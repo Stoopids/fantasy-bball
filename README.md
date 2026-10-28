@@ -1,2 +1,114 @@
-# fantasy-bball
-Fantasy BBALL NCAA Full Season and NCAA Tournament
+# Fantasy BBALL NCAA Full Season and NCAA Tournament
+
+A static, accounts-free web app for running a friends' fantasy draft of NCAA basketball teams. One commissioner sets up a league in a guided wizard, shares a link, managers join from their phones, and everyone drafts live in a shared room. One draft covers both the full season and the tournament. After the draft a league site shows standings (Full Season and NCAA Tournament), team cards and scores.
+
+No server of our own: every page is plain HTML/JS/CSS and all shared state lives in [textdb.dev](https://textdb.dev). It is built to be hosted on GitHub Pages.
+
+## Using it
+A one-page plain-words guide for commissioners and managers ships with the app: `help.html` (linked from the home page).
+
+
+**Commissioner** — open `index.html` → *Create a league*. One question per screen with Back/Next and a progress bar: league and your names, number of managers (4–12), draft style (Snake default, or Linear), draft time (a date-time picker in your own zone, stored as UTC, or "Start now, I'll press Start"), start mode, who picks first (Random, or "I'll set the exact order"), pick clock (30/60/90/120/180 s or none; default 60 s), teams per manager = rounds (default 8), and what happens when time runs out (auto-pick on by default). There is no passcode to invent: the app makes a random commissioner secret for you. A summary screen lets you edit any answer before anything is created. You then get a league code, an invite link, a draft-room link, a read-only spectator link, your **private commissioner link** and **private manager link** (both keep their secret after a `#`, are masked on screen and must be saved), an invite QR, a **Copy reminder message** button (league name, draft time in UTC, a link that shows each person's local time, the invite link) and **Share** where the Web Share API exists. Save the links: the passcode is stored only as a salted hash and cannot be recovered.
+In the lobby you can edit settings, reorder managers (drag the ⠿ handle or tap ▲ ▼), **Randomize**, spin the wheel, mark a manager away, rename or remove one, then **Start draft**. Once live: pause/resume, undo the last pick, change the clock, toggle auto-pick, end the draft early (typed confirmation), reset. Order is editable until the draft starts, then locked. Commissioner actions need the commissioner link on a device: open it, or paste it under More → Unlock (the creating phone is already unlocked). While a draft runs, auto-start and auto-pick only happen while at least one phone or computer has the room open; the commissioner sees that said in plain words, with a one-tap *Start the draft now* / *Make the auto-pick now* button if a tab was closed when the time came.
+
+**Manager** — open the invite link (or type the code on the home page): team name, your name, optional photo (cropped and shrunk on your phone to a small square under 25 KB; emoji or initial otherwise). In the room: Board, Teams (search, sort & group, ⭐ My Picks, Q+ queue), My Team (queue and auto-pick switch), Chat (separate from the pick feed), More. A 15-second warning, vibration and sound alert you; missed picks are auto-picked from your queue, then the best power rank. Your private manager link (`room.html?l=…#as=…&k=…`) restores your identity on another phone. There is no name picker: a device can only act as a manager if it holds that manager's secret, and a removed manager gets a plain "you were removed" notice with no pick or chat controls.
+
+**Spectator** — open the spectator link (`room.html?l=<code>&watch=1`). Read-only board, picks and chat. Anyone joining after the draft started is offered the spectator view; the order is fixed at the start.
+
+After the draft: final rosters and recap (`recap.html?l=<code>`), CSV and JSON export.
+
+## How it works
+
+Pages: `index`, `help` (one-page guide: Commissioner / Managers), `setup` (wizard), `join`, `room`, `recap`, `league` (the league site, see below), `time` (shows a draft time in the viewer's zone). Modules: `js/core.js` (all pure logic, unit-tested, loadable in Node), `js/store.js` (the **only** module that talks to textdb — swap it for Supabase later), `js/ui.js`, `js/league.js` (`FBNLeague.load(id)` reads every league key once and returns the derived state), `js/scoring.js` (pure scoring, loadable in Node), `js/setup.js`, `js/join.js`, `js/room.js`, `js/recap.js`, `js/leaguehome.js`.
+
+textdb.dev only offers GET and POST (POST replaces a whole document, last write wins, no compare-and-swap). So concurrency is handled by key layout and a verify step:
+- **One key per pick slot**; the first valid entry wins when the log is replayed. A writer reads, writes, waits 600 ms, re-reads and learns whether it landed or was beaten. Two phones picking at once cannot double-pick.
+- **One key per manager slot** (first write wins, same verify) so simultaneous joins never share a seat. Removing a manager bumps the slot's generation.
+- Every writer owns its own key (profile, presence, queue/auto prefs), so there are no cross-writer overwrites. Chat merges by message id. Commissioner changes go through read-modify-write with verification and retry.
+- Timeout/away auto-picks use deterministic entry ids, so several phones auto-picking write the same pick.
+- Polling is light and only runs in a visible tab: about 4 s in the lobby, 2.5 s while a draft is live, 15 s once it is complete, with jitter, exponential back-off (up to 30 s) after errors, and the Offline pill clears at once when any request succeeds or the browser reports it is online again, claims/profiles/chat on slower staggered schedules, presence every 45 s; a hidden tab stops polling and catches up the moment it is shown again.
+- **Every pick is a compare-and-set.** A pick records the pick number and the id of the previous pick; entries chained to a pick that was later undone are ignored, and *Undo* carries the pick number and id the commissioner was looking at and is refused if the board moved.
+
+### Key schema (`<id>` = league code, lower-case, 16 chars / 80 bits; prefix `fbn1-`)
+| key | holds |
+|---|---|
+| `fbn1-<id>-meta` | settings, status, order, epoch, voided picks, overrides (away/left/rename), slot generations, commissioner secret as salt + SHA-256 hash (never the secret) |
+| `fbn1-<id>-s<i>-g<gen>` | claim of manager slot *i*: manager id, name, team, salted hash of that manager's personal secret |
+| `fbn1-<id>-m-<mid>` | manager profile incl. the photo data URL (≤ 25 KB target, 40 KB hard cap) |
+| `fbn1-<id>-e<epoch>-p<n>` | pick *n* of the current draft epoch |
+| `fbn1-<id>-chat` | last 100 chat messages and reactions |
+| `fbn1-<id>-u-<mid>` / `-pr-<mid>` | that manager's queue + auto-pick flag / presence heartbeat |
+| `fbn1-<id>-e<epoch>-g<gen>-s<n>` | spin-wheel results |
+
+textdb limits verified with throwaway keys: POST works up to 1,000,000 bytes (413 at 1,100,000); keys of 100 and 200 characters work, 400 does not; a GET of an unknown key creates it empty; Date headers are not readable cross-origin (time sync uses a HEAD on the page's own origin).
+
+## Hosting on GitHub Pages (new repo or a sub-folder)
+This app is a separate static site. It does not touch, import from or link to any existing site; host it in its **own** new repo, or in its own sub-folder of a repo you already control, never by editing existing pages.
+1. Easiest: use the upload bundle `fantasy-bball-upload/` (shipped files only, with `MD5SUMS.txt`). Create a new repo and copy the bundle's contents to its root (or to a folder such as `/fantasy-bball/` inside an existing Pages repo). The bundle contains `index.html`, `setup.html`, `join.html`, `room.html`, `recap.html`, `league.html`, `time.html`, `manifest.webmanifest`, `sw.js`, `css/`, `js/`, `assets/`, `data/` and `icons/`. `LICENSE-third-party.txt` and `tools/refresh_data.py` (the data refresh script) are included too. `tests/`, `shots/` and the notes are not needed to run it.
+2. Settings → Pages → deploy from the branch root (or from the folder).
+3. Open `https://<user>.github.io/<repo>/` (or `.../<folder>/`).
+All links are relative, so any base path works with no changes; the generated invite/room links use the page's own location. The service worker (`sw.js`, cache name built from `js/version.js` so every build gets a fresh cache and old ones are deleted; network-first with a 4 s timeout, then the saved copy, then a plain offline page) is registered as `sw.js` next to the page, so its scope is that folder only; it ignores other origins (textdb, ESPN logos). Verified by serving the bundle from `/fantasy-bball/` with `python3 -m http.server` (see FINAL-TEST.md).
+Before the real season: run `python3 tools/refresh_data.py` (see "League site") and commit the new `data/` files. Until then a real league's standings page says "Standings start when the season starts" and shows no scores at all.
+
+## Run locally and test (development copy only)
+**Not in the upload bundle.** The bundle ships only the site files and `tools/refresh_data.py`. The tests, the mock store server (`tools/mock_textdb.js`), `tools/build_teams.py` and the screenshot scripts live in the development copy of the project, so the commands below only work there. To just open the app locally from the bundle, run `python3 -m http.server` in the bundle folder and open `http://localhost:8000/` (it will use the real textdb).
+```
+node tools/mock_textdb.js 8470 "$PWD" 8471 &      # static server on :8470 + a mock textdb on :8471
+# open http://localhost:8470/   (a normal browser still uses real textdb)
+node tests/test_core.js                       # unit tests (logic, secrets, compare-and-set)
+node tests/test_xss_static.js                 # static scan: every attribute interpolation escaped, CSP on every page, no inline handlers or console output calls
+node tests/test_scoring.js                    # scoring unit tests (Full Season, tournament upsets, games view, data files)
+node tools/mock_textdb.js 8480 "$PWD" 8481 &      # second mock for the security tests
+node tests/e2e_security.js                    # stored-XSS payloads, wrong-secret attempts, stale undo, demo data, removed manager, polling rate (~6 min)
+node tests/e2e_stage5.js                      # time.html bad input, sticky DEMO bar, CSV in the browser, help page, service worker on a slow link (needs mock on 8500/8501 and: node tests/slow_static.js 8520 "$PWD")
+node tests/e2e_league.js                      # league site only, on a seeded league (~10 s)
+node tests/final_shots.js                     # after e2e.js: final_* screenshots of the drafted league at 390 and 1280
+node tests/e2e.js                             # headless Chromium, mock store, 6 managers x 8 rounds + the league site, ~6 min
+node tests/seed_league.js                     # quick: put a finished 6-manager league into the mock and print its id
+node tests/e2e_real.js                        # one throwaway league on real textdb, then blanks every key
+MOCK=1 DESK=1 SHOTS=final_d_ node tests/e2e_real.js   # same flow against the mock at 1280px, saving screenshots
+```
+The e2e run points the app at the mock by setting the localStorage key `fbn.store` to a same-origin path; `js/store.js` only honours it on `localhost`/`127.0.0.1`, so on a real host it does nothing. There are no test controls in the shipped UI. Needs puppeteer-core (the repo symlinks `tests/node_modules`) and Google Chrome. Photos in `tests/fixtures` are generated test images. `tools/build_teams.py` regenerates `assets/teams.js` (162 teams, 83 with a power rank).
+
+## League site (`league.html?l=<code>`)
+Before the draft is complete the page only says **Available after the draft** (with links back to the room). After the draft it shows, for a real league, **"Standings start when the season starts"** until `data/scores.json` has games, plus the draft recap and the team cards. The invented sample scores live in `data/demo/` and are reachable only through the **DEMO** link (`league.html?l=<code>&demo=1`, offered on that empty page): every screen of the demo carries a sticky DEMO bar and a DEMO note, and sample files are ignored even if they are copied into `data/`. Once real games exist the page shows:
+- **Standings** with a **Full Season / NCAA Tournament** toggle. Tap a manager to see their schools (records, or points per school).
+- **Teams**: one card per manager (avatar, team name, manager name) with their schools as colour/logo chips, each school's record and its NCAA tournament status.
+- **Games**: results and upcoming games for the drafted schools, filter by manager and by season / NCAA tournament, upsets flagged. Times are shown in the viewer's zone.
+
+Links `league.html?l=<code>#teams`, `#games`, `#standings/tournament` open a tab directly.
+
+**Scoring** (`js/scoring.js`, rules also in `data/FORMAT.md`). Full Season = wins by a manager's schools in regular-season and conference games (ties: win %, then point difference). NCAA Tournament = points per school: in the field 5, play-in win 1, each win 2, upset by seed +4 (the winner has the worse seed; equal seeds are not an upset), Final Four +3, champion +4, missing the field -1 (only once the 64+ team field list is loaded). Ties: more upsets, then more wins. Seeds only; no other data is used. The values are fixed in `js/scoring.js` and can be overridden in `data/tournament.json` (`points`).
+
+**Data** is two static files, read by the browser from the same folder as the page: `data/scores.json` and `data/tournament.json` (format: `data/FORMAT.md`). The files in `data/` that ship are **empty** (no games, no field). The invented sample set (2,548 games, a 68-team field) is in `data/demo/` and is used only by the DEMO link, which marks every screen DEMO. If a file is missing or broken the site says so in plain words (standings at zero, "The tournament has not started", "No games yet") and the team cards still work.
+
+**Refreshing the data.** `python3 tools/refresh_data.py` (Python standard library, no key) reads the ESPN scoreboard day by day, falls back to the NCAA scoreboard relay for a day ESPN fails, keeps only games that involve a school in `assets/teams.js`, and writes both files with `"sample": false`. Useful flags: `--start/--end` for a window, `--merge` to keep older games, `--out DIR` to write somewhere else first, `--self-test` for an offline parser check. Run it, check the diff, commit and push `data/`. The demo files come from `tools/make_sample_data.py` (invented, seeded; writes to `data/demo/`). The refresh was tried live on 2026-03-18..20 (First Four and 1st Round: 34 games) into a temp folder; it has not been run for the 2026-27 season yet because that season has not started.
+
+## Known limits and decisions
+- **Friendly locks, not real authentication.** Anyone with a league link can read the league (and, with the code, join an open seat). The commissioner secret and each manager's secret are random 128-bit values that live only in the private links (after the `#`, so they are never sent to a server) and on the device; the league stores only a salted SHA-256 hash of each, so copying the stored data gives nobody a working secret. The app refuses to pick, queue, edit a profile, undo, pause or start without the matching secret. But textdb has no access control: a person who writes the store's keys by hand, outside the app, can still overwrite anything. That cannot be fixed without a backend that checks who is writing (the Supabase swap).
+- **Depends on textdb.dev**: free, third-party, no SLA, ~1–2 s per request from some networks, whole-document last-write-wins. Data can disappear if the service does.
+- **Polling, no push**: the room refreshes every few seconds; no notifications when the app is closed.
+- A league can only start with at least 2 managers; late joiners after the start are spectators.
+- **ESPN logos are hot-linked** from ESPN's CDN (with a colour-chip fallback if they fail). That is a rights/availability risk; replace with licensed or self-made marks before a public launch.
+- **Feed terms are uncertain.** The refresh script reads ESPN's public scoreboard and the NCAA relay (ncaa-api.henrygd.me) without a key. Those are undocumented/community feeds with no stated terms for this use and no guarantee they keep working; check their terms before a public launch. The site itself never calls them (only the maintainer's script does).
+- **No scores until you refresh.** The shipped `data/` files are empty. The real refresh was only tried on last season's First Four and 1st Round days.
+- **21 extra teams.** `assets/teams.js` has 162 schools: 141 come from the hardened-draft snapshot, and 21 more were added by hand (`tools/teammeta.py`: Miami (OH), Oklahoma, UC Santa Barbara, Furman, UIC, Marquette, Montana State, Dayton, Stephen F. Austin, St. Thomas, Santa Clara, Western Kentucky, Clemson, Merrimack, Creighton, Baylor, West Virginia, Providence, Central Arkansas, Queens University, Long Island University). Their colours, logos and power ranks should be checked by a person before launch.
+- **Trademark**: "NCAA" in the product name is a registered trademark. Review the name (and the team names/logos) before any public release.
+- The league code is the only index (no lookup service): lose the link and the code, lose the league. Photos make the profile key larger (≈25 KB each).
+- Points only: nothing in the app tracks anything but picks, scores and chat. Humor is off.
+- **League site data is refreshed by hand**: the site never calls ESPN itself, so scores are only as fresh as the last `tools/refresh_data.py` run and commit. Until the first refresh a real league shows no scores.
+- **Seeds come from the scoreboard feed.** A school's seed is read from game data; until the First Four / 1st Round games are listed, a school outside the first games has no seed (it still gets entry points from `data/tournament.json`). Games and schools not in `assets/teams.js` are dropped. NIT and other postseason events are not scored.
+- The Full Season standings count regular-season and conference games only; NCAA tournament games count only in tournament mode.
+- Standings are computed in the browser from the data files, so a very large season file (about 0.5 MB for the demo set) is downloaded on each visit (network-first service worker).
+- The hosted store keeps a league's data until the service drops it. The app has no delete-league button (textdb has no delete); the commissioner can blank the keys by hand, see the key table.
+- Stage 3 hook: `FBNLeague.load(id)` plus `FBNScore` give everything a later page needs.
+
+## Before public release
+These are open items that need a person's decision or permission. None is a code bug.
+1. **The name.** "NCAA" is a registered trademark, and the product name and every page header say it. Use descriptive wording such as "college basketball" and "March tournament" in the name, keep "NCAA" only in body text, and add a line "not affiliated with or endorsed by the NCAA or any school". The same care applies to school names and colours.
+2. **School logos.** The 162 logos are loaded from `https://a.espncdn.com/...` at view time. ESPN's terms do not allow this use, the addresses can change or be blocked, and every viewer's IP address reaches ESPN. Replace them with text chips, logos used with permission, or licensed art. The coloured-chip fallback already works without them.
+3. **The shared store.** textdb.dev is a free third-party service: no login, anyone with a key can read or overwrite it, no service promise, no privacy policy, no deletion. Names and photos of real people are saved there. Get the owner's permission for this request volume (polling is now light, see "How it works"), or move to the planned backend, before real use.
+4. **Privacy and children.** The join form now says that names, team names and photos are saved in a shared store anyone with the league link can read. A terms and privacy page is still needed, and a way to delete a league's data. Think about photos of minors.
+5. **Open-source notice.** `js/qr.min.js` is the MIT-licensed qrcode-generator by Kazuhiko Arase. The licence text is in `LICENSE-third-party.txt`, which ships with the site; keep it.
+6. **Scores feeds.** The refresh script reads public ESPN and NCAA-relay scoreboards with no stated terms. Check them before a public launch.
+7. **Demo data.** The invented scores in `data/demo/` use real school names. They are always marked DEMO and never shown for a real league; keep it that way, or delete the folder and the link.
