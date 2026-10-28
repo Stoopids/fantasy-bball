@@ -1,8 +1,8 @@
 fc4c2520be569d292be962f8ba4efdeb  LICENSE-third-party.txt
-9bb4d6d0f4311b76af2a32b2aeb15adf  README.md
+f6badf172933f12911016b44c96af510  README.md
 1efdefd1fb1432448a983cf69fd1f268  assets/hero-banner.jpg
 83abcdf7aceb3630c2221ce9bd3d4481  assets/teams.js
-2d676d349724ed6ea63b420897d6854a  css/app.css
+4301bd134475b6293ed6e6abbbb4b3ed  css/app.css
 a8d124effdec542ef0903542e193be9a  css/league-app.css
 2a4c31387b4daac8496894ac43044bea  css/power.css
 b372832279d9f8111ec2d74b18e04301  data/FORMAT.md
@@ -17,7 +17,7 @@ a3c9f1fd89b30436e6d0db39e1f480d9  data/tournament.json
 45fe205bbf157cfcb24b616a4d27a0ad  icons/icon-512.png
 2780e2b41986c2b7bab9e561e020b0fc  index.html
 c252cbc85e4188c51b4a09b81c4061b7  join.html
-48028bab76740349bf667e21cf3e4bce  js/core.js
+065f52973242e15e492a5dcb2f58fd66  js/core.js
 919176badbe78c5adc6fb7ce260cf723  js/help.js
 8f8d85115f27aef660fd538b619c1bc5  js/index.js
 bb58f36ff414bbbc0d86599a86c063bc  js/join.js
@@ -31,13 +31,13 @@ e5e82a4d18bdd8fae20c8fb9eb8670da  js/power-gen.js
 ade6fadbb2f4be5a575390360ff3af5b  js/qr.min.js
 76a984fe256585964de9117578bf729b  js/recap.js
 9dd412ad4966d3a444e42208d2a82a5b  js/redraft.js
-03b022984c99ba5cae43eedb0927b327  js/room.js
+e0bc7054cc1a7e4ed1eff7d8db92ce8b  js/room.js
 326c4475ed338cac89b84d6acdfadbaa  js/scoring.js
 4a01bf49da4ed83c66e0f9db0a9775f5  js/setup.js
-97ecaf76b8886073cccd7a717d42fe54  js/store.js
+d35b7dfbc2a6ac3e267dc010298ae922  js/store.js
 b31b8d130f47a378f2358995614b9470  js/time.js
 7727eb1e541fb48fdd0206454de8f133  js/ui.js
-7aa20207dc8cfeb0aeee60df6368e38c  js/version.js
+701ef786490dee7c370d6d33d3cb53ad  js/version.js
 93116a4ecb498983dd83b55ce0d7c2ec  league.html
 dde6bc94069703616dc2b911b7422ae9  manifest.webmanifest
 debeec657c7240763fa195452bfe7bf8  recap.html
