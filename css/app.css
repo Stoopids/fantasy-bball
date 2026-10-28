@@ -289,3 +289,8 @@ body.room .toast{bottom:calc(78px + var(--sb))}
 @media (min-width:700px){.card.oc .chips{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px 8px}.card.oc summary.lb{align-items:center}}
 .card.oc summary.lb{align-content:start}
 .sitebtns{flex-wrap:nowrap;width:100%}.sitebtns .btn{flex:1 1 0;white-space:nowrap;min-width:0}
+/* recap: exports are small, low-key text links at the very bottom (below rosters and highlights) */
+.exportrow{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;margin:18px 0 10px;font-size:13px}
+.lnkbtn{background:none;border:0;color:var(--mut);text-decoration:underline;font:inherit;font-size:13px;min-height:44px;padding:0 12px;cursor:pointer}
+.lnkbtn:hover,.lnkbtn:focus-visible{color:var(--acc)}
+body.hasstick.recapp .exportrow{margin-bottom:70px}
