@@ -424,3 +424,6 @@ a.tl{display:inline-block;padding:12px 2px;margin:-12px 0;text-decoration:underl
 #rc_room,#rcshare{min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center}
 /* redraft page: a very long one-word name wraps instead of widening the page (QA L7) */
 #rapp{overflow-wrap:anywhere}#rapp .grow,#rapp .row>*{min-width:0}
+/* s24: Pick stuck banner (draft server not answering for a pick slot) */
+.stuckbar{border-color:#c0392b;background:#3a1a14;color:#ffd9d2;font-size:14px;line-height:1.35;font-weight:600}.stuckbar b{color:#fff}
+.stuckbar .row{display:flex;gap:8px;flex-wrap:wrap}.stuckbar .btn.sm{min-height:44px;min-width:44px;padding:0 14px;font-size:15px}
