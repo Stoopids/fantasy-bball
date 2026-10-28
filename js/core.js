@@ -78,11 +78,11 @@ F.zonedToUtc=function(y,mo,d,h,mi,tz){let guess=Date.UTC(y,mo-1,d,h,mi);for(let 
 F.parseLocalInput=function(str,tz){const m=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(String(str||''));if(!m)return null;const v=F.zonedToUtc(+m[1],+m[2],+m[3],+m[4],+m[5],tz);return isFinite(v)?v:null};
 F.localInputValue=function(ms,tz){const p=parts(ms,tz);const z=n=>String(n).padStart(2,'0');return p.y+'-'+z(p.mo)+'-'+z(p.d)+'T'+z(p.h)+':'+z(p.mi)};
 F.offsetLabel=function(ms,tz){const m=F.tzOffsetMin(ms,tz);const s=m<0?'-':'+';const a=Math.abs(m);const h=Math.floor(a/60),mm=a%60;return 'UTC'+s+h+(mm?':'+String(mm).padStart(2,'0'):'')};
-F.fmtWhen=function(ms,tz,o){o=o||{};return new Intl.DateTimeFormat(o.locale||'en-US',{timeZone:tz,weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(ms)).replace(',',',')};
+F.fmtWhen=function(ms,tz,o){o=o||{};return new Intl.DateTimeFormat(o.locale||'en-US',{timeZone:tz,weekday:'short',month:o.year?'long':'short',day:'numeric',year:o.year?'numeric':undefined,hour:'numeric',minute:'2-digit'}).format(new Date(ms)).replace(',',',')};
 F.fmtUtc=function(ms){const d=new Date(ms);const z=n=>String(n).padStart(2,'0');return d.toUTCString().slice(0,16)+', '+z(d.getUTCHours())+':'+z(d.getUTCMinutes())+' UTC'};
-/* "Starts Sat, Oct 31, 8:00 PM your time (UTC+7)" ; commissioner zone line is added when it differs */
-F.startsLine=function(ms,viewerTz,commishTz){const own='Starts '+F.fmtWhen(ms,viewerTz)+' your time ('+F.offsetLabel(ms,viewerTz)+')';
-  if(commishTz&&commishTz!==viewerTz&&F.tzOffsetMin(ms,commishTz)!==F.tzOffsetMin(ms,viewerTz))return{you:own,commish:'Commissioner’s time: '+F.fmtWhen(ms,commishTz)+' ('+F.tzCity(commishTz)+', '+F.offsetLabel(ms,commishTz)+')',utc:F.fmtUtc(ms)};
+/* "Starts Sat, October 31, 2026 at 8:00 PM your time (UTC+7)" ; commissioner zone line is added when it differs */
+F.startsLine=function(ms,viewerTz,commishTz){const own='Starts '+F.fmtWhen(ms,viewerTz,{year:1})+' your time ('+F.offsetLabel(ms,viewerTz)+')';
+  if(commishTz&&commishTz!==viewerTz&&F.tzOffsetMin(ms,commishTz)!==F.tzOffsetMin(ms,viewerTz))return{you:own,commish:'Commissioner’s time: '+F.fmtWhen(ms,commishTz,{year:1})+' ('+F.tzCity(commishTz)+', '+F.offsetLabel(ms,commishTz)+')',utc:F.fmtUtc(ms)};
   return{you:own,commish:commishTz?'Commissioner’s zone: '+F.tzCity(commishTz)+' ('+F.offsetLabel(ms,commishTz)+')':'',utc:F.fmtUtc(ms)}};
 F.tzCity=tz=>String(tz||'UTC').split('/').pop().replace(/_/g,' ');
 F.countdownText=function(ms){ms=Math.max(0,ms);const s=Math.floor(ms/1000);const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sec=s%60;
@@ -102,8 +102,10 @@ F.cropRect=function(w,h,zoom,px,py){zoom=Math.max(1,zoom||1);const side=Math.min
   return{sx:mx+Math.max(-1,Math.min(1,px||0))*mx,sy:my+Math.max(-1,Math.min(1,py||0))*my,side}};
 const AV_COLORS=['#f59e0b','#38bdf8','#34d399','#f472b6','#a78bfa','#fb7185','#2dd4bf','#facc15','#60a5fa','#f97316','#4ade80','#c084fc'];
 F.EMOJIS=['🏀','🔥','⭐','🦅','🐻','🐯','🐺','🦁','🐉','🚀','⚡','🎯'];
+/* avatar letter: the first letter or digit of the name (any script), else the first whole character (an emoji, never half of a surrogate pair), else '?' */
+F.initialOf=function(nm){nm=String(nm==null?'':nm);let m=null;try{m=nm.match(/[\p{L}\p{N}]/u)}catch(e){}if(m)return m[0].toUpperCase();const a=Array.from(nm.trim());return a.length?a[0]:'?'};
 F.avatarSpec=function(m){m=m||{};const nm=clean(m.name||m.team||'?');const c=AV_COLORS[F.hash32(nm.toLowerCase())%AV_COLORS.length];
-  if(m.photo&&F.photoOk(m.photo))return{kind:'photo',src:m.photo,color:c};if(m.emoji)return{kind:'emoji',text:m.emoji,color:c};return{kind:'initial',text:(nm[0]||'?').toUpperCase(),color:c}};
+  if(m.photo&&F.photoOk(m.photo))return{kind:'photo',src:m.photo,color:c};if(m.emoji)return{kind:'emoji',text:m.emoji,color:c};return{kind:'initial',text:F.initialOf(nm),color:c}};
 /* ============================ managers: names, profiles, claims ============================ */
 F.uniqueName=function(name,taken){name=clean(name);const set=new Set((taken||[]).map(x=>clean(x).toLowerCase()));if(!set.has(name.toLowerCase()))return name;
   for(let i=2;i<100;i++){const c=name.slice(0,F.LIMITS.personMax-4)+' ('+i+')';if(!set.has(c.toLowerCase()))return c}return name+' '+F.hexId(3)};
@@ -195,7 +197,7 @@ F.mRemove=function(m,mid,slotIndex){if(m.status==='complete')return{error:'The d
   if(m.status==='lobby'){if(slotIndex==null)return{error:'Unknown manager.'};n.slotGen[slotIndex]=(n.slotGen[slotIndex]||0)+1;n.order=n.order.filter(x=>x!==mid);delete n.over[mid];return{state:n,freed:true}}
   n.over[mid]=Object.assign({},n.over[mid],{left:true,away:true});return{state:n,freed:false}};
 F.mEnd=function(m,now){if(m.status!=='live')return{error:'Only a live draft can be ended early.'};const n=clone(m);n.status='complete';n.endedEarly=true;n.endedAt=now;n.paused=false;n.pausedLeft=null;return{state:n}};
-F.mReset=function(m){if(m.status==='complete')return{error:'The draft is complete and locked.'};if(F.redraftLive(m))return{error:'The redraft cannot be reset. Use Undo, or End the draft early.'};const n=F.defaultMeta(m.id,m.settings,m.cm);n.name=m.name;n.created=m.created;n.pass=m.pass;n.version=m.version;n.epoch=m.epoch+1;n.slotGen=clone(m.slotGen);n.over=clone(m.over);n.spinDone=!!F.spinCompleted(m);
+F.mReset=function(m){if(m.status==='complete')return{error:'The draft is complete and locked.'};if(F.redraftLive(m))return{error:'The Redraft cannot be reset. Use Undo, or End the draft early.'};const n=F.defaultMeta(m.id,m.settings,m.cm);n.name=m.name;n.created=m.created;n.pass=m.pass;n.version=m.version;n.epoch=m.epoch+1;n.slotGen=clone(m.slotGen);n.over=clone(m.over);n.spinDone=!!F.spinCompleted(m);
   Object.keys(n.over).forEach(k=>{delete n.over[k].left});n.notes=m.notes;return{state:n}};
 /* ============================ REDRAFT (January 20, 2027) ============================
    Rules, in plain words (the same ones help.html and the redraft page show):
@@ -233,14 +235,14 @@ F.makeRedraftForm=function(o){return{mid:o.mid,rid:o.rid,drops:(o.drops||[]).map
 F.parseRedraftForm=function(txt){const d=F.parseJ(txt);if(!d||typeof d!=='object'||typeof d.mid!=='string'||!hexs(d.rid))return null;
   return{mid:d.mid,rid:d.rid,drops:Array.isArray(d.drops)?d.drops.map(String).filter(t=>/^[A-Za-z0-9_-]{1,40}$/.test(t)).slice(0,F.REDRAFT.maxDrops):[],pos:Number.isInteger(+d.pos)&&+d.pos>=1&&+d.pos<=24?+d.pos:null,ts:+d.ts||0,v:+d.v||0}};
 /* the commissioner opens the redraft (freezes the standings as of the date). status stays "complete" until the redraft starts. o={rows,now,rid} rows: redraftStandings() output. Can be repeated while it is still "open". */
-F.mRedraftOpen=function(m,st,o){if(F.redraftLive(m))return{error:'The redraft has already started.'};/* the store keeps status 'live' after the last pick; completion is derived (st.status), the same check the League site uses */
-  if(st.status!=='complete')return{error:'The redraft can only open after the first draft is complete.'};
+F.mRedraftOpen=function(m,st,o){if(F.redraftLive(m))return{error:'The Redraft has already started.'};/* the store keeps status 'live' after the last pick; completion is derived (st.status), the same check the League site uses */
+  if(st.status!=='complete')return{error:'The Redraft can only open after the first draft is complete.'};
   if(m.endedEarly)return{error:'The first draft ended early, so there is no full set of rosters to redraft.'};
   const rows=o.rows||[];if(rows.length<2)return{error:'At least 2 managers are needed.'};const n=clone(m);const prev=m.redraft;
   n.redraft={rid:prev&&prev.rid?prev.rid:F.hexOf((o.rb||cryptoBytes)(6)),phase:'open',asOf:F.REDRAFT.asOf,from:m.epoch,openedAt:prev&&prev.openedAt?prev.openedAt:o.now,stand:rows.map(r=>r.mid),rows:rows.map(r=>({mid:r.mid,w:r.wins,l:r.losses})),keep:{},need:{},drops:{},pos:null,lastMid:rows[rows.length-1].mid,rounds0:m.settings.rounds,startedAt:0};
   return{state:n}};
 /* start: forms = {mid: parsed form}. Only forms with the right redraft id, from managers in the draft, are used. Needs the finished first draft (st.real). */
-F.mRedraftStart=function(m,st,forms,o){o=o||{};const r=m.redraft;if(F.redraftLive(m))return{error:'The redraft has already started.'};if(!r||r.phase!=='open')return{error:'Open the redraft first.'};
+F.mRedraftStart=function(m,st,forms,o){o=o||{};const r=m.redraft;if(F.redraftLive(m))return{error:'The Redraft has already started.'};if(!r||r.phase!=='open')return{error:'Open the Redraft first.'};
   if(st.status!=='complete')return{error:'The first draft is not complete.'};
   const owners=st.order.slice();const stand=r.stand.filter(x=>owners.indexOf(x)>=0);owners.forEach(x=>{if(stand.indexOf(x)<0)stand.push(x)});
   const roster={};owners.forEach(x=>{roster[x]=st.real.filter(p=>p.owner===x).map(p=>p.tid)});
@@ -262,6 +264,8 @@ F.makePass=async function(pass,salt){salt=salt||F.hexId(16);return{salt,hash:awa
 F.checkPass=async function(meta,pass){if(!meta||!meta.pass)return false;try{return(await F.sha256Hex(meta.pass.salt+':'+String(pass)))===meta.pass.hash}catch(e){return false}};
 F.newSecret=()=>F.hexId(32);
 F.mgrHash=(mid,k)=>F.sha256Hex('fbn1-mgr:'+mid+':'+k);
+/* commissioner "Re-issue link": a NEW secret for the same seat; the claim's hash is replaced, so the old private link stops working. Returns {k, claim} (the caller writes claim to the seat's key) */
+F.reissueSeat=async function(claim){const k=F.newSecret();const sh=await F.mgrHash(claim.mid,k);return{k,claim:F.makeClaim(Object.assign({},claim,{sh,ts:Date.now()}))}};
 F.checkMgrSecret=async function(claim,k){if(!claim||!k)return false;if(!claim.sh)return false;try{return claim.sh===await F.mgrHash(claim.mid,k)}catch(e){return false}};
 /* pull a secret out of a pasted link or code: ...#cm=<32 hex>, ...#as=<mid>&k=<32 hex>, or the bare 32 hex characters */
 F.extractSecret=function(text,key){text=String(text||'').trim();let m;if(key==='cm'){m=/[#&?]cm=([0-9a-f]{32})\b/i.exec(text)}else if(key==='k'){m=/[#&?]k=([0-9a-f]{32})\b/i.exec(text)}if(m)return m[1].toLowerCase();return /^[0-9a-f]{32}$/i.test(text)?text.toLowerCase():''};
@@ -428,5 +432,7 @@ F.makeHero=(url,ts)=>({v:1,url,ts:ts||Date.now()});
 /* only the commissioner (secret checked on this device) may change or reset the banner */
 F.heroWritable=cmOk=>cmOk===true;
 F.fitHero=(encode)=>F.fitPhoto(encode,{maxBytes:F.HERO.maxBytes,edges:F.HERO.edges,qualities:F.HERO.qualities});
+/* school name -> ESPN team page (outbound link only). Only a numeric-string id (assets/teams.js element 0) gives a URL; anything else is null, so the caller shows plain text. */
+F.espnUrl=id=>(typeof id==='string'&&/^\d{1,8}$/.test(id))?'https://www.espn.com/mens-college-basketball/team/_/id/'+id:null;
 if(typeof module!=='undefined'&&module.exports)module.exports=F;else root.FBN=F;
 })(typeof window!=='undefined'?window:globalThis);

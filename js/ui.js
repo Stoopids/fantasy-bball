@@ -69,7 +69,15 @@ U.textOn=hex=>{const r=hex2rgb(hex);if(!r)return'#fff';const L=lum(r);return(1.0
 U.chip=function(TEAMS,tid,opt){opt=opt||{};const t=TEAMS[tid]||{};const bg='#'+((t.color||'').replace('#','')||'3a4256');const alt='#'+((t.alt||'').replace('#','')||'ffffff');
   const logo=t.logo?'<img src="'+U.esc(t.logo)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<span class="nologo"></span>';
   const label=opt.abbr?(t.abbr||t.short):(t.short||t.name||tid);
-  return '<span class="chip'+(opt.big?' big':'')+(opt.sm?' sm':'')+'" title="'+U.esc(t.name||tid)+'" style="background:'+bg+';color:'+U.textOn(bg)+';border-color:'+alt+'">'+logo+U.esc(label)+'</span>'};
+  return '<span class="chip'+(opt.big?' big':'')+(opt.sm?' sm':'')+'" title="'+U.esc(t.name||tid)+'" style="background:'+bg+';color:'+U.textOn(bg)+';border-color:'+alt+'">'+logo+(opt.wrap?'<span class="cl">'+U.esc(label)+'</span>':U.esc(label))+'</span>'};
+/* school -> ESPN team page. U.teamLink(team, innerHtml, cls): team = a TEAMS entry ({espn_id,name,short,...}) or an id string. An escaped <a target=_blank rel="noopener noreferrer">,
+   or a plain <span> when the school has no numeric ESPN id. U.teamChip(TEAMS,tid,opt) = chip inside that link. A capture-phase listener below stops a tap on the link from reaching any
+   row / cell / button handler, so opening ESPN never drafts, picks, stars or queues anything. Outbound link only (no ESPN images). */
+U.teamLink=function(team,inner,cls){const t=(team&&typeof team==='object')?team:null;const id=t?(t.espn_id!=null?t.espn_id:t.id):team;const url=window.FBN&&FBN.espnUrl?FBN.espnUrl(id==null?null:String(id)):null;const nm=t?(t.name||t.short||''):'';
+  if(!url)return '<span class="'+U.esc(cls||'')+'">'+inner+'</span>';
+  return '<a class="tlink '+U.esc(cls||'')+'" href="'+U.esc(url)+'" target="_blank" rel="noopener noreferrer"'+(nm?' title="'+U.esc(nm+' on ESPN (opens in a new tab)')+'"':'')+'>'+inner+'</a>'};
+U.teamChip=function(TEAMS,tid,opt){return U.teamLink(TEAMS[tid],U.chip(TEAMS,tid,opt),(opt&&opt.lcls)||'')};
+document.addEventListener('click',e=>{const a=e.target&&e.target.closest&&e.target.closest('a.tlink');if(a)e.stopPropagation()},true);
 U.fmtClock=ms=>{ms=Math.max(0,Math.ceil(ms/1000));return Math.floor(ms/60)+':'+String(ms%60).padStart(2,'0')};
 /* team pool from assets/teams.js */
 U.loadTeams=function(){const D=window.TEAMS_DATA||{teams:[],meta:{}};const TEAMS={},POOL=[];D.teams.forEach(r=>{TEAMS[r[0]]={espn_id:r[0],name:r[1],short:r[2],abbr:r[3],color:r[4],alt:r[5],logo:r[6],mascot:r[7]};POOL.push(r[0])});
@@ -93,7 +101,7 @@ UI.rosters=function(st,mgrs,T){const F=FBN;const rs=F.rosters(st,mgrs);const rt=
   return '<div class="rosgrid" id="rosgrid">'+rs.map(r=>{const stt=F.rosterStats(r.picks,T.META);const q=rt[r.mgr.mid]||{};
   return '<div class="card roster" data-mid="'+UI.esc(r.mgr.mid)+'"><div class="row nw">'+UI.avatar(r.mgr,42)+'<div class="grow"><b>'+UI.esc(r.mgr.name)+'</b><div class="small mut">'+UI.esc(r.mgr.team)+'</div></div><div class="small mut" style="text-align:right">'+r.picks.length+' team'+(r.picks.length===1?'':'s')+(stt.avgRank!=null?'<br>avg rank '+stt.avgRank:'')+'</div></div>'
    +'<div class="strength small"><b>Strength '+(q.strength==null?'–':q.strength)+'</b>'+(q.place?' <span class="mut">· #'+q.place+' of '+rs.length+'</span>':'')+'</div>'
-   +'<div class="rost">'+(r.picks.map(p=>UI.chip(T.TEAMS,p.tid)).join('')||'<span class="small mut">No picks</span>')+'</div></div>'}).join('')+'</div>'};
+   +'<div class="rost">'+(r.picks.map(p=>UI.teamChip(T.TEAMS,p.tid)).join('')||'<span class="small mut">No picks</span>')+'</div></div>'}).join('')+'</div>'};
 /* the same two buttons everywhere (room, recap, league site): Draft recap and League site. current = 'recap' | 'site' | '' marks the page you are on. Links hold the league code only. */
 UI.siteButtons=function(lid,domId,current){const E=UI.esc;const c=k=>E('btn grow'+(current===k?' cur':''));const a=k=>E(current===k?'page':'false');
   return '<div class="row sitebtns" id="'+E(domId)+'"><a class="'+c('recap')+'" id="'+E(domId)+'_recap" aria-current="'+a('recap')+'" href="'+E(UI.pageUrl('recap.html',{l:lid}))+'">Draft recap</a><a class="'+c('site')+'" id="'+E(domId)+'_site" aria-current="'+a('site')+'" href="'+E(UI.pageUrl('league.html',{l:lid}))+'">League site</a></div>'};

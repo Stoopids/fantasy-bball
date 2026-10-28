@@ -1,7 +1,7 @@
 /* League site. Built as a league standings page (banner, big title, one-row tab bar, rank cards with school chips) and fed by the league's own
    draft: owners, team names, emoji, photos and rosters come from the draft data; scores come from data/scores.json (+ an optional live ESPN overlay).
    It exists the moment the draft is complete: every owner is 0-0 and tied for first (T-1) until games are played.
-   Tabs: Standings, Games, Rosters, Power rankings, All teams, Postseason, Jan 20, 2027 redraft, Archive, Rules, plus Draft (link to the draft room).
+   Tabs: Standings, Games, Rosters, Bets, All teams, Postseason, Redraft, Archive, Rules, plus Draft (link to the draft room).
    No inline scripts or handlers: clicks go through data-a attributes (UI.bind). Every interpolated value goes through esc(). */
 (function(){const F=FBN,U=UI,esc=U.esc,S=FBNScore,A=FBNLeagueD;const id=F.parseCode(U.qs().get('l')||'')||'';const T=U.loadTeams();
 const DEMO=U.qs().get('demo')==='1';const DATA=DEMO?'data/demo/':'data/';
@@ -11,22 +11,26 @@ const homeLink=()=>'<a href="index.html">Home</a>';
 if(!id){app.innerHTML='<main><div class="card"><b>No league</b><div class="note">Open this page from your league link.</div><p><a class="btn" href="index.html">Home</a></p></div></main>';return}
 app.innerHTML='<main><div class="card" id="loading">Loading the league…</div></main>';
 /* ---------- state ---------- */
-const TABS=[['standings','🏆 Standings','Ranks'],['games','📅 Games','Games'],['rosters','👥 Rosters','Squads'],['power','⚡ Power rankings','Power'],['teams','🏀 All teams','Teams'],['postseason','✅ Postseason','Post'],['redraft','🔄 Jan 20, 2027 redraft','Jan 20, 2027'],['archive','🗂️ Archive','Past'],['rules','📖 Rules','Rules']];
+const TABS=[['standings','🏆 Standings','Ranks','Standings'],['games','📅 Games','Games','Games'],['rosters','👥 Rosters','Squads','Rosters'],['bets','💪 Bets','Bets','Bets'],['teams','🏀 All teams','Teams','All teams'],['postseason','✅ Postseason','Post','Postseason'],['redraft','🔄 Redraft','Redraft','Redraft'],['archive','🗂️ Archive','Past','Archive'],['rules','📖 Rules','Rules','Rules']];
 const KEYS=TABS.map(t=>t[0]);
-let tab='standings',ownerSel=null,openTeam={},gOwner='all',gMode=null,gDay='all',gH2H=false,gAll=false,prOpen={},prDeep={};
-let L=null,D=null,SC=null,TN=null,errS='',errT='',PR=null,CM=false,HERO_CUSTOM=null,MG=[];
-const hashSet=()=>{const h=(location.hash||'').replace('#','').split('/');let t=h[0];if(t==='teams'&&!h[1]){}if(t==='standings'&&h[1]==='tournament')t='postseason';if(KEYS.includes(t))tab=t};
+let tab='standings',ownerSel=null,openTeam={},gOwner='all',gMode=null,gDay='all',gH2H=false,gAll=false;
+let L=null,D=null,SC=null,TN=null,errS='',errT='',CM=false,HERO_CUSTOM=null,MG=[];
+const hashSet=()=>{const h=(location.hash||'').replace('#','').split('/');let t=h[0];if(t==='teams'&&!h[1]){}if(t==='standings'&&h[1]==='tournament')t='postseason';if(t==='power')t='standings';if(KEYS.includes(t))tab=t};
 const hashPut=()=>{try{history.replaceState(null,'','#'+tab)}catch(e){}};
 async function getJ(p){const r=await fetch(p+'?b='+encodeURIComponent(window.FBN_BUILD||'')+'&t='+Date.now().toString(36));if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
 /* ---------- helpers (from the template page) ---------- */
 function initials(n){n=String(n||'').replace(/\(.*?\)/g,' ').replace(/[^A-Za-z0-9 ]/g,' ').trim();if(!n||/^\d+$/.test(n))return '?';const w=n.split(/\s+/);return (w.length>1?w[0][0]+w[1][0]:n.slice(0,2)).toUpperCase()}
 const hexOk=v=>{v=String(v==null?'':v).replace('#','');return /^[0-9a-f]{6}$/i.test(v)?'#'+v:/^[0-9a-f]{3}$/i.test(v)?'#'+v:null};
+/* every school name links to its ESPN team page (outbound link only: no ESPN images are loaded for the link). Uses Draft Room's F.espnUrl(id); a team without a numeric id is shown as plain text, never as a link. */
+const espnUrl=id=>F.espnUrl?F.espnUrl(id==null?null:String(id)):(/^\d{1,8}$/.test(String(id==null?'':id))?'https://www.espn.com/mens-college-basketball/team/_/id/'+id:null);
+const teamHref=tid=>{const t=T.TEAMS[tid];return t?espnUrl(t.espn_id):null};
+function tlink(tid,txt,cls){const u=teamHref(tid),t=T.TEAMS[tid]||{};return u?`<a class="tl${cls?' '+cls:''}" href="${esc(u)}" target="_blank" rel="noopener noreferrer" title="Open ${esc(t.name||txt)} on ESPN">${esc(txt)}</a>`:esc(txt)}
 function chip(tid,o){o=o||{};const t=T.TEAMS[tid]||{};const nm=t.short||t.name||o.name||String(tid);const bg=hexOk(t.color)||'#3a4256',alt=hexOk(t.alt)||'#ffffff';const fg=U.textOn(bg);const ini=esc(initials(nm));
   const logo=t.logo?`<img src="${esc(t.logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-ini="${ini}">`:`<span class="nologo" aria-hidden="true">${ini}</span>`;
-  const url='https://www.espn.com/mens-college-basketball/team/_/id/'+encodeURIComponent(t.espn_id||tid);
-  return `<a class="chip${o.big?' big':''}${o.out?' out':''}" href="${esc(url)}" target="_blank" rel="noopener" title="Open ${esc(t.name||nm)} on ESPN" style="background:${bg};color:${fg};border-color:${alt}">${logo}${o.cn?'<span class="cn'+(/\s/.test(nm)?'':' one')+'">'+esc(nm)+'</span>':esc(nm)}</a>`}
+  const url=teamHref(tid);const inner=`${logo}<span class="cn${/\s/.test(nm)?'':' one'}">${esc(nm)}</span>`;const sty=`background:${bg};color:${fg};border-color:${alt}`;const cl=`chip school-chip${o.big?' big':''}${o.out?' out':''}`;
+  return url?`<a class="${cl}" href="${esc(url)}" target="_blank" rel="noopener noreferrer" title="Open ${esc(t.name||nm)} on ESPN" style="${sty}">${inner}</a>`:`<span class="${cl} nolink" title="${esc(t.name||nm)}" style="${sty}">${inner}</span>`}
 const rec=tid=>{const r=(D.records||{})[tid]||{w:0,l:0};return r.w+'-'+r.l};
-const chipRec=(tid,o)=>chip(tid,o).replace(/<\/a>$/,'<span class="cr" title="Season record (W-L)">'+rec(tid)+'</span></a>');
+const chipRec=(tid,o)=>chip(tid,o).replace(/<\/(a|span)>$/,(m0,tg)=>'<span class="cr" title="Season record (W-L)">'+rec(tid)+'</span></'+tg+'>');
 const sign=n=>n>0?'+'+n:String(n);
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 function fmtDate(k,wd){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(k||'');if(!m)return k||'';const d=new Date(Date.UTC(+m[1],+m[2]-1,+m[3],12));return (wd?DOW[d.getUTCDay()]+', ':'')+MON[+m[2]-1]+' '+(+m[3])+', '+m[1]}
@@ -121,7 +125,7 @@ function vStandings(){const mx=Math.max(10,...D.owners.map(o=>o.total));
     <div class="who"><b class="nm">${esc(o.emoji)} ${esc(o.name)}</b><small>${esc(o.team_name)}</small></div>
     <div class="pts score"><span class="pv">${o.total}</span><small>points</small></div></div>
     <div class="bar"><i style="width:${Math.max(0,o.total)/mx*100}%"></i></div>
-    <div class="chips">${o.teams.map(t=>chipRec(t.tid,{cn:1})).join('')}</div></div>`).join('')+'</div>'+
+    <div class="chips school-grid">${o.teams.map(t=>chipRec(t.tid,{cn:1})).join('')}</div></div>`).join('')+'</div>'+
     `<p class="note">Tap an owner for the full breakdown.</p>`}
 function goOwner(mid){ownerSel=mid;tab='rosters';hashPut();render();window.scrollTo(0,0)}
 function gOwned(g){return !!((g.home.owners&&g.home.owners.length)||(g.away.owners&&g.away.owners.length))}
@@ -163,7 +167,7 @@ function vRosters(){if(!ownerSel||!D.owners.some(x=>x.mid===ownerSel))ownerSel=D
       if(evs.length)h+=`<ul class="it">${evs.map(i=>`<li><b class="${i.pts<0?'bad':'good'}">${sign(i.pts)}</b> ${esc(i.label)}</li>`).join('')}</ul>`;
       const tg=(D.team_games[t.tid]||[]);const gs=tg.filter(g=>g.status==='final').slice(-8).reverse();const nx=tg.filter(g=>g.status!=='final').slice(0,3);
       if(!tg.length)h+=`<div class="note" style="margin-top:6px">No games yet. Scores show up here once games are played.</div>`;
-      if(gs.length)h+=`<div class="note" style="margin-top:6px">Last games</div>`+gs.map(g=>`<div style="margin:3px 0">${g.res==='W'?'<b class="good">W</b>':'<b class="bad">L</b>'} ${g.us}-${g.them} ${g.site==='A'?'@':g.site==='N'?'vs (N)':'vs'} ${esc(g.opp)} <span class="mut">${esc(fmtDate(g.day))}${g.round?' · '+esc(g.round):''}</span>${g._lv?' <span class="mut">· live ESPN feed, unofficial</span>':''}${gameLine(g)}</div>`).join('');
+      if(gs.length)h+=`<div class="note" style="margin-top:6px">Last games</div>`+gs.map(g=>`<div style="margin:3px 0">${g.res==='W'?'<b class="good">W</b>':'<b class="bad">L</b>'} ${g.us}-${g.them} ${g.site==='A'?'@':g.site==='N'?'vs (N)':'vs'} ${g.oppId?tlink(g.oppId,g.opp):esc(g.opp)} <span class="mut">${esc(fmtDate(g.day))}${g.round?' · '+esc(g.round):''}</span>${g._lv?' <span class="mut">· live ESPN feed, unofficial</span>':''}${gameLine(g)}</div>`).join('');
       if(nx.length)h+=`<div class="note" style="margin-top:6px">Up next</div>`+nx.map(g=>`<div style="margin:3px 0">${g.status==='live'?'<b class="good">LIVE '+g.us+'-'+g.them+'</b> ':''}${g.site==='A'?'@':'vs'} ${esc(g.opp)} <span class="mut">${esc(g.start?etLabel(etKey(g))+', '+etTime(g):fmtDate(g.day))}</span></div>`).join('');
       h+=`</div></td></tr>`}});
   return h+`</table></div>`}
@@ -178,12 +182,12 @@ function vPostseason(){const M=D.meta;
   h+=`<h2>NCAA Tournament standings</h2>`;
   if(!M.haveNcaa)h+=`<div class="card" id="notourney"><b>The NCAA Tournament has not started.</b><div class="note">${errT?'The tournament file could not be loaded ('+esc(errT)+'). ':''}Standings appear here once the field is set in March 2027. Schools earn points for making the field, winning games, reaching the Final Four and winning the title, plus a bonus for each upset by seed. Until then everyone is at 0.</div></div>`;
   const TOU=D.tournament||[];const mx=Math.max(10,...TOU.map(r=>r.score));
-  h+='<div class="ocl" id="tstand">'+TOU.map(r=>{const o=D.owners.find(x=>x.mid===r.mid)||{};return `<div class="card oc strow" data-mid="${esc(r.mid)}"><div class="lb"><div class="rank place">${esc((r.tied?'T-':'')+r.place)}</div><div class="who"><b class="nm">${esc(o.emoji||'')} ${esc(o.name||r.name)}</b><small>${plural(r.wins,'win','wins')} · ${plural(r.upsets,'upset','upsets')}</small></div><div class="pts score"><span class="pv">${r.score}</span><small>points</small></div></div><div class="bar"><i style="width:${Math.max(0,r.score)/mx*100}%"></i></div><div class="chips">${(o.teams||[]).map(t=>{const x=r.teams&&r.teams[t.tid];return chip(t.tid,{cn:1}).replace(/<\/a>$/,'<span class="cr">'+(x?(x.pts>0?'+':'')+x.pts+' pts':'0 pts')+'</span></a>')}).join('')}</div></div>`}).join('')+'</div>';
+  h+='<div class="ocl" id="tstand">'+TOU.map(r=>{const o=D.owners.find(x=>x.mid===r.mid)||{};return `<div class="card oc strow" data-mid="${esc(r.mid)}"><div class="lb"><div class="rank place">${esc((r.tied?'T-':'')+r.place)}</div><div class="who"><b class="nm">${esc(o.emoji||'')} ${esc(o.name||r.name)}</b><small>${plural(r.wins,'win','wins')} · ${plural(r.upsets,'upset','upsets')}</small></div><div class="pts score"><span class="pv">${r.score}</span><small>points</small></div></div><div class="bar"><i style="width:${Math.max(0,r.score)/mx*100}%"></i></div><div class="chips school-grid">${(o.teams||[]).map(t=>{const x=r.teams&&r.teams[t.tid];return chip(t.tid,{cn:1}).replace(/<\/a>$/,'<span class="cr">'+(x?(x.pts>0?'+':'')+x.pts+' pts':'0 pts')+'</span></a>')}).join('')}</div></div>`}).join('')+'</div>';
   return h}
 function vUpsets(){const A2=D.upsets||[];const P=D.meta.points;
   let h=`<div class="card"><b>😱 The upset rule</b><div class="note">Upset = in the NCAA tournament, a team <b>beats a better seed</b> (a bigger seed number beats a smaller one, e.g. a 12 over a 5). Equal seeds never count. Upsets are judged by seed only, and the First Four is not judged. A manager's school that wins an upset earns +${esc(P.upset)}.</div></div>`;
   if(!A2.length)return h+`<div class="card">No eligible games yet. Upsets are scored from the NCAA tournament in March.</div>`;
-  return h+`<div class="card sc"><table><tr><th>Date</th><th>Game</th><th>Owner</th></tr>${A2.map(a=>`<tr><td>${esc(fmtDate(a.day))}<div class="note">${esc(a.round)}</div></td><td>${a.wseed?'('+esc(a.wseed)+') ':''}<b>${esc(a.winner)}</b> ${esc(a.ws)}-${esc(a.ls)} ${a.lseed?'('+esc(a.lseed)+') ':''}${esc(a.loser)}</td><td>${a.owner?esc(a.owner):'<span class="mut">no owner</span>'}</td></tr>`).join('')}</table></div>`}
+  return h+`<div class="card sc"><table><tr><th>Date</th><th>Game</th><th>Owner</th></tr>${A2.map(a=>`<tr><td>${esc(fmtDate(a.day))}<div class="note">${esc(a.round)}</div></td><td>${a.wseed?'('+esc(a.wseed)+') ':''}<b>${a.wid?tlink(a.wid,a.winner):esc(a.winner)}</b> ${esc(a.ws)}-${esc(a.ls)} ${a.lseed?'('+esc(a.lseed)+') ':''}${a.lid?tlink(a.lid,a.loser):esc(a.loser)}</td><td>${a.owner?esc(a.owner):'<span class="mut">no owner</span>'}</td></tr>`).join('')}</table></div>`}
 function vRules(){const P=D.meta.points;
   const rows=[['Win (regular season and conference games, any opponent): 1 point in the Standings',1],['Make the NCAA field',P.entry],['Play-in (First Four) win',P.playin_win],['NCAA tournament win',P.win],['Upset (NCAA tournament: beat a better seed)',P.upset],['Final Four',P.final4],['National champ',P.champ],['Miss the NCAA field',P.missed]];
   return `<div class="card"><b>📖 League rules</b><ul class="it">
@@ -191,7 +195,7 @@ function vRules(){const P=D.meta.points;
    <li><b>Standings</b> count the wins of a manager's schools in regular-season and conference games. Ties: win %, then point difference.</li>
    <li><b>Postseason</b> points are separate: they come from the NCAA Tournament (table below). Ties there: more upsets, then more wins.</li>
    <li>Times are shown in your own time zone. Scores are loaded from the official game feeds; live scores are marked unofficial until the data updates.</li>
-   <li>The <b>Jan 20, 2027 redraft</b> is described on its own tab.</li></ul></div>
+   <li>The <b>Redraft</b> tab describes the January 20, 2027 Redraft.</li></ul></div>
   <div class="card sc"><table><tr><th>Scoring</th><th class="n">Pts</th></tr>${rows.map(r=>`<tr><td>${esc(r[0])}</td><td class="n">${sign(r[1])}</td></tr>`).join('')}</table></div>
   ${vUpsets()}
   <div class="card"><b>House interpretations</b><ul class="it">
@@ -201,52 +205,20 @@ function vRules(){const P=D.meta.points;
   <p class="note"><a class="btn sec" href="${esc(U.pageUrl('help.html'))}">Help</a> <a class="btn sec" href="${esc(U.pageUrl('recap.html',{l:id}))}">Draft recap</a></p>`}
 function vArchive(){return `<h2>🗂️ Season archive</h2><div class="card" id="archempty"><b>No past seasons yet</b><div class="note">This league's first season is the one in progress. When a season is finished, its final standings and rosters are kept here. Nothing is made up.</div></div>`}
 function vRedraft(){const m=L.meta,r=m.redraft,live=r&&r.phase==='live';const done=live&&L.state.status==='complete';const cd=F.redraftCountdown(Date.now(),U.tz());const can=!DEMO&&!m.endedEarly&&(r||cd.state!=='future');const dd=F.REDRAFT.asOfLabel;
-  const line=m.endedEarly?'The first draft ended early, so there is no redraft.':!r?(cd.state==='future'?'Opens '+dd+' · '+cd.text+'.':'The redraft is ready to open. The commissioner starts it.'):r.phase==='open'?'The redraft is open: owners can choose their drops now.':done?'The redraft is complete.':'The redraft is under way.';
+  const line=m.endedEarly?'The first draft ended early, so there is no Redraft.':!r?(cd.state==='future'?'Opens '+dd+' · '+cd.text+'.':'The Redraft is ready to open. The commissioner starts it.'):r.phase==='open'?'The Redraft is open: owners can choose their drops now.':done?'The Redraft is complete.':'The Redraft is under way.';
   const href=U.pageUrl('redraft.html',{l:id});
-  const btn=DEMO?'':can?`<a class="btn endbig" id="redraftlink" href="${esc(href)}">${live?'Open the redraft':'Go to the redraft page'}</a>`:`<button class="btn endbig" id="redraftlink" disabled aria-disabled="true">${m.endedEarly?'Not available':'Opens '+esc(dd)}</button> <a class="btn sec" id="redraftpreview" href="${esc(href)}">Preview the rules and standings</a>`;
+  const btn=DEMO?'':can?`<a class="btn endbig" id="redraftlink" href="${esc(href)}">${live?'Open the Redraft':'Go to the Redraft page'}</a>`:`<button class="btn endbig" id="redraftlink" disabled aria-disabled="true">${m.endedEarly?'Not available':'Opens '+esc(dd)}</button> <a class="btn sec" id="redraftpreview" href="${esc(href)}">Preview the rules and standings</a>`;
   let h=`<div class="card" id="redraftcard"><b>\u{1F4C5} Redraft: ${esc(dd)}</b><ul class="it">
    <li><b>Snake draft</b> in standings order as of ${esc(dd)}. <b>Last place</b> chooses where they draft, then it moves up the standings.</li>
    <li><b>Tiebreaker:</b> same win percentage? The owner with fewer wins ranks lower.</li>
    <li>Each owner has the <b>option</b> to drop up to 2 teams and draft one team for each one dropped. Dropped teams go back into the pool.</li></ul>
    <p class="note" id="rdline">${esc(line)}</p><div class="rdbtns">${btn}</div></div>`;
-  if(!(r&&r.keep&&Object.keys(r.keep).length))h+=`<div class="card">No redraft moves yet. Each owner's drops and adds will show up here after the ${esc(dd)} redraft.</div>`;
-  h+=D.owners.map(o=>`<div class="card"><b>${esc(o.emoji)} ${esc(o.name)}</b><div class="note">${esc(o.team_name)}</div><div class="chips">${o.teams.map(t=>chip(t.tid)).join('')}</div></div>`).join('');return h}
-/* ---------- power rankings (data/power-rankings.json, matched to the league's own managers by team / manager name) ---------- */
-const GCLS={'A+':'g-Ap','A':'g-A','A-':'g-A','B+':'g-B','B':'g-B','B-':'g-B','C+':'g-C','C':'g-C','C-':'g-C','D+':'g-D','D':'g-D','D-':'g-D','F':'g-D'};
-const dm=m=>Object.assign({},m,{name:A.disp(m.name),team:A.disp(m.team)});
-const norm=s=>A.disp(String(s||'')).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-/* A power ranking is shown only if it describes THIS league: for every one of the 8 managers there must be a row whose manager or team name matches
-   AND whose list of schools is exactly the school set that manager drafted. Anything less (a different draft, one manager off, a renamed team,
-   a roster changed by the redraft) shows the plain empty state; partial matches are never shown. */
-const sk=v=>String(v==null?'':v).toLowerCase().replace(/&/g,'and').replace(/\bsaint\b/g,'st').replace(/[^a-z0-9]+/g,'');
-function sameSchools(mid,row){const o=D&&D.owners.find(x=>x.mid===mid);if(!o||!Array.isArray(row.schools))return false;const want=row.schools.map(sk);if(!o.teams.length||o.teams.length!==want.length)return false;
-  for(const t of o.teams){const x=T.TEAMS[t.tid]||{};let i=want.indexOf(sk(x.short));if(i<0)i=want.indexOf(sk(x.name));if(i<0)return false;want.splice(i,1)}return true}
-function prMatch(rows){if(!Array.isArray(rows)||!rows.length||!D||!MG||MG.length!==8)return null;const used=new Set(),out=[];
-  for(const m of MG){const nm=norm(m.name),tm=norm(m.team);const i=rows.findIndex((r,k)=>!used.has(k)&&r&&(norm(r.manager)===nm||norm(r.team)===tm)&&sameSchools(m.mid,r));if(i<0)return null;used.add(i);out.push(Object.assign({},rows[i],{_m:m}))}
-  return out.sort((a,b)=>a.rank-b.rank)}
-function sentences(t){const out=[];let cur='';String(t||'').split(/(?<=[.!?])\s+/).forEach(p=>{cur=cur?cur+' '+p:p;if(!/\b(St|Mt|Ft|vs|No|Dr)\.$/.test(cur)){out.push(cur);cur=''}});if(cur)out.push(cur);return out}
-function paras(t,per){const s=sentences(t),o=[];for(let i=0;i<s.length;i+=per)o.push(s.slice(i,i+per).join(' '));return o}
-function vPower(){
-  if(PR===undefined||PR==='loading')return `<div class="card" id="prwait">Loading the power rankings…</div>`;
-  if(!PR||!PR.length)return `<div class="card" id="prempty"><b>Power rankings appear after the draft is analysed</b><div class="note">They are written from each manager's real roster, so nothing is shown until that analysis is ready for this league. Nothing is made up.</div></div>`;
-  const test=MG.some(m=>/^Test\s/.test(m.name));
-  let h=`<p class="note" style="margin:6px 2px">Pre-season ranking of the eight rosters by the strength of their schools. Tap a manager for the short recap, then <b>Deep dive</b> for the full version.${test?' <span class="pill warn" id="prnote">Test league · example analysis</span>':''}</p><ol class="prl">`;
-  PR.forEach((r,i)=>{const open=!!prOpen[i],deep=!!prDeep[i];const m=r._m;const gc=GCLS[r.grade]||'g-C';
-    h+=`<li><article class="card pr${open?' open':''}"><h3><button type="button" class="plb" id="prb${i}" data-a="propen" data-i="${i}" aria-expanded="${open}" aria-controls="prp${i}" aria-label="${esc('#'+r.rank+' '+A.disp(m.team)+', '+A.disp(m.name)+', grade '+r.grade+', average power rank '+r.avgPowerRank+'. '+(open?'Hide':'Show')+' recap')}">
-      <span class="prk">${esc(r.rank)}</span><span class="pav">${U.avatar(dm(m),40)}</span><span class="pwho"><b>${esc(A.disp(m.team))}</b><small>${esc(A.disp(m.name))}</small></span><span class="pgr ${gc}">${esc(r.grade)}</span><span class="pchev" aria-hidden="true"></span>
-      <span class="pmeta">Avg power rank <b>${esc(r.avgPowerRank)}</b> <span>· ${esc(r.rankedSchools)} of ${esc((r.schools||[]).length)} ranked</span></span></button></h3>
-      <div class="pchips" role="list" aria-label="Schools">${(r.schools||[]).map((s,j)=>`<span class="pchip k${j%8}" role="listitem">${esc(s)}</span>`).join('')}</div>
-      <div class="ppan" id="prp${i}"${open?'':' hidden'}><div class="ptag">Recap</div><p class="plead">${esc(r.short)}</p>
-        <button type="button" class="btn deepbtn" id="prd${i}" data-a="prdeep" data-i="${i}" aria-expanded="${deep}" aria-controls="prdp${i}"><span>${deep?'Hide deep dive':'Deep dive'}</span><span class="pchev" aria-hidden="true"></span></button>
-        <div class="pdeep" id="prdp${i}"${deep?'':' hidden'}><div class="ptag">Deep dive</div>${paras(r.recap,4).map(p=>`<p>${esc(p)}</p>`).join('')}
-        ${r.schoolData&&r.schoolData.length?`<div class="psec">The ${r.schoolData.length} schools</div><ul class="sch">${r.schoolData.map(d=>`<li><div><b>${esc(d.school)}</b><span> · ${esc(d.conference||'')}${d.lastRecord?' · '+esc(d.lastRecord):''}</span></div><span class="r">Pick ${esc(d.pick)} · Power ${d.powerRank==null?'n/a':'#'+esc(d.powerRank)} · Seed ${d.projectedSeed==null?'n/a':esc(d.projectedSeed)}</span></li>`).join('')}</ul>`:''}</div></div></article></li>`});
-  return h+'</ol>'}
-async function loadPower(){PR='loading';try{const r=await fetch('data/power-rankings.json?b='+encodeURIComponent(window.FBN_BUILD||''));if(!r.ok)throw 0;PR=prMatch(await r.json())}catch(e){PR=null}if(tab==='power')render()}
-const VIEWS={standings:vStandings,games:vGames,rosters:vRosters,power:vPower,teams:vTeams,postseason:vPostseason,redraft:vRedraft,archive:vArchive,rules:vRules};
+  if(!(r&&r.keep&&Object.keys(r.keep).length))h+=`<div class="card">No Redraft moves yet. Each owner's drops and adds will show up here after the ${esc(dd)} Redraft.</div>`;
+  h+=D.owners.map(o=>`<div class="card"><b>${esc(o.emoji)} ${esc(o.name)}</b><div class="note">${esc(o.team_name)}</div><div class="chips school-grid">${o.teams.map(t=>chip(t.tid)).join('')}</div></div>`).join('');return h}
+const isTestL=()=>A.isTestLeague(L&&L.meta&&L.meta.name);const dm=m=>Object.assign({},m,{name:A.disp(m.name,isTestL()),team:A.disp(m.team,isTestL())});
+const VIEWS={standings:vStandings,games:vGames,rosters:vRosters,bets:()=>LBETS.view(),teams:vTeams,postseason:vPostseason,redraft:vRedraft,archive:vArchive,rules:vRules};
 /* one line per school name: shrink the font a step at a time until it fits (floor 9px), else ellipsis */
-function chipFit(){const Ls=[...document.querySelectorAll('.card.oc .chip .cn')];if(!Ls.length)return;Ls.forEach(e=>{e.style.fontSize=''});
-  const base=Ls.map(e=>parseFloat(getComputedStyle(e).fontSize)),need=Ls.map(e=>e.scrollWidth>e.clientWidth+.5);
-  Ls.forEach((e,i)=>{if(!need[i])return;let f=base[i];while(f>9){f=Math.max(9,Math.floor((f-.25)*4)/4);e.style.fontSize=f+'px';if(e.scrollWidth<=e.clientWidth+.5)break}})}
+function chipFit(){/* chips are one fixed size; a long name is cut with an ellipsis (the title attribute has the full name), never shrunk or wrapped */}
 try{let _cf=0;window.addEventListener('resize',()=>{clearTimeout(_cf);_cf=setTimeout(()=>{try{chipFit()}catch(_){}},120)});if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{try{chipFit()}catch(_){}})}catch(_){}
 /* ---------- page shell ---------- */
 const roomHref=()=>U.roomHref(id),recapHref=()=>U.pageUrl('recap.html',{l:id});
@@ -257,13 +229,16 @@ function header(){const m=L.meta;
   <div id="live" class="lv" hidden><span id="lvT" aria-live="polite"></span><button id="lvB" type="button" data-a="lvrefresh" aria-label="Refresh live games">&#8635; Refresh Live Games</button><span id="lvU" class="lvU" hidden></span></div>
   <p class="tag" id="tag">${esc(tagFor())}</p></div><div class="sub" id="badges" style="margin:0">${D.meta.mode==='demo'?'<span class="badge warn" id="samplenote">DEMO DATA</span>':''}</div></header>`}
 function navHtml(){return `<nav id="ltabs" aria-label="League site">${TABS.map(t=>{const sp=t[1].indexOf(' '),ic=t[1].slice(0,sp),full=t[1].slice(sp+1),on=t[0]===tab;
-    return `<button class="${on?'on':''}" data-a="tab" data-v="${esc(t[0])}" aria-label="${esc(full)}"${on?' aria-current="page"':''}><span class="ni" aria-hidden="true">${ic}</span><span class="nl f">${esc(full)}</span><span class="nl s" aria-hidden="true">${esc(t[2])}</span></button>`}).join('')}<a class="nd" id="tab_room" href="${esc(roomHref())}" aria-label="Draft room (opens the draft room)"><span class="ni" aria-hidden="true">\u{1F4DD}</span><span class="nl f">Draft</span><span class="nl s" aria-hidden="true">Draft</span></a></nav>`}
+    return `<button class="${on?'on':''}" data-a="tab" data-v="${esc(t[0])}" aria-label="${esc(full)}"${on?' aria-current="page"':''}><span class="ni" aria-hidden="true">${ic}</span><span class="nl f">${esc(full)}</span><span class="nl s" aria-hidden="true">${esc(t[2])}</span><span class="nl m" aria-hidden="true">${esc(t[3]||t[2])}</span></button>`}).join('')}<a class="nd" id="tab_room" href="${esc(roomHref())}" aria-label="Draft room (opens the draft room)"><span class="ni" aria-hidden="true">\u{1F4DD}</span><span class="nl f">Draft</span><span class="nl s" aria-hidden="true">Draft</span><span class="nl m" aria-hidden="true">Draft</span></a></nav>`}
 function chatBar(){return `<section id="chat" class="chat" aria-label="Chat"><a class="chat-t" id="chatbar" data-a="chatopen" href="${esc(roomHref())}"><span class="ca" aria-hidden="true">▸</span><span class="cbm"><span class="cb1" id="chatpres">💬 Chat in the draft room</span><span class="cb2 mut" id="chatlast">Open the draft room chat</span></span><i class="cdot" id="chatbadge" hidden></i></a></section>`}
 function footer(){return `<footer id="foot">${esc(L.meta.name)} · times in your time zone (${esc(TZ_NAME)}) · ${DEMO?`<a href="${esc(U.pageUrl('league.html',{l:id}))}">back to the real league</a>`:`<a id="demolink" href="${esc(U.pageUrl('league.html',{l:id,demo:1}))}">see the demo (invented scores)</a>`} · <a id="tab_recap" href="${esc(recapHref())}">Draft recap</a> · ${homeLink()}${U.buildTag()}</footer>`}
 const dataNote=()=>errS&&(tab==='standings'||tab==='teams')?`<div class="card" id="nodata"><b>No scores yet.</b><div class="note">The scores file could not be loaded (${esc(errS)}), so everyone shows zero. A maintainer can refresh it; see the README.</div></div>`:'';
+/* s20: before the season (the data has no game for any rostered school, so every manager is 0-0) say so, instead of an unexplained 0-0 / "No games". The live ESPN overlay only updates games that are
+   already in data/scores.json, so with no game in the data it returns nothing either. The notice is gone as soon as any game exists in the data (any status). Not shown in the demo. */
+function scoreNotice(){if(DEMO||!D||(D.games&&D.games.length)||!/^(standings|games|rosters|teams|postseason)$/.test(tab))return '';return '<div class="card note" id="noscores" role="note">\u{1F4C5} Scores update once games start (first games November 2, 2026)</div>'}
 function render(){const keepScroll=window.scrollY;const nv0=document.getElementById('ltabs'),nsl=nv0?nv0.scrollLeft:0;
   const demo=DEMO?`<div class="demobar" id="demobar" role="note"><b>DEMO</b> · invented games and scores. These are not real results and not this league’s standings. <a href="${esc(U.pageUrl('league.html',{l:id}))}">Leave the demo</a></div>`:'';
-  app.innerHTML=demo+header()+navHtml()+'<main id="main">'+(DEMO?'<div class="card note" id="demonote"><b>DEMO data.</b> Invented games and scores, to show how standings will look. Not real results.</div>':'')+offHtml()+dataNote()+'<div id="lbody">'+(VIEWS[tab]||vStandings)()+'</div></main>'+chatBar()+footer();
+  app.innerHTML=demo+header()+navHtml()+'<main id="main">'+(DEMO?'<div class="card note" id="demonote"><b>DEMO data.</b> Invented games and scores, to show how standings will look. Not real results.</div>':'')+offHtml()+dataNote()+scoreNotice()+'<div id="lbody">'+(VIEWS[tab]||vStandings)()+'</div></main>'+chatBar()+footer();
   document.body.classList.add('lsite');paintHero();paintChat();freshStart();try{chipFit()}catch(_){}syncChat();navScroll(nsl)}
 /* phone: the tab bar scrolls sideways inside itself; keep its position and make sure the open tab is visible */
 function navScroll(x){const n=document.getElementById('ltabs');if(!n)return;n.scrollLeft=x;const on=n.querySelector('.on');if(!on||n.scrollWidth<=n.clientWidth+1)return;const l=on.offsetLeft,r=l+on.offsetWidth;if(l<n.scrollLeft+8)n.scrollLeft=Math.max(0,l-8);else if(r>n.scrollLeft+n.clientWidth-8)n.scrollLeft=r-n.clientWidth+8}
@@ -288,20 +263,18 @@ async function loadChat(){if(DEMO)return;try{const c=F.normChat(F.parseJ(await S
   try{const now=Date.now();const rs=await Promise.all(MG.map(async m=>{try{const p=F.parsePresence(await Store.get(F.Keys(id).pres(m.mid)));return p&&now-p.t<=F.PRES.onlineMs?A.disp(m.name):null}catch(e){return null}}));PRES=rs.filter(Boolean)}catch(e){}}
 function paintChat(){const last=document.getElementById('chatlast'),pr=document.getElementById('chatpres'),bd=document.getElementById('chatbadge');if(!last)return;
   if(pr)pr.textContent=PRES.length?'🟢 '+PRES.slice(0,3).join(', ')+(PRES.length>3?' +'+(PRES.length-3):'')+' online':'💬 Chat in the draft room';
-  if(CHAT.last){const w=MG.find(m=>m.mid===CHAT.last.who);last.textContent=(w?A.disp(w.name):'Someone')+': '+CHAT.last.text;last.classList.remove('mut')}
+  if(CHAT.last){const w=MG.find(m=>m.mid===CHAT.last.who);last.textContent=(w?A.disp(w.name,isTestL()):'Someone')+': '+CHAT.last.text;last.classList.remove('mut')}
   if(bd){const seen=+(U.lsGet('lchat.'+id)||0);const un=Math.max(0,CHAT.n-seen);bd.hidden=!un;bd.textContent=un>9?'9+':String(un)}}
 /* a logo that fails to load becomes the plain initials chip (no inline handler) */
 document.addEventListener('error',e=>{const t=e.target;if(t&&t.tagName==='IMG'&&t.closest&&t.closest('.chip')){const s=document.createElement('span');s.className='nologo';s.setAttribute('aria-hidden','true');s.textContent=t.getAttribute('data-ini')||'?';t.replaceWith(s)}},true);
 const ACT={trynow:()=>boot(true),herochange:()=>{const f=document.getElementById('herofile');if(f&&CM)f.click()},heroreset:()=>heroReset(),
   chatopen:()=>{U.lsSet('x.'+id+'.tab','chat');U.lsSet('lchat.'+id,String(CHAT.n))},
   tab:el=>{tab=el.dataset.v;hashPut();render();window.scrollTo(0,0)},
-  owner:(el,e)=>{if(e.target.closest('a.chip'))return;goOwner(el.dataset.mid)},
+  owner:(el,e)=>{if(e.target.closest('a.chip,a.tl'))return;goOwner(el.dataset.mid)},
   pickowner:el=>{ownerSel=el.dataset.mid;render()},
-  teamrow:(el,e)=>{if(e.target.closest('a.chip'))return;const k=el.dataset.key;openTeam[k]=!openTeam[k];render()},
+  teamrow:(el,e)=>{if(e.target.closest('a.chip,a.tl'))return;const k=el.dataset.key;openTeam[k]=!openTeam[k];render()},
   gmode:el=>{gMode=el.dataset.v;gDay='all';render()},gh2h:()=>{gH2H=!gH2H;render()},
-  fresh:()=>freshToggle(),lvrefresh:()=>lvManual(),
-  propen:el=>{const i=+el.dataset.i;prOpen[i]=!prOpen[i];if(!prOpen[i])prDeep[i]=false;render();const b=document.getElementById('prb'+i);if(b)b.focus()},
-  prdeep:el=>{const i=+el.dataset.i;prDeep[i]=!prDeep[i];render();const b=document.getElementById('prd'+i);if(b)b.focus()}};
+  fresh:()=>freshToggle(),lvrefresh:()=>lvManual()};
 document.addEventListener('change',e=>{const el=e.target;if(el.id==='herofile'){const f=el.files&&el.files[0];el.value='';if(f)heroChange(f);return}
   if(el.id==='gOwnerSel'){gOwner=el.value;render()}else if(el.id==='gDaySel'){gDay=el.value;render()}else if(el.id==='gUnowned'){gAll=el.checked;render()}});
 document.addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;const el=e.target;if(el&&el.getAttribute&&(el.getAttribute('role')==='button')&&el.dataset&&el.dataset.a&&el.tagName!=='BUTTON'){e.preventDefault();el.click()}});
@@ -309,7 +282,7 @@ U.bind(ACT);U.registerSW();
 /* the first draft is over when every pick is made (derived from the picks, not from meta.status) or it was ended early; a started redraft (epoch 2+) implies it */
 function draftDone(m,st){return st.status==='complete'||m.status==='complete'||!!m.endedEarly||(m.epoch||1)>1||!!(m.redraft&&m.redraft.phase)||!!(st.total&&st.picks&&st.picks.length>=st.total)}
 function placeholder(m,st){app.innerHTML=`<main><div class="card" id="lhome"><b style="font-size:19px">League site</b><div class="note" id="avail">Available after the draft.</div><div class="note">${st&&m.status!=='lobby'?`The draft is in progress: ${st.picks.length} of ${st.total} picks made. `:''}Standings, team cards and scores appear here, for every manager, the moment the draft is complete.</div><p><a class="btn" id="back_room" href="${esc(U.roomHref(id))}">Draft room</a> <a class="btn sec" href="index.html">Home</a></p></div></main><footer id="foot">${U.buildTag()}</footer>`}
-function rebuild(){D=A.build({managers:MG,roster:L.state.roster||L.state.picks,order:L.state.order,teams:T.TEAMS,SC,TN,demo:DEMO,genAt:L.meta.endedAt||Math.max(0,...Object.values(L.entries||{}).map(e=>e&&+e.ts||0))||L.meta.startedAt||null,season:'2026-27'});lvReapply()}
+function rebuild(){D=A.build({leagueName:L.meta.name,managers:MG,roster:L.state.roster||L.state.picks,order:L.state.order,teams:T.TEAMS,SC,TN,demo:DEMO,genAt:L.meta.endedAt||Math.max(0,...Object.values(L.entries||{}).map(e=>e&&+e.ts||0))||L.meta.startedAt||null,season:'2026-27'});lvReapply()}
 /* a failed refresh never blanks the page: the last good scores stay, FAIL.sc/FAIL.tn raise the small "offline" note */
 const FAIL={sc:false,tn:false,chat:false};let SCGOOD=false,TNGOOD=false,OFFN=false;
 async function loadScores(){await Promise.all([getJ(DATA+'scores.json').then(j=>{const e=S.validateScores(j);if(e)throw new Error(e);if(j.sample&&!DEMO){SC=null}else{SC=j}errS='';SCGOOD=true;FAIL.sc=false}).catch(e=>{if(SCGOOD){FAIL.sc=true}else{errS=e.message||String(e);SC=null}}),getJ(DATA+'tournament.json').then(j=>{const e=S.validateTournament(j);if(e)throw new Error(e);if(j.sample&&!DEMO){TN=null}else{TN=j}errT='';TNGOOD=true;FAIL.tn=false}).catch(e=>{if(TNGOOD){FAIL.tn=true}else{errT=e.message||String(e);TN=null}})])}
@@ -323,9 +296,12 @@ function noteTrouble(){const msg='<b>Having trouble reaching the league.</b><div
   const home=document.getElementById('lhome');
   if(home){home.insertAdjacentHTML('afterbegin','<div class="card bad" id="trouble" role="status" style="margin:0 0 10px">'+msg+'<p><button type="button" class="btn" id="tryNow" data-a="trynow">Try now</button></p></div>')}
   else app.innerHTML='<main><div class="card" id="trouble" role="status">'+msg+'<p><button type="button" class="btn" id="tryNow" data-a="trynow">Try now</button> <a class="btn sec" href="index.html">Home</a></p></div></main><footer id="foot">'+U.buildTag()+'</footer>'}
+/* who am I: the manager link kept on this device, accepted only if its secret matches this league's claim (else: spectator, read only) */
+let ME=null;
+async function resolveMe(){try{if(DEMO)return null;const me=U.getMe(id);if(!me||!me.mid||!me.k)return null;const c=F.joinedList(L.meta,L.claims).find(x=>x.mid===me.mid);return c&&await F.checkMgrSecret(c,me.k)?me.mid:null}catch(e){return null}}
 async function start(d){const m=d.meta;L=d;MG=d.managers;
   if(/[#&]cm=/.test(location.hash)){const fr=U.takeFragment();const cmF=F.extractSecret(fr.get('cm')||'','cm');if(cmF&&await F.checkPass(m,cmF)){U.lsSet('cm.'+id,cmF);U.rememberLeague(id,m.name,'commissioner')}}
-  CM=!DEMO&&await U.isCommish(m);await loadHero(false);await loadScores();rebuild();hashSet();render();BO.booted=true;loadPower();
+  CM=!DEMO&&await U.isCommish(m);ME=await resolveMe();LBETS.init({id,demo:DEMO,owners:()=>D?D.owners:[],me:()=>ME,active:()=>tab==='bets'&&!document.hidden,roomHref:()=>U.roomHref(id),render:()=>{if(tab!=='bets')return;const b=document.getElementById('lbody');if(b){b.innerHTML=LBETS.view()}}});await loadHero(false);await loadScores();rebuild();hashSet();render();BO.booted=true;LBETS.start();
   loadChat().then(()=>{paintChat();setOff()});setInterval(()=>{if(!document.hidden)loadChat().then(()=>{paintChat();setOff()})},30000);
   /* scores / tournament refresh every 5 min; after a failed refresh it retries with back-off and keeps the last good data on screen */
   let rf=0;const refresh=async()=>{const a=document.activeElement,t=a&&a.tagName;if(document.hidden||t==='INPUT'||t==='SELECT'){setTimeout(refresh,15000);return}

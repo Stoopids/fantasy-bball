@@ -1,0 +1,78 @@
+/* Power rankings generator (s20): turns ANY finished 8-manager draft into the same rows the example file data/power-rankings.json has
+   (rank, grade A+ to D, 4-sentence short recap, 10-sentence deep dive, schools and per-school facts), in the browser, deterministically.
+   API:  FBNPowerGen.generate({managers, picks|state, teams, meta})  ->  array of 8 rows sorted by rank, or null when there is nothing to analyse
+           managers  [{mid,name,team,...}]           the league's managers (recap.js: d.managers)
+           picks     [{owner|managerId|mid, tid, n}]   final rosters (or state: recap.js d.state; state.roster, else state.real, else state.picks is used)
+           teams     {tid:{name,short,...}}            assets/teams.js table (recap.js: T.TEAMS)
+           meta      {tid:{c:conference, r:'W-L' last record, p:power rank, s:projected seed}}   assets/teams.js meta (recap.js: T.META; default window.TEAMS_DATA.meta)
+         FBNPowerGen.strengthOf / .gradeFor / .describe are exported for tests.
+   FORMULA (only fields that exist are used, a missing field is skipped, never invented):
+     school score  = mean of the available parts: power part (101 - power rank) / 100 and seed part (17 - projected seed) / 16  (each 0..1);  a school with neither part scores 0
+     strength      = mean of the school scores over ALL the manager's schools x 100  (so unranked schools pull the average down, exactly like "100 minus power rank, unranked counts 0")
+     rank          = by strength, highest first; ties broken by manager name (A-Z, case-insensitive), then by manager id
+     grade         = by rank among the 8:  1 A+, 2 A, 3 A-, 4 B+, 5 B, 6 B-, 7 C, 8 D   (a typical league gets a full spread; ties never share a grade because ranks are distinct)
+   Needs exactly 8 managers who all hold the same number (>= 1) of schools; anything else returns null (the module then shows the plain empty state).
+   TEXT: every sentence is built from names, ranks, seeds, conferences and records found in the data, from at least 3 phrasings per slot, chosen by a hash of the manager name and
+   schools (no Math.random: same draft = same text). No injuries, players, stats or results are ever mentioned, and no off-limits wording is used.
+   Periods inside names are dropped in the TEXT (St. John's -> St John's) so counting sentences by [.!?] is always exact; school chips keep the real names. */
+(function(){
+const GR=['A+','A','A-','B+','B','B-','C','D'];
+const disp=n=>{n=String(n==null?'':n);const t=n.replace(/^Test\s+(?=\S)/,'');return(!t.trim()||/^test$/i.test(t.trim()))?n:t};
+const WJ='\u2060';const safeName=s=>String(s).replace(/\.\s*/g,m=>/\s/.test(m)?' ':'');const safe=s=>String(s);   /* periods inside a NAME are dropped in the generated TEXT ("St. John's" -> "St John's", "N.C. State" -> "NC State", "Am. East" -> "Am East") so a sentence count by [.!?] is always exact; the school chips keep the real names */
+const num=v=>{const x=Number(v);return isFinite(x)?x:null};
+function hash(str){let h=2166136261;str=String(str);for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+const pick=(arr,key)=>arr[hash(key)%arr.length];
+const ord=n=>{n=Math.round(n);const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0])};
+const an=g=>/^[A]/.test(g)?'an':'a';
+function schoolScore(m){const parts=[];const p=num(m&&m.p),s=num(m&&m.s);if(p!=null&&p>=1)parts.push(Math.max(0,Math.min(1,(101-p)/100)));if(s!=null&&s>=1)parts.push(Math.max(0,Math.min(1,(17-s)/16)));return parts.length?parts.reduce((a,b)=>a+b,0)/parts.length:0}
+const strengthOf=(metas)=>metas.length?Math.round(metas.reduce((a,m)=>a+schoolScore(m),0)/metas.length*1000)/10:0;
+const gradeFor=rank=>GR[Math.max(0,Math.min(GR.length-1,rank-1))];
+function wl(r){const m=/^(\d+)-(\d+)$/.exec(String(r||''));return m?{w:+m[1],l:+m[2]}:null}
+function describe(c){return c}
+function gather(o){const MG=o.managers||[];const list=(o.picks)||(o.state&&(o.state.roster||o.state.real||o.state.picks))||[];const T=o.teams||{},META=o.meta||(window.TEAMS_DATA&&window.TEAMS_DATA.meta)||{};
+  if(MG.length!==8)return null;
+  const by={};MG.forEach(m=>{by[m.mid]=[]});
+  list.forEach(p=>{const mid=p&&(p.owner||p.managerId||p.mid);if(mid in by&&p.tid!=null)by[mid].push(p)});
+  const sizes=MG.map(m=>by[m.mid].length);if(!sizes[0]||sizes.some(z=>z!==sizes[0]))return null;
+  return MG.map(m=>{const sc=by[m.mid].slice().sort((a,b)=>(a.n||0)-(b.n||0)).map((p,i)=>{const t=T[p.tid]||{},mt=META[p.tid]||{};const name=t.short||t.name||String(p.tid);
+      return{tid:String(p.tid),name,sn:safeName(name),full:t.name||name,conf:mt.c||null,cs:mt.c?safeName(mt.c):null,rec:mt.r||null,p:num(mt.p),s:num(mt.s),n:p.n==null?i+1:p.n,meta:mt}});
+    return{m,name:String(m.name==null?'':m.name),team:String(m.team==null?'':m.team),schools:sc,strength:strengthOf(sc.map(x=>x.meta))}})}
+function facts(c,all){const sc=c.schools,N=sc.length;const ranked=sc.filter(x=>x.p!=null).sort((a,b)=>a.p-b.p||a.n-b.n),seeded=sc.filter(x=>x.s!=null);
+  const conf={};sc.forEach(x=>{if(x.cs)conf[x.cs]=(conf[x.cs]||0)+1});const cl=Object.entries(conf).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+  const val=ranked.map(x=>({x,d:x.n-x.p})).sort((a,b)=>b.d-a.d||a.x.n-b.x.n);
+  const bestV=val.length&&val[0].d>0?val[0]:null,reach=val.length&&val[val.length-1].d<0?val[val.length-1]:null;
+  const sleeper=seeded.length?seeded.slice().sort((a,b)=>b.s-a.s||a.n-b.n)[0]:(ranked.length?ranked[ranked.length-1]:null);
+  const recs=sc.map(x=>({x,r:wl(x.rec)})).filter(z=>z.r&&z.r.w+z.r.l>0).sort((a,b)=>b.r.w/(b.r.w+b.r.l)-a.r.w/(a.r.w+a.r.l)||a.x.n-b.x.n);
+  return{N,ranked,seeded,cl,bestV,reach,sleeper,recs,unranked:sc.length-ranked.length,top:ranked[0]||null,weak:ranked.length?ranked[ranked.length-1]:null}}
+function build(c,rank,field){const f=facts(c,field),g=gradeFor(rank),name=safeName(c.name),team=safeName(c.team),S=c.schools.map(x=>x.name).join('|'),K=slot=>c.name+'#'+c.team+'#'+S+'#'+slot;
+  const V=(slot,arr)=>pick(arr,K(slot));const nm=x=>x.sn;
+  const avg=Math.round(field.reduce((a,b)=>a+b.strength,0)/field.length*10)/10,diff=Math.round((c.strength-avg)*10)/10;
+  /* ---- slots: each returns ONE sentence ---- */
+  const head=V('head',[`${team} (${name}) lands at ${ord(rank)} of 8 with a grade of ${g}.`,`Grade ${g}: ${name}'s ${team} ranks ${ord(rank)} among the 8 rosters.`,`${team} comes in ${ord(rank)} of 8, graded ${g}.`]);
+  const headLong=V('headL',[`${name}'s ${team} ranks ${ord(rank)} of the 8 rosters and earns ${an(g)} ${g}.`,`The ${g} for ${team} (${name}) puts this roster ${ord(rank)} in the league.`,`Our read on ${team}: ${ord(rank)} of 8 managers, grade ${g}.`]);
+  const strength=V('str',[`Its strength score is ${c.strength} out of 100, built from the power ranks and projected seeds of its ${f.N} schools.`,`That comes from a strength score of ${c.strength} out of 100, averaging the power rank and projected seed of all ${f.N} schools.`,`The strength score is ${c.strength} out of 100, counting every one of the ${f.N} schools (a school without a rank adds nothing).`]);
+  const field_=diff>=0?V('fld',[`That is ${diff} points above the league average of ${avg}.`,`The league average is ${avg}, so this roster sits ${diff} points higher.`,`Against a league average of ${avg}, it is up ${diff} points.`]):V('fld',[`That is ${Math.abs(diff)} points below the league average of ${avg}.`,`The league average is ${avg}, so this roster sits ${Math.abs(diff)} points lower.`,`Against a league average of ${avg}, it is down ${Math.abs(diff)} points.`]);
+  const anchor=f.top?V('anc',[`${nm(f.top)} (power rank #${f.top.p}${f.top.cs?', '+f.top.cs:''}) is the anchor of the roster.`,`The highest-ranked school is ${nm(f.top)}, power rank #${f.top.p}${f.top.cs?' in the '+f.top.cs:''}.`,`${nm(f.top)} leads the way at power rank #${f.top.p}${f.top.cs?' ('+f.top.cs+')':''}.`]):V('anc',[`None of the ${f.N} schools has a power rank yet, so the anchor is ${c.schools[0].sn}, the first pick.`,`No school here has a power rank in our data; the first pick, ${c.schools[0].sn}, sets the tone.`,`There is no power rank for any of these schools, so ${c.schools[0].sn}, taken first, is the one to watch.`]);
+  const ancShort=f.top?V('ancS',[`${nm(f.top)} (#${f.top.p} power rank) leads the roster.`,`The best school is ${nm(f.top)} at #${f.top.p}.`,`${nm(f.top)} at power rank #${f.top.p} is the headliner.`]):V('ancS',[`No school here carries a power rank yet.`,`The data has no power rank for any of these schools.`,`None of the ${f.N} schools is ranked in our data yet.`]);
+  const value=f.bestV?V('val',[`The best pick was ${nm(f.bestV.x)} at pick ${f.bestV.x.n}, ${f.bestV.d} picks after its power rank of #${f.bestV.x.p}.`,`${nm(f.bestV.x)} was the steal: taken at pick ${f.bestV.x.n} with a power rank of #${f.bestV.x.p}.`,`Value showed up at pick ${f.bestV.x.n}, where ${nm(f.bestV.x)} (power rank #${f.bestV.x.p}) came off the board.`]):V('val',[`No pick stands out as a steal, since none came after its power rank.`,`Nothing on this roster was taken later than its power rank suggests.`,`There is no clear bargain here: every ranked school went at or before its rank.`]);
+  const reach=f.reach?V('rea',[`The biggest reach was ${nm(f.reach.x)} at pick ${f.reach.x.n}, ${Math.abs(f.reach.d)} picks before its power rank of #${f.reach.x.p}.`,`${nm(f.reach.x)} was the early grab: pick ${f.reach.x.n} for a school ranked #${f.reach.x.p}.`,`Taking ${nm(f.reach.x)} at pick ${f.reach.x.n} (power rank #${f.reach.x.p}) was the boldest move.`]):V('rea',[`There is no real reach here, because no school went far before its power rank.`,`Every ranked school was taken at or after its rank, so there is no reach to point at.`,`Nothing here was taken ahead of its power rank, which keeps the roster honest.`]);
+  const cf=f.cl;const mix=cf.length?(cf.length===1?V('mix',[`All ${f.N} schools play in the ${cf[0][0]}.`,`The whole roster lives in one conference, the ${cf[0][0]}.`,`It is a one-conference roster: ${cf[0][0]} from top to bottom.`]):V('mix',[`The roster spans ${cf.length} conferences, led by the ${cf[0][0]} with ${cf[0][1]}.`,`${cf.length} conferences are in the mix, and the ${cf[0][0]} supplies ${cf[0][1]} of the ${f.N} schools.`,`The ${cf[0][0]} has the biggest share (${cf[0][1]} schools) in a ${cf.length}-conference mix.`])):V('mix',[`The data lists no conferences for these schools.`,`There is no conference information for this roster.`,`Conference data is missing for these ${f.N} schools.`]);
+  const mixShort=cf.length?V('mixS',[`It covers ${cf.length} conference${cf.length===1?'':'s'}, mostly the ${cf[0][0]}.`,`${cf[0][0]} schools make up ${cf[0][1]} of the ${f.N}, across ${cf.length} conference${cf.length===1?'':'s'}.`,`The mix is ${cf.length} conference${cf.length===1?'':'s'}, led by the ${cf[0][0]}.`]):V('mixS',[`No conference data is listed for these schools.`,`Conference information is missing here.`,`There are no conferences on file for this roster.`]);
+  const s=f.sleeper;const sleeper=s?(s.s!=null?V('slp',[`The sleeper is ${nm(s)}, projected as a seed ${s.s}${s.p!=null?' with a power rank of #'+s.p:''}.`,`${nm(s)} (projected seed ${s.s}) is the school most likely to surprise.`,`For upside, watch ${nm(s)}: projected seed ${s.s}${s.cs?' in the '+s.cs:''}.`]):V('slp',[`The longest road belongs to ${nm(s)}, the lowest-ranked school at #${s.p}.`,`${nm(s)} (power rank #${s.p}) has the most room to surprise.`,`For upside, watch ${nm(s)} at power rank #${s.p}.`])):V('slp',[`There is no seed or rank data to point to a sleeper.`,`Without seeds or ranks, no single school can be named the sleeper.`,`The data has no seed or rank to mark a sleeper on this roster.`]);
+  const risk=f.unranked>0?V('rsk',[`${f.unranked} of the ${f.N} schools have no power rank, which is where the risk sits.`,`The main risk is depth: ${f.unranked} of ${f.N} schools are unranked.`,`${f.unranked} unranked schools out of ${f.N} make this roster harder to trust.`]):(f.weak?V('rsk',[`The risk is the bottom of the list: ${nm(f.weak)} at power rank #${f.weak.p}.`,`Every school is ranked; the weakest, ${nm(f.weak)} (#${f.weak.p}), is the soft spot.`,`${nm(f.weak)} at #${f.weak.p} is the lowest-ranked school and the main risk.`]):V('rsk',[`There is nothing to flag as a risk in the data.`,`No risk shows up in the available numbers.`,`The data shows no weak spot.`]));
+  const rec0=f.recs.length?V('rec',[`Last season's best record on the roster belongs to ${nm(f.recs[0].x)} at ${f.recs[0].x.rec}.`,`${nm(f.recs[0].x)} posted the best record last season (${f.recs[0].x.rec}).`,`Looking back, ${nm(f.recs[0].x)} went ${f.recs[0].x.rec} last season, the best mark here.`]):V('rec',[`No last-season records are on file for these schools.`,`There are no records to compare for this roster.`,`Last season's records are not available for these schools.`]);
+  const tier=rank<=2?'top':rank<=5?'mid':'low';
+  const outlook={top:[`The outlook is bright: this is one of the rosters to beat.`,`Expect ${team} to be in the title conversation all season.`,`${team} starts the season among the favorites.`],mid:[`The outlook is open: a few good breaks could push ${team} up the table.`,`${team} sits in the pack and can still climb with a few wins.`,`Expect a tight race in the middle, and ${team} is right in it.`],low:[`The outlook is a climb: ${team} needs its best schools to win early.`,`${team} starts behind the field and has the most ground to make up.`,`${team} will lean on its sleepers to move up from here.`]}[tier];
+  const out=V('out'+tier,outlook);
+  const closing=V('close',[`${name} has ${f.N} schools to follow, and every win moves the standings.`,`With ${f.N} schools in play, this ranking will keep changing as games are played.`,`This is a preseason read, and the real games will decide it.`]);
+  const short=[head,ancShort,mixShort,out].map(safe);
+  const deep=[headLong,strength,field_,anchor,value,reach,mix,sleeper,risk,out].map(safe);
+  return{short:short.join(' '),recap:deep.join(' '),facts:f,grade:g,avg}}
+function generate(o){const cs=gather(o||{});if(!cs)return null;
+  const ord_=cs.map((c,i)=>({c,i})).sort((a,b)=>b.c.strength-a.c.strength||a.c.name.toLowerCase().localeCompare(b.c.name.toLowerCase())||String(a.c.m.mid).localeCompare(String(b.c.m.mid)));
+  const field=cs;const rows=ord_.map((z,k)=>{const c=z.c,rank=k+1,b=build(c,rank,field),f=b.facts;
+    const ranked=f.ranked;return{rank,grade:b.grade,manager:c.m.name,team:c.m.team,avgPowerRank:ranked.length?Math.round(ranked.reduce((a,x)=>a+x.p,0)/ranked.length*10)/10:null,rankedSchools:ranked.length,strength:c.strength,
+      schools:c.schools.map(x=>x.name),schoolData:c.schools.map(x=>({school:x.name,conference:x.conf||'',lastRecord:x.rec||'',pick:x.n,powerRank:x.p,projectedSeed:x.s})),short:b.short,recap:b.recap,generated:true,_mid:c.m.mid}});
+  return rows}
+window.FBNPowerGen={generate,strengthOf,gradeFor,describe,schoolScore,_hash:hash};
+})();
