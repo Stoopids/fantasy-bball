@@ -1,0 +1,698 @@
+[
+ {
+  "rank": 1,
+  "grade": "A+",
+  "manager": "Test Drew",
+  "team": "Drew Dunkers",
+  "avgPowerRank": 29.3,
+  "rankedSchools": 8,
+  "schools": [
+   "Florida",
+   "Miami",
+   "St. John's",
+   "Wichita State",
+   "Utah State",
+   "UCLA",
+   "Missouri",
+   "St. Thomas"
+  ],
+  "schoolData": [
+   {
+    "pick": 2,
+    "school": "Florida",
+    "conference": "SEC",
+    "lastRecord": "27-8",
+    "powerRank": 2,
+    "projectedSeed": 1
+   },
+   {
+    "pick": 15,
+    "school": "Miami",
+    "conference": "ACC",
+    "lastRecord": "26-9",
+    "powerRank": 14,
+    "projectedSeed": 5
+   },
+   {
+    "pick": 18,
+    "school": "St. John's",
+    "conference": "Big East",
+    "lastRecord": "30-7",
+    "powerRank": 17,
+    "projectedSeed": 5
+   },
+   {
+    "pick": 31,
+    "school": "Wichita State",
+    "conference": "American",
+    "lastRecord": "24-12",
+    "powerRank": 27,
+    "projectedSeed": 12
+   },
+   {
+    "pick": 34,
+    "school": "Utah State",
+    "conference": "Pac-12",
+    "lastRecord": "29-7",
+    "powerRank": 30,
+    "projectedSeed": 11
+   },
+   {
+    "pick": 47,
+    "school": "UCLA",
+    "conference": "Big Ten",
+    "lastRecord": "24-12",
+    "powerRank": 42,
+    "projectedSeed": 8
+   },
+   {
+    "pick": 50,
+    "school": "Missouri",
+    "conference": "SEC",
+    "lastRecord": "20-13",
+    "powerRank": 46,
+    "projectedSeed": 9
+   },
+   {
+    "pick": 63,
+    "school": "St. Thomas",
+    "conference": "Summit",
+    "lastRecord": "24-10",
+    "powerRank": 56,
+    "projectedSeed": 15
+   }
+  ],
+  "note": "Best average power rank (29.3, all 8 schools ranked); owns the preseason AP #1 (Florida), 4 AP top-25 teams, and every school has a projected seed.",
+  "short": "Strength: Florida at #1 plus Miami, St John's and UCLA gives Drew the best average power rank (29.3) with all 8 schools projected for the field. Best pick: Florida at #2 overall, the first preseason AP #1 for the Gators since 2006. Biggest risk: the bottom of the roster, with St Thomas and Wichita State needing mid-major magic. Trash talk: Drew's Dunkers may be a test manager, but the trophy engraver already has his number.",
+  "recap": "Test Drew's Drew Dunkers opened the mock draft at pick #2 and used it on Florida, the school that just became the 2026-27 preseason AP #1 with 47 of 59 first-place votes, so the trophy for best pick of the night was mailed immediately. Todd Golden's Gators won the 2025 national title, lost to Iowa in the round of 32 last March, and now bring back the whole frontcourt of Thomas Haugh, Alex Condon and Rueben Chinyelu. That is the first time since 2006 that Florida opens a season at #1, which is the kind of pressure a mock draft manager can only dream about. Drew also took Miami (preseason AP #14), which gives his own roster a built-in family feud, because Florida opens the season against Miami in Tampa. St John's brings Rick Pitino's pressure defense, a 30-7 record and a Sweet 16 run in which the Red Storm edged Kansas 67-65 before losing to Duke. UCLA under Mick Cronin is the grind-it-out Big Ten entry and opens the season against Paul's Arizona in Las Vegas, a game Drew gets to watch with a straight face while Paul sweats. Utah State is the sneaky pick because the Aggies were a 9 seed that beat Villanova 86-76 in March, and Ben Jacobson has replaced Jerrod Calhoun after arriving from Northern Iowa. Wichita State and Missouri give the Dunkers serious depth, with the Tigers drawing the most AP votes of any school outside the preseason top 25. St Thomas is the Summit League long shot at power rank #56, so the bottom of this roster is where Drew's grade could wobble. Still, the app gives Drew the best average power rank of the eight rosters at 29.3 with all eight schools projected for the field, so the rest of the league is officially playing for second place."
+ },
+ {
+  "rank": 2,
+  "grade": "A",
+  "manager": "Test Blake",
+  "team": "Blake Bombers",
+  "avgPowerRank": 29.4,
+  "rankedSchools": 8,
+  "schools": [
+   "Duke",
+   "Texas",
+   "Nebraska",
+   "Howard",
+   "Alabama",
+   "UC Santa Barbara",
+   "Purdue",
+   "Santa Clara"
+  ],
+  "schoolData": [
+   {
+    "pick": 1,
+    "school": "Duke",
+    "conference": "ACC",
+    "lastRecord": "35-3",
+    "powerRank": 1,
+    "projectedSeed": 1
+   },
+   {
+    "pick": 16,
+    "school": "Texas",
+    "conference": "SEC",
+    "lastRecord": "21-15",
+    "powerRank": 15,
+    "projectedSeed": 3
+   },
+   {
+    "pick": 17,
+    "school": "Nebraska",
+    "conference": "Big Ten",
+    "lastRecord": "28-7",
+    "powerRank": 16,
+    "projectedSeed": 6
+   },
+   {
+    "pick": 32,
+    "school": "Howard",
+    "conference": "MEAC",
+    "lastRecord": "24-11",
+    "powerRank": 28,
+    "projectedSeed": 15.5
+   },
+   {
+    "pick": 33,
+    "school": "Alabama",
+    "conference": "SEC",
+    "lastRecord": "25-10",
+    "powerRank": 29,
+    "projectedSeed": 5
+   },
+   {
+    "pick": 48,
+    "school": "UC Santa Barbara",
+    "conference": "Big West",
+    "lastRecord": "18-14",
+    "powerRank": 44,
+    "projectedSeed": 13.5
+   },
+   {
+    "pick": 49,
+    "school": "Purdue",
+    "conference": "Big Ten",
+    "lastRecord": "30-9",
+    "powerRank": 45,
+    "projectedSeed": 8
+   },
+   {
+    "pick": 64,
+    "school": "Santa Clara",
+    "conference": "WCC",
+    "lastRecord": "26-9",
+    "powerRank": 57,
+    "projectedSeed": 12
+   }
+  ],
+  "note": "Near-identical average (29.4, all 8 ranked) with the highest-ceiling duo: Duke (power #1, projected 1 seed) and Texas (AP #7); 5 schools projected 8 seed or better.",
+  "short": "Strength: Duke, Texas and Purdue give Blake the highest-ceiling roster, with 5 schools projected 8 seed or better. Best pick: Texas at #16, an 11 seed last year that beat NC State, BYU and Gonzaga. Biggest risk: Duke leaning on a 19-point lead it already lost once in March. Trash talk: the Bombers will make the Final Four if Duke can finally hold on to the ball.",
+  "recap": "Test Blake's Blake Bombers took Duke with the very first pick, and the Blue Devils (35-3 last year) are the app's power rank #1 and the AP's preseason #2. Jon Scheyer's team had a 19-point lead and a 44-29 halftime edge against UConn in the Elite Eight, so the Bombers are drafting redemption as much as talent. Cameron Boozer scored a game-high 27 in that loss, so Duke's recent March heartbreak is well documented. Pick #16 landed Texas, the 11 seed that fought through the First Four by beating NC State 68-66 and then knocked out BYU and Gonzaga before Purdue stopped them 79-77 in the Sweet 16. Purdue also sits on this roster, so Blake gets to own the team that ended his own Texas run, which is either poetic or just poor scheduling luck. Nebraska and Alabama keep the Bombers firmly in the Big Ten and SEC power circle, with Nate Oats' Crimson Tide having reached the Sweet 16 last March. Howard is the MEAC wild card and Santa Clara and UC Santa Barbara round out a bench of schools that can steal a bid in a conference tournament. Test Blake is a test manager, but this roster plays like it has a real scouting department behind it. Five of the eight schools are projected 8 seed or better, which matches the best depth number in the league. If Duke finally holds a lead in March, the Bombers will be hard to catch, and if not, they have a lot of history to explain."
+ },
+ {
+  "rank": 3,
+  "grade": "A",
+  "manager": "Test Alex",
+  "team": "Alex's Aces",
+  "avgPowerRank": 29.5,
+  "rankedSchools": 8,
+  "schools": [
+   "Gonzaga",
+   "Iowa State",
+   "Vanderbilt",
+   "Michigan",
+   "Miami (OH)",
+   "BYU",
+   "Furman",
+   "Stephen F. Austin"
+  ],
+  "schoolData": [
+   {
+    "pick": 3,
+    "school": "Gonzaga",
+    "conference": "Pac-12",
+    "lastRecord": "31-4",
+    "powerRank": 3,
+    "projectedSeed": 3
+   },
+   {
+    "pick": 14,
+    "school": "Iowa State",
+    "conference": "Big 12",
+    "lastRecord": "29-8",
+    "powerRank": 13,
+    "projectedSeed": 4
+   },
+   {
+    "pick": 19,
+    "school": "Vanderbilt",
+    "conference": "SEC",
+    "lastRecord": "27-9",
+    "powerRank": 19,
+    "projectedSeed": 5
+   },
+   {
+    "pick": 30,
+    "school": "Michigan",
+    "conference": "Big Ten",
+    "lastRecord": "37-3",
+    "powerRank": 26,
+    "projectedSeed": 6
+   },
+   {
+    "pick": 35,
+    "school": "Miami (OH)",
+    "conference": "MAC",
+    "lastRecord": "32-2",
+    "powerRank": 32,
+    "projectedSeed": 12.5
+   },
+   {
+    "pick": 46,
+    "school": "BYU",
+    "conference": "Big 12",
+    "lastRecord": "23-12",
+    "powerRank": 41,
+    "projectedSeed": 8
+   },
+   {
+    "pick": 51,
+    "school": "Furman",
+    "conference": "SoCon",
+    "lastRecord": "22-13",
+    "powerRank": 47,
+    "projectedSeed": 14
+   },
+   {
+    "pick": 62,
+    "school": "Stephen F. Austin",
+    "conference": "Southland",
+    "lastRecord": "28-6",
+    "powerRank": 55,
+    "projectedSeed": 14.5
+   }
+  ],
+  "note": "Deepest AP presence in the league: 5 AP top-25 schools (Gonzaga, Michigan, Iowa State, Vanderbilt, BYU) and all 8 projected for the field; avg 29.5.",
+  "short": "Strength: five AP top-25 schools and all eight projected for the NCAA field. Best pick: Michigan at #30, the reigning champion that the app only rates at power #26. Biggest risk: Dusty May left for the NBA and Michigan is now under Mike Boynton. Trash talk: Alex's Aces drafted the champions, yet Blake's Texas already knocked two of their schools out last March.",
+  "recap": "Alex's Aces, run by Test Alex, hold the broadest roster of ranked schools, with five of the eight listed in the AP preseason top 25 (Gonzaga, Michigan, Iowa State, Vanderbilt and BYU). Michigan is the reigning national champion after the 69-63 win over UConn, but Dusty May left for the Dallas Mavericks and Mike Boynton was named full-time coach in July on a two-year contract. The app is skeptical, with Michigan at power rank #26 and a projected 6 seed, which is the best bargain argument on the board. Gonzaga moves into the rebuilt Pac-12 with Mark Few still in charge and a 31-4 record behind him, though a loss to Texas ended last March early. Iowa State plays the Big 12 way, with TJ Otzelberger's defense-first Cyclones bringing a 29-8 record and a Sweet 16 trip into this season. Vanderbilt (27-9) and BYU (23-12) are the Aces' proven NCAA entries, although BYU also lost to Texas in the first round, which is going to be a running theme for Alex. Miami (OH) went 32-2 in the MAC last year per the app's data, so the RedHawks arrive with a gaudy record and a mid-major résumé to defend. Furman and SFA supply two mid-major contenders that will need a perfect tournament week, and Furman already has history as a 15 seed that fell to UConn 82-71. Test Alex is a test manager, so this roster is all upside with no real-life consequences. All eight Aces are projected for the field and the average power rank is 29.5, a quiet, deep and respectable build that keeps Alex right in the top three."
+ },
+ {
+  "rank": 4,
+  "grade": "B",
+  "manager": "Test Fran",
+  "team": "Fran Flyers",
+  "avgPowerRank": 29.5,
+  "rankedSchools": 8,
+  "schools": [
+   "Houston",
+   "Virginia",
+   "Saint Mary's",
+   "VCU",
+   "Texas A&M",
+   "Ohio State",
+   "Cincinnati",
+   "Indiana"
+  ],
+  "schoolData": [
+   {
+    "pick": 8,
+    "school": "Houston",
+    "conference": "Big 12",
+    "lastRecord": "30-7",
+    "powerRank": 7,
+    "projectedSeed": 2
+   },
+   {
+    "pick": 9,
+    "school": "Virginia",
+    "conference": "ACC",
+    "lastRecord": "30-6",
+    "powerRank": 8,
+    "projectedSeed": 4
+   },
+   {
+    "pick": 24,
+    "school": "Saint Mary's",
+    "conference": "WCC",
+    "lastRecord": "27-6",
+    "powerRank": 23,
+    "projectedSeed": 11
+   },
+   {
+    "pick": 25,
+    "school": "VCU",
+    "conference": "A-10",
+    "lastRecord": "28-8",
+    "powerRank": 24,
+    "projectedSeed": 10
+   },
+   {
+    "pick": 40,
+    "school": "Texas A&M",
+    "conference": "SEC",
+    "lastRecord": "22-12",
+    "powerRank": 36,
+    "projectedSeed": 8
+   },
+   {
+    "pick": 41,
+    "school": "Ohio State",
+    "conference": "Big Ten",
+    "lastRecord": "21-13",
+    "powerRank": 37,
+    "projectedSeed": 8
+   },
+   {
+    "pick": 56,
+    "school": "Cincinnati",
+    "conference": "Big 12",
+    "lastRecord": "18-15",
+    "powerRank": 50,
+    "projectedSeed": 10
+   },
+   {
+    "pick": 57,
+    "school": "Indiana",
+    "conference": "Big Ten",
+    "lastRecord": "18-14",
+    "powerRank": 51,
+    "projectedSeed": 10
+   }
+  ],
+  "note": "Safest floor: all 8 schools projected for the field, with Houston (power #7) and Virginia (power #8) up top; avg 29.5 but fewer ceiling plays.",
+  "short": "Strength: the safest floor in the league, with all eight schools projected for the field. Best pick: Virginia at #9, a 30-6 team now under Ryan Odom. Biggest risk: only Houston and Virginia are AP top-25 schools, so the ceiling is limited. Trash talk: the Flyers will win slowly and everywhere, which is the most Fran sentence ever written.",
+  "recap": "Test Fran's Fran Flyers built the safest roster in the league, with all eight schools projected for the NCAA field and an average power rank of 29.5. Houston is the headline at power rank #7, and Kelvin Sampson's Cougars remain the model for carrying a defensive identity from year to year, with JoJo Tugler back to anchor it. Virginia (power rank #8, AP #9) now plays for Ryan Odom, so the Cavaliers' pace and defense are the Fran Flyers' most intriguing style contrast. Saint Mary's is a very different story after Randy Bennett left for Arizona State and Mickey McConnell was promoted, which is a big transition for a program that has been steady for decades. VCU brings Atlantic 10 pedigree and a 28-8 record, and it drew AP votes in the preseason poll. Texas A&M, Ohio State and Indiana give Fran a pile of Big Ten and SEC bodies, and all three are projected for 8 or 10 seeds. Cincinnati is under Jerrod Calhoun, who moved over from Utah State, so Fran gets a new head coach while Paul's Youngstown State gets a road trip to Cincinnati. Test Fran is a test manager, so we will say the Flyers' strategy is to win slowly and everywhere. Only Houston and Virginia sit in the AP top 25, which means the Flyers have fewer ceiling plays than the top three rosters. That is why Fran lands fourth, a very sturdy fortress that needs one of those two big names to reach Indianapolis."
+ },
+ {
+  "rank": 5,
+  "grade": "B",
+  "manager": "Test Eli",
+  "team": "Eli Eagles",
+  "avgPowerRank": 29.5,
+  "rankedSchools": 8,
+  "schools": [
+   "UConn",
+   "Grand Canyon",
+   "McNeese",
+   "Texas Tech",
+   "UNC Wilmington",
+   "NC State",
+   "UIC",
+   "Dayton"
+  ],
+  "schoolData": [
+   {
+    "pick": 4,
+    "school": "UConn",
+    "conference": "Big East",
+    "lastRecord": "34-6",
+    "powerRank": 4,
+    "projectedSeed": 2.5
+   },
+   {
+    "pick": 13,
+    "school": "Grand Canyon",
+    "conference": "Mountain West",
+    "lastRecord": "20-12",
+    "powerRank": 12,
+    "projectedSeed": 11
+   },
+   {
+    "pick": 20,
+    "school": "McNeese",
+    "conference": "Southland",
+    "lastRecord": "28-6",
+    "powerRank": 20,
+    "projectedSeed": 13
+   },
+   {
+    "pick": 29,
+    "school": "Texas Tech",
+    "conference": "Big 12",
+    "lastRecord": "23-11",
+    "powerRank": 25,
+    "projectedSeed": 5
+   },
+   {
+    "pick": 36,
+    "school": "UNC Wilmington",
+    "conference": "CAA",
+    "lastRecord": "27-7",
+    "powerRank": 33,
+    "projectedSeed": 13.5
+   },
+   {
+    "pick": 45,
+    "school": "NC State",
+    "conference": "ACC",
+    "lastRecord": "20-14",
+    "powerRank": 40,
+    "projectedSeed": 10.5
+   },
+   {
+    "pick": 52,
+    "school": "UIC",
+    "conference": "MVC",
+    "lastRecord": "19-16",
+    "powerRank": 48,
+    "projectedSeed": 13.5
+   },
+   {
+    "pick": 61,
+    "school": "Dayton",
+    "conference": "A-10",
+    "lastRecord": "25-12",
+    "powerRank": 54,
+    "projectedSeed": 11.5
+   }
+  ],
+  "note": "Top-heavy: UConn (power #4, finalist) is elite, but only 2 schools project 8 seed or better and 6 are projected 10 seed or worse; avg 29.5.",
+  "short": "Strength: UConn, the 2026 national runner-up, is the app's power #4 and the AP's #4. Best pick: UConn at #4, the only school here that already beat Duke on a buzzer-beater. Biggest risk: only two schools project 8 seed or better, so the floor is thin. Trash talk: the Eagles have the best near-miss in the draft and the shakiest back half.",
+  "recap": "Test Eli's Eli Eagles drafted UConn at pick #4, and the Huskies (34-6) are the app's power rank #4 and the AP's #4 preseason team after reaching the 2026 title game. Dan Hurley's team beat Duke on Braylon Mullins' game-winner in the Elite Eight, topped Illinois 71-62 in the semifinal and then lost 69-63 to Michigan, so the Eagles bought the best near-miss in the draft. Hurley's bid for a third title in four years fell short, and UConn went from 6-0 to 6-1 in national title games. Texas Tech is the AP #19 team and the app's power rank #25, which gives the Eagles a solid Big 12 second option. Grand Canyon is the Mountain West entry at power rank #12 with a 20-12 record, and it received two AP points, which is basically the AP's way of saying it is paying attention. NC State is the cautionary tale, because the Wolfpack lost the First Four to Texas 68-66 and now has Justin Gainey replacing Will Wade, who left for LSU. McNeese and UNC Wilmington are the mid-major depth chart, with McNeese (28-6) and UNCW (27-7) both coming off big winning seasons. UIC (19-16, Missouri Valley) and Dayton (25-12, Atlantic 10) close out the roster and carry the lowest hopes. Test Eli is a test manager, so the Eagles have the luxury of swinging for one big dream, but only two schools project 8 seed or better. The top is elite and the bottom is thin, which is why Eli ends up fifth, with a great top end and a shakier floor than the four rosters above him."
+ },
+ {
+  "rank": 6,
+  "grade": "B",
+  "manager": "Paul",
+  "team": "Pauly",
+  "avgPowerRank": 29.9,
+  "rankedSchools": 7,
+  "schools": [
+   "Arizona",
+   "High Point",
+   "Arkansas",
+   "Saint Louis",
+   "Kentucky",
+   "USC",
+   "American University",
+   "Youngstown State"
+  ],
+  "schoolData": [
+   {
+    "pick": 7,
+    "school": "Arizona",
+    "conference": "Big 12",
+    "lastRecord": "36-3",
+    "powerRank": 6,
+    "projectedSeed": 2
+   },
+   {
+    "pick": 10,
+    "school": "High Point",
+    "conference": "Big South",
+    "lastRecord": "31-5",
+    "powerRank": 9,
+    "projectedSeed": 13
+   },
+   {
+    "pick": 23,
+    "school": "Arkansas",
+    "conference": "SEC",
+    "lastRecord": "28-9",
+    "powerRank": 22,
+    "projectedSeed": 5
+   },
+   {
+    "pick": 26,
+    "school": "Saint Louis",
+    "conference": "A-10",
+    "lastRecord": "29-6",
+    "powerRank": 31,
+    "projectedSeed": 10
+   },
+   {
+    "pick": 39,
+    "school": "Kentucky",
+    "conference": "SEC",
+    "lastRecord": "22-14",
+    "powerRank": 35,
+    "projectedSeed": 7
+   },
+   {
+    "pick": 42,
+    "school": "USC",
+    "conference": "Big Ten",
+    "lastRecord": "18-14",
+    "powerRank": 38,
+    "projectedSeed": 7
+   },
+   {
+    "pick": 55,
+    "school": "American University",
+    "conference": "Patriot",
+    "lastRecord": "16-16",
+    "powerRank": 68,
+    "projectedSeed": 16
+   },
+   {
+    "pick": 58,
+    "school": "Youngstown State",
+    "conference": "Horizon",
+    "lastRecord": "15-17",
+    "powerRank": null,
+    "projectedSeed": null
+   }
+  ],
+  "note": "Arizona and High Point are great value, 4 AP top-25 schools, but Youngstown State has no data (7 of 8 ranked) and American is power #68; avg 29.9 over 7.",
+  "short": "Strength: Arizona, Arkansas, USC and Kentucky give Paul four AP top-25 schools, plus High Point as a bargain. Best pick: Arizona at #7, a 36-3 Final Four team with Krivas back and a Big 12 favorite tag. Biggest risk: Youngstown State has no data and American is power #68, so only 7 of 8 schools are rated. Trash talk: Paul owns both High Point and Arkansas, so he can only lose to himself in that matchup.",
+  "recap": "Paul's Pauly picked Arizona at #7 overall, and the Wildcats (36-3) are the Big 12 preseason favorite after a Final Four run that ended with a 91-73 loss to Michigan. Tommy Lloyd announced at the Final Four that he is staying in Tucson, and Motiejus Krivas, the preseason Big 12 Player of the Year, is back for another run. High Point at pick #10 is the best story on the roster, a 12 seed that beat Wisconsin 83-82 on a layup with 11.7 seconds left before losing 94-88 to Arkansas. Plot twist, Arkansas is also on Paul's roster, so Paul technically owns both sides of that second-round game. John Calipari's Razorbacks went 28-9, reached the Sweet 16 and sit at AP #12 in the new poll. Saint Louis from the Atlantic 10 (29-6) and Kentucky under Mark Pope with Malachi Moreno back are the safe middle of the roster. USC (AP #21) and its 18-14 record are the Big Ten wild card, and it is the school that gets Paul to the 4-AP-team mark. American is the Patriot League entry at power rank #68 with a 16-16 record, and Youngstown State (15-17, Horizon League, Ethan Faulkner in his third season as head coach) has no power rank or projected seed in the app, so the back of the roster is the weak point. Because of that missing data the average power rank is only 29.9 across 7 of the 8 schools, which pushes the Pauly just behind the top five. Paul gets a B, a bounce-back plan, and a front-row seat to watch Drew's UCLA play his Arizona in Las Vegas on the first Monday of the season."
+ },
+ {
+  "rank": 7,
+  "grade": "C",
+  "manager": "Test Casey",
+  "team": "Casey Cats",
+  "avgPowerRank": 30.3,
+  "rankedSchools": 7,
+  "schools": [
+   "Illinois",
+   "Michigan State",
+   "Tennessee",
+   "Grambling",
+   "New Mexico",
+   "Villanova",
+   "Akron",
+   "Montana State"
+  ],
+  "schoolData": [
+   {
+    "pick": 5,
+    "school": "Illinois",
+    "conference": "Big Ten",
+    "lastRecord": "28-9",
+    "powerRank": 5,
+    "projectedSeed": 2
+   },
+   {
+    "pick": 12,
+    "school": "Michigan State",
+    "conference": "Big Ten",
+    "lastRecord": "27-8",
+    "powerRank": 11,
+    "projectedSeed": 3
+   },
+   {
+    "pick": 21,
+    "school": "Tennessee",
+    "conference": "SEC",
+    "lastRecord": "25-12",
+    "powerRank": 21,
+    "projectedSeed": 5
+   },
+   {
+    "pick": 28,
+    "school": "Grambling",
+    "conference": "SWAC",
+    "lastRecord": "14-19",
+    "powerRank": null,
+    "projectedSeed": null
+   },
+   {
+    "pick": 37,
+    "school": "New Mexico",
+    "conference": "Mountain West",
+    "lastRecord": "26-11",
+    "powerRank": 34,
+    "projectedSeed": 12
+   },
+   {
+    "pick": 44,
+    "school": "Villanova",
+    "conference": "Big East",
+    "lastRecord": "24-9",
+    "powerRank": 39,
+    "projectedSeed": 8.5
+   },
+   {
+    "pick": 53,
+    "school": "Akron",
+    "conference": "MAC",
+    "lastRecord": "29-6",
+    "powerRank": 49,
+    "projectedSeed": 13.5
+   },
+   {
+    "pick": 60,
+    "school": "Montana State",
+    "conference": "Big Sky",
+    "lastRecord": "18-14",
+    "powerRank": 53,
+    "projectedSeed": 15
+   }
+  ],
+  "note": "Best top three in the league by AP points (Illinois, Michigan State, Tennessee) but Grambling has no data (7 of 8 ranked) and the back end is thin; avg 30.3 over 7.",
+  "short": "Strength: Illinois, Michigan State and Tennessee are the best top three of any roster by AP points. Best pick: Illinois at #5, a Final Four team led by preseason first-team All-American David Mirković. Biggest risk: Grambling has no data and Montana State is a projected 15 seed, so the back end is thin. Trash talk: the Cats own three top-eight teams and a back half full of question marks.",
+  "recap": "Test Casey's Casey Cats own the nicest top three in the draft by AP points, with Illinois (3), Michigan State (6) and Tennessee (8) all in the preseason top eight. Illinois reached its first Final Four since 2005 under Brad Underwood and has David Mirković back as a preseason first-team All-American. Michigan State is Tom Izzo's annual March machine, a 27-8 team that lost to UConn 67-63 in the Sweet 16. Tennessee is the physical SEC option, with Rick Barnes' Volunteers coming off an Elite Eight loss to eventual champion Michigan. After that the Cats get a lot less fearsome, as Grambling (14-19, SWAC) has no power rank or projected seed in the app. New Mexico (26-11) and Akron (29-6) are decent mid-major options, with the Zips now under Dustin Ford after John Groce left for Charleston. Villanova arrives with a 24-9 mark but lost to Utah State 86-76 in the first round as an 8 seed, while Montana State (18-14) brings a projected 15 seed. Test Casey is a test manager, so the Cats get to pretend the AP poll is the only metric. The app's average power rank is 30.3 across 7 of the 8 schools, because the Grambling gap is a real problem for the field count. That gap and a shaky back end leave the Cats seventh, with a first-class top three that has to carry everything."
+ },
+ {
+  "rank": 8,
+  "grade": "D",
+  "manager": "Jo",
+  "team": "YOYOYOYO",
+  "avgPowerRank": 44.3,
+  "rankedSchools": 6,
+  "schools": [
+   "Louisville",
+   "Kansas",
+   "Oklahoma",
+   "Liberty",
+   "Marquette",
+   "Pennsylvania",
+   "Army",
+   "Cal Poly"
+  ],
+  "schoolData": [
+   {
+    "pick": 6,
+    "school": "Louisville",
+    "conference": "ACC",
+    "lastRecord": "24-11",
+    "powerRank": 18,
+    "projectedSeed": 4.5
+   },
+   {
+    "pick": 11,
+    "school": "Kansas",
+    "conference": "Big 12",
+    "lastRecord": "24-11",
+    "powerRank": 10,
+    "projectedSeed": 3
+   },
+   {
+    "pick": 22,
+    "school": "Oklahoma",
+    "conference": "SEC",
+    "lastRecord": "21-16",
+    "powerRank": 43,
+    "projectedSeed": 10
+   },
+   {
+    "pick": 27,
+    "school": "Liberty",
+    "conference": "CUSA",
+    "lastRecord": "26-8",
+    "powerRank": 71,
+    "projectedSeed": 14.5
+   },
+   {
+    "pick": 38,
+    "school": "Marquette",
+    "conference": "Big East",
+    "lastRecord": "12-20",
+    "powerRank": 52,
+    "projectedSeed": 10.5
+   },
+   {
+    "pick": 43,
+    "school": "Pennsylvania",
+    "conference": "Ivy",
+    "lastRecord": "18-12",
+    "powerRank": 72,
+    "projectedSeed": 15
+   },
+   {
+    "pick": 54,
+    "school": "Army",
+    "conference": "Patriot",
+    "lastRecord": "11-21",
+    "powerRank": null,
+    "projectedSeed": null
+   },
+   {
+    "pick": 59,
+    "school": "Cal Poly",
+    "conference": "Big West",
+    "lastRecord": "14-19",
+    "powerRank": null,
+    "projectedSeed": null
+   }
+  ],
+  "note": "Only Louisville and Kansas are in the top 18; Army and Cal Poly have no data (6 of 8 ranked), and Liberty and Penn are power #71-72; avg 44.3 over 6.",
+  "short": "Strength: Louisville and Kansas give the roster two real AP-ranked teams. Best pick: Kansas at #11, the blue-blood program with Bill Self back for another year. Biggest risk: Army and Cal Poly have no data, Liberty and Penn are power #71-72, and the average is 44.3. Trash talk: Jo is Paul on another browser, and this roster is the proof that Paul does not scout himself.",
+  "recap": "Jo's YOYOYOYO is where Paul's other browser lives, so this recap is mostly Paul arguing with himself. Louisville (AP #11) is the top pick, with Pat Kelsey's Cardinals at 24-11, a 6 seed that beat South Florida and lost 77-69 to Michigan State in the second round. Kansas (AP #17) is the blue-blood piece of the roster, and Bill Self confirmed in April he is not retiring, which keeps the Jayhawks' Big 12 story alive. Oklahoma at pick #22 is the SEC wild card, a 21-16 team at power rank #43 under Porter Moser. Liberty went 26-8 in Conference USA, but sits at power rank #71, which makes it the long shot of the roster. Marquette went 12-20 last year, which is the kind of record that makes a big program quiet for a while. Pennsylvania from the Ivy League is projected as a 15 seed with an 18-12 record, which fits the Ivy League script of being dangerous only on a lucky night. Army (11-21, Patriot) and Cal Poly (14-19, Big West) have no power rank or projected seed, so the data is the most obvious hole in the draft. The average power rank is 44.3 across just 6 of the 8 schools, 14 spots behind the next roster, and only two schools sit in the AP top 25. Jo, who is just Paul on another browser, gets the D and a reminder that 'my other browser' is not a proper scouting report."
+ }
+]
