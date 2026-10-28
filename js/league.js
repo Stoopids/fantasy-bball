@@ -8,7 +8,7 @@ async function load(id,opt){opt=opt||{};const K=F.Keys(id);const out={id,K,meta:
   const j=F.joinedList(m,out.claims);
   await Promise.all(j.map(async c=>{try{const p=F.parseProfile(await Store.get(K.mgr(c.mid)));if(p)out.profiles[c.mid]=p}catch(e){}}));
   out.managers=F.managersView(m,out.claims,out.profiles);
-  if(m.status!=='lobby'){const tot=F.totalPicks(m.order,m.settings.rounds);for(let n=1;n<=tot;n+=6){const ns=[];for(let k=n;k<n+6&&k<=tot;k++)ns.push(k);
+  if(m.status!=='lobby'){const tot=F.totalPicks(m.order,m.settings.rounds);const real=[];for(let k=1;k<=tot;k++){const sl=F.slotAt(m.order,k,m.settings.type,m.settings.rounds);if(!(sl&&F.redraftSkip(m,sl)))real.push(k)}for(let n=0;n<real.length;n+=6){const ns=real.slice(n,n+6);
       const rs=await Promise.all(ns.map(k=>Store.get(K.pick(m.epoch,k)).then(F.parseEntry).catch(()=>null)));ns.forEach((k,x)=>{out.entries[k]=rs[x]});if(rs.some(r=>!r))break}}
   out.state=F.deriveState(m,out.entries,{},opt.pool?new Set(opt.pool):null);return out}
 window.FBNLeague={load};

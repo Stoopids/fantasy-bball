@@ -59,9 +59,24 @@ U.loadTeams=function(){const D=window.TEAMS_DATA||{teams:[],meta:{}};const TEAMS
   POOL.sort((a,b)=>TEAMS[a].short.localeCompare(TEAMS[b].short));return{TEAMS,POOL,POOLSET:new Set(POOL),META:D.meta||{}}};
 /* logo that fails to load -> plain colour chip (no inline handler, so a strict CSP can be used) */
 document.addEventListener('error',e=>{const t=e.target;if(t&&t.tagName==='IMG'&&t.closest&&t.closest('.chip')){const s=document.createElement('span');s.className='nologo';t.replaceWith(s)}},true);
+/* ---- league banner: default file, or the commissioner's photo from its own key (cached on this device, never polled) ---- */
+U.heroApply=function(el,src){if(!el)return;const F=FBN;const ok=src===F.HERO.file||F.heroOk(src);const use=ok?src:F.HERO.file;
+  const im=new Image();im.onload=()=>{el.style.backgroundImage='url("'+use+'")';el.classList.remove('herofail')};im.onerror=()=>{el.style.backgroundImage='';el.classList.add('herofail')};im.src=use};
+U.heroLoad=async function(id,force){const F=FBN;const ck='hero.'+id;const c=U.lsJSON(ck,null);if(!force&&c&&Date.now()-(+c.at||0)<F.HERO.cacheMs)return(c.url&&F.heroOk(c.url))?c.url:null;
+  try{const rec=F.parseHero(await Store.get(F.Keys(id).hero));U.lsSet(ck,JSON.stringify({url:rec?rec.url:null,at:Date.now()}));return rec?rec.url:null}catch(e){return(c&&c.url&&F.heroOk(c.url))?c.url:null}};
+U.heroRemember=(id,url)=>U.lsSet('hero.'+id,JSON.stringify({url:url||null,at:Date.now()}));
+/* does this device hold the commissioner secret for the league? (checked against the salted hash in meta) */
+U.isCommish=async function(meta){const t=U.lsGet('cm.'+meta.id);return!!(t&&await FBN.checkPass(meta,t))};
+/* back-and-forth links: league code only, no secrets. A device that remembers a manager or the commissioner opens the room normally; anyone else opens it as a spectator. */
+U.roomHref=function(id){const me=U.getMe(id);const cm=!!U.lsGet('cm.'+id);return U.pageUrl('room.html',(me&&me.mid)||cm?{l:id}:{l:id,watch:1})};
 window.UI=U;
 })();
 /* final rosters, shared by the room and the recap page */
-UI.rosters=function(st,mgrs,T){const F=FBN;const rs=F.rosters(st,mgrs);return rs.map(r=>{const stt=F.rosterStats(r.picks,T.META);
+UI.rosters=function(st,mgrs,T){const F=FBN;const rs=F.rosters(st,mgrs);const rt=F.rosterRatings(rs.map(r=>({mid:r.mgr.mid,picks:r.picks})),T.META);
+  return '<div class="rosgrid" id="rosgrid">'+rs.map(r=>{const stt=F.rosterStats(r.picks,T.META);const q=rt[r.mgr.mid]||{};
   return '<div class="card roster" data-mid="'+UI.esc(r.mgr.mid)+'"><div class="row nw">'+UI.avatar(r.mgr,42)+'<div class="grow"><b>'+UI.esc(r.mgr.name)+'</b><div class="small mut">'+UI.esc(r.mgr.team)+'</div></div><div class="small mut" style="text-align:right">'+r.picks.length+' team'+(r.picks.length===1?'':'s')+(stt.avgRank!=null?'<br>avg rank '+stt.avgRank:'')+'</div></div>'
-   +'<div class="rost">'+(r.picks.map(p=>UI.chip(T.TEAMS,p.tid)).join('')||'<span class="small mut">No picks</span>')+'</div></div>'}).join('')};
+   +'<div class="strength small"><b>Strength '+(q.strength==null?'–':q.strength)+'</b>'+(q.place?' <span class="mut">· #'+q.place+' of '+rs.length+'</span>':'')+'</div>'
+   +'<div class="rost">'+(r.picks.map(p=>UI.chip(T.TEAMS,p.tid)).join('')||'<span class="small mut">No picks</span>')+'</div></div>'}).join('')+'</div>'};
+/* the same two buttons everywhere (room, recap, league site): Draft recap and League site. current = 'recap' | 'site' | '' marks the page you are on. Links hold the league code only. */
+UI.siteButtons=function(lid,domId,current){const E=UI.esc;const c=k=>E('btn grow'+(current===k?' cur':''));const a=k=>E(current===k?'page':'false');
+  return '<div class="row sitebtns" id="'+E(domId)+'"><a class="'+c('recap')+'" id="'+E(domId)+'_recap" aria-current="'+a('recap')+'" href="'+E(UI.pageUrl('recap.html',{l:lid}))+'">Draft recap</a><a class="'+c('site')+'" id="'+E(domId)+'_site" aria-current="'+a('site')+'" href="'+E(UI.pageUrl('league.html',{l:lid}))+'">League site</a></div>'};

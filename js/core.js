@@ -7,7 +7,8 @@ const clone=o=>JSON.parse(JSON.stringify(o));F.clone=clone;
 /* ============================ constants ============================ */
 F.CLOCKS=[30,60,90,120,180,0];                       /* 0 = no clock */
 F.DEFAULTS={managers:8,rounds:8,type:'snake',startAt:null,startMode:'manual',orderMode:'random',clockSecs:60,autoPick:true,warn15:true};
-F.LIMITS={mgrMin:4,mgrMax:12,roundsMin:1,roundsMax:15,nameMin:2,nameMax:40,personMax:30};
+F.MANAGERS=8;                                         /* every NEW league has exactly 8 managers (seats) */
+F.LIMITS={mgrMin:8,mgrMax:8,roundsMin:1,roundsMax:15,nameMin:2,nameMax:40,personMax:30};
 F.PHOTO={maxBytes:25*1024,edges:[256,224,192,160,128,96],qualities:[0.82,0.7,0.58,0.46,0.36],hardStoreBytes:40*1024};
 F.KEY_PREFIX='fbn1-';
 /* ============================ ids, codes, keys ============================ */
@@ -23,7 +24,7 @@ F.hexId=function(n,rb){rb=rb||cryptoBytes;return Array.from(rb(Math.ceil(n/2)),x
 F.slug=s=>String(s).toLowerCase().replace(/[^a-z0-9]+/g,'')||'x';
 F.Keys=function(id){const K=F.KEY_PREFIX+String(id).toLowerCase();return{
   base:K,meta:K+'-meta',chat:K+'-chat',slot:(i,gen)=>K+'-s'+i+'-g'+(gen||0),mgr:mid=>K+'-m-'+mid,pick:(e,n)=>K+'-e'+e+'-p'+n,
-  pref:mid=>K+'-u-'+mid,pres:mid=>K+'-pr-'+mid,spin:(e,g,n)=>K+'-e'+e+'-g'+g+'-s'+n}};
+  pref:mid=>K+'-u-'+mid,pres:mid=>K+'-pr-'+mid,rd:mid=>K+'-rd-'+mid,hero:K+'-hero',spin:(e,g,n)=>K+'-e'+e+'-g'+g+'-s'+n}};
 /* ============================ settings + wizard validation ============================ */
 const isInt=v=>typeof v==='number'&&isFinite(v)&&Math.floor(v)===v;
 const clean=s=>String(s==null?'':s).replace(/<[^>]*>/g,' ').replace(/[\u0000-\u001f<>]/g,' ').replace(/\s+/g,' ').trim();
@@ -34,7 +35,7 @@ F.validateSettings=function(s,o){o=o||{};const e={};const L=F.LIMITS;const now=o
   const nm=clean(s.name);if(nm.length<L.nameMin)e.name='Give your league a name (at least '+L.nameMin+' letters).';else if(nm.length>L.nameMax)e.name='Keep the league name under '+(L.nameMax+1)+' characters.';
   if(s.mgrName!==undefined||o.needPerson){const m=clean(s.mgrName);if(!m)e.mgrName='Enter your name.';else if(m.length>L.personMax)e.mgrName='Keep your name under '+(L.personMax+1)+' characters.';
     const t=clean(s.teamName);if(!t)e.teamName='Enter a team name.';else if(t.length>L.personMax)e.teamName='Keep the team name under '+(L.personMax+1)+' characters.'}
-  if(!isInt(s.managers)||s.managers<L.mgrMin||s.managers>L.mgrMax)e.managers='Choose between '+L.mgrMin+' and '+L.mgrMax+' managers.';
+  if(!(isInt(s.managers)&&(s.managers===F.MANAGERS||(o.legacyCount!=null&&s.managers===o.legacyCount))))e.managers='Every league has exactly '+F.MANAGERS+' managers.';
   if(['snake','linear'].indexOf(s.type)<0)e.type='Choose snake or linear.';
   if(s.startAt!=null){if(!isInt(s.startAt)||s.startAt<=0)e.startAt='That date and time is not valid.';else if(s.startAt<now+60000)e.startAt='Pick a time in the future.'}
   if(['manual','auto'].indexOf(s.startMode)<0)e.startMode='Choose how the draft starts.';
@@ -45,14 +46,14 @@ F.validateSettings=function(s,o){o=o||{};const e={};const L=F.LIMITS;const now=o
   else if(o.poolSize&&isInt(s.managers)&&s.managers*s.rounds>o.poolSize)e.rounds='Not enough teams: '+s.managers+' managers × '+s.rounds+' rounds = '+(s.managers*s.rounds)+', but only '+o.poolSize+' teams are available. Lower it to '+F.maxRounds(s.managers,o.poolSize)+' or fewer.';
   if(typeof s.autoPick!=='boolean')e.autoPick='Choose what happens when time runs out.';
   return{ok:!Object.keys(e).length,errors:e}};
-F.WIZARD=['you','managers','type','when','start','order','clock','rounds','missed','confirm'];
+F.WIZARD=['you','type','when','start','order','clock','rounds','missed','confirm'];
 /* the start-mode screen only exists when a date is set */
 F.stepsFor=s=>F.WIZARD.filter(k=>k!=='start'||s.startAt!=null);
-F.STEP_FIELDS={you:['name','mgrName','teamName'],managers:['managers'],type:['type'],when:['startAt'],start:['startMode'],order:['orderMode'],clock:['clockSecs'],rounds:['rounds'],missed:['autoPick'],confirm:[]};
+F.STEP_FIELDS={you:['name','mgrName','teamName'],type:['type'],when:['startAt'],start:['startMode'],order:['orderMode'],clock:['clockSecs'],rounds:['rounds'],missed:['autoPick'],confirm:[]};
 F.validateStep=function(step,s,o){o=o||{};const full=F.validateSettings(Object.assign({mgrName:s.mgrName||'',teamName:s.teamName||''},s),o);
   const f=F.STEP_FIELDS[step]||[];const errors={};f.forEach(k=>{if(full.errors[k])errors[k]=full.errors[k]});
   if(step==='confirm')return full;return{ok:!Object.keys(errors).length,errors}};
-F.normalizeSettings=function(s){const d=F.DEFAULTS;return{managers:isInt(+s.managers)?+s.managers:d.managers,rounds:isInt(+s.rounds)?+s.rounds:d.rounds,type:s.type==='linear'?'linear':'snake',
+F.normalizeSettings=function(s){const d=F.DEFAULTS;return{managers:(isInt(+s.managers)&&+s.managers>=1&&+s.managers<=24)?+s.managers:d.managers,rounds:isInt(+s.rounds)?+s.rounds:d.rounds,type:s.type==='linear'?'linear':'snake',
   startAt:s.startAt!=null&&isFinite(+s.startAt)?Math.round(+s.startAt):null,startMode:s.startMode==='auto'&&s.startAt!=null?'auto':'manual',orderMode:s.orderMode==='manual'?'manual':'random',
   clockSecs:F.CLOCKS.indexOf(+s.clockSecs)>=0?+s.clockSecs:d.clockSecs,autoPick:s.autoPick!==false,warn15:s.warn15!==false,tz:typeof s.tz==='string'?s.tz.slice(0,60):'UTC'}};
 /* ============================ pick order: snake / linear ============================ */
@@ -131,7 +132,7 @@ F.claimKey=async function(io,o){const NOCONN="Can't reach the server. Check your
   return{ok:true}};
 /* join: try free slots in order until one sticks. io:{read,write,sleep,url(i,gen)}. returns {ok,slot,claim} | {ok:false,full:true} */
 F.joinLeague=async function(io,o){const meta=o.meta;const tried=new Set();
-  for(let round=0;round<F.LIMITS.mgrMax+2;round++){
+  for(let round=0;round<meta.settings.managers+2;round++){
     const claims={};await Promise.all(Array.from({length:meta.settings.managers},(_,k)=>k+1).map(async i=>{claims[i]=F.parseClaim(await io.read(io.url(i,meta.slotGen[i]||0)).catch(()=>''))}));
     const free=F.freeSlots(meta,claims).filter(i=>!tried.has(i));if(!free.length)return{ok:false,full:true};
     const i=free[0];tried.add(i);const mine=F.makeClaim({mid:o.mid,i,gen:meta.slotGen[i]||0,name:o.name,team:o.team,sh:o.sh,w:o.w,ts:o.now?o.now():Date.now()});
@@ -140,7 +141,7 @@ F.joinLeague=async function(io,o){const meta=o.meta;const tried=new Set();
   return{ok:false,full:true}};
 /* ============================ meta (the commissioner-owned document) ============================ */
 F.defaultMeta=function(id,s,cm){return{v:1,version:0,id,name:clean(s.name),created:Date.now(),settings:F.normalizeSettings(s),cm:cm||null,pass:null,status:'lobby',epoch:1,order:[],orderSet:false,
-  spin:null,spinGen:0,respins:[],paused:false,pausedLeft:null,startedAt:null,resumeAt:null,voided:[],slotGen:{},over:{},endedEarly:false,endedAt:null,notes:false,updated:new Date().toISOString()}};
+  spin:null,spinGen:0,spinDone:false,respins:[],redraft:null,paused:false,pausedLeft:null,startedAt:null,resumeAt:null,voided:[],slotGen:{},over:{},endedEarly:false,endedAt:null,notes:false,updated:new Date().toISOString()}};
 F.normalizeMeta=function(d){const base=F.defaultMeta('',F.DEFAULTS,null);const m=Object.assign(base,(d&&typeof d==='object'&&!Array.isArray(d))?d:{});
   m.settings=F.normalizeSettings(Object.assign({},F.DEFAULTS,m.settings||{}));m.name=clean(m.name)||'League';
   if(['lobby','live','complete'].indexOf(m.status)<0)m.status='lobby';
@@ -149,7 +150,10 @@ F.normalizeMeta=function(d){const base=F.defaultMeta('',F.DEFAULTS,null);const m
   if(!m.slotGen||typeof m.slotGen!=='object')m.slotGen={};if(!m.over||typeof m.over!=='object')m.over={};
   if(!(m.pass&&typeof m.pass.salt==='string'&&typeof m.pass.hash==='string'))m.pass=null;
   m.spinGen=Math.max(0,+m.spinGen||0);if(!Array.isArray(m.respins))m.respins=[];m.respins=m.respins.slice(-20);
-  if(!(m.spin&&typeof m.spin==='object'&&+m.spin.gen>0&&Array.isArray(m.spin.players)))m.spin=null;else m.spin={gen:+m.spin.gen,players:m.spin.players.map(String),done:!!m.spin.done};
+  if(!(m.spin&&typeof m.spin==='object'&&+m.spin.gen>0&&Array.isArray(m.spin.players)))m.spin=null;else m.spin={gen:+m.spin.gen,players:m.spin.players.map(String),done:!!m.spin.done,ts:(isFinite(+m.spin.ts)&&+m.spin.ts>0)?+m.spin.ts:0,sid:typeof m.spin.sid==='string'?m.spin.sid.slice(0,24):''};
+  /* a spin that finished once is remembered for good (old leagues have no flag: it is derived from spin.done / the spin log) */
+  m.redraft=F.normRedraft(m.redraft);
+  m.spinDone=!!(m.spinDone||(m.spin&&m.spin.done)||m.respins.some(r=>r&&r.kind==='spin'));
   return m};
 F.exists=d=>!!(d&&typeof d==='object'&&d.v&&d.settings&&d.id);
 /* the order that would be used right now: the commissioner's saved order (kept in sync with who has joined) or join order */
@@ -164,7 +168,7 @@ F.mStart=function(m,joined,now,seedStr,poolSize){if(m.status!=='lobby')return{er
 F.mPause=function(m,st,pause,now){if(m.status!=='live'||st.status==='complete')return{error:'Draft is not live.'};const n=clone(m);
   if(pause){if(n.paused)return{error:'Already paused.'};n.paused=true;n.pausedLeft=st.deadline?Math.max(0,st.deadline-now):null}
   else{if(!n.paused)return{error:'Not paused.'};n.paused=false;const c=n.settings.clockSecs;n.resumeAt=c&&n.pausedLeft!=null?now-(c*1000-n.pausedLeft):now;n.pausedLeft=null}return{state:n}};
-F.mUndo=function(m,st,expect,now){if(m.status==='complete'||st.status==='complete')return{error:'The draft is complete and locked.'};if(!st.picks.length)return{error:'Nothing to undo.'};const last=st.picks[st.picks.length-1];
+F.mUndo=function(m,st,expect,now){if(m.status==='complete'||st.status==='complete')return{error:'The draft is complete and locked.'};const rp=st.real||st.picks;if(!rp.length)return{error:'Nothing to undo.'};const last=rp[rp.length-1];
   /* compare-and-set: the pick the commissioner was looking at must still be the last pick (number and id) */
   const eN=expect&&typeof expect==='object'?expect.n:expect,eId=expect&&typeof expect==='object'?expect.id:null;
   if(eN==null||last.n!==eN||(eId!=null&&last.id!==eId))return{error:'The board changed — a new pick landed or the pick you saw is gone. Look again before undoing.'};const n=clone(m);n.voided.push(last.id);n.status='live';n.resumeAt=now;
@@ -172,13 +176,12 @@ F.mUndo=function(m,st,expect,now){if(m.status==='complete'||st.status==='complet
 F.mClock=function(m,secs,now){if(F.CLOCKS.indexOf(+secs)<0)return{error:'Not a valid clock option.'};const n=clone(m);n.settings.clockSecs=+secs;n.resumeAt=now;if(n.paused)n.pausedLeft=n.settings.clockSecs?n.settings.clockSecs*1000:null;return{state:n}};
 F.mFlags=function(m,f){const n=clone(m);if('warn15' in f)n.settings.warn15=!!f.warn15;if('autoPick' in f)n.settings.autoPick=!!f.autoPick;if('notes' in f)n.notes=!!f.notes;return{state:n}};
 /* edit league settings: only before the draft starts (clock/auto flags have their own live actions) */
-F.mSettings=function(m,patch,joined,poolSize,now){const joinedCount=joined.length;if(m.status!=='lobby')return{error:'Locked: the draft has started.'};
-  const n=clone(m);const s=Object.assign({},n.settings,patch);if(patch.name!=null)n.name=clean(patch.name);
-  const v=F.validateSettings(Object.assign({name:n.name},s),{poolSize,now:now||Date.now()});
+F.mSettings=function(m,patch,joined,poolSize,now){if(m.status!=='lobby')return{error:'Locked: the draft has started.'};
+  /* the number of managers is fixed (8 for every new league); a league saved with another count keeps its own count and is edited tolerantly */
+  const n=clone(m);patch=Object.assign({},patch);delete patch.managers;const s=Object.assign({},n.settings,patch);if(patch.name!=null)n.name=clean(patch.name);
+  const v=F.validateSettings(Object.assign({name:n.name},s),{poolSize,now:now||Date.now(),legacyCount:n.settings.managers});
   const e=Object.assign({},v.errors);if(patch.startAt==null&&'startAt' in patch)delete e.startAt;if(!('startAt' in patch)&&n.settings.startAt!=null&&n.settings.startAt<(now||Date.now()))delete e.startAt;
   if(Object.keys(e).length)return{error:e[Object.keys(e)[0]],errors:e};
-  if(s.managers<joinedCount)return{error:'Already '+joinedCount+' managers have joined. Remove someone first to go lower.'};
-  const high=joined.filter(c=>c.i>s.managers)[0];if(high)return{error:'A manager is sitting in spot '+high.i+'. Remove them (or raise the number) first.'};
   n.settings=F.normalizeSettings(s);return{state:n}};
 F.mSetOrder=function(m,joined,newOrder){if(m.status!=='lobby')return{error:'Order is locked once the draft starts.'};if(!F.permutationOf(newOrder,joined))return{error:'That order does not match the managers who joined.'};const n=clone(m);n.order=newOrder.slice();n.orderSet=true;return{state:n}};
 F.mMove=function(m,joined,mid,dir){if(m.status!=='lobby')return{error:'Order is locked once the draft starts.'};const o=F.moveItem(F.effectiveOrder(m,joined),mid,dir);if(!o)return{error:'cannot move'};return F.mSetOrder(m,joined,o)};
@@ -192,8 +195,62 @@ F.mRemove=function(m,mid,slotIndex){if(m.status==='complete')return{error:'The d
   if(m.status==='lobby'){if(slotIndex==null)return{error:'Unknown manager.'};n.slotGen[slotIndex]=(n.slotGen[slotIndex]||0)+1;n.order=n.order.filter(x=>x!==mid);delete n.over[mid];return{state:n,freed:true}}
   n.over[mid]=Object.assign({},n.over[mid],{left:true,away:true});return{state:n,freed:false}};
 F.mEnd=function(m,now){if(m.status!=='live')return{error:'Only a live draft can be ended early.'};const n=clone(m);n.status='complete';n.endedEarly=true;n.endedAt=now;n.paused=false;n.pausedLeft=null;return{state:n}};
-F.mReset=function(m){if(m.status==='complete')return{error:'The draft is complete and locked.'};const n=F.defaultMeta(m.id,m.settings,m.cm);n.name=m.name;n.created=m.created;n.pass=m.pass;n.version=m.version;n.epoch=m.epoch+1;n.slotGen=clone(m.slotGen);n.over=clone(m.over);
+F.mReset=function(m){if(m.status==='complete')return{error:'The draft is complete and locked.'};if(F.redraftLive(m))return{error:'The redraft cannot be reset. Use Undo, or End the draft early.'};const n=F.defaultMeta(m.id,m.settings,m.cm);n.name=m.name;n.created=m.created;n.pass=m.pass;n.version=m.version;n.epoch=m.epoch+1;n.slotGen=clone(m.slotGen);n.over=clone(m.over);n.spinDone=!!F.spinCompleted(m);
   Object.keys(n.over).forEach(k=>{delete n.over[k].left});n.notes=m.notes;return{state:n}};
+/* ============================ REDRAFT (January 20, 2027) ============================
+   Rules, in plain words (the same ones help.html and the redraft page show):
+   1. The draft order follows the league standings as of January 20, 2027. The best record picks first (snake: the order reverses every round).
+   2. The owner in last place chooses where they pick (any position, 1 to 8). If they do not choose, they pick last.
+   3. Standings: best win percentage first. Same percentage: the owner with fewer wins ranks lower. Still tied: bigger point difference, then seat order.
+   4. Each owner may drop up to 2 of their teams first (dropping is optional). Dropped teams go back into the pool and are redrafted; an owner drafts one team for each team they dropped.
+   Stored in meta.redraft; each owner's choices live under their own key (K.rd(mid)) so nobody overwrites anybody. */
+F.REDRAFT={asOf:'2027-01-20',asOfLabel:'January 20, 2027',maxDrops:2,worstFirst:false};
+F.redraftLive=m=>!!(m&&m.redraft&&m.redraft.phase==='live');
+F.redraftSkip=function(meta,sl){const r=meta&&meta.redraft;return !!(r&&r.phase==='live'&&sl&&sl.round>(+r.need[sl.owner]||0))};
+const hexs=v=>typeof v==='string'&&/^[0-9a-f]{4,32}$/.test(v);
+F.normRedraft=function(r){if(!r||typeof r!=='object'||Array.isArray(r)||['open','live'].indexOf(r.phase)<0||!hexs(r.rid))return null;
+  const strs=a=>Array.isArray(a)?a.map(String).filter(x=>/^[A-Za-z0-9_-]{1,40}$/.test(x)):[];const o={rid:r.rid,phase:r.phase,asOf:/^\d{4}-\d{2}-\d{2}$/.test(r.asOf)?r.asOf:F.REDRAFT.asOf,from:Math.max(1,+r.from||1),openedAt:+r.openedAt||0,
+    stand:strs(r.stand).slice(0,24),rows:Array.isArray(r.rows)?r.rows.slice(0,24).filter(x=>x&&typeof x==='object').map(x=>({mid:String(x.mid||''),w:Math.max(0,+x.w||0),l:Math.max(0,+x.l||0)})):[],
+    keep:{},need:{},drops:{},pos:(Number.isInteger(+r.pos)&&+r.pos>=1&&+r.pos<=24)?+r.pos:null,lastMid:typeof r.lastMid==='string'?r.lastMid:'',rounds0:Math.max(1,+r.rounds0||1),startedAt:+r.startedAt||0};
+  if(r.keep&&typeof r.keep==='object')Object.keys(r.keep).slice(0,400).forEach(t=>{if(/^[A-Za-z0-9_-]{1,40}$/.test(t)&&typeof r.keep[t]==='string')o.keep[t]=r.keep[t]});
+  if(r.need&&typeof r.need==='object')Object.keys(r.need).slice(0,24).forEach(k=>{const n=+r.need[k];if(Number.isInteger(n))o.need[k]=Math.max(0,Math.min(F.REDRAFT.maxDrops,n))});
+  if(r.drops&&typeof r.drops==='object')Object.keys(r.drops).slice(0,24).forEach(k=>{o.drops[k]=strs(r.drops[k]).slice(0,F.REDRAFT.maxDrops)});
+  return o};
+/* games played up to and including the date (YYYY-MM-DD). Anything without a valid day is ignored. */
+F.gamesUpTo=(games,day)=>(games||[]).filter(g=>g&&typeof g.day==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(g.day)&&g.day<=day);
+/* rows: [{mid,wins,losses,diff,idx}] -> best first, each with place 1..n and tieNote when a tie was broken */
+F.redraftStandings=function(rows){const r=(rows||[]).map((x,i)=>{const w=+x.wins||0,l=+x.losses||0,gp=w+l;return Object.assign({},x,{wins:w,losses:l,diff:+x.diff||0,idx:x.idx!=null?+x.idx:i,gp,pct:gp?w/gp:0})});
+  r.sort((a,b)=>b.pct-a.pct||b.wins-a.wins||b.diff-a.diff||a.idx-b.idx);
+  r.forEach((x,i)=>{x.place=i+1;const prev=r[i-1],next=r[i+1];x.tieBroken=!!((prev&&prev.pct===x.pct)||(next&&next.pct===x.pct))});return r};
+/* standMids: best -> worst. pos: the last-place owner's chosen position (1..n) or null. Returns the pick order. */
+F.redraftOrder=function(standMids,pos){const n=standMids.length;if(!n)return[];const base=F.REDRAFT.worstFirst?standMids.slice().reverse():standMids.slice();
+  const lastMid=standMids[n-1];const o=base.filter(x=>x!==lastMid);const p=(Number.isInteger(pos)&&pos>=1&&pos<=n)?pos:(F.REDRAFT.worstFirst?1:n);o.splice(p-1,0,lastMid);return o};
+/* an owner's drops: unique, from their own roster, at most 2 */
+F.validateDrops=function(roster,drops,max){max=max==null?F.REDRAFT.maxDrops:max;if(!Array.isArray(drops))return{error:'Choose the teams to drop.'};const d=drops.map(String);
+  if(new Set(d).size!==d.length)return{error:'The same team is listed twice.'};if(d.length>max)return{error:'You can drop at most '+max+' teams.'};
+  const rs=new Set((roster||[]).map(String));if(d.some(t=>!rs.has(t)))return{error:'You can only drop teams that are on your roster.'};return{ok:true,drops:d}};
+F.makeRedraftForm=function(o){return{mid:o.mid,rid:o.rid,drops:(o.drops||[]).map(String).slice(0,F.REDRAFT.maxDrops),pos:Number.isInteger(o.pos)?o.pos:null,ts:o.ts||Date.now(),v:(o.v||0)+1}};
+F.parseRedraftForm=function(txt){const d=F.parseJ(txt);if(!d||typeof d!=='object'||typeof d.mid!=='string'||!hexs(d.rid))return null;
+  return{mid:d.mid,rid:d.rid,drops:Array.isArray(d.drops)?d.drops.map(String).filter(t=>/^[A-Za-z0-9_-]{1,40}$/.test(t)).slice(0,F.REDRAFT.maxDrops):[],pos:Number.isInteger(+d.pos)&&+d.pos>=1&&+d.pos<=24?+d.pos:null,ts:+d.ts||0,v:+d.v||0}};
+/* the commissioner opens the redraft (freezes the standings as of the date). status stays "complete" until the redraft starts. o={rows,now,rid} rows: redraftStandings() output. Can be repeated while it is still "open". */
+F.mRedraftOpen=function(m,st,o){if(F.redraftLive(m))return{error:'The redraft has already started.'};if(m.status!=='complete'||st.status!=='complete')return{error:'The redraft can only open after the first draft is complete.'};
+  if(m.endedEarly)return{error:'The first draft ended early, so there is no full set of rosters to redraft.'};
+  const rows=o.rows||[];if(rows.length<2)return{error:'At least 2 managers are needed.'};const n=clone(m);const prev=m.redraft;
+  n.redraft={rid:prev&&prev.rid?prev.rid:F.hexOf((o.rb||cryptoBytes)(6)),phase:'open',asOf:F.REDRAFT.asOf,from:m.epoch,openedAt:prev&&prev.openedAt?prev.openedAt:o.now,stand:rows.map(r=>r.mid),rows:rows.map(r=>({mid:r.mid,w:r.wins,l:r.losses})),keep:{},need:{},drops:{},pos:null,lastMid:rows[rows.length-1].mid,rounds0:m.settings.rounds,startedAt:0};
+  return{state:n}};
+/* start: forms = {mid: parsed form}. Only forms with the right redraft id, from managers in the draft, are used. Needs the finished first draft (st.real). */
+F.mRedraftStart=function(m,st,forms,o){o=o||{};const r=m.redraft;if(F.redraftLive(m))return{error:'The redraft has already started.'};if(!r||r.phase!=='open')return{error:'Open the redraft first.'};
+  if(m.status!=='complete'||st.status!=='complete')return{error:'The first draft is not complete.'};
+  const owners=st.order.slice();const stand=r.stand.filter(x=>owners.indexOf(x)>=0);owners.forEach(x=>{if(stand.indexOf(x)<0)stand.push(x)});
+  const roster={};owners.forEach(x=>{roster[x]=st.real.filter(p=>p.owner===x).map(p=>p.tid)});
+  const drops={},need={},keep={};let total=0;forms=forms||{};
+  for(const x of owners){const f=forms[x];let d=[];if(f&&f.rid===r.rid){const v=F.validateDrops(roster[x],f.drops);if(v.ok)d=v.drops}drops[x]=d;need[x]=d.length;total+=d.length;roster[x].forEach(t=>{if(d.indexOf(t)<0)keep[t]=x})}
+  if(!total)return{error:'Nobody has chosen a team to drop, so there is nothing to redraft yet.'};
+  if(o.poolSize!=null&&o.poolSize-Object.keys(keep).length<total)return{error:'Not enough teams left in the pool.'};
+  const lastMid=stand[stand.length-1];const lf=forms[lastMid];const pos=lf&&lf.rid===r.rid&&Number.isInteger(lf.pos)&&lf.pos>=1&&lf.pos<=stand.length?lf.pos:null;
+  const n=clone(m);n.redraft=Object.assign({},r,{phase:'live',stand,keep,need,drops,pos,lastMid,startedAt:o.now,rounds0:m.settings.rounds});
+  n.epoch=m.epoch+1;n.status='live';n.order=F.redraftOrder(stand,pos);n.orderSet=true;n.settings.type='snake';n.settings.rounds=Math.max.apply(null,owners.map(x=>need[x]));
+  n.paused=false;n.pausedLeft=null;n.startedAt=o.now;n.resumeAt=o.now;n.voided=[];n.endedEarly=false;n.endedAt=null;return{state:n}};
 /* ---- commissioner + manager secrets ----
    The commissioner secret is random (128 bits), lives only in the commissioner link's URL fragment and on the commissioner's devices; meta.pass holds only {salt, hash(salt:secret)}.
    A manager's secret is random too; the claim holds hash(mid:secret). Neither can be derived from public data, and a copied hash unlocks nothing.
@@ -213,23 +270,26 @@ F.makeEntry=function(n,owner,tid,o){o=o||{};const by=o.by||'owner';return{id:o.i
 F.parseEntry=function(txt){const d=F.parseJ(txt);if(d&&typeof d==='object'&&typeof d.id==='string'&&+d.n>0&&typeof d.owner==='string'&&d.tid!=null){d.tid=String(d.tid);d.n=+d.n;return d}return null};
 F.entryProblem=function(meta,e,n,taken,pool,prevId){if(!e)return'empty';if(meta.voided.indexOf(e.id)>=0)return'voided';if(e.n!==n)return'wrong-slot';if(e.e!=null&&+e.e!==meta.epoch)return'old-epoch';
   const sl=F.slotAt(meta.order,n,meta.settings.type,meta.settings.rounds);if(!sl)return'beyond';if(e.owner!==sl.owner)return'wrong-owner';if(prevId!=null&&e.prev!=null&&e.prev!==prevId)return'stale-chain';if(pool&&!pool.has(e.tid))return'not-in-pool';if(taken[e.tid])return'duplicate-team';return null};
-F.replay=function(meta,entries,pool){const picks=[],taken={},rejected=[];const tot=F.totalPicks(meta.order,meta.settings.rounds);
-  for(let n=1;n<=tot;n++){const e=entries[n];if(!e)break;const why=F.entryProblem(meta,e,n,taken,pool,picks.length?picks[picks.length-1].id:'');if(why){if(why!=='voided'&&why!=='old-epoch'&&why!=='stale-chain')rejected.push({n,entry:e,why});break}
+F.replay=function(meta,entries,pool){const picks=[],taken={},rejected=[];const tot=F.totalPicks(meta.order,meta.settings.rounds);const rd=F.redraftLive(meta)?meta.redraft:null;if(rd)Object.keys(rd.keep).forEach(t=>{taken[t]=1});
+  for(let n=1;n<=tot;n++){
+    if(rd){const s0=F.slotAt(meta.order,n,meta.settings.type,meta.settings.rounds);if(s0&&F.redraftSkip(meta,s0)){picks.push({n,round:s0.round,owner:s0.owner,tid:'',skip:true,ts:0,id:'sk'+meta.epoch+'-'+n});continue}}
+    const e=entries[n];if(!e)break;const why=F.entryProblem(meta,e,n,taken,pool,picks.length?picks[picks.length-1].id:'');if(why){if(why!=='voided'&&why!=='old-epoch'&&why!=='stale-chain')rejected.push({n,entry:e,why});break}
     const sl=F.slotAt(meta.order,n,meta.settings.type,meta.settings.rounds);picks.push({n,round:sl.round,owner:e.owner,tid:e.tid,ts:e.ts,id:e.id,auto:e.by==='auto'||undefined,by:e.by});taken[e.tid]=1}
   return{picks,rejected}};
 F.deadlineOf=function(meta,picks){const c=meta.settings.clockSecs;if(meta.status!=='live'||meta.paused||!c)return null;if(picks.length>=F.totalPicks(meta.order,meta.settings.rounds))return null;
-  const base=Math.max(picks.length?(+picks[picks.length-1].ts||0):(+meta.startedAt||0),+meta.resumeAt||0);return base?base+c*1000:null};
+  const lp=picks.slice().reverse().find(p=>!p.skip);const base=Math.max(lp?(+lp.ts||0):(+meta.startedAt||0),+meta.resumeAt||0);return base?base+c*1000:null};
 /* state: the shape the UI reads. prefs: {mid:{auto,queue}} */
 F.deriveState=function(meta,entries,prefs,pool){const r=meta.status==='lobby'?{picks:[],rejected:[]}:F.replay(meta,entries,pool);const s=meta.settings;const tot=F.totalPicks(meta.order,s.rounds);
   const st={meta,order:meta.order.slice(),picks:r.picks,rejected:r.rejected,type:s.type,rounds:s.rounds,clockSecs:s.clockSecs,warn15:s.warn15,autoPick:s.autoPick,paused:meta.paused,pausedLeft:meta.pausedLeft,epoch:meta.epoch,total:tot,
     away:{},auto:{},queues:{}};
   Object.keys(meta.over).forEach(k=>{if(meta.over[k].away)st.away[k]=true});
   Object.keys(prefs||{}).forEach(o=>{const p=prefs[o]||{};st.auto[o]=!!p.auto;st.queues[o]=Array.isArray(p.queue)?p.queue.map(String):[]});
+  st.real=r.picks.filter(p=>!p.skip);st.realTotal=F.redraftLive(meta)?Object.keys(meta.redraft.need).reduce((t,k)=>t+meta.redraft.need[k],0):tot;st.kept=F.redraftLive(meta)?Object.keys(meta.redraft.keep).map(t=>({n:0,round:0,tid:t,owner:meta.redraft.keep[t],kept:true})):[];st.roster=st.kept.concat(st.real);st.redraft=meta.redraft||null;
   st.status=meta.status==='complete'?'complete':(meta.status==='live'&&tot>0&&r.picks.length>=tot)?'complete':meta.status;st.deadline=F.deadlineOf(meta,r.picks);st.endedEarly=!!meta.endedEarly;return st};
 F.onClock=st=>st.status==='live'?F.slotAt(st.order,st.picks.length+1,st.type,st.rounds):null;
-F.takenMap=st=>{const m={};st.picks.forEach(p=>m[p.tid]=p);return m};
-F.ownerCount=(st,o)=>st.picks.filter(p=>p.owner===o).length;
-F.picksAway=function(st,owner){if(st.status!=='live')return null;const cur=st.picks.length+1;for(let n=cur;n<=st.total;n++){if(F.slotAt(st.order,n,st.type,st.rounds).owner===owner)return n-cur}return null};
+F.takenMap=st=>{const m={};(st.kept||[]).forEach(k=>{m[k.tid]=k});st.picks.forEach(p=>{if(!p.skip)m[p.tid]=p});return m};
+F.ownerCount=(st,o)=>st.picks.filter(p=>p.owner===o&&!p.skip).length;
+F.picksAway=function(st,owner){if(st.status!=='live')return null;const cur=st.picks.length+1;for(let n=cur;n<=st.total;n++){{const sl=F.slotAt(st.order,n,st.type,st.rounds);if(sl.owner===owner&&!(st.meta&&F.redraftSkip(st.meta,sl)))return n-cur}}return null};
 F.nextPickNo=(st,o)=>{const a=F.picksAway(st,o);return a==null?null:st.picks.length+1+a};
 F.validatePick=function(st,owner,tid,opt){opt=opt||{};if(st.status!=='live')return{error:'The draft is not live right now.'};if(st.paused)return{error:'The draft is paused.'};
   const s=F.onClock(st);if(!s)return{error:'No pick is on the clock.'};if(opt.pool&&!opt.pool.has(String(tid)))return{error:'That team is not on the list of teams.'};
@@ -290,9 +350,22 @@ F.spinValid=function(meta,winners,r){if(!meta.spin||!r)return false;const rem=F.
 F.spinReplay=function(meta,recs){if(!meta.spin)return{winners:[],recs:[],done:false,total:0};const players=meta.spin.players,winners=[],ok=[];
   for(let n=1;n<=players.length;n++){const r=recs[n];if(!r||!F.spinValid(meta,winners,r))break;winners.push(r.winner);ok.push(r)}return{winners,recs:ok,done:winners.length===players.length,total:players.length}};
 F.wheelTarget=function(len,idx,nonce){const seg=360/len;const b=parseInt(String(nonce).slice(0,4),16)||0;const turns=4+(b%3);const jit=(((b>>2)%71)/70-.5)*seg*0.6;return 360*turns-((idx+.5)*seg+jit)};
-F.mSpinStart=function(m,joined){if(m.status!=='lobby')return{error:'The draft already started.'};const n=clone(m);n.spinGen=m.spinGen+1;n.spin={gen:n.spinGen,players:F.effectiveOrder(m,joined)};return{state:n}};
-F.mSpinApply=function(m,winners,joined,now){if(m.status!=='lobby')return{error:'The draft already started.'};if(!m.spin)return{error:'No spin to apply.'};if(winners.length!==m.spin.players.length)return{error:'The spin is not finished.'};
-  if(!F.permutationOf(winners,joined))return{error:'Someone joined or left during the spin — spin again.'};const n=clone(m);n.order=winners.slice();n.orderSet=true;n.spin.done=true;n.respins.push({gen:m.spin.gen,ts:now,kind:'spin'});return{state:n}};
+/* One wheel spin per league. A spin that finished and set the order can never be repeated (also not after a reset). A spin that was started but never finished
+   (e.g. the commissioner's tab was closed) counts as stale after SPIN.staleMs without any new result and may then be replaced by a new spin (new generation = new ids). */
+F.SPIN={staleMs:60000,overlayMaxAgeMs:25000,autoCloseMs:6000};
+F.spinCompleted=m=>!!(m&&(m.spinDone||(m.spin&&m.spin.done)));
+F.spinStatus=function(m,recs,now){if(F.spinCompleted(m))return{state:'done',lastTs:0};if(!m||!m.spin)return{state:'none',lastTs:0};let last=+m.spin.ts||0;
+  for(const k in (recs||{})){const r=recs[k];if(r&&r.gen===m.spin.gen&&+r.ts>last)last=+r.ts}
+  return{state:(now-last>F.SPIN.staleMs)?'stale':'fresh',lastTs:last}};
+F.mSpinStart=function(m,joined,now,lastTs,rb){if(m.status!=='lobby')return{error:'The draft already started.'};
+  if(F.spinCompleted(m))return{error:'The draft order was already set with the wheel. There is only one spin.'};
+  now=now||Date.now();if(m.spin&&!m.spin.done){const last=Math.max(+m.spin.ts||0,+lastTs||0);if(now-last<=F.SPIN.staleMs)return{error:'A spin is already under way.'}}
+  const n=clone(m);n.spinGen=m.spinGen+1;n.spin={gen:n.spinGen,players:F.effectiveOrder(m,joined),done:false,ts:now,sid:F.hexOf((rb||cryptoBytes)(6))};return{state:n}};
+/* should this client play a spin result as an animation? never twice, never an old one from before the page opened, never a stale one */
+F.spinShouldPlay=function(rec,o){if(!rec||!o)return false;if(rec.n<=(o.shown||0))return false;if(o.seenId&&rec.id===o.seenId)return false;
+  if(o.loadTs&&+rec.ts<o.loadTs-2000)return false;if(!o.playing&&o.now-rec.ts>(o.maxAge||F.SPIN.overlayMaxAgeMs))return false;return true};
+F.mSpinApply=function(m,winners,joined,now){if(m.status!=='lobby')return{error:'The draft already started.'};if(F.spinCompleted(m))return{error:'The draft order was already set with the wheel.'};if(!m.spin)return{error:'No spin to apply.'};if(winners.length!==m.spin.players.length)return{error:'The spin is not finished.'};
+  if(!F.permutationOf(winners,joined))return{error:'Someone joined or left during the spin — spin again.'};const n=clone(m);n.order=winners.slice();n.orderSet=true;n.spin.done=true;n.spinDone=true;n.respins.push({gen:m.spin.gen,ts:now,kind:'spin'});return{state:n}};
 /* ============================ team list: sort / group / search / watchlist ============================ */
 F.TIERS=[{k:'elite',label:'Elite',max:12,note:'power rank 1–12'},{k:'solid',label:'Solid',max:30,note:'13–30'},{k:'sleeper',label:'Sleeper',max:Infinity,note:'31+ (ranked)'},{k:'longshot',label:'Unranked',note:'no power rank'}];
 F.tierOf=p=>{if(!p)return F.TIERS[3];for(const t of F.TIERS)if(t.max!=null&&p<=t.max&&t.k!=='longshot')return t;return F.TIERS[2]};
@@ -318,13 +391,41 @@ F.watchToggle=(arr,tid)=>{const a=(arr||[]).slice();const i=a.indexOf(String(tid
 F.rowValue=(mode,t,META)=>{const m=META[t]||{};if(mode==='power'||mode==='tiers')return m.p?'#'+m.p:'—';if(mode==='seed'){const s=F.seedNum(m);return s==null?'—':'S'+s}if(mode==='record')return m.r||'—';if(mode==='conf')return m.c||'—';return m.p?'#'+m.p:'—'};
 /* ============================ export + recap ============================ */
 const csvCell=v=>{v=String(v==null?'':v);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};F.csvCell=csvCell;
-F.rosters=function(st,mgrs){return st.order.map(mid=>{const m=mgrs.find(x=>x.mid===mid)||{mid,name:'Manager',team:'Team'};return{mgr:m,picks:st.picks.filter(p=>p.owner===mid)}})};
+F.rosters=function(st,mgrs){return st.order.map(mid=>{const m=mgrs.find(x=>x.mid===mid)||{mid,name:'Manager',team:'Team'};return{mgr:m,picks:(st.roster||st.real||st.picks).filter(p=>p.owner===mid)}})};
 F.toCSV=function(st,mgrs,teams,meta){const rows=[['pick','round','manager','team_name','school','conference','power_rank','auto_pick']];
-  st.picks.forEach(p=>{const m=mgrs.find(x=>x.mid===p.owner)||{};const t=teams[p.tid]||{};const mt=(meta&&meta[p.tid])||{};rows.push([p.n,p.round,m.name||'',m.team||'',t.name||p.tid,mt.c||'',mt.p||'',p.auto?'yes':'no'])});
+  (st.real||st.picks).forEach(p=>{const m=mgrs.find(x=>x.mid===p.owner)||{};const t=teams[p.tid]||{};const mt=(meta&&meta[p.tid])||{};rows.push([p.n,p.round,m.name||'',m.team||'',t.name||p.tid,mt.c||'',mt.p||'',p.auto?'yes':'no'])});
   return rows.map(r=>r.map(csvCell).join(',')).join('\n')+'\n'};
 F.toJSONExport=function(st,mgrs,teams,meta,leagueMeta){return{league:leagueMeta.name,id:leagueMeta.id,status:st.status,endedEarly:!!st.endedEarly,settings:leagueMeta.settings,order:st.order,
-  managers:mgrs.map(m=>({id:m.mid,name:m.name,team:m.team})),picks:st.picks.map(p=>({n:p.n,round:p.round,managerId:p.owner,teamId:p.tid,school:(teams[p.tid]||{}).name||p.tid,auto:!!p.auto,ts:p.ts})),exportedAt:new Date().toISOString()}};
+  managers:mgrs.map(m=>({id:m.mid,name:m.name,team:m.team})),picks:(st.real||st.picks).map(p=>({n:p.n,round:p.round,managerId:p.owner,teamId:p.tid,school:(teams[p.tid]||{}).name||p.tid,auto:!!p.auto,ts:p.ts})),kept:(st.kept||[]).map(k=>({managerId:k.owner,teamId:k.tid,school:(teams[k.tid]||{}).name||k.tid})),exportedAt:new Date().toISOString()}};
 F.pickNote=function(n,rank){if(!rank)return null;const d=n-rank;if(d>=10)return'value';if(d<=-10)return'reach';return null};
 F.rosterStats=function(picks,META){let sum=0,c=0,best=null;picks.forEach(p=>{const r=(META[p.tid]||{}).p;if(r){sum+=r;c++;if(!best||r<best.r)best={r,tid:p.tid}}});return{n:picks.length,avgRank:c?Math.round(sum/c*10)/10:null,best,ranked:c}};
+/* ============================ end-of-draft screen + recap helpers ============================ */
+/* whole days from "today" (in time zone tz) to the redraft date. Calendar days, so 11:59 pm and 12:01 am are one day apart. */
+F.redraftCountdown=function(now,tz){tz=tz||'UTC';const d=F.REDRAFT.asOf.split('-').map(Number);let p;try{p=parts(now,tz)}catch(e){p=parts(now,'UTC')}
+  const days=Math.round((Date.UTC(d[0],d[1]-1,d[2])-Date.UTC(p.y,p.mo-1,p.d))/864e5);
+  if(days>0)return{days,state:'future',text:days+(days===1?' day':' days')+' to go'};if(days===0)return{days:0,state:'today',text:'It is today'};return{days,state:'past',text:'That date has passed'}};
+F.NEXT={season:'College basketball games start in early November 2026. Standings fill in on the league site as scores come in.',
+  points:'Full Season: every win by your teams counts. NCAA Tournament: points for making the field, each win, upsets by seed, the Final Four and the title.'};
+/* roster strength: each team scores 100 minus its power rank (rank 1 = 99; rank 100 or worse, or unranked = 0); the rating is the average per team. Empty roster -> null. */
+F.teamStrength=(tid,META)=>{const r=+((META&&META[tid])||{}).p;return(r>0&&r<100)?100-r:0};
+F.rosterStrength=function(picks,META){if(!picks||!picks.length)return null;let t=0;picks.forEach(p=>{t+=F.teamStrength(p.tid,META)});return Math.round(t/picks.length*10)/10};
+/* rows: [{mid, picks}] -> same rows with .strength and .place (1 = strongest, equal ratings share a place) */
+F.rosterRatings=function(rows,META){const out=(rows||[]).map(r=>({mid:r.mid,strength:F.rosterStrength(r.picks,META)}));
+  const sorted=out.filter(x=>x.strength!=null).sort((a,b)=>b.strength-a.strength);sorted.forEach((x,i)=>{x.place=(i>0&&sorted[i-1].strength===x.strength)?sorted[i-1].place:i+1});
+  const by={};out.forEach(x=>{by[x.mid]=x});return by};
+/* best pick = a ranked team taken the most picks AFTER its power rank (pick number minus rank, biggest and above 0); biggest reach = taken the most picks BEFORE its rank (most negative).
+   Ties go to the earlier pick. Unranked teams, skipped slots and kept teams are ignored. Returns {best,reach} (each {n,owner,tid,rank,diff} or null). */
+F.pickHighlights=function(picks,META){let best=null,reach=null;(picks||[]).forEach(p=>{if(!p||p.skip||p.kept||!(p.n>0))return;const r=+((META&&META[p.tid])||{}).p;if(!(r>0))return;const diff=p.n-r;const o={n:p.n,owner:p.owner,tid:p.tid,rank:r,diff};
+  if(diff>0&&(!best||diff>best.diff||(diff===best.diff&&p.n<best.n)))best=o;if(diff<0&&(!reach||diff<reach.diff||(diff===reach.diff&&p.n<reach.n)))reach=o});return{best,reach}};
+/* ============================ league banner photo ============================
+   Default: assets/hero-banner.jpg (shipped). The commissioner may replace it with a photo kept in its own small key (K.hero, NOT polled with the draft).
+   Anything read from the store is sanitised: only a data:image/jpeg|png|webp URL within the size cap counts; everything else falls back to the default. */
+F.HERO={file:'assets/hero-banner.jpg',maxBytes:150*1024,edges:[1280,1100,960,800,640,480],qualities:[0.8,0.7,0.6,0.5,0.4],cacheMs:600000};
+F.heroOk=url=>{if(typeof url!=='string'||url.length>F.HERO.maxBytes*1.4+64)return false;const b=F.photoBytes(url);return b>0&&b<=F.HERO.maxBytes};
+F.parseHero=function(txt){const d=F.parseJ(txt);if(!d||typeof d!=='object'||Array.isArray(d)||!F.heroOk(d.url))return null;return{url:d.url,ts:+d.ts||0}};
+F.makeHero=(url,ts)=>({v:1,url,ts:ts||Date.now()});
+/* only the commissioner (secret checked on this device) may change or reset the banner */
+F.heroWritable=cmOk=>cmOk===true;
+F.fitHero=(encode)=>F.fitPhoto(encode,{maxBytes:F.HERO.maxBytes,edges:F.HERO.edges,qualities:F.HERO.qualities});
 if(typeof module!=='undefined'&&module.exports)module.exports=F;else root.FBN=F;
 })(typeof window!=='undefined'?window:globalThis);
