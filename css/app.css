@@ -78,12 +78,12 @@ select{width:auto}
 .crop canvas{width:100%;height:100%;display:block}
 .emojis{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.emojis button{width:42px;height:42px;font-size:22px;background:var(--card2);border:2px solid var(--line);border-radius:12px}.emojis button.on{border-color:var(--acc)}
 /* room */
-body.room{padding-bottom:calc(16px + var(--sb));--tabh:55px}
+body.room{--tabh:55px}
 html:has(body.room){scroll-padding-top:60px}
 .tabs{position:sticky;top:0;z-index:20;background:#0b0e14;border-bottom:1px solid var(--line);display:flex;padding:0 max(env(safe-area-inset-right),calc((100vw - 1100px)/2)) 0 max(env(safe-area-inset-left),calc((100vw - 1100px)/2))}
 .tabs button{flex:1 1 0;min-width:0;min-height:54px;background:none;border:0;padding:6px 2px 5px;color:var(--mut);font:inherit;font-size:11px;font-weight:800;position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:inset 0 -3px 0 transparent}
 .tabs button:focus-visible{outline:2px solid var(--acc);outline-offset:-3px}
-@media (min-width:900px){.tabs button{font-size:14px;min-height:58px}.tabs button span{display:inline-block;margin-right:7px;vertical-align:-2px}}
+@media (min-width:900px){body.room{--tabh:59px}.tabs button{font-size:14px;min-height:58px}.tabs button span{display:inline-block;margin-right:7px;vertical-align:-2px}}
 .tabs button span{display:block;font-size:19px;line-height:1.1}.tabs button.on{color:var(--acc);box-shadow:inset 0 -3px 0 var(--acc)}
 
 .tabs .bd{position:absolute;top:3px;left:55%;background:var(--bad);color:#fff;border-radius:99px;font-size:10px;padding:0 5px;font-weight:900}
@@ -143,7 +143,7 @@ table.board{border-collapse:separate;border-spacing:0;min-width:100%}
 .sheet{background:var(--card);border-top:3px solid var(--acc);border-radius:18px 18px 0 0;padding:16px 16px calc(16px + var(--sb));width:100%;max-width:520px;max-height:90vh;max-height:90dvh;overflow:auto}
 .fixedval{padding:11px 12px;border:1px dashed var(--line);border-radius:10px;color:var(--mut);font-size:16px}
 .sheet h2{margin:0 0 8px;font-size:20px}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + var(--sb));background:#0b0e14;border:1px solid var(--acc);color:var(--tx);padding:9px 14px;border-radius:12px;z-index:60;max-width:92vw;font-weight:700;box-shadow:0 6px 24px rgba(0,0,0,.5);text-align:center;font-size:14px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + var(--sb));background:#0b0e14;border:1px solid var(--acc);color:var(--tx);padding:9px 14px;border-radius:12px;z-index:60;max-width:92vw;font-weight:700;box-shadow:0 6px 24px rgba(0,0,0,.5);text-align:center;font-size:14px}
 .ov{position:fixed;inset:0;background:rgba(5,7,11,.94);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow:auto}
 .who8{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:420px;margin:14px 0}.who8 button{display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 8px;font-weight:800;font-size:15px}
 .urlbox{font-size:12px;word-break:break-all;background:var(--card2);padding:6px 8px;border-radius:8px;margin:6px 0;user-select:all}
@@ -190,13 +190,16 @@ table.board{border-collapse:separate;border-spacing:0;min-width:100%}
 
 /* touch devices: tap targets of at least 44 px (iOS / Android guidance) and no double-tap zoom delay */
 html{touch-action:manipulation}
-@media (pointer:coarse){
+@media (pointer:coarse),(max-width:700px){
   a.url{min-height:44px;display:flex;align-items:center}
  .btn,.btn.sm,button.btn{min-height:44px}
  .btn.sm{min-width:44px;display:inline-flex;align-items:center;justify-content:center}
  .seg button,.opills button,.pills button,.chipb,.sumrow .ed,.qbtn,.wstar,button[data-a=ropen],button[data-a=emoji],button[data-a=om]{min-height:44px;min-width:44px}
  .pills button,.opills button{display:inline-flex;align-items:center}
  .sw{min-height:44px}
+ .rx button,.msg .rx button{min-height:44px;min-width:44px}
+ .handle{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px}
+ .link{min-height:44px;min-width:44px;padding:0 10px}
  input[type=range]{min-height:44px;margin:0}
  .top .brand{display:flex;flex-direction:column;justify-content:center;min-height:44px}
  #buildtag a{display:inline-block;padding:14px 8px}
@@ -209,6 +212,10 @@ a,button,input,select,textarea,label,summary,[data-a]{touch-action:manipulation}
 select,select.sortsel{-webkit-appearance:none;appearance:none;background-color:var(--card2);color:var(--tx);padding-right:36px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%239aa6bd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center}
 select.sortsel{background-color:var(--card)}
 select option{background:var(--card);color:var(--tx)}
+/* toast: 12px above the bottom edge; above the sticky League site button while that button is showing (it is hidden at >=900px wide and on short landscape phones) */
+body.hasstick .toast{bottom:calc(72px + var(--sb))}
+@media (min-width:900px){body.hasstick .toast{bottom:calc(12px + var(--sb))}}
+@media (max-height:500px){body.hasstick .toast{bottom:calc(12px + var(--sb))}}
 /* a toast must not sit on top of an open dialog */
 body:has(.sheetbg) .toast,body:has(#pickov) .toast{bottom:auto;top:calc(12px + env(safe-area-inset-top))}
 
@@ -219,7 +226,7 @@ body:has(.sheetbg) .toast,body:has(#pickov) .toast{bottom:auto;top:calc(12px + e
 /* league-site links */
 a.pill{color:var(--acc);text-decoration:none}.pill.dis{opacity:.55}
 .banner.finalbn{flex-wrap:wrap}.endbtns{width:100%}
-@media (pointer:coarse){a.pill{min-height:44px}}
+@media (pointer:coarse),(max-width:700px){a.pill{min-height:44px}}
 
 /* recap: rosters side by side (swipe on a phone, grid on a desktop) */
 .rosgrid{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:6px;-webkit-overflow-scrolling:touch}
@@ -285,7 +292,6 @@ body.hasstick .wrap{padding-bottom:96px}body.hasstick.recapp .wrap{padding-botto
 .card.oc .cc .chip{overflow:hidden;text-overflow:ellipsis}
 
 .wrap .ctl{top:var(--tabh,0px)}
-body.room .toast{bottom:calc(78px + var(--sb))}
 @media (min-width:700px){.card.oc .chips{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px 8px}.card.oc summary.lb{align-items:center}}
 .card.oc summary.lb{align-content:start}
 .sitebtns{flex-wrap:nowrap;width:100%}.sitebtns .btn{flex:1 1 0;white-space:nowrap;min-width:0}
@@ -294,3 +300,14 @@ body.room .toast{bottom:calc(78px + var(--sb))}
 .lnkbtn{background:none;border:0;color:var(--mut);text-decoration:underline;font:inherit;font-size:13px;min-height:44px;padding:0 12px;cursor:pointer}
 .lnkbtn:hover,.lnkbtn:focus-visible{color:var(--acc)}
 body.hasstick.recapp .exportrow{margin-bottom:70px}
+
+/* chat tab: the page is a column, the message box is pinned to the bottom of the screen even with few messages */
+body[data-tab=chat] .wrap{display:flex;flex-direction:column;min-height:calc(100vh - var(--tabh));min-height:calc(100dvh - var(--tabh));padding-bottom:0}
+body[data-tab=chat] #view{flex:1;display:flex;flex-direction:column}
+body[data-tab=chat] #chatbody{flex:1}
+body[data-tab=chat] .chatbox{margin-top:auto;position:sticky;bottom:0;padding-bottom:calc(8px + var(--sb))}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* reduced motion: no pulses, no progress or other transitions */
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.pill.live i,.cd.warn{animation:none!important}.prog .bar i{transition:none!important}html:has(#helppage){scroll-behavior:auto}}
+/* short landscape phones: the sticky League site button would cover the board; the End-of-draft banner still has the League site button */
+@media (max-height:500px){.stickysite{display:none}body.hasstick .wrap{padding-bottom:40px}}
