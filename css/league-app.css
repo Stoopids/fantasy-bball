@@ -5,7 +5,7 @@ body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-appl
 a{color:var(--acc)}
 header{max-width:1000px;margin:0 auto;padding:0 0 8px}
 .hero{position:relative;aspect-ratio:992/340;background:linear-gradient(135deg,#17224a 0%,#2b2a4a 55%,#6b4220 100%) center 14%/cover no-repeat;border-radius:0 0 18px 18px;overflow:hidden}
-.titlebar{padding:12px 14px 4px;text-align:left}
+.titlebar{padding:12px 10px 4px;text-align:left}
 .titlebar .tag{margin:6px 0 0;color:#e7ecf6}
 .fresh{display:flex;width:fit-content;max-width:100%;align-items:center;min-height:40px;margin:-6px 0 -8px;padding:6px 14px 6px 0;font-size:12px;line-height:1.3;color:var(--mut);opacity:.55;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
 .fresh[hidden]{display:none}
@@ -20,7 +20,7 @@ h1 span{color:var(--acc)}
 .badge.warn{background:#4b3a0b;border-color:#8a6d12;color:#ffe08a}
 /*<NAV-ONE-ROW>*/
 /* All tabs on ONE row, never wrapping or scrolling. Phone: tiny icon above a short label (full name stays in aria-label). Desktop (>=900px): full labels in pills. */
-nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:6px 4px;display:flex;flex-wrap:nowrap;gap:2px;overflow:hidden;max-width:1000px;margin:8px auto 0}
+nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:6px 10px;display:flex;flex-wrap:nowrap;gap:2px;overflow:hidden;max-width:1000px;margin:8px auto 0}
 nav button{position:relative;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:9px;padding:4px 0;min-height:46px;font:inherit;font-size:9.5px;font-weight:800;letter-spacing:-.01em;line-height:1.05;white-space:nowrap;cursor:pointer}
 nav button .ni{font-size:17px;line-height:1}
 nav button .nl{display:block;max-width:100%;overflow:hidden;text-overflow:clip}
@@ -38,11 +38,10 @@ nav a.nd .nl{display:block;max-width:100%;overflow:hidden;text-overflow:clip}
 nav a.nd .nl.f{display:none}
 nav a.nd:hover{background:var(--card2)}
 nav a.nd:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
-@media (max-width:420px){nav{padding:6px 2px;gap:1px}}
+@media (max-width:420px){nav{padding:6px 10px;gap:1px}}
 @media (max-width:370px){nav a.nd{font-size:8.8px;letter-spacing:-.025em}}
 @media (max-width:340px){nav button,nav a.nd{font-size:8.2px;letter-spacing:-.03em}}
-@media (min-width:600px) and (max-width:1039px){nav{padding:6px 4px;gap:2px}nav button,nav a.nd{flex:1 1 0;flex-direction:column;gap:2px;border-radius:9px;padding:4px 0;min-height:46px;font-size:11.5px;letter-spacing:-.01em}nav button .ni,nav a.nd .ni{font-size:19px}nav button .nl.f,nav a.nd .nl.f{display:none}nav button .nl.s,nav a.nd .nl.s{display:block}}
-@media (min-width:1040px){nav{padding:8px 8px;gap:3px}nav button,nav a.nd{flex:1 1 auto;flex-direction:row;gap:4px;border-radius:99px;padding:8px 8px;min-height:40px;font-size:12.5px;letter-spacing:0}nav button .ni,nav a.nd .ni{font-size:14px}nav button .nl.f,nav a.nd .nl.f{display:block}nav button .nl.s,nav a.nd .nl.s{display:none}}
+@media (min-width:600px) and (max-width:999px){nav{gap:3px}nav button,nav a.nd{flex:1 1 0;flex-direction:column;gap:2px;border-radius:9px;padding:4px 0;min-height:46px;font-size:11.5px;letter-spacing:-.01em}nav button .ni,nav a.nd .ni{font-size:19px}nav button .nl.f,nav a.nd .nl.f{display:none}nav button .nl.s,nav a.nd .nl.s{display:block}}
 /*</DRAFT-TAB>*/
 main{max-width:1000px;margin:0 auto;padding:12px 10px 60px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px 0;overflow-wrap:anywhere}
@@ -156,7 +155,7 @@ select,.sel{background:var(--card);color:var(--tx);border:1px solid var(--line);
 .asel select{font-size:16px;font-weight:700;min-width:190px}
 .fine{font-size:12px;color:var(--mut)}
 .pill.warn{background:#4b3a0b;border-color:#8a6d12;color:#ffe08a}
-footer{max-width:1000px;margin:0 auto;padding:0 14px 40px;color:var(--mut);font-size:12px}
+footer{max-width:1000px;margin:0 auto;padding:0 10px 40px;color:var(--mut);font-size:12px}
 
 /* ---------- "Who are you?" modal (the online list now lives in the chat bar) ---------- */
 /* the old standalone 'Online now' strip CSS (#presence/.pr/.pc/.pg) was removed: that info now lives in the merged chat bar (CHAT-BAR) */
@@ -182,7 +181,7 @@ footer{max-width:1000px;margin:0 auto;padding:0 14px 40px;color:var(--mut);font-
 
 /* chat bar (link to the draft room chat) */
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.chat{position:fixed;left:0;right:0;bottom:0;z-index:30;box-sizing:border-box;margin:0;padding:8px max(10px,calc((100% - 1000px)/2)) calc(8px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line);display:flex;flex-direction:column-reverse}   /* ONE fixed bar at the bottom of every tab (page content gets --chatH bottom padding), the panel opens upward as a sheet */
+.chat{position:fixed;left:0;right:0;bottom:0;z-index:30;box-sizing:border-box;margin:0;padding:8px max(10px,calc((100% - 980px)/2)) calc(8px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line);display:flex;flex-direction:column-reverse}   /* ONE fixed bar at the bottom of every tab (page content gets --chatH bottom padding), the panel opens upward as a sheet */
 body{padding-bottom:var(--chatH,0px)}
 body.nochat .chat{visibility:hidden}   /* hidden (space kept) while a text field outside the chat has focus, so the phone keyboard never meets two bars */
 .chat[hidden]{display:none}
@@ -207,8 +206,6 @@ body.nochat .chat{visibility:hidden}   /* hidden (space kept) while a text field
 .chat-t .ca{color:var(--acc);font-size:12px;flex:none}
 /* nav for 10 items */
 @media (max-width:599px){nav button,nav a.nd{flex:1 1 auto}}
-@media (min-width:1040px) and (max-width:1239px){nav{padding:6px 4px;gap:2px}nav button,nav a.nd{flex:1 1 0;flex-direction:column;gap:2px;border-radius:9px;padding:4px 0;min-height:46px;font-size:11.5px;letter-spacing:-.01em}nav button .ni,nav a.nd .ni{font-size:19px}nav button .nl.f,nav a.nd .nl.f{display:none}nav button .nl.s,nav a.nd .nl.s{display:block}}
-@media (min-width:1240px){nav{max-width:1180px}}
 
 /* ===== League site additions (not in the template): banner change control, placeholders, demo bar, toast, redraft buttons, owner card, power rankings ===== */
 html{-webkit-text-size-adjust:100%}
@@ -246,34 +243,6 @@ select{min-height:44px}
 .trow{cursor:pointer}
 .pill.warn{background:#4b3a0b;border-color:#8a6d12;color:#ffe08a}
 /* power rankings */
-ol.prl{list-style:none;margin:0;padding:0}ol.prl>li{margin:0}
-.card.pr{padding:0;overflow:hidden}.card.pr.open{border-color:#46506a}.card.pr h3{margin:0;font:inherit}
-.plb{display:grid;grid-template-columns:40px 40px minmax(0,1fr) auto 20px;grid-template-areas:"rank av who grade chev" "meta meta meta meta meta";align-items:center;column-gap:10px;row-gap:6px;width:100%;min-height:72px;background:none;border:0;padding:12px;text-align:left;color:var(--tx);font:inherit;cursor:pointer;touch-action:manipulation}
-.plb:focus-visible,.deepbtn:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
-.prk{grid-area:rank;font-size:26px;font-weight:900;text-align:center;color:var(--acc);font-variant-numeric:tabular-nums}
-.pav{grid-area:av;display:flex}
-.pwho{grid-area:who;min-width:0}.pwho b{display:block;font-size:17px;line-height:1.2}.pwho small{display:block;color:var(--mut);font-size:12.5px}
-.pgr{grid-area:grade;min-width:56px;height:56px;padding:0 6px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:#111;letter-spacing:-.02em}
-.g-Ap{background:#4ade80}.g-A{background:#86efac}.g-B{background:#ffd23f}.g-C{background:#fb923c}.g-D{background:#f87171}
-.pchev{grid-area:chev;width:12px;height:12px;border-right:3px solid var(--mut);border-bottom:3px solid var(--mut);transform:rotate(45deg);transition:transform .15s;justify-self:center;margin-top:-4px}
-.plb[aria-expanded=true] .pchev{transform:rotate(225deg);margin-top:4px}
-.pmeta{grid-area:meta;font-size:12.5px;color:var(--mut);padding-left:2px}.pmeta b{color:var(--tx);font-size:15px;font-variant-numeric:tabular-nums}
-.pchips{display:flex;flex-wrap:wrap;gap:5px;padding:0 12px 12px}
-.pchip{display:inline-flex;align-items:center;min-height:28px;padding:2px 10px;border-radius:99px;font-weight:700;font-size:12.5px;background:var(--card2);border:2px solid var(--line);max-width:100%}
-.pchip.k0{border-color:#ffd23f}.pchip.k1{border-color:#4ade80}.pchip.k2{border-color:#60a5fa}.pchip.k3{border-color:#f472b6}.pchip.k4{border-color:#fb923c}.pchip.k5{border-color:#a78bfa}.pchip.k6{border-color:#2dd4bf}.pchip.k7{border-color:#f87171}
-.ppan{border-top:1px solid var(--line);padding:12px;background:#171c27}
-.plead{font-size:15px;line-height:1.5;margin:0 0 12px}
-.ptag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin:0 0 4px}
-.deepbtn{width:100%;gap:8px;background:var(--card2);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:11px 16px;cursor:pointer}
-.deepbtn .pchev{position:static;width:9px;height:9px;margin:-3px 0 0}.deepbtn[aria-expanded=true] .pchev{transform:rotate(225deg);margin:3px 0 0}
-.pdeep{margin-top:12px}.pdeep p{margin:0 0 10px;font-size:15px;line-height:1.55;color:#dfe5f1}
-.sch{display:grid;grid-template-columns:1fr;gap:6px;margin:12px 0 0;padding:0;list-style:none}
-.sch li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px}
-.sch li b{font-size:14px}.sch li span{color:var(--mut)}.sch li .r{text-align:right;white-space:nowrap}
-.psec{margin:14px 0 6px;font-size:13px;font-weight:800;color:var(--acc)}
-@media (max-width:340px){.plb{grid-template-columns:34px 36px minmax(0,1fr) auto 16px;column-gap:8px}.prk{font-size:22px}.pwho b{font-size:15px}}
-@media (min-width:700px){.plb{grid-template-columns:56px 44px minmax(0,1fr) auto 150px 24px;grid-template-areas:"rank av who meta grade chev";column-gap:14px;padding:12px 16px}.pgr{justify-self:end;width:56px}.pmeta{text-align:right}.pchips{padding:0 16px 14px 86px}.ppan{padding:16px 16px 16px 86px}.sch{grid-template-columns:1fr 1fr}.deepbtn{width:auto;min-width:200px}}
-@media (prefers-reduced-motion:reduce){.pchev{transition:none}}
 
 /* s16: every tappable thing is at least 44 x 44 CSS px on a phone (real boxes, not just hit areas). The tab bar scrolls sideways inside itself. */
 @media (max-width:599px){
@@ -295,3 +264,124 @@ footer a{min-height:44px;box-sizing:border-box}
 .offnote{font-size:13px;color:var(--mut);padding:8px 12px;border-style:dashed;margin:8px 0}
 #trouble .btn{margin-top:4px}
 #buildtag a{display:inline-flex;align-items:center;box-sizing:border-box;min-height:44px;min-width:44px}
+
+/* s20: ONE column on every League-site view at widths >= 600px: banner, title, tab row, cards/rows, notes, footer and the fixed chat bar all start and end on the same left and right edges (the 980px column inside the 1000px page; 10px side margins on phones). 11 tabs in one row without scrolling (icon over a medium label). */
+.titlebar,.sub{box-sizing:border-box}
+@media (min-width:600px){header{padding:0 10px 8px}.hero{border-radius:0 0 18px 18px}nav{box-sizing:border-box;width:calc(100% - 20px);max-width:980px;margin:8px auto 0;padding:6px 0}}
+nav button .nl.m,nav a.nd .nl.m{display:none}
+@media (min-width:1000px){nav{gap:4px;overflow:hidden}nav button,nav a.nd{flex:1 1 0;min-width:0;flex-direction:column;gap:2px;border-radius:9px;padding:4px 0;min-height:50px;font-size:12px;letter-spacing:0}nav button .ni,nav a.nd .ni{font-size:19px}nav button .nl.f,nav a.nd .nl.f,nav button .nl.s,nav a.nd .nl.s{display:none}nav button .nl.m,nav a.nd .nl.m{display:block}}
+
+/* ===== s20: Bets tab (pushup challenges), CSS adapted from the reference standings site’s Bets look ===== */
+.sb-in,.sb-ta{background:var(--card2);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;width:100%}
+.st.open{color:#7dd3fc}.st.settled{color:var(--good)}.st.wash{color:var(--mut)}.st.unparsed{color:#fbbf24;border-color:#8a6d12}
+.mx td,.mx th{padding:5px 7px;font-size:13px;text-align:right;white-space:nowrap}.mx td:first-child,.mx th:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
+.mx td.z{color:#4b566d}
+.b27-q{margin:12px 0 4px;font-weight:700;font-size:14px}
+.b27-chips{display:flex;flex-wrap:wrap;gap:6px}
+.b27-chip,.b27-amt{min-height:46px;border-radius:12px;border:2px solid var(--line);background:var(--card2);color:var(--tx);font:inherit;font-weight:800;font-size:15px;padding:0 14px;cursor:pointer}
+.b27-chip[aria-pressed=true],.b27-amt[aria-pressed=true]{background:var(--acc);color:#111;border-color:var(--acc)}
+.b27-amts{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.b27-amt.cu{font-size:12px;letter-spacing:-.02em}
+.b27-note{font-size:12px;color:var(--mut);line-height:1.35}
+.b27-r{font-size:12px}
+.b27-amt{font-size:18px;padding:0}
+.b27-in{font-size:16px;min-height:46px}
+.oq tr.oqh td{font-size:12px;color:var(--mut);padding:9px 2px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:0}
+.b27-form textarea.b27-in{min-height:84px;resize:vertical;margin-top:8px}
+.b27-cw{margin-top:8px}
+.b27-bad-t{color:var(--bad);font-size:13px;min-height:16px;margin-top:4px}
+.b27-livebox,.b27-confirm #b27Live{margin-top:12px;padding:10px;border-radius:12px;background:var(--card2);border:1px solid var(--line);font-size:14px}
+.b27-w{color:var(--good);font-size:13.5px;margin-top:3px}.b27-l{color:#fbbf24;font-size:13.5px;margin-top:2px}
+.b27-sum{margin:10px 0 6px;font-weight:800;overflow-wrap:anywhere}
+.b27-big{width:100%;min-height:52px;font-size:17px;margin-top:6px}
+.b27-big:disabled,#b27Place:disabled{opacity:.45;cursor:default}
+.b27-act{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.b27-b{min-height:44px;padding:0 12px}
+.b27-t{margin:4px 0;font-size:15px;overflow-wrap:anywhere}.b27-m{font-size:13.5px}
+/*<MULTI-BET>*/
+.b27-opps{display:grid;grid-template-columns:repeat(var(--n,7),minmax(0,1fr));gap:6px}   /* all opponents on ONE row at every width (7 equal columns; short names + smaller type on narrower screens, see media below) */
+.b27-opps .b27-chip{position:relative;min-height:58px;min-width:0;padding:6px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1.15;text-align:center;overflow:hidden;font-size:13px}
+.b27-chip.op .ck{display:none;position:absolute;top:2px;right:5px;font-weight:900;font-size:11px;line-height:1}.b27-chip.op[aria-pressed=true] .ck{display:block}
+.b27-chip.op .em{font-size:18px;line-height:1.1;white-space:nowrap}
+.b27-chip.op .nm{display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b27-chip.op .nm .sh,.b27-chip.op .nm .xs{display:none}
+@media (max-width:899px){.b27-chip.op .nm .f{display:none}.b27-chip.op .nm .sh{display:inline}.b27-opps .b27-chip{font-size:12.5px}}
+@media (max-width:599px){.b27-chip.op .nm .sh{display:none}.b27-chip.op .nm .xs{display:inline}.b27-opps{gap:3px}.b27-opps .b27-chip{min-height:52px;padding:4px 0;border-width:1.5px;border-radius:9px;font-size:10px;letter-spacing:-.02em}.b27-chip.op .em{font-size:16px}.b27-chip.op .ck{top:1px;right:3px;font-size:9px}}   /* phones: all 7 chips stay on ONE row (equal 1/7 columns, short names, small type) */
+@media (max-width:399px){.b27-amt.cu{font-size:11px;letter-spacing:-.03em;white-space:nowrap;min-width:0;overflow:hidden}}
+@media (max-width:359px){.b27-opps .b27-chip{font-size:9px}.b27-chip.op .em{font-size:14px}}
+.b27-selbar{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;margin-top:8px}
+.b27-selbar .b27-sm{min-height:44px;min-width:88px;white-space:nowrap;padding:0 12px;border-radius:10px;border:2px solid var(--line);background:var(--card2);color:var(--tx);font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+.b27-selbar .cnt{font-size:13px;color:var(--mut);margin-left:auto;white-space:nowrap}
+/*</MULTI-BET>*/
+/*<OWES-TABLE>*/
+/* "Who owes who" (Bets 26-27): pair nets + per-manager nets, names never wrap (emoji + name; a short name on phones, ellipsis as the last resort). */
+.oq{width:100%;max-width:560px;border-collapse:collapse;table-layout:fixed;font-size:14px}
+.oq td,.oq th{padding:7px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid var(--line);text-align:left}
+.oq th{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.oq .n{text-align:right;font-variant-numeric:tabular-nums}
+.oq .ow{color:var(--mut);text-align:center;padding:7px 0}
+.oq.oqx col.a,.oq.oqx col.b{width:35%}.oq.oqx col.m{width:14%}.oq.oqx col.v{width:16%}
+.oqn{white-space:nowrap}.oqn::before{content:attr(data-em) " "}.oqn .s{display:none}
+.oqs{font-size:12px;color:var(--mut);margin:2px 0 6px}
+/*<OWES-CHART>*/
+/* plain matrix = the old Side bets matrix (table.mx inside .card.sc); only the totals get a light divider + bold */
+.mx.oqm td.t,.mx.oqm th.t{font-weight:800;border-left:1px solid var(--line)}.mx.oqm tfoot td,.mx.oqm tfoot th{font-weight:800;border-top:1px solid var(--line)}.mx.oqm td.t{color:var(--tx)}
+@media (max-width:1000px){.swipe.oqw{display:block}}
+.oqc{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.oqc .cr{display:grid;grid-template-columns:96px minmax(0,1fr) 54px;align-items:center;gap:6px}
+.oqc .cn{white-space:nowrap;font-size:13.5px}
+.oqc .ct{position:relative;height:20px;display:block}
+.oqc .ct::before{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;margin-left:-1px;background:var(--mut);opacity:.7}
+.oqc .cb{position:absolute;top:3px;bottom:3px;width:calc(var(--w) * 50%);border-radius:3px}
+.oqc .cb.pos{left:50%;background:var(--good);border-radius:0 4px 4px 0}.oqc .cb.neg{right:50%;background:var(--bad);border-radius:4px 0 0 4px}
+.oqc .cv{text-align:right;font-size:13.5px;font-variant-numeric:tabular-nums}
+@media (min-width:600px){.oqc .cr{grid-template-columns:170px minmax(0,1fr) 64px}}
+/*</OWES-CHART>*/
+
+@media (max-width:599px){.oqn.hs .f{display:none}.oqn.hs .s{display:inline}.oq td,.oq th{padding:7px 2px}.oqn::before{content:attr(data-e1) " "}}
+@media (max-width:359px){.oq{font-size:13px}.oq.oqx col.a,.oq.oqx col.b{width:33%}.oq.oqx col.m{width:12%}.oq.oqx col.v{width:22%}}
+/*</OWES-TABLE>*/
+.b27-owe{padding:6px 0;border-bottom:1px solid var(--line);font-size:15px}
+.b27-ok{border-color:#2f6b47}.b27-bad{border-color:#8a2d2d}
+
+.b27-c{margin:10px 0}.b27-c .st{font-size:11px;border:1px solid var(--line);border-radius:99px;padding:1px 8px;font-weight:800}
+#b27Head .btn,#b27Retry{min-height:44px}
+
+/* s20 even column: from 600px up the banner, title, tag, tab row, every tab's content, the footer (and the chat bar, see .chat) share ONE column
+   (max 980px, centered, 10px page margin on narrower screens) with identical left and right edges. Nothing is wider than the tab row. */
+@media (min-width:600px){
+  header,nav,main,footer{box-sizing:border-box;width:calc(100% - 20px);max-width:980px;margin-left:auto;margin-right:auto}
+  header{padding:0 0 8px}
+  .titlebar,.sub{padding-left:0;padding-right:0}
+  main{padding:12px 0 60px}
+  footer{padding:0 0 40px}
+  nav{padding:6px 0}
+  .gday{margin-left:0;margin-right:0}
+}
+
+/* s20: school names that are links to the school's ESPN page (a.tl) and chips: >= 44px tall (phone and desktop), no overflow */
+a.tl{display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box;color:inherit;text-decoration:underline dotted;text-underline-offset:3px;max-width:100%}
+a.tl:hover{filter:brightness(1.15)}a.tl:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+span.chip.nolink{cursor:default}
+
+/* ===== s20 CHIP GRID: one shared school chip (.school-chip, together with .chip for the team colors) and one shared grid (.school-grid) =====
+   Every school chip is the SAME box: fixed height 44px (equal width inside a grid: 2 columns on phones, 4 from 600px; outside a grid, one fixed width per screen size).
+   A long name is cut with an ellipsis on ONE line (the title attribute holds the full name); the chip never wraps and never changes size. The chip is an <a> to the school's
+   ESPN page (target=_blank rel="noopener noreferrer") or, without an ESPN id, a plain <span class="... nolink">. Markup:  <div class="school-grid"><a class="chip school-chip" ...><img><span class="cn">Name</span>[<span class="cr">12-3</span>]</a>...</div> */
+.school-grid,.card.oc .chips.school-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:44px;gap:6px;align-content:start;align-items:stretch;min-height:0;margin-top:8px}
+@media (min-width:600px){.school-grid,.card.oc .chips.school-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.chip.school-chip,.card.oc .chip.school-chip{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:1fr;align-items:center;align-content:center;column-gap:6px;row-gap:0;box-sizing:border-box;width:100%;min-width:0;max-width:100%;height:44px;min-height:44px;padding:0 8px 0 5px;border-radius:12px;overflow:hidden;font-size:12px;line-height:1.15;letter-spacing:0;font-weight:700}
+.chip.school-chip img,.chip.school-chip .nologo,.card.oc .chip.school-chip img,.card.oc .chip.school-chip .nologo{width:26px;height:26px;grid-row:1/3;align-self:center;margin:0;padding:1px;border-radius:50%}
+.chip.school-chip .nologo,.card.oc .chip.school-chip .nologo{font-size:9px}
+.chip.school-chip .cn,.card.oc .chip.school-chip .cn,.card.oc .chip.school-chip .cn.one{display:block;grid-column:2;grid-row:1;align-self:end;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;-webkit-line-clamp:unset;-webkit-box-orient:unset;font-size:inherit}
+.chip.school-chip .cr,.card.oc .chip.school-chip .cr{display:block;grid-column:2;grid-row:2;align-self:start;margin:1px 0 0;font-size:.9em;font-weight:600;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.85;text-align:left}
+.chip.school-chip:not(:has(.cr)) .cn{align-self:center;grid-row:1/3}
+.chip.school-chip.big{font-size:13px;padding:0 10px 0 5px}.chip.school-chip.big img{width:30px;height:30px}
+/* outside a grid (game cards, tables) every chip is the same fixed width */
+.gside .chip.school-chip,td .chip.school-chip{width:172px;flex:none}
+@media (max-width:599px){.gside .chip.school-chip,td .chip.school-chip{width:150px}}
+@media (max-width:339px){.card.oc .chips.school-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* manager cards: one column, every card the same height (header row + two or four chip rows) and nothing ragged */
+.ocl{align-items:stretch}
+.ocl>.card.oc{align-self:stretch}
+.card.oc .who .nm,.card.oc .who small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
