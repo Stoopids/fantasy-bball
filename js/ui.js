@@ -25,10 +25,27 @@ U.avatar=function(m,px){px=px||32;const a=FBN.avatarSpec(m);const st='width:'+px
   if(a.kind==='photo')return '<span class="av" style="'+st+'"><img src="'+U.esc(a.src)+'" alt=""></span>';
   return '<span class="av" style="'+st+'" aria-hidden="true">'+U.esc(a.text)+'</span>'};
 let toastT=null;
-U.toast=function(msg,ms){let t=U.$('toast');if(!t){t=document.createElement('div');t.id='toast';t.className='toast hide';t.setAttribute('role','status');document.body.appendChild(t)}
-  t.textContent=msg;t.classList.remove('hide');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.add('hide'),ms||3800)};
-U.openSheet=function(html){let w=U.$('sheetwrap');if(!w){w=document.createElement('div');w.id='sheetwrap';document.body.appendChild(w)}w.innerHTML='<div class="sheetbg" data-a="sheetbg"><div class="sheet">'+html+'</div></div>'};
-U.closeSheet=()=>{const w=U.$('sheetwrap');if(w)w.innerHTML=''};
+U.toast=function(msg,ms){let t=U.$('toast');if(!t){t=document.createElement('div');t.id='toast';t.className='toast hide';document.body.appendChild(t)}
+  t.setAttribute('role','status');t.setAttribute('aria-live','polite');
+  t.classList.remove('hide');t.textContent=msg;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.add('hide'),ms||3800)};
+/* dialogs: role=dialog + aria-modal, focus moves in on open and goes back to the opener on close, Tab stays inside, Escape closes the top one (a dialog may set el._esc to decide what Escape does) */
+const FOCUSABLE='a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+U.dialogIn=function(el,label,opener){if(!el)return;el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');if(label&&!el.getAttribute('aria-label')&&!el.getAttribute('aria-labelledby'))el.setAttribute('aria-label',label);
+  const a=opener||document.activeElement;el._opener=(a&&a!==document.body&&!el.contains(a))?a:null;
+  const f=[].slice.call(el.querySelectorAll(FOCUSABLE)).find(x=>!/^(input|textarea|select)$/i.test(x.tagName));
+  if(!f){el.setAttribute('tabindex','-1')}try{(f||el).focus({preventScroll:true})}catch(e){}};
+U.dialogOut=function(el){const o=el&&el._opener;if(!o)return;const t=o.isConnected?o:(o.id?U.$(o.id):null);try{if(t&&t.focus)t.focus({preventScroll:true})}catch(e){}};
+U.openSheet=function(html){let w=U.$('sheetwrap');if(!w){w=document.createElement('div');w.id='sheetwrap';document.body.appendChild(w)}
+  const old=w.querySelector('.sheet');const op=old?old._opener:null;
+  w.innerHTML='<div class="sheetbg" data-a="sheetbg"><div class="sheet">'+html+'</div></div>';const s=w.querySelector('.sheet');const h=s.querySelector('h2');U.dialogIn(s,h?h.textContent:'Dialog',op)};
+U.closeSheet=()=>{const w=U.$('sheetwrap');if(!w)return;const s=w.querySelector('.sheet');w.innerHTML='';if(s)U.dialogOut(s)};
+/* topmost dialog, highest layer first (identity 50, wheel 45, sheet 40, pick 35) */
+U.topDialog=()=>document.querySelector('#overlay .ov')||U.$('wheelov')||document.querySelector('#sheetwrap .sheet')||U.$('pickov');
+document.addEventListener('keydown',e=>{const d=U.topDialog();if(!d)return;
+  if(e.key==='Escape'&&!e.defaultPrevented){e.preventDefault();if(typeof d._esc==='function')d._esc();else if(d.classList.contains('sheet'))U.closeSheet();return}
+  if(e.key==='Tab'){const f=[].slice.call(d.querySelectorAll(FOCUSABLE)).filter(x=>x.offsetParent!==null||x===document.activeElement);if(!f.length){e.preventDefault();return}
+    const first=f[0],last=f[f.length-1],a=document.activeElement;if(!d.contains(a)){e.preventDefault();first.focus();return}
+    if(e.shiftKey&&(a===first||a===d)){e.preventDefault();last.focus()}else if(!e.shiftKey&&a===last){e.preventDefault();first.focus()}}});
 U.copy=async function(text,msg){try{await navigator.clipboard.writeText(text);U.toast(msg||'Copied')}catch(e){const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');U.toast(msg||'Copied')}catch(e2){U.toast('Copy failed — press and hold the text to copy it')}ta.remove()}};
 U.canShare=()=>typeof navigator.share==='function';
 U.share=async function(data){if(U.canShare()){try{await navigator.share(data);return true}catch(e){if(e&&e.name==='AbortError')return false}}await U.copy((data.text?data.text+'\n':'')+(data.url||''),'Share is not available here — copied instead');return false};

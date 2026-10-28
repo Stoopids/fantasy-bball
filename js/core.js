@@ -160,7 +160,7 @@ F.exists=d=>!!(d&&typeof d==='object'&&d.v&&d.settings&&d.id);
 F.effectiveOrder=function(meta,joinedMids){const j=joinedMids.slice();if(!meta.orderSet)return j;const o=meta.order.filter(x=>j.indexOf(x)>=0);j.forEach(x=>{if(o.indexOf(x)<0)o.push(x)});return o};
 /* ---- commissioner actions (pure functions on meta; return {state}|{error}|{noop}) ---- */
 F.mStart=function(m,joined,now,seedStr,poolSize){if(m.status!=='lobby')return{error:'The draft already started.'};
-  if(joined.length<2)return{error:'At least 2 managers must join before the draft can start.'};
+  if(joined.length!==F.MANAGERS)return{error:joined.length<F.MANAGERS?'Waiting for '+(F.MANAGERS-joined.length)+' more manager'+(F.MANAGERS-joined.length===1?'':'s')+'. The draft needs exactly '+F.MANAGERS+' managers to start.':'The draft needs exactly '+F.MANAGERS+' managers to start.'};
   const s=m.settings;if(joined.length*s.rounds>(poolSize||1e9))return{error:'Not enough teams for that many managers and rounds.'};
   const n=clone(m);let order=F.effectiveOrder(m,joined);
   if(!m.orderSet&&s.orderMode==='random')order=F.shuffled(order,F.mulberry(F.hash32(seedStr||m.id)));      /* deterministic: two phones starting at once get the same order */
@@ -233,14 +233,15 @@ F.makeRedraftForm=function(o){return{mid:o.mid,rid:o.rid,drops:(o.drops||[]).map
 F.parseRedraftForm=function(txt){const d=F.parseJ(txt);if(!d||typeof d!=='object'||typeof d.mid!=='string'||!hexs(d.rid))return null;
   return{mid:d.mid,rid:d.rid,drops:Array.isArray(d.drops)?d.drops.map(String).filter(t=>/^[A-Za-z0-9_-]{1,40}$/.test(t)).slice(0,F.REDRAFT.maxDrops):[],pos:Number.isInteger(+d.pos)&&+d.pos>=1&&+d.pos<=24?+d.pos:null,ts:+d.ts||0,v:+d.v||0}};
 /* the commissioner opens the redraft (freezes the standings as of the date). status stays "complete" until the redraft starts. o={rows,now,rid} rows: redraftStandings() output. Can be repeated while it is still "open". */
-F.mRedraftOpen=function(m,st,o){if(F.redraftLive(m))return{error:'The redraft has already started.'};if(m.status!=='complete'||st.status!=='complete')return{error:'The redraft can only open after the first draft is complete.'};
+F.mRedraftOpen=function(m,st,o){if(F.redraftLive(m))return{error:'The redraft has already started.'};/* the store keeps status 'live' after the last pick; completion is derived (st.status), the same check the League site uses */
+  if(st.status!=='complete')return{error:'The redraft can only open after the first draft is complete.'};
   if(m.endedEarly)return{error:'The first draft ended early, so there is no full set of rosters to redraft.'};
   const rows=o.rows||[];if(rows.length<2)return{error:'At least 2 managers are needed.'};const n=clone(m);const prev=m.redraft;
   n.redraft={rid:prev&&prev.rid?prev.rid:F.hexOf((o.rb||cryptoBytes)(6)),phase:'open',asOf:F.REDRAFT.asOf,from:m.epoch,openedAt:prev&&prev.openedAt?prev.openedAt:o.now,stand:rows.map(r=>r.mid),rows:rows.map(r=>({mid:r.mid,w:r.wins,l:r.losses})),keep:{},need:{},drops:{},pos:null,lastMid:rows[rows.length-1].mid,rounds0:m.settings.rounds,startedAt:0};
   return{state:n}};
 /* start: forms = {mid: parsed form}. Only forms with the right redraft id, from managers in the draft, are used. Needs the finished first draft (st.real). */
 F.mRedraftStart=function(m,st,forms,o){o=o||{};const r=m.redraft;if(F.redraftLive(m))return{error:'The redraft has already started.'};if(!r||r.phase!=='open')return{error:'Open the redraft first.'};
-  if(m.status!=='complete'||st.status!=='complete')return{error:'The first draft is not complete.'};
+  if(st.status!=='complete')return{error:'The first draft is not complete.'};
   const owners=st.order.slice();const stand=r.stand.filter(x=>owners.indexOf(x)>=0);owners.forEach(x=>{if(stand.indexOf(x)<0)stand.push(x)});
   const roster={};owners.forEach(x=>{roster[x]=st.real.filter(p=>p.owner===x).map(p=>p.tid)});
   const drops={},need={},keep={};let total=0;forms=forms||{};
