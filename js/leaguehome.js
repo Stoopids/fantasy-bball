@@ -1,0 +1,79 @@
+/* League site: standings (Full Season / NCAA Tournament), team cards, games. Only after the draft is complete.
+   Data: data/scores.json and data/tournament.json (static files, format in data/FORMAT.md). Scoring: js/scoring.js. */
+(function(){const F=FBN,U=UI,esc=U.esc,S=FBNScore;const id=F.parseCode(U.qs().get('l')||'')||'';const T=U.loadTeams();
+const DEMO=U.qs().get('demo')==='1';const DATA=DEMO?'data/demo/':'data/';
+const topEl=document.getElementById('top');topEl.innerHTML=U.header({sub:DEMO?'League · DEMO':'League'});if(DEMO){const bh=document.createElement('div');bh.innerHTML='<div class="demobar" id="demobar" role="note"><b>DEMO</b> · invented games and scores. These are not real results and not this league’s standings. <a href="'+esc(U.pageUrl('league.html',{l:id}))+'">Leave the demo</a></div>';topEl.after(bh.firstChild)}const app=document.getElementById('app');app.id='lapp';
+const home=()=>id?`<div class="row"><a class="btn" href="${esc(U.pageUrl('room.html',{l:id}))}">Back to the draft room</a> <a class="btn" href="${esc(U.pageUrl('recap.html',{l:id}))}">Draft recap</a></div>`:'<a class="btn" href="index.html">Home</a>';
+if(!id){app.innerHTML='<div class="card"><h2>No league</h2><p class="mut">Open this page from your league link.</p><a class="btn" href="index.html">Home</a></div>';return}
+app.innerHTML='<div class="card mut" id="loading">Loading the league…</div>';
+const V={tab:'standings',mode:'season',gmode:'results',gmid:'',gkind:'',more:60};let D=null,SC=null,TN=null,errS='',errT='',own={},MG=[],SEA=[],TOU=[];
+const hashSet=()=>{const h=(location.hash||'').replace('#','').split('/');if(['standings','teams','games'].includes(h[0]))V.tab=h[0];if(h[1]==='tournament')V.mode='tourney';else if(h[1]==='season')V.mode='season'};
+const hashPut=()=>{try{history.replaceState(null,'','#'+V.tab+(V.tab==='standings'?'/'+(V.mode==='tourney'?'tournament':'season'):''))}catch(e){}};
+async function getJ(p){const r=await fetch(p+'?b='+encodeURIComponent(window.FBN_BUILD||''));if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
+const nm=mid=>{const m=MG.find(x=>x.mid===mid);return m?m.name:''};
+const tname=tid=>(T.TEAMS[tid]&&T.TEAMS[tid].short)||tid;
+const plural=(n,a,b)=>n+' '+(n===1?a:b);
+const num=n=>String(n);
+function compute(){const g=SC?SC.games:[];SEA=S.fullSeason(g,own,MG);TOU=S.tournament(g,TN?TN.field:{},own,MG,TN&&TN.points)}
+/* ---------- shared bits ---------- */
+function sampleNote(){return DEMO?'<div class="note" id="samplenote"><b>DEMO data.</b> Invented games and scores, to show how standings will look. Not real results.</div>':''}
+const noGames=()=>!(SC&&SC.games&&SC.games.length)&&!(TN&&Object.keys(TN.field||{}).length);
+function dataNote(){let h='';if(errS)h+=`<div class="card" id="nodata"><b>No scores yet.</b><p class="mut small" style="margin:4px 0 0">The scores file could not be loaded (${esc(errS)}), so everyone shows zero. A maintainer can refresh it; see the README.</p></div>`;return h}
+const asOf=()=>{const a=(SC&&SC.as_of)||(TN&&TN.as_of);return a?`<div class="tiny mut" id="asof">Scores as of ${esc(a)}</div>`:''};
+function head(){const m=D.meta,st=D.state;return `<div class="card" id="lhead"><div class="small mut">${st.endedEarly?'DRAFT ENDED EARLY':'DRAFT COMPLETE'}</div><h2 style="margin:2px 0">${esc(m.name)}</h2><div class="small mut">${plural(MG.length,'manager','managers')} · ${plural(st.picks.length,'school','schools')} drafted</div></div>`}
+function tabs(){return `<div class="seg" id="ltabs">${[['standings','Standings'],['teams','Teams'],['games','Games']].map(([k,l])=>`<button data-a="tab" data-v="${k}" class="${V.tab===k?'on':''}">${l}</button>`).join('')}</div>`}
+/* ---------- standings ---------- */
+function emptyState(){return `<div class="card" id="emptystate"><h3 style="margin:0 0 4px">Standings start when the season starts</h3><p class="mut small" style="margin:0 0 8px">The draft is done and the teams are set. Wins and points will show up here once games are played and the scores are loaded. Nothing below is made up.</p>${errS?`<p class="small mut">The scores file could not be loaded (${esc(errS)}).</p>`:''}<div class="row"><a class="btn" href="${esc(U.pageUrl('recap.html',{l:id}))}">Draft recap</a> <button class="btn" data-a="tab" data-v="teams">See the teams</button></div><p class="tiny mut" style="margin:10px 0 0">Want to see how it will look? <a href="${esc(U.pageUrl('league.html',{l:id,demo:1}))}" id="demolink">Open the demo</a> (invented scores, clearly marked DEMO).</p></div>`}
+function standings(){if(!DEMO&&noGames())return emptyState();const tm=V.mode==='tourney';const list=tm?TOU:SEA;
+  let h=`<div class="seg" id="lmode"><button data-a="mode" data-v="season" class="${!tm?'on':''}">Full Season</button><button data-a="mode" data-v="tourney" class="${tm?'on':''}">NCAA Tournament</button></div>`;
+  if(tm){const any=TN&&Object.keys(TN.field||{}).length||(SC&&SC.games.some(g=>g.kind==='ncaa'));
+    if(!any)return h+`<div class="card" id="notourney"><b>The tournament has not started.</b><p class="mut small" style="margin:4px 0 0">${errT?'The tournament file could not be loaded ('+esc(errT)+'). ':''}Standings appear here once the field is set. Schools earn points for making the field, winning games, reaching the Final Four and winning the title, plus a bonus for each upset by seed.</p></div>`+asOf();
+    h+=`<p class="small mut" style="margin:6px 0">Points: make the field ${S.POINTS.entry}, play-in win ${S.POINTS.playin_win}, each win ${S.POINTS.win}, upset by seed +${S.POINTS.upset} (the worse seed beats the better seed), Final Four +${S.POINTS.final4}, champion +${S.POINTS.champ}${list.locked?`, missing the field ${S.POINTS.missed}`:''}. Ties: more upsets, then more wins.</p>`}
+  else h+=`<p class="small mut" style="margin:6px 0">Wins by your schools in regular-season and conference tournament games. Ties: win %, then point difference.</p>`;
+  h+='<div id="stlist">'+list.map(r=>{const you=false;const big=tm?r.score:r.wins;const lab=tm?'pts':(r.wins===1?'win':'wins');
+    const sub=tm?`${plural(r.wins,'win','wins')} · ${plural(r.upsets,'upset','upsets')}`:`${r.wins}-${r.losses}${r.gp?` · ${Math.round(r.pct*100)}%`:''}`;
+    const mg=MG.find(x=>x.mid===r.mid)||{mid:r.mid,name:r.name};
+    const det=tm?tourneyDetail(r):seasonDetail(r);
+    return `<details class="card strow" data-mid="${esc(r.mid)}"><summary><span class="place${r.place===1?' first':''}">${r.place}${r.tied?'<small>=</small>':''}</span>${U.avatar(mg,40)}<span class="grow"><b class="nm">${esc(r.name)}</b><span class="small mut tn">${esc(mg.team||'')}</span><span class="tiny mut sub">${sub}</span></span><span class="score"><b>${num(big)}</b><small>${lab}</small></span></summary><div class="det">${det}</div></details>`}).join('')+'</div>';
+  if(tm){const up=S.upsets(SC?SC.games:[],own);const mine=up.filter(u=>u.owner);
+    h+=`<div class="card" id="uplist"><h3>Upsets by your schools</h3>${mine.length?mine.slice(0,12).map(u=>`<div class="up"><span class="seedtag">${u.winner.seed} over ${u.loser.seed}</span> ${U.chip(T.TEAMS,u.winner.id,{sm:1})} <span class="small mut">beat</span> ${U.chip(T.TEAMS,u.loser.id,{sm:1})} <span class="small mut">${esc(S.roundShort?S.roundShort(u.game.round):u.game.round)} · ${esc(nm(u.owner))}</span></div>`).join(''):'<p class="mut small" style="margin:4px 0 0">No upsets by your schools yet.</p>'}</div>`}
+  return h+asOf()}
+function seasonDetail(r){if(!r.teamList.length)return '<span class="small mut">No finished games yet.</span>';
+  return r.teamList.map(t=>`<div class="tl">${U.chip(T.TEAMS,t.tid,{sm:1})}<span class="small mut">${t.w}-${t.l}</span></div>`).join('')}
+function tourneyDetail(r){if(!r.events.length)return '<span class="small mut">No points yet.</span>';
+  const by={};r.events.forEach(e=>{(by[e.tid]=by[e.tid]||[]).push(e)});
+  return Object.keys(by).map(tid=>{const ev=by[tid],tot=ev.reduce((a,e)=>a+e.pts,0);return `<div class="tl2"><div class="tl">${U.chip(T.TEAMS,tid,{sm:1})}<b class="small" style="margin-left:auto">${tot>0?'+':''}${tot}</b></div><div class="tiny mut evs">${ev.map(e=>esc(e.label)+' ('+(e.pts>0?'+':'')+e.pts+')').join(' · ')}</div></div>`}).join('')}
+/* ---------- team cards ---------- */
+function status(tid){const q=S.teamTourney(tid,SC?SC.games:[],TN?TN.field:{});if(q.state==='none')return '';const sd=q.seed!=null?'Seed '+q.seed+' · ':'';
+  return q.state==='champ'?sd+'National champion':q.state==='out'?sd+'Out in '+q.round:sd+'Still playing ('+q.round+')'}
+function teams(){const order=(D.state.order||[]).map(mid=>MG.find(x=>x.mid===mid)).filter(Boolean);
+  return `<p class="small mut" style="margin:6px 0">Each card shows a manager's schools with their record this season and where they stand in the NCAA tournament.</p><div class="tgrid">`+order.map(mg=>{const picks=D.state.picks.filter(p=>p.owner===mg.mid);const sr=SEA.find(x=>x.mid===mg.mid),tr=TOU.find(x=>x.mid===mg.mid);
+    return `<div class="card tcard" data-mid="${esc(mg.mid)}"><div class="row nw">${U.avatar(mg,48)}<div class="grow"><b style="font-size:17px">${esc(mg.team||'Team')}</b><div class="small mut">${esc(mg.name)}</div></div><div class="small" style="text-align:right"><b>${sr?sr.wins+'-'+sr.losses:'0-0'}</b><div class="tiny mut">${tr?tr.score:0} tourney pts</div></div></div>
+    <div class="schools">${picks.map(p=>{const t=sr&&sr.teams[p.tid];const rec=t?t.w+'-'+t.l:'0-0';const st=status(p.tid);
+      return `<div class="school" data-tid="${esc(p.tid)}">${U.chip(T.TEAMS,p.tid)}<span class="small mut rec">${rec}</span>${st?`<span class="tiny stt">${esc(st)}</span>`:''}</div>`}).join('')||'<span class="small mut">No schools</span>'}</div></div>`}).join('')+'</div>'}
+/* ---------- games ---------- */
+const dayLabel=d=>{try{const x=new Date(d+'T12:00:00');return x.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric',year:'numeric'})}catch(e){return d}};
+const timeLabel=g=>{if(!g.start)return '';try{const x=new Date(g.start);if(isNaN(x))return '';return x.toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}catch(e){return ''}};
+function side(s,g,win){const o=own[String(s.id)];return `<div class="gs${win?' w':''}">${s.seed!=null&&g.kind==='ncaa'?`<span class="sd">${s.seed}</span>`:''}${U.chip(T.TEAMS,s.id,{sm:1})}${o?`<span class="tiny own">${esc(nm(o))}</span>`:''}<span class="sc">${s.score==null?'':s.score}</span></div>`}
+function gameRow(g){const f=S.isFinal(g);const w=f?S.winnerSide(g):null;const tag=g.kind==='ncaa'?'NCAA · '+g.round:g.kind==='conf'?(g.round?'Conference tournament · '+g.round:'Conference'):'';
+  return `<div class="game card" data-gid="${esc(g.id)}">${tag?`<div class="tiny mut gt">${esc(tag)}${f&&S.isUpset(g)?' <span class="upb">Upset</span>':''}</div>`:''}${side(g.home,g,w===g.home)}${side(g.away,g,w===g.away)}${!f?`<div class="tiny mut">${esc(timeLabel(g)||dayLabel(g.day))}</div>`:''}</div>`}
+function games(){if(errS)return `<div class="card" id="nogames"><b>No games yet.</b><p class="mut small" style="margin:4px 0 0">The scores file could not be loaded (${esc(errS)}). A maintainer can refresh it; see the README.</p></div>`;
+  const v=S.gamesView(SC.games,own,{mid:V.gmid,kind:V.gkind==='ncaa'?'ncaa':V.gkind==='season'?'season':''});const list=V.gmode==='results'?v.results:v.upcoming;
+  let h=`<div class="seg" id="gmode"><button data-a="gmode" data-v="results" class="${V.gmode==='results'?'on':''}">Results (${v.results.length})</button><button data-a="gmode" data-v="upcoming" class="${V.gmode==='upcoming'?'on':''}">Upcoming (${v.upcoming.length})</button></div>
+  <div class="row gfil"><select id="gmid" data-a="gmid" aria-label="Manager"><option value="">All managers</option>${MG.map(m=>`<option value="${esc(m.mid)}"${V.gmid===m.mid?' selected':''}>${esc(m.name)}</option>`).join('')}</select><select id="gkind" data-a="gkind" aria-label="Type"><option value="">All games</option><option value="season"${V.gkind==='season'?' selected':''}>Season</option><option value="ncaa"${V.gkind==='ncaa'?' selected':''}>NCAA tournament</option></select></div>`;
+  if(!list.length)return h+`<div class="card" id="gempty"><p class="mut" style="margin:0">${V.gmode==='results'?'No finished games for these schools yet.':'No upcoming games for these schools.'}</p></div>`;
+  let day='';h+='<div id="glist">';list.slice(0,V.more).forEach(g=>{const d=g.day||'';if(d!==day){day=d;h+=`<div class="dayh">${esc(dayLabel(d))}</div>`}h+=gameRow(g)});h+='</div>';
+  if(list.length>V.more)h+=`<button class="btn block" data-a="more">Show more (${list.length-V.more} left)</button>`;return h+asOf()}
+/* ---------- render ---------- */
+function render(){const body=V.tab==='standings'?standings():V.tab==='teams'?teams():games();
+  app.innerHTML=head()+sampleNote()+(V.tab!=='games'?dataNote():'')+tabs()+'<div id="lbody">'+body+'</div><div class="row" style="margin-top:14px">'+home()+'</div>'+U.buildTag()}
+const ACT={tab:el=>{V.tab=el.dataset.v;hashPut();render();window.scrollTo(0,0)},mode:el=>{V.mode=el.dataset.v;hashPut();render()},gmode:el=>{V.gmode=el.dataset.v;V.more=60;render()},more:()=>{V.more+=60;render()}};
+document.addEventListener('change',e=>{const el=e.target;if(el.id==='gmid'){V.gmid=el.value;V.more=60;render()}else if(el.id==='gkind'){V.gkind=el.value;V.more=60;render()}});
+U.bind(ACT);U.registerSW();
+function placeholder(m,st){app.innerHTML=`<div class="card" id="lhome"><h2>League home</h2><p class="mut" id="avail">Available after the draft.</p><p class="small mut">${st&&m.status!=='lobby'?`The draft is in progress: ${st.picks.length} of ${st.total} picks made. `:''}Standings, team cards and scores will appear here when the draft is complete.</p>${home()}</div>`+U.buildTag()}
+FBNLeague.load(id,{pool:T.POOL}).then(async d=>{D=d;if(!d.meta){app.innerHTML='<div class="card" id="nf"><h2>League not found</h2><p class="mut">Check the link.</p><a class="btn" href="index.html">Home</a></div>';return}
+  const st=d.state,m=d.meta;if(m.status==='lobby'||!st||st.status!=='complete'){placeholder(m,m.status==='lobby'?null:st);return}
+  MG=d.managers;own=S.ownerMap(st.picks);
+  await Promise.all([getJ(DATA+'scores.json').then(j=>{const e=S.validateScores(j);if(e)throw new Error(e);if(j.sample&&!DEMO){SC=null;return}SC=j}).catch(e=>{errS=e.message||String(e);SC=null}),getJ(DATA+'tournament.json').then(j=>{const e=S.validateTournament(j);if(e)throw new Error(e);if(j.sample&&!DEMO){TN=null;return}TN=j}).catch(e=>{errT=e.message||String(e);TN=null})]);
+  compute();hashSet();render();window.addEventListener('hashchange',()=>{hashSet();render()});app.setAttribute('data-ready','1')}).catch(e=>{app.innerHTML='<div class="card bad">Could not load the league: '+esc(e.message||e)+'</div>'});
+})();
