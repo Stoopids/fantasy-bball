@@ -169,7 +169,7 @@ F.mStart=function(m,joined,now,seedStr,poolSize){if(m.status!=='lobby')return{er
   n.order=order;n.orderSet=true;n.status='live';n.paused=false;n.pausedLeft=null;n.startedAt=now;n.resumeAt=now;return{state:n}};
 F.mPause=function(m,st,pause,now){if(m.status!=='live'||st.status==='complete')return{error:'Draft is not live.'};const n=clone(m);
   if(pause){if(n.paused)return{error:'Already paused.'};n.paused=true;n.pausedLeft=st.deadline?Math.max(0,st.deadline-now):null}
-  else{if(!n.paused)return{error:'Not paused.'};n.paused=false;const c=n.settings.clockSecs;n.resumeAt=c&&n.pausedLeft!=null?now-(c*1000-n.pausedLeft):now;n.pausedLeft=null}return{state:n}};
+  else{if(!n.paused)return{error:'Not paused.'};n.paused=false;/* s22b: time left at Pause is kept, EXCEPT when the clock had already run out at Pause (0 left): Resume then restarts the FULL clock from the moment of Resume (before, 0 left meant the clock was expired again at once and auto-pick fired the instant the draft resumed) */const c=n.settings.clockSecs;n.resumeAt=c&&n.pausedLeft!=null&&n.pausedLeft>0?now-(c*1000-n.pausedLeft):now;n.pausedLeft=null}return{state:n}};
 F.mUndo=function(m,st,expect,now){if(m.status==='complete'||st.status==='complete')return{error:'The draft is complete and locked.'};const rp=st.real||st.picks;if(!rp.length)return{error:'Nothing to undo.'};const last=rp[rp.length-1];
   /* compare-and-set: the pick the commissioner was looking at must still be the last pick (number and id) */
   const eN=expect&&typeof expect==='object'?expect.n:expect,eId=expect&&typeof expect==='object'?expect.id:null;
@@ -314,6 +314,8 @@ F.submitSlot=async function(io,o){const NOCONN="Can't reach the draft server. Ch
   for(let attempt=0;attempt<3;attempt++){let ex;try{ex=F.parseEntry(await io.read(o.url))}catch(e){return{ok:false,msg:NOCONN}}
     if(ex&&ex.id===o.entry.id)break;
     if(!F.slotWritable(o.meta,ex,o.n,o.taken,o.pool,o.prevId)){io.adopt(o.n,ex);return{ok:false,beaten:true,by:ex}}
+    /* never write an entry that the replay would reject (duplicate team, not in the pool, wrong slot or owner): a rejected entry would sit in the slot and stall the draft until it is overwritten */
+    {const bp=F.entryProblem(o.meta,o.entry,o.n,o.taken||{},o.pool,undefined);if(bp&&bp!=='voided'&&bp!=='old-epoch')return{ok:false,msg:bp==='duplicate-team'?'That team was already taken. Pick another team. Nothing was saved.':'That pick is not valid right now. Nothing was saved.',rejected:bp}}
     try{await io.write(o.url,o.entry)}catch(e){if(attempt===2)return{ok:false,msg:'Save failed (server hiccup). Nothing was changed — try again.'};await io.sleep(400);continue}
     io.adopt(o.n,o.entry);if(o.fast)return{ok:true,pick:o.entry,unverified:true};
     await io.sleep(600);let chk=null;try{chk=F.parseEntry(await io.read(o.url))}catch(e){return{ok:true,pick:o.entry,unverified:true}}

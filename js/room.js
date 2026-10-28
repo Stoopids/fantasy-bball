@@ -48,7 +48,8 @@ async function syncLog(){const tot=S?S.total:0;if(!tot)return false;let ch=false
   if(k>=1&&(pollNo%4===0||!logReady))want.push(k);if(k>=2&&pollNo%6===0)want.push(k-1);if(pollNo%14===0&&k>2){sweepAt=(sweepAt%(k-2))+1;want.push(sweepAt)}
   const batch=logReady?1:6;let from=k+1;let gap=false;
   for(let g=0;g<30&&from<=tot;g++){const ns=[];for(let i=0;i<batch&&from+i<=tot;i++)ns.push(from+i);if(g===0)want.forEach(n=>{if(ns.indexOf(n)<0)ns.push(n)});
-    const rs=await Promise.all(ns.map(n=>fetchSlot(n).catch(()=>null)));if(rs.some(r=>r===true))ch=true;if(rs.some(r=>r===null))return ch;
+    const rs=await Promise.all(ns.map(n=>fetchSlot(n).catch(e=>e&&e.stuck?false:null)));   /* a slot the server cannot read (e.stuck, Pick stuck banner) counts as not changed / not filled, so the board still loads and the on-the-clock manager can pick via the backup spot */
+    if(rs.some(r=>r===true))ch=true;if(rs.some(r=>r===null))return ch;
     const nk=F.replay(M,ENT,POOLSET).picks.length;if(nk>=from+batch-1&&nk>=from){from=nk+1;if(ch)rebuild()}else{gap=true;break}}
   if(from>tot)gap=true;if(gap&&!logReady){logReady=true;ch=true}return ch}
 async function syncClaims(){if(!M)return false;const N=M.settings.managers;let ch=false;
@@ -126,7 +127,7 @@ async function mutatePref(mid,fn,verify){for(let attempt=0;attempt<2;attempt++){
     PREF[mid]=ns;PREFraw[mid]=JSON.stringify(ns);rebuild(true);await sleep(500);try{const d=F.parseJ(await readRaw(url));if(d&&verify(d))return{ok:true}}catch(e){return{ok:true}}}
   return{ok:false,msg:'Could not save that setting — try again.'}}
 async function submitPick(n,owner,tid,by,o){o=o||{};const prevId=n>1&&S.picks.length===n-1?S.picks[n-2].id:(n>1?null:'');const entry=F.makeEntry(n,owner,tid,{by,now:nowSrv(),writer:WRITER,epoch:M.epoch,prev:prevId});
-  const io={read:readRaw,write:postJ,sleep,adopt:(k,e)=>{ENT[k]=e||null;ENTraw[k]=e?JSON.stringify(e):'';rebuild()},later:fn=>{fn()},alert:k=>toast('Pick #'+k+' was replaced by a simultaneous write — check the board.',6000)};
+  const io={read:u=>Store.get(u,undefined,{write:1}).then(r=>{storeOk();return r}),write:postJ,sleep,adopt:(k,e)=>{ENT[k]=e||null;ENTraw[k]=e?JSON.stringify(e):'';rebuild()},later:fn=>{fn()},alert:k=>toast('Pick #'+k+' was replaced by a simultaneous write — check the board.',6000)};
   return F.submitSlot(io,{meta:M,url:K.pick(M.epoch,n),n,entry,taken:F.takenMap({picks:S.picks.filter(p=>p.n<n),kept:S.kept}),pool:POOLSET,prevId:prevId==null?undefined:prevId,fast:o.fast})}
 async function chatWrite(fn,verify){for(let attempt=0;attempt<4;attempt++){let raw;try{raw=await readRaw(K.chat)}catch(e){return{ok:false,msg:NOCONN}}
     const cur=normChatRaw(raw);const r=fn(cur);if(r.error)return{ok:false,msg:r.error};const ns=r.state;ns.version=(cur.version||0)+1;
@@ -148,6 +149,10 @@ async function doPick(tid,forOwner,opt){opt=opt||{};const cs0=S&&F.onClock(S);co
     if(res.ok){toast(mg(forOwner).name+' drafted '+tn(tid)+' (#'+res.pick.n+')');return true}
     if(res.beaten){const w=res.by||{};toast(w.owner===forOwner?'Pick #'+v.slot.n+' was already made for '+forWho(forOwner)+': '+tn(w.tid)+'. Check the board.':'Someone beat you to it: pick #'+v.slot.n+' was just made ('+tn(w.tid)+' by '+mg(w.owner).name+'). Check the board.',6500);showConflict(v.slot.n,tid,w,forOwner);return false}
     toast(res.msg,5000);return false}finally{if(busy===mySlot)busy=false}}
+/* Commissioner: force the best available pick for the manager on the clock (same save path as every pick, so it uses the backup spot when the main one is stuck). Asks for the commissioner passcode like other host actions. */
+async function actForce(){if(!commish()||!S||S.status!=='live')return;await pollOnce();const s=F.onClock(S);if(!s)return;if(!needUnlock())return;if(S.paused){toast('The draft is paused. Resume it first (More tab, Draft controls), then tap Force.',6000);return}
+  const ch=F.autoChoice(S,s.owner,POOL,F.mulberry(s.n*7919),prankOf);if(!ch){toast('No team is available to pick.',4000);return}
+  const ok=await doPick(ch.tid,s.owner,{});if(!ok)toast('Still could not save pick #'+s.n+'. Nothing was changed. Wait a minute and tap Force again.',6000)}
 let conflictMsg='';
 function showConflict(n,tid,w,forOwner){conflictMsg=w.owner===forOwner?'<b>Already picked for '+esc(forWho(forOwner))+'.</b> Pick #'+n+' was already made — <b>'+esc(tn(w.tid))+'</b>. Your pick of '+esc(tn(tid))+' was <b>not</b> saved.':'<b>Someone beat you to it.</b> Pick #'+n+' was already made — <b>'+esc(tn(w.tid))+'</b> by '+esc(mg(w.owner).name)+'. Your pick of '+esc(tn(tid))+' was <b>not</b> saved.';renderBanner();setTimeout(()=>{conflictMsg='';renderBanner()},12000)}
 async function simple(fn,okMsg,verify){const res=await mutateMeta(fn,verify);if(!res.ok&&!res.noop)toast(res.msg,5000);else if(okMsg)toast(okMsg);return res}
@@ -175,7 +180,8 @@ async function actUnlock(pass){if(Date.now()<pinLock)return{ok:false,msg:'Too ma
   pinTries++;if(pinTries>=5){pinLock=Date.now()+30000;pinTries=0;return{ok:false,msg:'That is not the commissioner secret. Locked for 30 seconds.'}}return{ok:false,msg:'That is not the commissioner secret. Paste the whole commissioner link, or its 32-character code ('+(5-pinTries)+' tries left).'}}
 const prankOf=t=>(META[t]||{}).p||0;
 let autoPlan={n:0,at:0},autoBusy=false;
-function autoTick(){if(!S||!loaded||autoBusy||busy||!S.logReady)return;const s=F.onClock(S);if(!s){autoPlan={n:0,at:0};return}
+function autoTick(){if(!S||!loaded||autoBusy||busy||!S.logReady)return;if(Store.stuck().length)return;   /* s22b: never auto-pick while a pick slot cannot be read or saved (Pick stuck banner): the manager or the commissioner decides */
+  const s=F.onClock(S);if(!s){autoPlan={n:0,at:0};return}
   const reason=F.autoReason(S,nowSrv(),CFG.graceMs);if(!reason){autoPlan={n:0,at:0};return}
   if(autoPlan.n!==s.n){autoPlan={n:s.n,at:Date.now()+(reason==='expired'?0:900)+Math.random()*1500};return}if(Date.now()<autoPlan.at)return;
   autoBusy=true;autoPlan.at=Date.now()+5000;const n=s.n;
@@ -322,8 +328,11 @@ function autoNote(){if(!commish()||!S||!loaded||WATCH)return'';const s=M.setting
     return `<div class="note" id="autonote"><b>Auto-pick only runs while a page is open.</b> If every phone has this room closed, a missed turn waits until someone opens it again.${r==='expired'?'<div style="margin-top:6px"><button class="btn pri sm" data-a="catchup" id="catchup">Make the auto-pick now</button></div>':''}</div>`}
   return''}
 function renderBanner(){const keep=document.activeElement&&document.activeElement.id==='pickbtn';renderBanner0();if(removed()&&$('banner'))$('banner').insertAdjacentHTML('afterbegin','<div class="note" id="removednote"><b>You were removed by the commissioner.</b> You can still watch the draft and read the chat.</div>');const an=autoNote();if(an&&$('banner'))$('banner').insertAdjacentHTML('beforeend',an);if(S&&loaded&&S.status==='live'&&canPick()&&$('banner'))$('banner').insertAdjacentHTML('beforeend','<button class="btn pri pickbtn" data-a="popen" id="pickbtn">Pick a team</button>');
-  if($('pickov')){const cs=S&&F.onClock(S);if(!canPick()||!cs||String(cs.n)!==$('pickov').dataset.n)closePick();else updateTeams()}if(conflictMsg&&$('banner'))$('banner').insertAdjacentHTML('beforeend',`<div class="cflict" id="conflict">${conflictMsg}</div>`);
+  if($('pickov')){const cs=S&&F.onClock(S);if(!canPick()||!cs||String(cs.n)!==$('pickov').dataset.n)closePick();else updateTeams()}if(conflictMsg&&$('banner'))$('banner').insertAdjacentHTML('beforeend',`<div class="cflict" id="conflict">${conflictMsg}</div>`);const sb=stuckBar();if(sb&&$('banner'))$('banner').insertAdjacentHTML('afterbegin',sb);
   if(keep){const b=$('pickbtn');if(b&&document.activeElement!==b)b.focus({preventScroll:true})}}
+/* Pick stuck: a pick slot the draft server cannot read or save right now (Store.stuck). Plain wording; the on-the-clock manager and the commissioner still have a way forward. */
+function stuckBar(){if(!M||!S||!loaded)return'';const st=Store.stuck();if(!st.length)return'';const ns=st.map(x=>'#'+x.n).join(', ');const cur=S.status==='live'?F.onClock(S):null;const cm=commish()&&!WATCH&&cur&&!S.paused;
+  return `<div class="alertbar stuckbar" id="stuckbar" role="status"><b>Pick stuck.</b> The draft server is not answering for pick ${esc(ns)}. This is a problem on the server's side, not with your phone. Nothing is lost: the picks already made are safe, and we keep trying every few seconds. ${S.paused?'The draft is paused. When the manager is ready, the commissioner resumes it (More tab, Draft controls, Resume); the pick clock then starts fresh.':(cur?'The manager on the clock can still pick; the pick is saved to a backup spot automatically and counts the same.':'')}<div class="row" style="margin-top:6px"><button class="btn sm" data-a="stuckretry" id="stuckretry">Try again now</button>${cm?'<button class="btn sm pri" data-a="force" id="forcepick">Force a pick for '+esc(mg(cur.owner).name)+'</button>':''}</div></div>`}
 function renderBanner0(){const b=$('banner');
   if(!loaded||(!S&&!notFound)){const off=connState()==='offline';b.innerHTML=`<div class="banner"><div class="bm"><div class="nm">${off?'Offline, retrying…':'Connecting…'}</div><div class="sb">${off?'Trying to reach the draft server again':'Reaching the draft server'}</div></div></div>`;return}
   if(notFound||S.status==='lobby'){b.innerHTML='';return}
@@ -533,7 +542,7 @@ const ACT={
  invite:()=>showInvite(),share:()=>shareU(UI.pageUrl('join.html',{l:LID}),'Join '+M.name+' on Fantasy BBALL NCAA'),shareu:el=>shareU(el.dataset.u),copy:el=>UI.copy(el.dataset.u,'Copied'),
  copyrem:()=>UI.copy(reminderMsg(),'Reminder message copied'),
  copymine:()=>{if(me&&ME_OK&&me.k)UI.copy(UI.pageUrl('room.html',{l:LID},{as:me.mid,k:me.k}),'Private link copied');else toast('This phone has no private link. Open the link you were given when you joined.')},
- popen:()=>openPick(),pclose:()=>closePick(),
+ popen:()=>openPick(),pclose:()=>closePick(),stuckretry:()=>{Store.retryNow();toast('Trying the draft server again…',2000);pollOnce()},force:()=>actForce(),
  tsort:el=>{TF.mode=el.dataset.m;lsSet('tmode',TF.mode);updateTeams()},tconf:el=>{TF.conf=el.dataset.c||'';updateTeams()},thide:()=>{TF.hide=!TF.hide;lsSet('thide',TF.hide?'1':'0');updateTeams()},twatch:()=>{TF.watch=!TF.watch;updateTeams()},tqueue:()=>{TF.queue=!TF.queue;updateTeams()},
  watch:(el,e)=>{e.stopPropagation();const t=el.dataset.t;if(WATCHSET.has(t))WATCHSET.delete(t);else WATCHSET.add(t);saveWatch();updateTeams()},
  draftrow:el=>confirmDraft(el.dataset.t),confirm:async el=>{UI.closeSheet();await doPick(el.dataset.t,el.dataset.o)},
@@ -569,6 +578,7 @@ document.addEventListener('change',e=>{const el=e.target;if(el.id==='w15')actFla
 document.addEventListener('input',e=>{if(e.target.id==='tq'||e.target.id==='tqP'){TF.q=e.target.value;updateTeams()}});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='pin'){e.preventDefault();ACT.dounlock()}if(e.key==='Enter'&&e.target.id==='ilink'){e.preventDefault();ACT.ilinkgo()}if(e.key==='Enter'&&e.target.id==='cin'){e.preventDefault();ACT.send()}});
 window.addEventListener('online',()=>{failCount=0;loop()});
+window.addEventListener('fbn:pickstate',e=>{const d=e.detail||{};if(!loaded)return;if(d.state==='alt')toast('Pick #'+d.n+' was saved to a backup spot because the main spot is not answering. It counts the same.',6500);renderBanner()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){loop();updateTitle();renderBanner();presBeat();syncTime()}else updateTitle();presTick()});
 window.addEventListener('focus',()=>{kick();syncTime()});window.addEventListener('pageshow',kick);
 /* the Send button must not take focus from the message box (keeps the phone keyboard open) */
