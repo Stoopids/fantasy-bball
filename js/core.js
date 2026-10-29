@@ -16,7 +16,9 @@ const B32='0123456789ABCDEFGHJKMNPQRSTVWXYZ';                 /* Crockford: no I
 function cryptoBytes(n){const a=new Uint8Array(n);(root.crypto||globalThis.crypto).getRandomValues(a);return a}
 F.cryptoBytes=cryptoBytes;
 function b32of(bytes){let bits=0,val=0,out='';for(const b of bytes){val=(val<<8)|b;bits+=8;while(bits>=5){out+=B32[(val>>>(bits-5))&31];bits-=5}}if(bits>0)out+=B32[(val<<(5-bits))&31];return out}
-F.makeLeagueId=function(rb){rb=rb||cryptoBytes;return b32of(rb(10))};          /* 10 bytes = 80 bits = 16 chars */
+F.MOCK_PREFIX='MK';   /* s24c: mock ids start with MK; real league ids never do (re-rolled), so a device can tell a mock id apart without the store */
+F.makeLeagueId=function(rb){rb=rb||cryptoBytes;let id;do{id=b32of(rb(10))}while(id.slice(0,2)===F.MOCK_PREFIX);return id};
+F.makeMockId=function(rb){rb=rb||cryptoBytes;return F.MOCK_PREFIX+b32of(rb(10)).slice(0,14)};          /* 10 bytes = 80 bits = 16 chars */
 F.formatCode=id=>String(id).toUpperCase().replace(/(.{4})(?=.)/g,'$1-');
 F.parseCode=function(s){s=String(s||'').toUpperCase().replace(/[^0-9A-Z]/g,'').replace(/[IL]/g,'1').replace(/O/g,'0');
   if(s.length!==16)return null;for(const c of s)if(B32.indexOf(c)<0)return null;return s};
@@ -199,7 +201,7 @@ F.mRemove=function(m,mid,slotIndex){if(m.status==='complete')return{error:'The d
   if(m.status==='lobby'){if(slotIndex==null)return{error:'Unknown manager.'};n.slotGen[slotIndex]=(n.slotGen[slotIndex]||0)+1;n.order=n.order.filter(x=>x!==mid);delete n.over[mid];return{state:n,freed:true}}
   n.over[mid]=Object.assign({},n.over[mid],{left:true,away:true});return{state:n,freed:false}};
 F.mEnd=function(m,now){if(m.status!=='live')return{error:'Only a live draft can be ended early.'};const n=clone(m);n.status='complete';n.endedEarly=true;n.endedAt=now;n.paused=false;n.pausedLeft=null;return{state:n}};
-F.mReset=function(m){if(m.status==='complete')return{error:'The draft is complete and locked.'};if(F.redraftLive(m))return{error:'The Redraft cannot be reset. Use Undo, or End the draft early.'};const n=F.defaultMeta(m.id,m.settings,m.cm);n.name=m.name;n.created=m.created;n.pass=m.pass;n.version=m.version;n.epoch=m.epoch+1;n.slotGen=clone(m.slotGen);n.over=clone(m.over);n.spinDone=!!F.spinCompleted(m);
+F.mReset=function(m){if(m.status==='complete')return{error:'The draft is complete and locked.'};if(F.redraftLive(m))return{error:'The Redraft cannot be reset. Use Undo, or End the draft early.'};const n=F.defaultMeta(m.id,m.settings,m.cm);n.name=m.name;n.created=m.created;n.pass=m.pass;n.version=m.version;n.epoch=m.epoch+1;n.slotGen=clone(m.slotGen);n.over=clone(m.over);n.spinDone=!!F.spinCompleted(m);if(m.mock){n.mock=true;n.solo=!!m.solo;n.parent=m.parent||null}
   Object.keys(n.over).forEach(k=>{delete n.over[k].left});n.notes=m.notes;return{state:n}};
 /* ============================ REDRAFT (January 20, 2027) ============================
    Rules, in plain words (the same ones help.html and the redraft page show):

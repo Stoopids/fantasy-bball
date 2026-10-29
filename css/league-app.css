@@ -21,14 +21,14 @@ h1 span{color:var(--acc)}
 /*<NAV-ONE-ROW>*/
 /* All tabs on ONE row, never wrapping or scrolling. Phone: tiny icon above a short label (full name stays in aria-label). Desktop (>=900px): full labels in pills. */
 nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:6px 10px;display:flex;flex-wrap:nowrap;gap:2px;overflow:hidden;max-width:1000px;margin:8px auto 0}
-nav button{position:relative;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:9px;padding:4px 0;min-height:46px;font:inherit;font-size:9.5px;font-weight:800;letter-spacing:-.01em;line-height:1.05;white-space:nowrap;cursor:pointer}
-nav button .ni{font-size:17px;line-height:1}
-nav button .nl{display:block;max-width:100%;overflow:hidden;text-overflow:clip}
-nav button .nl.f{display:none}
-nav button.on{background:var(--acc);color:#111;border-color:var(--acc)}
-nav button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
-@media (max-width:370px){nav{padding:6px 2px;gap:1px}nav button{font-size:8.8px;letter-spacing:-.025em}}
-@media (min-width:900px){nav{padding:8px 10px;gap:5px}nav button{flex:1 1 auto;flex-direction:row;gap:6px;border-radius:99px;padding:8px 10px;min-height:40px;font-size:13px;letter-spacing:0}nav button .ni{font-size:14px}nav button .nl.f{display:block}nav button .nl.s{display:none}}
+nav button,nav a.tb{position:relative;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:9px;padding:4px 0;min-height:46px;font:inherit;font-size:9.5px;font-weight:800;letter-spacing:-.01em;line-height:1.05;white-space:nowrap;cursor:pointer}
+nav button .ni,nav a.tb .ni{font-size:17px;line-height:1}
+nav button .nl,nav a.tb .nl{display:block;max-width:100%;overflow:hidden;text-overflow:clip}
+nav button .nl.f,nav a.tb .nl.f{display:none}
+nav button.on,nav a.tb.on{background:var(--acc);color:#111;border-color:var(--acc)}
+nav button:focus-visible,nav a.tb:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+@media (max-width:370px){nav{padding:6px 2px;gap:1px}nav button,nav a.tb{font-size:8.8px;letter-spacing:-.025em}}
+@media (min-width:900px){nav{padding:8px 10px;gap:5px}nav button,nav a.tb{flex:1 1 auto;flex-direction:row;gap:6px;border-radius:99px;padding:8px 10px;min-height:40px;font-size:13px;letter-spacing:0}nav button .ni,nav a.tb .ni{font-size:14px}nav button .nl.f,nav a.tb .nl.f{display:block}nav button .nl.s,nav a.tb .nl.s{display:none}}
 /*</NAV-ONE-ROW>*/
 /*<DRAFT-TAB>*/
 /* "Draft" is an external link (<a class="nd">) styled like the tab buttons. 10 items now: phone labels get shorter (see NAVSHORT below), full labels only from 1040px. */
@@ -40,8 +40,8 @@ nav a.nd:hover{background:var(--card2)}
 nav a.nd:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
 @media (max-width:420px){nav{padding:6px 10px;gap:1px}}
 @media (max-width:370px){nav a.nd{font-size:8.8px;letter-spacing:-.025em}}
-@media (max-width:340px){nav button,nav a.nd{font-size:8.2px;letter-spacing:-.03em}}
-@media (min-width:600px) and (max-width:999px){nav{gap:3px}nav button,nav a.nd{flex:1 1 0;flex-direction:column;gap:2px;border-radius:9px;padding:4px 0;min-height:46px;font-size:11.5px;letter-spacing:-.01em}nav button .ni,nav a.nd .ni{font-size:19px}nav button .nl.f,nav a.nd .nl.f{display:none}nav button .nl.s,nav a.nd .nl.s{display:block}}
+@media (max-width:340px){nav button,nav a.tb,nav a.nd{font-size:8.2px;letter-spacing:-.03em}}
+@media (min-width:600px) and (max-width:999px){nav{gap:3px}nav button,nav a.tb,nav a.nd{flex:1 1 0;flex-direction:column;gap:2px;border-radius:9px;padding:4px 0;min-height:46px;font-size:11.5px;letter-spacing:-.01em}nav button .ni,nav a.tb .ni,nav a.nd .ni{font-size:19px}nav button .nl.f,nav a.tb .nl.f,nav a.nd .nl.f{display:none}nav button .nl.s,nav a.tb .nl.s,nav a.nd .nl.s{display:block}}
 /*</DRAFT-TAB>*/
 main{max-width:1000px;margin:0 auto;padding:12px 10px 60px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px 0;overflow-wrap:anywhere}
@@ -205,7 +205,7 @@ body.nochat .chat{visibility:hidden}   /* hidden (space kept) while a text field
 .chat-t:focus-visible,.chat-f button:focus-visible,.chat-f input:focus-visible,.chat-p button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .chat-t .ca{color:var(--acc);font-size:12px;flex:none}
 /* nav for 10 items */
-@media (max-width:599px){nav button,nav a.nd{flex:1 1 auto}}
+@media (max-width:599px){nav button,nav a.tb,nav a.nd{flex:1 1 auto}}
 
 /* ===== League site additions (not in the template): banner change control, placeholders, demo bar, toast, redraft buttons, owner card, power rankings ===== */
 html{-webkit-text-size-adjust:100%}
@@ -239,7 +239,7 @@ select{min-height:44px}
 .gUn{min-height:44px}.gUn input{width:20px;height:20px}
 .fresh{min-height:44px}
 .lv,.lv button{min-height:44px}
-@media (min-width:1040px){nav button,nav a.nd{min-height:44px}}
+@media (min-width:1040px){nav button,nav a.tb,nav a.nd{min-height:44px}}
 .trow{cursor:pointer}
 .pill.warn{background:#4b3a0b;border-color:#8a6d12;color:#ffe08a}
 /* power rankings */
@@ -248,8 +248,8 @@ select{min-height:44px}
 @media (max-width:599px){
   nav{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch;justify-content:flex-start}
   nav::-webkit-scrollbar{display:none}
-  nav button,nav a.nd{flex:1 0 auto;min-width:44px;padding:4px 7px;white-space:nowrap}
-  nav button .nl,nav a.nd .nl{max-width:none;overflow:visible}
+  nav button,nav a.tb,nav a.nd{flex:1 0 auto;min-width:44px;padding:4px 7px;white-space:nowrap}
+  nav button .nl,nav a.tb .nl,nav a.nd .nl{max-width:none;overflow:visible}
   .card.oc .chips{grid-auto-rows:44px;min-height:calc(var(--rows)*44px + (var(--rows) - 1)*4px)}
   .card.oc .chip{height:44px;min-height:44px}
   .chip{min-height:44px}
@@ -268,10 +268,10 @@ footer a{min-height:44px;box-sizing:border-box}
 /* s20: ONE column on every League-site view at widths >= 600px: banner, title, tab row, cards/rows, notes, footer and the fixed chat bar all start and end on the same left and right edges (the 980px column inside the 1000px page; 10px side margins on phones). 11 tabs in one row without scrolling (icon over a medium label). */
 .titlebar,.sub{box-sizing:border-box}
 @media (min-width:600px){header{padding:0 10px 8px}.hero{border-radius:0 0 18px 18px}nav{box-sizing:border-box;width:calc(100% - 20px);max-width:980px;margin:8px auto 0;padding:6px 0}}
-nav button .nl.m,nav a.nd .nl.m{display:none}
-@media (min-width:1000px){nav{gap:4px;overflow:hidden}nav button,nav a.nd{flex:1 1 0;min-width:0;flex-direction:column;gap:2px;border-radius:9px;padding:4px 0;min-height:50px;font-size:12px;letter-spacing:0}nav button .ni,nav a.nd .ni{font-size:19px}nav button .nl.f,nav a.nd .nl.f,nav button .nl.s,nav a.nd .nl.s{display:none}nav button .nl.m,nav a.nd .nl.m{display:block}}
+nav button .nl.m,nav a.tb .nl.m,nav a.nd .nl.m{display:none}
+@media (min-width:1000px){nav{gap:4px;overflow:hidden}nav button,nav a.tb,nav a.nd{flex:1 1 0;min-width:0;flex-direction:column;gap:2px;border-radius:9px;padding:4px 0;min-height:50px;font-size:12px;letter-spacing:0}nav button .ni,nav a.tb .ni,nav a.nd .ni{font-size:19px}nav button .nl.f,nav a.tb .nl.f,nav a.nd .nl.f,nav button .nl.s,nav a.tb .nl.s,nav a.nd .nl.s{display:none}nav button .nl.m,nav a.tb .nl.m,nav a.nd .nl.m{display:block}}
 
-/* ===== s20: Bets tab (pushup challenges), CSS adapted from the reference standings site’s Bets look ===== */
+/* ===== s20: Bets tab (pushup challenges), pushup challenge look ===== */
 .sb-in,.sb-ta{background:var(--card2);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;width:100%}
 .st.open{color:#7dd3fc}.st.settled{color:var(--good)}.st.wash{color:var(--mut)}.st.unparsed{color:#fbbf24;border-color:#8a6d12}
 .mx td,.mx th{padding:5px 7px;font-size:13px;text-align:right;white-space:nowrap}.mx td:first-child,.mx th:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
@@ -311,7 +311,7 @@ nav button .nl.m,nav a.nd .nl.m{display:none}
 @media (max-width:359px){.b27-opps .b27-chip{font-size:9px}.b27-chip.op .em{font-size:14px}}
 .b27-selbar{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;margin-top:8px}
 .b27-selbar .b27-sm{min-height:44px;min-width:88px;white-space:nowrap;padding:0 12px;border-radius:10px;border:2px solid var(--line);background:var(--card2);color:var(--tx);font:inherit;font-weight:700;font-size:14px;cursor:pointer}
-.b27-selbar .cnt{font-size:13px;color:var(--mut);margin-left:auto;white-space:nowrap}
+.b27-selbar .cnt{font-size:13px;color:var(--mut);margin-left:auto;white-space:normal;min-width:0;overflow-wrap:anywhere}
 /*</MULTI-BET>*/
 /*<OWES-TABLE>*/
 /* "Who owes who" (Bets 26-27): pair nets + per-manager nets, names never wrap (emoji + name; a short name on phones, ellipsis as the last resort). */
@@ -385,7 +385,7 @@ span.chip.nolink{cursor:default}
 .ocl{align-items:stretch}
 .ocl>.card.oc{align-self:stretch}
 .card.oc .who .nm,.card.oc .who small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* s22: Quick bet pill + picker on a Games card (same class names as the reference; every tap target 44px) */
+/* s22: Quick bet pill + picker on a Games card (every tap target 44px) */
 .qbw{margin-top:8px;display:flex;justify-content:flex-end}
 .qb-btn{min-width:44px;font:inherit;font-size:13px;font-weight:800;min-height:44px;padding:0 14px;border-radius:99px;border:1px solid var(--acc);background:transparent;color:var(--acc);cursor:pointer}
 .qb-btn[aria-expanded=true]{background:var(--acc);color:#111}
@@ -425,5 +425,49 @@ span.chip.nolink{cursor:default}
 .chat-m{min-height:18px;margin-top:4px;font-size:12px;color:var(--mut)}
 .chat-m .bad{color:var(--bad)}
 .chat-t{font:inherit;text-align:left}
-/* s22: "new" mark on the Bets tab (same look as the reference) */
-nav button .nb{position:absolute;top:-5px;right:6px;background:var(--acc);color:#111;border-radius:99px;font-size:9px;font-weight:900;line-height:1;padding:2px 5px;pointer-events:none}
+/* s22: "new" mark on the Bets tab */
+nav button .nb,nav a.tb .nb{position:absolute;top:-5px;right:6px;background:var(--acc);color:#111;border-radius:99px;font-size:9px;font-weight:900;line-height:1;padding:2px 5px;pointer-events:none}
+/* s24: Fix result history + edit hint */
+.b27-hist{margin-top:8px;padding:8px 10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(0,0,0,.18);font-size:13px;overflow-wrap:anywhere}
+.b27-hist ol{margin:4px 0 0;padding-left:18px}.b27-hist li{margin:2px 0}
+.b27-hist li.fx-confirmed{color:var(--good,#4ade80)}.b27-hist li.fx-pending{color:var(--acc,#ffd23f)}
+.b27-edhint{margin:6px 0;padding:6px 10px;border-left:3px solid var(--acc,#ffd23f);background:rgba(255,210,63,.08);border-radius:6px}
+/* s24: below 380px seven opponents on one row gave chips under 44px wide (37px at 320, 42px at 360); wrap to 4 per row and 3 pushup buttons per row so every tap target is >= 44px */
+@media (max-width:379px){.b27-opps{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.b27-opps .b27-chip{font-size:11px}.b27-chip.op .nm .xs{display:inline}.b27-amts{grid-template-columns:repeat(3,1fr)}}
+/* s24: share / copy-link buttons and the deep-link highlight */
+.lshare{display:flex;justify-content:flex-end;margin:0 0 6px}
+.lshare .cpt{min-height:44px;padding:0 14px;font-size:14px}
+.cpl{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:10px;background:var(--card2);color:var(--tx);font:inherit;font-size:16px;cursor:pointer;padding:0;margin-left:auto}
+.b27-cpl{float:right;margin:-4px -4px 4px 8px}
+.dl-hl{outline:3px solid var(--acc);outline-offset:2px;box-shadow:0 0 0 8px rgba(255,210,63,.18);transition:outline-color .4s,box-shadow .4s}
+@media (prefers-reduced-motion:reduce){.dl-hl{transition:none}}
+
+/* s24: League site tabs are real links (a.tb) styled exactly like the old buttons */
+nav a.tb{text-decoration:none;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* s24: Bets list filters: one row (Person, Status, search terms); wraps below 360px */
+.b27-flt{padding:10px}
+.b27-flt .b27-fr{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.b27-flt select,.b27-flt .b27-fq{min-height:44px;width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;color:var(--tx);font:inherit;font-size:16px;font-weight:400;padding:0 12px;margin:0}
+.b27-flt select{appearance:none;-webkit-appearance:none;background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23eef1f7' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 10px center;padding-right:28px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;cursor:pointer;color-scheme:dark}
+.b27-flt .b27-fq{background:var(--card2)}
+.b27-flt .b27-fq::placeholder{color:var(--mut)}
+.b27-flt select:focus-visible,.b27-flt .b27-fq:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+@media (max-width:399px){.b27-flt .b27-fr{gap:5px}.b27-flt select,.b27-flt .b27-fq{font-size:14px;padding:0 7px}.b27-flt select{padding-right:21px;background-position:right 6px center}.b27-flt .b27-fq::placeholder{font-size:13px}}
+@media (max-width:359px){.b27-flt .b27-fr{grid-template-columns:1fr 1fr}.b27-flt .b27-fq{grid-column:1 / -1}}
+.b27-cnt{margin-top:6px}.b27-top{margin:6px 0 0}
+/* s24: shared League site ball loader */
+/*<BALL-LOADER>*/
+/* ONE reusable loader: 3 basketballs bouncing in a staggered rhythm, each with a ground shadow that squashes / stretches; centered, small "Loading…" line under it. CSS only. Markup comes from ballLoader(). */
+.bl{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:26px 0 20px;text-align:center}
+.bl-row{display:flex;gap:16px;align-items:flex-start}
+.bl-b{position:relative;width:30px;height:66px}
+.bl-b i{position:absolute;left:0;top:0;width:30px;height:30px;font-size:27px;line-height:30px;font-style:normal;text-align:center;transform-origin:50% 100%;animation:blBounce .84s infinite}
+.bl-b s{position:absolute;left:3px;bottom:0;width:24px;height:6px;border-radius:50%;background:rgba(255,255,255,.28);box-shadow:0 0 4px rgba(255,255,255,.12);animation:blShadow .84s infinite}
+.bl-b:nth-child(2) i,.bl-b:nth-child(2) s{animation-delay:.14s}
+.bl-b:nth-child(3) i,.bl-b:nth-child(3) s{animation-delay:.28s}
+.bl-t{font-size:12px;color:var(--mut);letter-spacing:.02em}
+@keyframes blBounce{0%,100%{transform:translateY(0) scale(1,1);animation-timing-function:cubic-bezier(.4,0,.9,.6)}46%{transform:translateY(33px) scale(1,1)}50%{transform:translateY(34px) scale(1.14,.84);animation-timing-function:cubic-bezier(.1,.4,.6,1)}56%{transform:translateY(31px) scale(.94,1.08)}}
+@keyframes blShadow{0%,100%{transform:scale(.45,.7);opacity:.3;animation-timing-function:cubic-bezier(.4,0,.9,.6)}50%{transform:scale(1.2,1);opacity:.85;animation-timing-function:cubic-bezier(.1,.4,.6,1)}}
+@media (prefers-reduced-motion:reduce){.bl-b i,.bl-b s{animation:none}.bl-b i{transform:translateY(34px)}.bl-b s{transform:none;opacity:.7}}
+/*</BALL-LOADER>*/
+@media (max-width:359px){.b27-selbar{flex-wrap:wrap}}   /* s24b: the 3 buttons + counter do not fit below 360px: let the row wrap */

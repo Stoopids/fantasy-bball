@@ -105,3 +105,42 @@ UI.rosters=function(st,mgrs,T){const F=FBN;const rs=F.rosters(st,mgrs);const rt=
 /* the same two buttons everywhere (room, recap, league site): Draft recap and League site. current = 'recap' | 'site' | '' marks the page you are on. Links hold the league code only. */
 UI.siteButtons=function(lid,domId,current){const E=UI.esc;const c=k=>E('btn grow'+(current===k?' cur':''));const a=k=>E(current===k?'page':'false');
   return '<div class="row sitebtns" id="'+E(domId)+'"><a class="'+c('recap')+'" id="'+E(domId)+'_recap" aria-current="'+a('recap')+'" href="'+E(UI.pageUrl('recap.html',{l:lid}))+'">Draft recap</a><a class="'+c('site')+'" id="'+E(domId)+'_site" aria-current="'+a('site')+'" href="'+E(UI.pageUrl('league.html',{l:lid}))+'">League site</a></div>'};
+/* s24 mock drafts: a practice league is a normal league with meta.mock=true and its own id. It is NEVER added to "Your leagues" (fbn.leagues); the device keeps
+   only the last 5 mocks in fbn.mocks: [{id,name,parent,ts,grade,solo}]. */
+UI.MOCK_KEEP=5;
+UI.myMocks=()=>{const a=UI.lsJSON('mocks',[]);return Array.isArray(a)?a.filter(x=>x&&typeof x.id==='string'&&FBN.parseCode(x.id)):[]};
+/* s24c: every mock id this device has seen (not only the last 5 shown), so old resume records can be refused offline */
+UI.MOCK_IDS_KEEP=100;
+UI.isMockId=function(id){id=FBN.parseCode(String(id||''));if(!id)return false;
+  if(UI.myMocks().some(x=>x.id===id))return true;const all=UI.lsJSON('mockids',[]);if(Array.isArray(all)&&all.indexOf(id)>=0)return true;
+  /* the MK prefix marks a mock unless this device knows it as one of its real leagues (a real league made before s24c could start with MK) */
+  if(id.slice(0,2)===FBN.MOCK_PREFIX&&!UI.myLeagues().some(l=>l&&l.id===id))return true;return false};
+UI.rememberMock=function(o){try{const all=UI.lsJSON('mockids',[]);const b=(Array.isArray(all)?all:[]).filter(x=>x!==o.id);b.unshift(o.id);UI.lsSet('mockids',JSON.stringify(b.slice(0,UI.MOCK_IDS_KEEP)))}catch(e){}const a=UI.myMocks();const old=a.find(x=>x.id===o.id)||{};const rest=a.filter(x=>x.id!==o.id);rest.unshift(Object.assign({},old,o,{ts:old.ts||o.ts||Date.now()}));UI.lsSet('mocks',JSON.stringify(rest.slice(0,UI.MOCK_KEEP)))};
+UI.practiceBanner=function(sub){return '<div class="practicebn" id="practicebn" role="note"><b>PRACTICE DRAFT</b><span>'+UI.esc(sub||'Not your real league. Nothing here changes your league.')+'</span></div>'};
+/* "Back to my league": the league this mock copied, else the first league on this device, else the home page */
+UI.mockBack=function(meta){const p=meta&&meta.parent&&FBN.parseCode(meta.parent);const l=p||((UI.myLeagues().find(x=>x&&typeof x.id==='string'&&FBN.parseCode(x.id))||{}).id);
+  return l?{href:UI.roomHref(FBN.parseCode(l)),label:'Back to my league'}:{href:UI.pageUrl('index.html'),label:'Back to home'}};
+UI.mockAgain=meta=>UI.pageUrl('mock.html',{from:meta&&meta.parent?FBN.parseCode(meta.parent):''});
+/* s24: the current tab lives in the URL hash as "#tab=<name>" and NOTHING else (never an id, seat, k= or other secret). The query string is kept as is.
+   U.hashTab(valid): the tab named in the hash; null when the hash names an unknown tab or holds anything else; undefined when there is no hash. */
+UI.hashTab=function(valid,hash){const h=String(hash==null?location.hash:hash).replace(/^#/,'');if(!h)return undefined;const m=/^tab=([a-z]+)$/.exec(h);return m&&valid.indexOf(m[1])>=0?m[1]:null};
+UI.setHashTab=function(t,push){if(!/^[a-z]+$/.test(String(t)))return;const want='#tab='+t;if(location.hash===want)return;try{history[push?'pushState':'replaceState'](null,'',location.pathname+location.search+want)}catch(e){}};
+
+/* s24: where the user was, so a refresh or a home-screen app launch returns there.
+   Draft room / recap write fbn.last.<id> (per-league tab) and the shared "last place" record fbn.lastnav = {kind:'room'|'recap', id, path, tab, ts}.
+   The League site (league.html, League-owned) writes fbn.lastsite = {id, t, at}; UI.lastPlace() reads both and returns the newest in one shape.
+   Only a page, a league code, its plain query (l / watch) and a tab name: never k=, a manager id or a secret. Mock drafts never write here. */
+UI.RESUME_MS=14*864e5;
+/* first page of this app session? (read once at load, then marked; league.html marks the same flag) */
+UI.firstPage=(()=>{try{const f=!sessionStorage.getItem('fbn.launched');sessionStorage.setItem('fbn.launched','1');return f}catch(e){return false}})();
+UI.cleanPath=function(path){try{const u=new URL(path,location.href);if(u.origin!==location.origin||!/\/(room|recap)\.html$/.test(u.pathname))return null;const q=new URLSearchParams();const l=FBN.parseCode(u.searchParams.get('l')||'');if(!l)return null;q.set('l',l);if(u.searchParams.get('watch')==='1')q.set('watch','1');return u.pathname+'?'+q.toString()}catch(e){return null}};
+UI.saveLast=function(page,id,tab,mock){if(mock||UI.isMockId(id)||!id||!/^[a-z]+$/.test(String(tab||'')))return;const path=UI.cleanPath(location.pathname+location.search);if(!path)return;const ts=Date.now();
+  UI.lsSet('last.'+id,JSON.stringify({page,tab,t:ts}));UI.lsSet('lastnav',JSON.stringify({kind:page,id,path,tab,ts}))};
+UI.lastTab=function(id,page,valid){if(UI.isMockId(id))return null;const o=UI.lsJSON('last.'+id,null);return o&&o.page===page&&valid.indexOf(o.tab)>=0&&Date.now()-(o.t||0)<30*864e5?o.tab:null};
+UI.isStandalone=function(){try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
+/* the newest valid place, as {kind,id,url,ts}, or null */
+UI.lastPlace=function(){const c=[];const ok=t=>/^[a-z]{2,16}$/.test(String(t||''));
+  const a=UI.lsJSON('lastnav',null);if(a&&(a.kind==='room'||a.kind==='recap')&&!a.mock&&ok(a.tab)&&!UI.isMockId(a.id)){const id=FBN.parseCode(String(a.id||''));const path=UI.cleanPath(a.path||'');
+    if(id&&path&&path.indexOf('l='+id)>=0&&path.indexOf(a.kind+'.html')>=0)c.push({kind:a.kind,id,url:path+'#tab='+a.tab,ts:+a.ts||0})}
+  const b=UI.lsJSON('lastsite',null);if(b&&!b.mock&&!UI.isMockId(b.id)){const id=FBN.parseCode(String(b.id||''));if(id&&/^[a-z]{3,12}$/.test(String(b.t||'')))c.push({kind:'league',id,url:UI.pageUrl('league.html',{l:id})+'#'+b.t,ts:+b.at||0})}
+  const now=Date.now();const v=c.filter(x=>x.ts>0&&now-x.ts<UI.RESUME_MS&&x.ts<=now+6e4).sort((x,y)=>y.ts-x.ts);return v[0]||null};

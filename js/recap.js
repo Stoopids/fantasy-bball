@@ -39,9 +39,12 @@ let TSTL=false;/* League's rule: strip a leading "Test " only when the LEAGUE NA
 const disp=n=>{n=String(n==null?'':n);if(!TSTL)return n;const t=n.replace(/^Test\s+(?=\S)/,'');return(!t.trim()||/^test$/i.test(t.trim()))?n:t};
 const sec=(idv,h,body,cls)=>`<section class="rsec${cls?' '+cls:''}" id="${esc(idv)}" aria-labelledby="${esc(idv)}_h"><h2 id="${esc(idv)}_h">${esc(h)}</h2>${body}</section>`;
 FBNLeague.load(id,{pool:T.POOL}).then(d=>{D=d;if(!d.meta){app.innerHTML='<div class="card" id="nf"><h2>League not found</h2><a class="btn" href="index.html">Home</a></div>';return}
- const st=d.state,m=d.meta;TSTL=/^test(?![A-Za-z0-9])/i.test(String(m.name==null?'':m.name).trim());
+ const st=d.state,m=d.meta;
+ /* s24: a mock (practice league): PRACTICE banner, grades say they were against bots, Run another / Back to my league, no League site and no Redraft */
+ const MOCK=!!m.mock;rcMock=MOCK;const nBots=MOCK?Object.keys(m.over||{}).filter(k=>m.over[k]&&m.over[k].bot).length:0,nPeople=MOCK?Math.max(0,(d.managers||[]).length-nBots):0;
+ const VS=nBots?'Practice grade: graded against '+nBots+' bot'+(nBots===1?'':'s')+(nPeople>1?' and '+(nPeople-1)+' other '+(nPeople-1===1?'person':'people'):'')+', not your real league.':'Practice grade: graded against the others in this mock, not your real league.';TSTL=/^test(?![A-Za-z0-9])/i.test(String(m.name==null?'':m.name).trim());
  if(m.status==='lobby'){app.innerHTML=`<div class="card"><h2>${esc(m.name)}</h2><p class="mut">The draft has not started yet.</p><a class="btn" href="${esc(U.pageUrl('room.html',{l:id}))}">Go to the lobby</a></div>`+U.buildTag();
- U.bind(ACT);return}
+ U.bind(ACT);wireTabs();return}
  const done=st.status==='complete',redr=F.redraftLive(m);
  const real=st.real||st.picks;const MG=d.managers;const mgOf=mid=>MG.find(y=>y.mid===mid)||{mid,name:'Manager',team:''};const nameOf=mid=>mgOf(mid).name;
  const me=U.getMe(id),myMid=me&&me.mid&&MG.some(x=>x.mid===me.mid)?me.mid:'';
@@ -53,14 +56,14 @@ FBNLeague.load(id,{pool:T.POOL}).then(d=>{D=d;if(!d.meta){app.innerHTML='<div cl
  const sn=tid=>(T.TEAMS[tid]&&(T.TEAMS[tid].short||T.TEAMS[tid].name))||tid;
  /* ---- 1 congratulations ---- */
  const cd=F.redraftCountdown(Date.now(),U.tz());
- const msg=!done?'The draft is under way.':st.endedEarly?'The draft ended early. See you again '+F.REDRAFT.asOfLabel+' for the Redraft!':redr?'Congratulations! The Redraft is complete. Good luck this season!':'Congratulations! The draft is complete. See you '+F.REDRAFT.asOfLabel+' for the Redraft!';
+ const msg=!done?(MOCK?'The mock draft is under way.':'The draft is under way.'):MOCK?(st.endedEarly?'The mock draft ended early.':'Mock draft complete! Here is how you did against the bots.'):st.endedEarly?'The draft ended early. See you again '+F.REDRAFT.asOfLabel+' for the Redraft!':redr?'Congratulations! The Redraft is complete. Good luck this season!':'Congratulations! The draft is complete. See you '+F.REDRAFT.asOfLabel+' for the Redraft!';
  /* s23 (item 9): a finished draft opens on a full-screen confetti banner (the confetti is CSS only and is skipped with reduced motion) */
  const CONF=done?'<div class="confetti" aria-hidden="true">'+Array.from({length:28},(_,k)=>`<i style="left:${esc((k*37)%100)}%;animation-delay:${esc(((k*53)%30)/10)}s;background:${esc(['#ffd23f','#4ade80','#60a5fa','#f472b6','#fb923c','#a78bfa'][k%6])}"></i>`).join('')+'</div>':'';
  const s1hero=done?`<section class="rsec rchero" id="recaphead" aria-labelledby="rc1_h">${CONF}<div class="rcemo" aria-hidden="true">🎉🏀🏆🎊</div><div class="rclbl" id="rcfinal">${esc(st.endedEarly?'ENDED EARLY':'FINAL')} · ${real.length} OF ${st.realTotal==null?st.total:st.realTotal} PICKS</div><h1 id="rc1_h" class="rcmsg">${esc(msg)}</h1>`
-  +(!redr&&cd.state!=='past'?`<div class="rccount" id="rccount"><b>${esc(cd.text)}</b> until the Redraft on ${esc(F.REDRAFT.asOfLabel)}</div>`:'')
-  +`<div class="small mut">${esc(m.name)}</div><a class="btn pri rcdown" id="rcdown" href="#powerrecap_s">See how you scored ↓</a></section>`:'';
+  +(!redr&&!MOCK&&cd.state!=='past'?`<div class="rccount" id="rccount"><b>${esc(cd.text)}</b> until the Redraft on ${esc(F.REDRAFT.asOfLabel)}</div>`:'')
+  +`<div class="small mut">${esc(m.name)}</div><a class="btn pri rcdown" id="rcdown" href="#tab=grade">See how you scored ↓</a></section>`:'';
  const s1=`<section class="card rsec" id="recaphead" aria-labelledby="rc1_h"><div class="small mut">${done?(st.endedEarly?'ENDED EARLY':'FINAL'):'DRAFT IN PROGRESS'}</div><h2 id="rc1_h" style="margin:2px 0 6px">${esc(msg)}</h2>`
-  +(done&&!redr&&cd.state!=='past'?`<div class="rccount" id="rccount"><b>${esc(cd.text)}</b> until the Redraft on ${esc(F.REDRAFT.asOfLabel)}</div>`:'')
+  +(done&&!redr&&!MOCK&&cd.state!=='past'?`<div class="rccount" id="rccount"><b>${esc(cd.text)}</b> until the Redraft on ${esc(F.REDRAFT.asOfLabel)}</div>`:'')
   +`<div class="small mut">${esc(m.name)} · ${real.length} of ${st.realTotal==null?st.total:st.realTotal} picks · ${m.settings.type==='snake'?'Snake':'Linear'} · ${redr?'Redraft: '+m.settings.rounds+' round'+(m.settings.rounds===1?'':'s')+' (rosters include kept teams)':m.settings.rounds+' teams each'}</div><div class="row" style="margin-top:6px"><a class="btn sm" id="rc_room" href="${esc(U.roomHref(id))}">Draft room</a></div></section>`;
  /* ---- 2 grades (filled in by the analysis file when it matches this league) ---- */
  const s2=sec('powerrecap_s','Here is how you scored',`<div id="powerrecap"><div class="card rcempty" id="rcempty"><b>Your draft recap will appear here.</b><div class="small mut" style="margin-top:4px">${done?'A grade, a short summary and a deeper analysis are added once this league’s drafts have been analysed. Nothing is made up.':'It appears after the draft is complete.'}</div></div></div>`);
@@ -116,12 +119,14 @@ FBNLeague.load(id,{pool:T.POOL}).then(d=>{D=d;if(!d.meta){app.innerHTML='<div cl
  /* s23 (item 9): League grades (all 8 rosters ranked; filled in with the grades below) and the bottom buttons: See my team + League site, Share my grade, Invite friends to watch, More (exports + watch link) */
  const sG=`<section class="rsec" id="rc_grades" aria-labelledby="rc_grades_h" hidden><h2 id="rc_grades_h">League grades</h2><p class="small mut rcnote">All ${MG.length} teams, best first. Tap a team for its summary, picks and deeper analysis.</p><ol class="grlist" id="grlist"></ol></section>`;
  const watchUrl=U.pageUrl('room.html',{l:id,watch:1});
- const s10=`<section class="rsec rcbig" id="rc_site" aria-label="What's next"><h2>What’s next</h2>${done?`<div class="rcnext"><a class="btn pri block endbig" id="rcmyteam" href="${esc(U.pageUrl('room.html',{l:id,tab:'my'}))}">${myMid?'See my team':'See the teams'}</a><a class="btn block endbig" id="rcsite" href="${esc(U.pageUrl('league.html',{l:id}))}">League site</a></div>`:`<button class="btn block endbig" id="rcsite" disabled aria-disabled="true">League site · after the draft</button>`}<p class="rcline" id="rcsiteline">Games start early November 2026 · Redraft ${esc(F.REDRAFT.asOfLabel)} (drop up to ${F.REDRAFT.maxDrops} teams)</p>
+ const mb=MOCK?U.mockBack(m):null;
+ const s10=MOCK?`<section class="rsec rcbig" id="rc_site" aria-label="What's next"><h2>What’s next</h2><div class="rcnext"><a class="btn pri block endbig" id="mockagain" href="${esc(U.mockAgain(m))}">Run another</a><a class="btn block endbig" id="mockback" href="${esc(mb.href)}">${esc(mb.label)}</a></div><p class="rcline" id="rcsiteline">Practice only. Your real league is not changed.</p><div class="row rcshare"><button class="btn grow" data-a="sharegrade" id="rcsharegrade" hidden>Share my grade</button>${done?`<a class="btn grow" id="rc_room" href="${esc(U.roomHref(id))}">Draft room</a>`:''}</div></section>`:`<section class="rsec rcbig" id="rc_site" aria-label="What's next"><h2>What’s next</h2>${done?`<div class="rcnext"><a class="btn pri block endbig" id="rcmyteam" href="${esc(U.pageUrl('room.html',{l:id,tab:'my'}))}">${myMid?'See my team':'See the teams'}</a><a class="btn block endbig" id="rcsite" href="${esc(U.pageUrl('league.html',{l:id}))}">League site</a></div>`:`<button class="btn block endbig" id="rcsite" disabled aria-disabled="true">League site · after the draft</button>`}<p class="rcline" id="rcsiteline">Games start early November 2026 · Redraft ${esc(F.REDRAFT.asOfLabel)} (drop up to ${F.REDRAFT.maxDrops} teams)</p>
   <div class="row rcshare"><button class="btn grow" data-a="sharegrade" id="rcsharegrade" hidden>Share my grade</button><button class="btn grow" data-a="invitewatch" id="rcinvite">Invite friends to watch</button></div>
   <details class="rcmore" id="rcmore"><summary>More</summary><div class="exportrow" id="exportrow"><span class="mut">Save a copy:</span><button class="lnkbtn" data-a="csv" id="csvbtn">Export CSV</button><button class="lnkbtn" data-a="json" id="jsonbtn">Export JSON</button></div><div class="small" style="margin-top:6px">Watch link (read-only): <a id="rcwatch" href="${esc(watchUrl)}">${esc(watchUrl)}</a></div><div class="row" style="margin-top:6px"><button class="btn sm" data-a="share" id="rcshare">Share this recap</button>${done?`<a class="btn sm" id="rc_room" href="${esc(U.roomHref(id))}">Draft room</a>`:''}</div></details></section>`;
  /* ---- 11 footer ---- */
  const s11=`<footer class="rsec rcfoot" id="rc_foot"><h2 style="font-size:16px">How grades work</h2><p class="small mut" id="rcgradehow">Each roster is graded A+ to D by where it ranks among the 8. The rank comes from a strength score: every school gets a score from its preseason power rank (rank 1 is best, an unranked school counts 0) averaged with its projected tournament seed (seed 1 is best, no seed counts 0), and a roster’s strength is the average score of all its schools, out of 100. Conference and last record only appear in the written analysis, not in the grade. The same strength and rank are used in the Power rankings, Rosters side by side and the awards. It is a rough preseason guide, not a prediction. Pick times are approximate, projected seeds are estimates, and no grade is shown unless this league’s rosters have been analysed.</p></footer>`;
- app.innerHTML=(done?s1hero+s2+sG:s1)+s3+(done?s4:'')+s5+(done?s6+s7+s8+s9:'')+s10+s11+U.buildTag();U.bind(ACT);
+ app.innerHTML=(MOCK?U.practiceBanner(VS):'')+(done?s1hero+s2+sG:s1)+s3+(done?s4:'')+s5+(done?s6+s7+s8+s9:'')+s10+s11+U.buildTag();U.bind(ACT);
+ rcNav();wireTabs();
  /* s23: no sticky League site bar on the recap; the big buttons are at the bottom (What's next) */
  ONROWS=mt=>{
    /* the example league's hand-written file text has its own ranking: make rosters + awards follow the Power section's order */
@@ -137,18 +142,41 @@ FBNLeague.load(id,{pool:T.POOL}).then(d=>{D=d;if(!d.meta){app.innerHTML='<div cl
     GRD[did]=`<p class="rcsum">${esc(r.short)}</p><div class="grpicks">${picksOf(mid).filter(p=>p.tid).map(p=>chip(p.tid,{sm:1})).join('')}</div><h3 class="small">Deeper analysis</h3>${paras.map(t=>`<p class="small">${esc(t)}</p>`).join('')}`;
     return `<li class="grli${esc(own?' mine':'')}" data-mid="${esc(mid)}"><button type="button" class="grrow" data-a="grrow" aria-expanded="false" aria-controls="${esc(did)}"><span class="grk">#${esc(r.rank)}</span><span class="rcgrade sm ${esc(gcls(r.grade))}">${esc(r.grade)}</span><span class="grt"><b>${esc(disp(r._m.team))}${own?' <span class="tag pri">You</span>':''}</b><small>${esc(disp(r._m.name))}</small></span><span class="grb">${b?'<small class="mut">Best school</small>'+esc(sn(b)):''}</span><span class="grc" aria-hidden="true">▾</span></button>
      <div class="grdet" id="${esc(did)}" hidden></div></li>`}).join('');
-   secG.hidden=false}
+   secG.hidden=false;if(MOCK){const nt=secG.querySelector('.rcnote');if(nt)nt.insertAdjacentHTML('afterend',`<p class="vsbots small" id="vsbots_all">${esc(VS)}</p>`)}}
   if(!mine)return;
   const my=diffs.filter(x=>x.p.owner===myMid);const bp=my.filter(x=>x.diff>0).sort((a,b)=>b.diff-a.diff)[0],bo=my.filter(x=>x.diff<0).sort((a,b)=>a.diff-b.diff)[0];
   const sum=document.getElementById('rcsummary');
   if(sum)sum.insertAdjacentHTML('beforebegin',`<div class="rcrank" id="rcrank"><b>${esc(ord(+mine.rank))}</b> of ${MG.length} in power rankings</div>`);
   const deepb=document.getElementById('rcdeepbtn');
   if(deepb)deepb.insertAdjacentHTML('beforebegin',`<div class="rcchips" id="rcchips">${bp?`<span class="cc2" id="rcbest"><b>Best pick</b> ${esc(sn(bp.p.tid))} <span class="mut">#${bp.p.n}, rank ${bp.rank}</span></span>`:''}${bo?`<span class="cc2" id="rcbold"><b>Boldest</b> ${esc(sn(bo.p.tid))} <span class="mut">#${bo.p.n}, rank ${bo.rank}</span></span>`:''}</div>`);
-  const host=document.getElementById('rcmine');if(host)host.insertAdjacentHTML('beforeend',`<div class="row rcjump"><a class="btn grow" id="rcgradesjump" href="#rc_grades">See all league grades</a><a class="btn grow" id="rcfulljump" href="#rc_order">See full draft recap</a></div>`);
+  const host=document.getElementById('rcmine');if(host)host.insertAdjacentHTML('beforeend',`<div class="row rcjump"><a class="btn grow" id="rcgradesjump" href="#tab=grades">See all league grades</a><a class="btn grow" id="rcfulljump" href="#tab=order">See full draft recap</a></div>`);
   GRADE={grade:mine.grade,team:disp(mine._m.team),name:disp(mine._m.name),rank:ord(+mine.rank)+' of '+MG.length,league:m.name,best:bp?sn(bp.p.tid):''};
-  const sg=document.getElementById('rcsharegrade');if(sg)sg.hidden=false};
+  const sg=document.getElementById('rcsharegrade');if(sg)sg.hidden=false;
+  if(MOCK){const hm=document.getElementById('rcrank');if(hm)hm.insertAdjacentHTML('afterend',`<div class="vsbots" id="vsbots">${esc(VS)}</div>`);GRADE.league=m.name+' (practice vs bots)';U.rememberMock({id,name:m.name,parent:m.parent||'',solo:!!m.solo,grade:mine.grade})}};
  if(done)wirePower(d,st,MG,myMid);
 }).catch(e=>{app.innerHTML='<div class="card bad">Could not load the league: '+esc(e.message||e)+'</div>'});
+/* s24: recap sections act as tabs in the URL hash: #tab=<name> only (never an id, seat or secret). Refresh / shared link scrolls to that section, back / forward follow it,
+   an unknown name falls back to the top; while reading, the hash follows the section on screen (replaceState, so history is not flooded). */
+const RTABS={top:'recaphead',grade:'powerrecap_s',grades:'rc_grades',order:'rc_order',howorder:'rc_spin',rosters:'rc_rosters',outlook:'rc_outlook',conferences:'rc_conf',times:'rc_times',awards:'rc_awards',next:'rc_site',about:'rc_foot'};
+const RKEYS=Object.keys(RTABS);let rtTrack=false,rtT=0;
+function rtEl(t){const el=document.getElementById(RTABS[t]);return el&&!el.hidden&&el.offsetParent!==null?el:null}
+function rtGo(t){if(t==='top'){window.scrollTo(0,0);return true}const el=rtEl(t);if(!el)return false;el.scrollIntoView({block:'start'});return true}
+let rcMock=null;const rcSave=t=>{if(rcMock===false)U.saveLast('recap',id,t,false)};
+function rtWant(){const t=U.hashTab(RKEYS);if(t==null){/* no tab in the hash: the last section used for this league; an unknown or foreign hash: the top */const s=(t===undefined?U.lastTab(id,'recap',RKEYS):null)||'top';U.setHashTab(s,false);return s}return t}
+function rtSeek(t,tries){rtTrack=false;rcNavMark(t);rcSave(t);clearTimeout(rtT);const step=k=>{const okk=rtGo(t);if(okk||k>=25){rtT=setTimeout(()=>{if(okk)rtGo(t);rtTrack=true},400);return}rtT=setTimeout(()=>step(k+1),300)};step(0)}
+function rtOnScroll(){if(!rtTrack)return;let cur='top';for(const k of RKEYS){const el=rtEl(k);if(el&&el.getBoundingClientRect().top<=90)cur=k}U.setHashTab(cur,false);rcNavMark(cur);rcSave(cur)}
+const RNAMES={top:'Top',grade:'My grade',grades:'Grades',order:'Draft order',howorder:'Order set',rosters:'Rosters',outlook:'Outlook',conferences:'Conferences',times:'Pick times',awards:'Awards',next:'What’s next',about:'How grades work'};
+/* s24: the recap sections as real links (#tab=<name>): plain left click jumps in place; modified / middle / right clicks are left to the browser */
+function rcNav(){const keys=RKEYS.filter(k=>k==='top'||rtEl(k)||(document.getElementById(RTABS[k])&&k==='grades'));if(keys.length<3)return;
+  const nav=document.createElement('nav');nav.className='rcnav';nav.id='rcnav';nav.setAttribute('aria-label','Recap sections');
+  nav.innerHTML=keys.map(k=>'<a href="#tab='+k+'" data-rt="'+k+'" id="rcnav_'+k+'">'+esc(RNAMES[k])+'</a>').join('');
+  const head=document.getElementById('recaphead');if(head)head.insertAdjacentElement('afterend',nav);
+  nav.addEventListener('click',e=>{const a=e.target.closest('a[data-rt]');if(!a)return;if(e.button!==0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;e.preventDefault();U.setHashTab(a.dataset.rt,true);rtSeek(a.dataset.rt)})}
+function rcNavMark(t){document.querySelectorAll('#rcnav a').forEach(a=>{if(a.dataset.rt===t)a.setAttribute('aria-current','location');else a.removeAttribute('aria-current')})}
+let rtWired=false;
+function wireTabs(){const t=rtWant();if(!rtWired){rtWired=true;let q=0;window.addEventListener('scroll',()=>{if(q)return;q=setTimeout(()=>{q=0;rtOnScroll()},250)},{passive:true});
+  window.addEventListener('hashchange',()=>rtSeek(rtWant()));window.addEventListener('popstate',()=>rtSeek(rtWant()))}
+  try{history.scrollRestoration='manual'}catch(e){}rtSeek(t)}
 /* section 2: the viewer's grade card from data/power-rankings.json through the League Site module (FBNPower.match / mount). Anything that does not match this league's managers and rosters leaves the empty state. */
 function wirePower(d,st,MG,myMid){const host=document.getElementById('powerrecap');if(!host||!window.FBNPower||!(FBNPower.resolve||FBNPower.match))return;
   const o={done:true,managers:MG,state:st,teams:T.TEAMS};

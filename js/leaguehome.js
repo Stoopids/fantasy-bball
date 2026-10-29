@@ -9,14 +9,53 @@ const app=document.getElementById('app');app.id='lapp';const $=s=>document.query
 const plural=(n,a,b)=>n+' '+(n===1?a:b);
 const homeLink=()=>'<a href="index.html">Home</a>';
 if(!id){app.innerHTML='<main><div class="card"><b>No league</b><div class="note">Open this page from your league link.</div><p><a class="btn" href="index.html">Home</a></p></div></main>';return}
-app.innerHTML='<main><div class="card" id="loading">Loading the league…</div></main>';
+/* s24: one shared loader for every League site loading state; 3 bouncing 🏀, CSS only in css/league-app.css .bl*), role=status */
+const LLOADER=window.LLOADER=t=>{const b='<span class="bl-b"><i>🏀</i><s></s></span>';return '<div class="bl" role="status" aria-live="polite"><div class="bl-row" aria-hidden="true">'+b+b+b+'</div><div class="bl-t">'+esc(t||'Loading…')+'</div></div>'};
+app.innerHTML='<main><div id="loading">'+LLOADER('Loading…')+'</div></main>';
 /* ---------- state ---------- */
 const TABS=[['standings','🏆 Standings','Ranks','Standings'],['games','📅 Games','Games','Games'],['rosters','👥 Rosters','Squads','Rosters'],['bets','💪 Bets','Bets','Bets'],['teams','🏀 All teams','Teams','All teams'],['postseason','✅ Postseason','Post','Postseason'],['redraft','🔄 Redraft','Redraft','Redraft'],['archive','🗂️ Archive','Past','Archive'],['rules','📖 Rules','Rules','Rules']];
 const KEYS=TABS.map(t=>t[0]);
 let tab='standings',ownerSel=null,openTeam={},gOwner='all',gMode=null,gDay='all',gH2H=false,gAll=false;
 let L=null,D=null,SC=null,TN=null,errS='',errT='',CM=false,HERO_CUSTOM=null,MG=[];
-const hashSet=()=>{const h=(location.hash||'').replace('#','').split('/');let t=h[0];if(t==='teams'&&!h[1]){}if(t==='standings'&&h[1]==='tournament')t='postseason';if(t==='power')t='standings';if(KEYS.includes(t))tab=t};
-const hashPut=()=>{try{history.replaceState(null,'','#'+tab)}catch(e){}};
+/* s24 routes: every tab has its own hash (#standings #games #rosters #bets #teams #postseason #redraft #archive #rules), plus deep links #bets/<betId> and #games/<gameId>.
+   URLs written by this page (pushState for tab switches, replaceState for the first normalization) and every shared / copied link are built ONLY from
+   origin + path + ?l=CODE (+ &demo=1 in the demo) + the route hash: never a manager id, k=, cm= or any other query value. */
+let SUB=null,MISS=null;
+const SUBOK=v=>/^[A-Za-z0-9_.:-]{1,64}$/.test(v);
+const FRE=/^bets\/f=(all|me|[1-8])-(all|waiting|open|settled|wash)(?:\/q=([^\/]{1,180}))?$/;   /* Bets filter in the hash: person (all / me / position 1-8 in the league, never a manager id) - status */
+function readRoute(hs){try{const h=String(hs||'').replace(/^#/,'').split('&')[0];const fm=FRE.exec(h);if(fm)return{t:'bets',sub:null,f:fm[1]+'-'+fm[2],q:fm[3]?decodeURIComponent(fm[3]):''};if(!h||h.indexOf('=')>=0)return null;const p=h.split('/');let t=p[0],sub=p[1]?decodeURIComponent(p[1]):null;if(sub&&!SUBOK(sub))sub=null;
+  if(t==='standings'&&p[1]==='tournament'){t='postseason';sub=null}if(t==='power')t='standings';if(t==='schedule')t='games';if(!KEYS.includes(t))return null;if(t!=='bets'&&t!=='games')sub=null;return{t,sub}}catch(e){return null}}
+const standalone=()=>{try{return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true}catch(e){return false}};
+/* read before anything strips the fragment. No route in the URL: a reload / back-forward, or any open inside the home-screen app, falls back to the last tab of
+   this browser tab (sessionStorage) and then to the last tab used for THIS league on this device (localStorage fbn.x.<league>.ltab). A plain open in the browser
+   (e.g. from the draft room) still starts on Standings. */
+const ROUTE0=(()=>{const r=readRoute(location.hash);if(r)return r;try{const nav=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0];if((nav&&(nav.type==='reload'||nav.type==='back_forward'))||standalone()){const x=readRoute(sessionStorage.getItem('fbn.ltab.'+id)||'')||readRoute(U.lsGet('x.'+id+'.ltab')||'');if(x)return{t:x.t,sub:null}}}catch(e){}return null})();
+/* s24 (draft room HOOK.md, hook 1): mock leagues (meta.mock) never write or use the last-tab / fbn.lastsite memory; any old record of this mock league is cleared */
+const MOCK=()=>!!(L&&L.meta&&L.meta.mock===true);
+function saveLast(){const mk=MOCK();try{if(!mk)sessionStorage.setItem('fbn.ltab.'+id,routeHash());else sessionStorage.removeItem('fbn.ltab.'+id);sessionStorage.setItem('fbn.launched','1')}catch(_){}
+  if(mk){U.lsSet('x.'+id+'.ltab',null);const ll=U.lsJSON('lastsite',null);if(ll&&ll.id===id)U.lsSet('lastsite',null);return}
+  if(DEMO)return;U.lsSet('x.'+id+'.ltab',tab);U.lsSet('lastsite',JSON.stringify({id,t:tab,at:Date.now()}))}
+const fHash=()=>{try{return tab==='bets'&&window.LBETS&&LBETS.filterHash?LBETS.filterHash():''}catch(e){return''}};
+const routeHash=()=>tab+(SUB?'/'+encodeURIComponent(SUB):fHash()?'/'+fHash():'');
+const cleanPath=h=>location.pathname+'?l='+encodeURIComponent(id)+(DEMO?'&demo=1':'')+(h?'#'+h:'');
+const shareUrl=h=>location.origin+cleanPath(h);
+function hashPut(push){try{const want=cleanPath(routeHash());saveLast();if(location.pathname+location.search+location.hash===want)return;history[push?'pushState':'replaceState'](null,'',want)}catch(e){}}
+function applyRoute(r){if(r.t!==tab||r.sub!==SUB)MISS=null;tab=r.t;SUB=r.sub;if(r.f&&window.LBETS&&LBETS.setFilterHash)LBETS.setFilterHash(r.f,r.q);if(tab==='games'&&SUB&&D){const g=(D.games||[]).find(x=>String(x.id)===SUB);if(g){gOwner='all';gDay='all';gH2H=false;if(!gOwned(g))gAll=true;gMode=g.status==='final'?'scores':'upcoming'}}}
+function normalizeUrl(){saveLast();try{if(ROUTE0){history.replaceState(null,'',cleanPath(routeHash()))}else if(location.hash||location.search!==cleanPath('').slice(location.pathname.length))history.replaceState(null,'',cleanPath(''))}catch(e){}}
+const missHtml=()=>MISS&&MISS===tab?`<div class="card note" id="dlmiss" role="status">${tab==='bets'?'That bet was not found. It may have been removed, or the link is incomplete. Here are all the bets.':'That game was not found. It may have moved or been removed. Here are the games.'}</div>`:'';
+function deepGo(){const t=tab,sub=SUB;if(!sub)return;let n=0;
+  const go=()=>{if(tab!==t||SUB!==sub)return;const sel=t==='bets'?'[data-bet="'+CSS.escape(sub)+'"]':'[data-gid="'+CSS.escape(sub)+'"]';const el=document.querySelector('#lbody '+sel);
+    if(el){el.scrollIntoView({block:'center'});el.classList.add('dl-hl');setTimeout(()=>{const e2=document.querySelector('#lbody '+sel);if(e2)e2.classList.remove('dl-hl')},2600);return}
+    if(t==='bets'&&window.LBETS&&LBETS._state&&LBETS._state.state==='init'&&n++<80){setTimeout(go,250);return}
+    if(t==='bets'&&window.LBETS&&LBETS.reveal&&LBETS.reveal(sub)&&n++<90){render();setTimeout(go,30);return}   /* the bet exists but the Bets filter hides it: filters go back to Everyone / All */
+    MISS=t;const dn=document.getElementById('dlnote');if(dn)dn.innerHTML=missHtml()};
+  setTimeout(go,30)}
+function onNav(){const r=readRoute(location.hash)||{t:'standings',sub:null};if(r.t===tab&&r.sub===SUB&&(!r.f||'f='+r.f+(r.q?'/q='+encodeURIComponent(r.q):'')===(fHash()||'f=all-all'))){if(!r.f&&fHash())hashPut(false);return}applyRoute(r);saveLast();render();if(SUB)deepGo();else window.scrollTo(0,0)}
+const canShare=()=>!!(navigator.share&&window.isSecureContext);
+function copyText(url){const done=()=>U.toast('Link copied',2600),fall=()=>{try{const ta=document.createElement('textarea');ta.value=url;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();const okc=document.execCommand('copy');ta.remove();if(okc){done();return}}catch(e){}U.toast('Copy this link: '+url,8000)};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(done,fall);else fall()}
+function shareLink(h,title){const url=shareUrl(h);if(canShare()){navigator.share({title,url}).catch(e=>{if(!(e&&e.name==='AbortError'))copyText(url)})}else copyText(url)}
+const tabTitle=()=>{const t=TABS.find(x=>x[0]===tab);return (L&&L.meta?L.meta.name+' · ':'')+(t?t[3]:'League site')};
 async function getJ(p){const r=await fetch(p+'?b='+encodeURIComponent(window.FBN_BUILD||'')+'&t='+Date.now().toString(36));if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
 /* ---------- helpers (from the template page) ---------- */
 function initials(n){n=String(n||'').replace(/\(.*?\)/g,' ').replace(/[^A-Za-z0-9 ]/g,' ').trim();if(!n||/^\d+$/.test(n))return '?';const w=n.split(/\s+/);return (w.length>1?w[0][0]+w[1][0]:n.slice(0,2)).toUpperCase()}
@@ -127,7 +166,7 @@ function vStandings(){const mx=Math.max(10,...D.owners.map(o=>o.total));
     <div class="bar"><i style="width:${Math.max(0,o.total)/mx*100}%"></i></div>
     <div class="chips school-grid">${o.teams.map(t=>chipRec(t.tid,{cn:1})).join('')}</div></div>`).join('')+'</div>'+
     `<p class="note">Tap an owner for the full breakdown.</p>`}
-function goOwner(mid){ownerSel=mid;tab='rosters';hashPut();render();window.scrollTo(0,0)}
+function goOwner(mid){ownerSel=mid;tab='rosters';SUB=null;MISS=null;hashPut(true);render();window.scrollTo(0,0)}
 function gOwned(g){return !!((g.home.owners&&g.home.owners.length)||(g.away.owners&&g.away.owners.length))}
 function gameCard(g){const fin=g.status==='final',live=g.status==='live';
   const row=s=>{const lose=fin&&!s.win;return `<div class="gside${lose?' lose':''}"><div class="nm">${chip(s.id,{big:1,name:s.short})}${s.seed?`<span class="seed">(${esc(s.seed)})</span>`:''}${opills(s.owners)}</div><div class="sc2">${(fin||live)&&s.score!=null?s.score:''}</div></div>`};
@@ -138,7 +177,8 @@ function gameCard(g){const fin=g.status==='final',live=g.status==='live';
   if(g.civil)head+=`<span class="h2b">🙃 SAME OWNER (${esc(g.away.owners.join('/'))} wins either way)</span>`;
   let foot='';if(fin&&g.upset&&g.kind==='ncaa'){if(g.upset.is)foot+=` <span class="up">😱 UPSET +${esc(D.meta.points.upset)}</span>`}
   foot+=lvNote(g);
-  return `<div class="gm${g.h2h||g.civil?' h2h':''}"><div class="gh">${head}</div>${row(g.away)}${row(g.home)}${foot.trim()?`<div class="gl">${foot}</div>`:''}${quick(g)}</div>`}
+  head+=`<button type="button" class="cpl" data-a="cplink" data-h="games/${esc(encodeURIComponent(String(g.id)))}" aria-label="Copy link to this game" title="Copy link to this game">🔗</button>`;
+  return `<div class="gm${g.h2h||g.civil?' h2h':''}" data-gid="${esc(String(g.id))}"><div class="gh">${head}</div>${row(g.away)}${row(g.home)}${foot.trim()?`<div class="gl">${foot}</div>`:''}${quick(g)}</div>`}
 /* s22: the "Quick bet" pill + picker of a Games card is built by js/league-bets.js (it knows the managers, the viewer and the form); '' when it does not apply */
 function quick(g){try{return window.LBETS&&LBETS.quickHtml?LBETS.quickHtml(g,{name:s=>{const t=T.TEAMS[s.id];return(t&&(t.short||t.name))||s.short||''}}):''}catch(e){return''}}
 function vGames(){const every=D.games||[],nHidden=every.filter(g=>!gOwned(g)).length;if(!nHidden)gAll=false;const all=gAll?every:every.filter(gOwned);
@@ -232,7 +272,7 @@ function header(){const m=L.meta;
   <p class="tag" id="tag">${esc(tagFor())}</p></div><div class="sub" id="badges" style="margin:0">${D.meta.mode==='demo'?'<span class="badge warn" id="samplenote">DEMO DATA</span>':''}</div></header>`}
 const nbNew=on=>{try{return !on&&!DEMO&&window.LBETS&&LBETS.badge&&LBETS.badge()}catch(e){return false}};   /* s22: small "new" mark on the Bets tab when someone has added since this device last looked */
 function navHtml(){return `<nav id="ltabs" aria-label="League site">${TABS.map(t=>{const sp=t[1].indexOf(' '),ic=t[1].slice(0,sp),full=t[1].slice(sp+1),on=t[0]===tab;
-    return `<button class="${on?'on':''}" data-a="tab" data-v="${esc(t[0])}" aria-label="${esc(full)}${t[0]==='bets'&&nbNew(on)?', new bets':''}"${on?' aria-current="page"':''}><span class="ni" aria-hidden="true">${ic}</span>${t[0]==='bets'&&nbNew(on)?'<b class="nb" aria-hidden="true">new</b>':''}<span class="nl f">${esc(full)}</span><span class="nl s" aria-hidden="true">${esc(t[2])}</span><span class="nl m" aria-hidden="true">${esc(t[3]||t[2])}</span></button>`}).join('')}<a class="nd" id="tab_room" href="${esc(roomHref())}" aria-label="Draft room (opens the draft room)"><span class="ni" aria-hidden="true">\u{1F4DD}</span><span class="nl f">Draft</span><span class="nl s" aria-hidden="true">Draft</span><span class="nl m" aria-hidden="true">Draft</span></a></nav>`}
+    return `<a class="${on?'on':''} tb" href="${esc(cleanPath(t[0]))}" data-a="tab" data-v="${esc(t[0])}" aria-label="${esc(full)}${t[0]==='bets'&&nbNew(on)?', new bets':''}"${on?' aria-current="page"':''}><span class="ni" aria-hidden="true">${ic}</span>${t[0]==='bets'&&nbNew(on)?'<b class="nb" aria-hidden="true">new</b>':''}<span class="nl f">${esc(full)}</span><span class="nl s" aria-hidden="true">${esc(t[2])}</span><span class="nl m" aria-hidden="true">${esc(t[3]||t[2])}</span></a>`}).join('')}<a class="nd" id="tab_room" href="${esc(roomHref())}" aria-label="Draft room (opens the draft room)"><span class="ni" aria-hidden="true">\u{1F4DD}</span><span class="nl f">Draft</span><span class="nl s" aria-hidden="true">Draft</span><span class="nl m" aria-hidden="true">Draft</span></a></nav>`}
 function chatBar(){const o=!!CHAT.open;return `<section id="chat" class="chat" aria-label="Chat"><button type="button" class="chat-t" id="chatbar" data-a="chatopen" aria-expanded="${o}" aria-controls="chatpanel"><span class="ca" aria-hidden="true">${o?'▾':'▸'}</span><span class="cbm"><span class="cb1" id="chatpres">💬 Chat with the league</span><span class="cb2 mut" id="chatlast">Tap to open the chat</span></span><i class="cdot" id="chatbadge" hidden></i></button><div class="chat-b" id="chatpanel" role="region" aria-label="League chat"${o?'':' hidden'}><div class="chat-h"><span class="note">The same chat as the draft room</span><a class="chat-room" id="chatroom" data-a="chatroom" href="${esc(roomHref())}">Open in the draft room</a></div><div class="chat-l" id="chatlist" role="log" aria-live="polite"></div>${ME&&!DEMO?'<form class="chat-f" id="chatform" autocomplete="off"><label class="sr" for="chatin">Message</label><input id="chatin" maxlength="280" autocomplete="off" enterkeyhint="send" placeholder="Message the league"><button type="submit" id="chatsend">Send</button></form>':'<div class="chat-p"><div class="note" id="chatwatch">👀 Watching only: you can read the chat. To write, open this page from your own manager link.</div></div>'}<div class="chat-m" id="chatmsg" role="status" aria-live="polite"></div></div></section>`}
 function footer(){return `<footer id="foot">${esc(L.meta.name)} · times in your time zone (${esc(TZ_NAME)}) · ${DEMO?`<a href="${esc(U.pageUrl('league.html',{l:id}))}">back to the real league</a>`:`<a id="demolink" href="${esc(U.pageUrl('league.html',{l:id,demo:1}))}">see the demo (invented scores)</a>`} · <a id="tab_recap" href="${esc(recapHref())}">Draft recap</a> · ${homeLink()}${U.buildTag()}</footer>`}
 const dataNote=()=>errS&&!(window.LSCHED&&LSCHED.has())&&(tab==='standings'||tab==='teams')?`<div class="card" id="nodata"><b>No scores yet.</b><div class="note">The scores file could not be loaded (${esc(errS)}), so everyone shows zero. A maintainer can refresh it; see the README.</div></div>`:'';
@@ -244,7 +284,7 @@ function schedUpdate(){try{rebuild()}catch(e){return}const a=document.activeElem
 function scoreNotice(){if(DEMO||!D||(D.games&&D.games.length)||!/^(standings|games|rosters|teams|postseason)$/.test(tab))return '';return '<div class="card note" id="noscores" role="note">\u{1F4C5} Scores update once games start (first games November 2, 2026)</div>'}
 function render(){const keepScroll=window.scrollY;const nv0=document.getElementById('ltabs'),nsl=nv0?nv0.scrollLeft:0;
   const demo=DEMO?`<div class="demobar" id="demobar" role="note"><b>DEMO</b> · invented games and scores. These are not real results and not this league’s standings. <a href="${esc(U.pageUrl('league.html',{l:id}))}">Leave the demo</a></div>`:'';
-  app.innerHTML=demo+header()+navHtml()+'<main id="main">'+(DEMO?'<div class="card note" id="demonote"><b>DEMO data.</b> Invented games and scores, to show how standings will look. Not real results.</div>':'')+offHtml()+dataNote()+scoreNotice()+schedLine()+'<div id="lbody">'+(VIEWS[tab]||vStandings)()+'</div></main>'+chatBar()+footer();
+  app.innerHTML=demo+header()+navHtml()+'<main id="main">'+(DEMO?'<div class="card note" id="demonote"><b>DEMO data.</b> Invented games and scores, to show how standings will look. Not real results.</div>':'')+offHtml()+dataNote()+scoreNotice()+schedLine()+`<div class="lshare" id="lshare"><button type="button" class="btn sec cpt" data-a="cptab" id="cptab" aria-label="${esc(canShare()?'Share':'Copy')} a link to this tab">🔗 ${canShare()?'Share':'Copy link'}</button></div><div id="dlnote">${missHtml()}</div>`+'<div id="lbody">'+(VIEWS[tab]||vStandings)()+'</div></main>'+chatBar()+footer();
   document.body.classList.add('lsite');paintHero();paintChat();freshStart();try{chipFit()}catch(_){}syncChat();navScroll(nsl)}
 /* phone: the tab bar scrolls sideways inside itself; keep its position and make sure the open tab is visible */
 function navScroll(x){const n=document.getElementById('ltabs');if(!n)return;n.scrollLeft=x;const on=n.querySelector('.on');if(!on||n.scrollWidth<=n.clientWidth+1)return;const l=on.offsetLeft,r=l+on.offsetWidth;if(l<n.scrollLeft+8)n.scrollLeft=Math.max(0,l-8);else if(r>n.scrollLeft+n.clientWidth-8)n.scrollLeft=r-n.clientWidth+8}
@@ -295,7 +335,9 @@ const ACT={trynow:()=>boot(true),herochange:()=>{const f=document.getElementById
   chatopen:()=>{CHAT.open=!CHAT.open;CHAT.sig='';const pn=document.getElementById('chatpanel'),bt=document.getElementById('chatbar');if(pn)pn.hidden=!CHAT.open;if(bt){bt.setAttribute('aria-expanded',String(CHAT.open));const ca=bt.querySelector('.ca');if(ca)ca.textContent=CHAT.open?'▾':'▸'}
     if(CHAT.open){U.lsSet('lchat.'+id,String(CHAT.n));paintChat();syncChat();loadChat().then(()=>{paintChat()});const ci=document.getElementById('chatin');if(ci)setTimeout(()=>ci.focus(),30)}else syncChat();chatPoll();paintChat()},
   chatroom:()=>{U.lsSet('x.'+id+'.tab','chat');U.lsSet('lchat.'+id,String(CHAT.n))},
-  tab:el=>{tab=el.dataset.v;hashPut();render();window.scrollTo(0,0)},
+  tab:(el,e)=>{if(e&&(e.defaultPrevented||e.button>0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey))return;if(e)e.preventDefault();tab=el.dataset.v;SUB=null;MISS=null;hashPut(true);render();window.scrollTo(0,0)},
+  cptab:()=>shareLink(tab+(fHash()?'/'+fHash():''),tabTitle()),
+  cplink:el=>{const r=readRoute(el.dataset.h||'');if(r)shareLink(r.t+(r.sub?'/'+encodeURIComponent(r.sub):''),tabTitle())},
   owner:(el,e)=>{if(e.target.closest('a.chip,a.tl'))return;goOwner(el.dataset.mid)},
   pickowner:el=>{ownerSel=el.dataset.mid;render()},
   teamrow:(el,e)=>{if(e.target.closest('a.chip,a.tl'))return;const k=el.dataset.key;openTeam[k]=!openTeam[k];render()},
@@ -330,14 +372,14 @@ let ME=null;
 async function resolveMe(){try{if(DEMO)return null;const me=U.getMe(id);if(!me||!me.mid||!me.k)return null;const c=F.joinedList(L.meta,L.claims).find(x=>x.mid===me.mid);return c&&await F.checkMgrSecret(c,me.k)?me.mid:null}catch(e){return null}}
 async function start(d){const m=d.meta;L=d;MG=d.managers;
   if(/[#&]cm=/.test(location.hash)){const fr=U.takeFragment();const cmF=F.extractSecret(fr.get('cm')||'','cm');if(cmF&&await F.checkPass(m,cmF)){U.lsSet('cm.'+id,cmF);U.rememberLeague(id,m.name,'commissioner')}}
-  CM=!DEMO&&await U.isCommish(m);ME=await resolveMe();LBETS.init({id,demo:DEMO,owners:()=>D?D.owners:[],me:()=>ME,games:()=>D?D.games:[],rerender:()=>render(),goBets:()=>{tab='bets';hashPut();render();window.scrollTo(0,0)},active:()=>tab==='bets'&&!document.hidden,roomHref:()=>U.roomHref(id),render:()=>{if(tab!=='bets')return;const b=document.getElementById('lbody');if(b){b.innerHTML=LBETS.view()}}});if(window.LSCHED&&!DEMO){LSCHED.init({ids:()=>(L.state.roster||L.state.picks||[]).map(p=>p&&p.tid).filter(x=>x!=null),enabled:()=>!DEMO,onUpdate:schedUpdate})}await loadHero(false);await loadScores();rebuild();hashSet();render();BO.booted=true;LBETS.start();if(window.LSCHED&&!DEMO)LSCHED.start();
+  CM=!DEMO&&await U.isCommish(m);ME=await resolveMe();LBETS.init({id,demo:DEMO,owners:()=>D?D.owners:[],me:()=>ME,games:()=>D?D.games:[],rerender:()=>render(),goBets:()=>{tab='bets';SUB=null;MISS=null;hashPut(true);render();window.scrollTo(0,0)},active:()=>tab==='bets'&&!document.hidden,roomHref:()=>U.roomHref(id),onFilter:()=>{SUB=null;MISS=null;hashPut(false)},render:()=>{if(tab!=='bets')return;const b=document.getElementById('lbody');if(b){b.innerHTML=LBETS.view()}}});if(window.LSCHED&&!DEMO){LSCHED.init({ids:()=>(L.state.roster||L.state.picks||[]).map(p=>p&&p.tid).filter(x=>x!=null),enabled:()=>!DEMO,onUpdate:schedUpdate})}await loadHero(false);await loadScores();rebuild();if(ROUTE0)applyRoute(ROUTE0);normalizeUrl();render();BO.booted=true;LBETS.start();if(window.LSCHED&&!DEMO)LSCHED.start();
   loadChat().then(()=>{paintChat();setOff()});setInterval(()=>{if(!document.hidden)loadChat().then(()=>{paintChat();setOff()})},30000);
   /* scores / tournament refresh every 5 min; after a failed refresh it retries with back-off and keeps the last good data on screen */
   let rf=0;const refresh=async()=>{const a=document.activeElement,t=a&&a.tagName;if(document.hidden||t==='INPUT'||t==='SELECT'){setTimeout(refresh,15000);return}
     await loadScores();rebuild();setOff();if(tab==='standings'||tab==='games'||tab==='rosters'||tab==='teams'||tab==='postseason'||tab==='rules')render();
     if(FAIL.sc||FAIL.tn){rf++;setTimeout(refresh,backoff(rf))}else{rf=0;setTimeout(refresh,5*60*1000)}};
   setTimeout(refresh,5*60*1000);
-  window.addEventListener('hashchange',()=>{hashSet();render()});lvInit();app.setAttribute('data-ready','1')}
+  window.addEventListener('popstate',onNav);window.addEventListener('hashchange',onNav);if(SUB)deepGo();lvInit();app.setAttribute('data-ready','1')}
 async function boot(manual){if(BO.busy||BO.stop||BO.booted)return;BO.busy=true;clearTimeout(BO.timer);let ok=true;
   if(document.hidden&&!manual){BO.busy=false;BO.timer=setTimeout(boot,5000);return}
   try{

@@ -9,6 +9,10 @@ if(!LID){location.replace('index.html');return}
 const K=F.Keys(LID);const T=UI.loadTeams();const {TEAMS,POOL,POOLSET,META}=T;const TZ=UI.tz();
 const CFG={stuckHoldMs:15000,pollLobbyMs:4000,pollLiveMs:2500,pollDoneMs:15000,backoffMaxMs:30000,graceMs:1800};
 const L=k=>'x.'+LID+'.'+k;
+/* s24: a mock (practice league) is never added to "Your leagues"; it goes to the device's last-5 mock list instead */
+const isMock=()=>!!(M&&M.mock);let savedOnce=false;/* saved on open and on tab changes only, so a room left open in the background does not keep claiming to be the last place */const saveLast=()=>{if(M&&!notFound)UI.saveLast('room',LID,tab,isMock())};
+function remember(role){if(isMock())UI.rememberMock({id:LID,name:M.name,parent:M.parent||'',solo:!!M.solo});else UI.rememberLeague(LID,M.name,role)}
+const isBot=mid=>!!(M&&M.mock&&M.over[mid]&&M.over[mid].bot);
 /* ===================== state ===================== */
 let M=null,Mraw='',notFound=false,CL={},CLraw={},PROF={},PROFraw={},profAt={},MG=[],S=null,C=F.normChat(null),Craw='',pendingChat=[];
 let ENT={},ENTraw={},PREF={},PREFraw={},SPIN={},SPINraw={},logReady=false,prefsLoaded=false,epochSeen=0,pollNo=0,sweepAt=0,srvOff=0,srvSync=0,srvInfo='device clock';
@@ -39,7 +43,7 @@ async function syncTime(){try{const t0=Date.now();const ac=new AbortController()
 function signature(){return Mraw+'|'+Object.keys(CLraw).map(k=>k+CLraw[k]).join(',')+'|'+Object.keys(PROFraw).map(k=>k+PROFraw[k].length+PROFraw[k].slice(-12)).join(',')+'|'+Object.keys(ENTraw).map(k=>k+':'+ENTraw[k]).join(',')+'|'+JSON.stringify(PREF)+'|'+Object.keys(SPINraw).map(k=>k+':'+SPINraw[k]).join(',')+'|'+logReady}
 function rebuild(force){const sig=signature();if(!force&&sig===lastSig)return;lastSig=sig;
   if(!Mraw||notFound){S=null;renderAll();return}
-  M=F.normalizeMeta(F.parseJ(Mraw));MG=F.managersView(M,CL,PROF);const prev=S;S=F.deriveState(M,ENT,PREF,POOLSET);S.logReady=logReady;onState(prev,S);onSpinState();renderAll();saveLogCache()}
+  M=F.normalizeMeta(F.parseJ(Mraw));MG=F.managersView(M,CL,PROF);const prev=S;S=F.deriveState(M,ENT,PREF,POOLSET);if(!savedOnce){savedOnce=true;saveLast()}S.logReady=logReady;onState(prev,S);onSpinState();renderAll();saveLogCache()}
 function saveLogCache(){if(!logReady||!M)return;try{lsSet(L('logc'),JSON.stringify({e:M.epoch,raw:ENTraw}))}catch(e){}}
 function loadLogCache(){try{const c=JSON.parse(lsGet(L('logc'))||'null');if(c&&c.e&&c.raw){epochSeen=c.e;Object.keys(c.raw).forEach(k=>{ENTraw[k]=c.raw[k];ENT[k]=F.parseEntry(c.raw[k])})}}catch(e){}}
 /* ===================== polling ===================== */
@@ -111,9 +115,9 @@ let resumeDone=false,cmDone=false;
 async function adoptManager(as,k){const c=F.joinedList(M,CL).find(c=>c.mid===as);
   if(!c){if(Object.keys(CLraw).length>=M.settings.managers)return'That manager link does not match anyone in this league (they may have been removed).';return null}
   if(!(await F.checkMgrSecret(c,k)))return'That manager link is not valid for '+c.name+'.';
-  me={mid:as,k};UI.setMe(LID,me);UI.rememberLeague(LID,M.name,'manager');ME_KEY='';await refreshAuth();rebuild(true);UI.toast('Welcome back, '+c.name);return'';}
+  me={mid:as,k};UI.setMe(LID,me);remember('manager');ME_KEY='';await refreshAuth();rebuild(true);UI.toast('Welcome back, '+c.name);return'';}
 async function resumeCheck(){if(!M)return;
-  if(!cmDone&&CMFRAG){cmDone=true;if(await F.checkPass(M,CMFRAG)){lsSet('cm.'+LID,CMFRAG);CM_KEY='';await refreshAuth();UI.rememberLeague(LID,M.name,'commissioner');UI.toast('Commissioner tools unlocked on this phone')}else resumeErr='That commissioner link is not valid for this league.'}
+  if(!cmDone&&CMFRAG){cmDone=true;if(await F.checkPass(M,CMFRAG)){lsSet('cm.'+LID,CMFRAG);CM_KEY='';await refreshAuth();remember('commissioner');UI.toast('Commissioner tools unlocked on this phone')}else resumeErr='That commissioner link is not valid for this league.'}
   if(resumeDone||!ASFRAG||!KFRAG)return;const r=await adoptManager(ASFRAG,KFRAG);if(r===null)return;resumeDone=true;if(r)resumeErr=r}
 /* ---- meta writes (commissioner actions): re-read -> apply to the fresh copy -> POST -> verify -> retry ---- */
 async function mutateMeta(fn,verify){
@@ -194,12 +198,13 @@ function autoTick(){if(!S||!loaded||autoBusy||busy||!S.logReady)return;{const st
   const reason=F.autoReason(S,nowSrv(),CFG.graceMs);if(!reason){autoPlan={n:0,at:0};return}
   /* s23: right after an Undo the slot is the manager's again: an away / auto-pick-on manager is not re-picked for at once (only when the pick clock runs out) */
   {const ue=ENT[s.n];if(reason!=='expired'&&ue&&M.voided.indexOf(ue.id)>=0){autoPlan={n:0,at:0};return}}
-  if(autoPlan.n!==s.n){autoPlan={n:s.n,at:Date.now()+(reason==='expired'?0:900)+Math.random()*1500};return}if(Date.now()<autoPlan.at)return;
+  if(autoPlan.n!==s.n){autoPlan={n:s.n,at:Date.now()+(reason==='expired'?0:isBot(s.owner)?1000+Math.random()*1000:900+Math.random()*1500)};return}if(Date.now()<autoPlan.at)return;
   autoBusy=true;autoPlan.at=Date.now()+5000;const n=s.n;
   (async()=>{await pollOnce();const s2=F.onClock(S);if(!s2||s2.n!==n||!F.autoReason(S,nowSrv(),CFG.graceMs-200))return;
     const ch=F.autoChoice(S,s2.owner,POOL,F.mulberry(n*7919),prankOf);if(!ch)return;const r=await submitPick(n,s2.owner,ch.tid,'auto');if(r&&r.ok)toast('Auto-pick: '+tn(ch.tid)+' for '+mg(s2.owner).name)})().finally(()=>{autoBusy=false})}
 let startTried=0;
-function autoStartTick(){if(!M||busy||M.status!=='lobby'||M.settings.startMode!=='auto'||M.settings.startAt==null)return;if(nowSrv()<M.settings.startAt+500)return;if(!full8())return;if(Date.now()<startTried)return;
+function autoStartTick(){/* s24: a solo mock (you + 7 bots) starts at once on the creator's page */if(M&&!busy&&M.status==='lobby'&&M.mock&&M.solo&&commish()&&full8()&&Date.now()>=startTried){startTried=Date.now()+4000;actStart(true);return}
+  if(!M||busy||M.status!=='lobby'||M.settings.startMode!=='auto'||M.settings.startAt==null)return;if(nowSrv()<M.settings.startAt+500)return;if(!full8())return;if(Date.now()<startTried)return;
   /* s23 (item 12): a wheel spin that is running right now is left to finish first (it is stale after 60 s, then the auto-spin takes over) */
   if(M.spin&&!F.spinCompleted(M)&&!spinInfo().done&&spinState()==='fresh')return;
   startTried=Date.now()+4000+Math.random()*2500;actStart(true)}
@@ -322,7 +327,8 @@ function updateTitle(){const base=(M?M.name+' · ':'')+'Fantasy BBALL NCAA';cons
   else{setFavicon(false);document.title=S&&S.status==='live'?base+' · #'+(S.picks.length+1):base}}
 function beep(){try{if(lsGet('sound')==='0')return;const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const c=beep.c||(beep.c=new A());const o=c.createOscillator(),g=c.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.18)}catch(e){}}
 /* ===================== render ===================== */
-const QTAB=new URLSearchParams(location.search).get('tab');const NOREDIR=new URLSearchParams(location.search).get('stay')==='1';let tab=(['board','teams','my','chat','more'].indexOf(QTAB)>=0?QTAB:null)||lsGet(L('tab'))||'board',chatSub='chat',viewOwner=null,reactOpen=null,identityShown=false;
+const QTAB=new URLSearchParams(location.search).get('tab');const NOREDIR=new URLSearchParams(location.search).get('stay')==='1';const TABN=['board','teams','my','chat','more'];/* s24: #tab=<name> wins (a shared link or a refresh), an unknown tab in the hash falls back to Board */const HT=FR.has('tab')?(TABN.indexOf(FR.get('tab'))>=0?FR.get('tab'):'board'):null;
+let tab=HT||(TABN.indexOf(QTAB)>=0?QTAB:null)||(!UI.isMockId(LID)&&TABN.indexOf(lsGet(L('tab')))>=0?lsGet(L('tab')):null)||'board',chatSub='chat',viewOwner=null,reactOpen=null,identityShown=false;
 const TABS=[['board','Board','🧩'],['teams','Teams','🏀'],['my','My Team','👤'],['chat','Chat','💬'],['more','More','⚙️']];
 function stickySite(){let el=$('stickysite');const done=false;/* s23: the sticky League site bar is gone (the end card has the button) */if(!done){if(el)el.remove();document.body.classList.remove('hasstick');return}
   if(!el){el=document.createElement('a');el.id='stickysite';el.className='stickysite btn pri';el.textContent='League site';document.body.appendChild(el)}
@@ -334,11 +340,11 @@ function watchBig(){if(!('IntersectionObserver' in window))return;const b=$('big
 function measureTabs(){const h=$('tabs').offsetHeight;if(h)document.body.style.setProperty('--tabh',h+'px')}
 window.addEventListener('resize',()=>{if($('tabs'))measureTabs()});
 function renderTabs(){stickySite();const unread=Math.max(0,C.msgs.length-seenChat);const el=$('tabs');const af=document.activeElement&&el.contains(document.activeElement)?document.activeElement.dataset.t:null;
-  el.innerHTML=TABS.map(t=>`<button role="tab" id="tab_${t[0]}" aria-selected="${tab===t[0]?'true':'false'}" aria-controls="view" tabindex="${tab===t[0]?'0':'-1'}" class="${tab===t[0]?'on':''}" data-a="tab" data-t="${t[0]}"><span aria-hidden="true">${t[2]}</span>${t[1]}${t[0]==='chat'&&unread&&tab!=='chat'?`<i class="bd"><span aria-hidden="true">${unread>9?'9+':unread}</span><span class="sr">${unread} unread message${unread===1?'':'s'}</span></i>`:''}</button>`).join('');
+  el.innerHTML=TABS.map(t=>`<a role="tab" href="#tab=${t[0]}" id="tab_${t[0]}" aria-selected="${tab===t[0]?'true':'false'}" aria-controls="view" tabindex="${tab===t[0]?'0':'-1'}" class="${tab===t[0]?'on':''}" data-a="tab" data-t="${t[0]}"><span aria-hidden="true">${t[2]}</span>${t[1]}${t[0]==='chat'&&unread&&tab!=='chat'?`<i class="bd"><span aria-hidden="true">${unread>9?'9+':unread}</span><span class="sr">${unread} unread message${unread===1?'':'s'}</span></i>`:''}</a>`).join('');
   $('view').setAttribute('aria-labelledby','tab_'+tab);measureTabs();if(af){const b=el.querySelector('[data-t="'+af+'"]');if(b)b.focus()}}
-$('tabs').addEventListener('keydown',e=>{const k=e.key;if(!['ArrowLeft','ArrowRight','Home','End'].includes(k))return;const bs=[...$('tabs').querySelectorAll('button')];let i=bs.indexOf(document.activeElement);if(i<0)return;e.preventDefault();i=k==='Home'?0:k==='End'?bs.length-1:(i+(k==='ArrowRight'?1:-1)+bs.length)%bs.length;setTab(bs[i].dataset.t);const nb=$('tabs').querySelector('[data-t="'+TABS[i][0]+'"]');if(nb)nb.focus()});
+$('tabs').addEventListener('keydown',e=>{const k=e.key;if(!['ArrowLeft','ArrowRight','Home','End'].includes(k))return;const bs=[...$('tabs').querySelectorAll('[data-t]')];let i=bs.indexOf(document.activeElement);if(i<0)return;e.preventDefault();i=k==='Home'?0:k==='End'?bs.length-1:(i+(k==='ArrowRight'?1:-1)+bs.length)%bs.length;setTab(bs[i].dataset.t);const nb=$('tabs').querySelector('[data-t="'+TABS[i][0]+'"]');if(nb)nb.focus()});
 const siteUrl=()=>UI.pageUrl('league.html',{l:LID}),recapUrl=()=>UI.pageUrl('recap.html',{l:LID});
-function renderTop(){const done=!!(S&&S.status==='complete');const site=done?`<a class="pill" id="sitelink" href="${esc(siteUrl())}">League site</a>`:'<span class="pill dis" id="sitelink" aria-disabled="true">League site · after the draft</span>';const who=WATCH?'<span class="pill" id="who">Spectator</span>':(myMid()?`<span class="pill" id="who">${UI.avatar(mg(myMid()),18)} ${esc(mg(myMid()).name)}${commish()?' · commissioner':''}</span>`:((me||KFRAG)&&!authReady&&!removed()?'<span class="pill" id="who">Checking your link…</span>':'<span class="pill" id="who">Not joined</span>'));/* s23 (LOW-2): no "Not joined" while a private link is still being checked */
+function renderTop(){const done=!!(S&&S.status==='complete');const site=isMock()?'<span class="pill prac" id="pracpill">Practice</span>':done?`<a class="pill" id="sitelink" href="${esc(siteUrl())}">League site</a>`:'<span class="pill dis" id="sitelink" aria-disabled="true">League site · after the draft</span>';const who=WATCH?'<span class="pill" id="who">Spectator</span>':(myMid()?`<span class="pill" id="who">${UI.avatar(mg(myMid()),18)} ${esc(mg(myMid()).name)}${commish()?' · commissioner':''}</span>`:((me||KFRAG)&&!authReady&&!removed()?'<span class="pill" id="who">Checking your link…</span>':'<span class="pill" id="who">Not joined</span>'));/* s23 (LOW-2): no "Not joined" while a private link is still being checked */
   $('top').innerHTML=UI.header({below:true,sub:M?M.name:'Draft room',right:'<span id="conn" class="pill bad"><i></i>Connecting…</span>'+who+site});renderConn()}
 function canPick(){if(!S||!S.logReady)return false;if(WATCH)return false;const s=F.onClock(S);if(!s||S.paused)return false;return(!isSpec()&&s.owner===myMid())||commish()}
 function remaining(){if(!S||!S.clockSecs)return null;if(S.paused)return S.pausedLeft;return S.deadline?S.deadline-nowSrv():null}
@@ -348,25 +354,26 @@ function autoNote(){if(!commish()||!S||!loaded||WATCH)return'';const s=M.setting
   if(S.status==='live'&&!S.paused&&S.autoPick&&S.clockSecs){const r=F.autoReason(S,nowSrv(),0);
     return `<div class="note" id="autonote"><b>Auto-pick only runs while a page is open.</b> If every phone has this room closed, a missed turn waits until someone opens it again.${r==='expired'?'<div style="margin-top:6px"><button class="btn pri sm" data-a="catchup" id="catchup">Make the auto-pick now</button></div>':''}</div>`}
   return''}
-function renderBanner(){const keep=document.activeElement&&document.activeElement.id==='pickbtn';renderBanner0();if(removed()&&$('banner'))$('banner').insertAdjacentHTML('afterbegin','<div class="note" id="removednote"><b>You were removed by the commissioner.</b> You can still watch the draft and read the chat.</div>');const an=autoNote();if(an&&$('banner'))$('banner').insertAdjacentHTML('beforeend',an);if(S&&loaded&&S.status==='live'&&canPick()&&$('banner'))$('banner').insertAdjacentHTML('beforeend','<button class="btn pri pickbtn" data-a="popen" id="pickbtn">Pick a team</button>');
+function renderBanner(){const keep=document.activeElement&&document.activeElement.id==='pickbtn';renderBanner0();if(isMock()&&$('banner'))$('banner').insertAdjacentHTML('afterbegin',UI.practiceBanner(M.solo?'You against 7 bots. Not your real league: nothing here changes it.':'Not your real league: nothing here changes it.'));if(removed()&&$('banner'))$('banner').insertAdjacentHTML('afterbegin','<div class="note" id="removednote"><b>You were removed by the commissioner.</b> You can still watch the draft and read the chat.</div>');const an=autoNote();if(an&&$('banner'))$('banner').insertAdjacentHTML('beforeend',an);if(S&&loaded&&S.status==='live'&&canPick()&&(!isMock()||(F.onClock(S)||{}).owner===myMid())&&$('banner'))$('banner').insertAdjacentHTML('beforeend','<button class="btn pri pickbtn" data-a="popen" id="pickbtn">Pick a team</button>');
   if($('pickov')){const cs=S&&F.onClock(S);if(!canPick()||!cs||String(cs.n)!==$('pickov').dataset.n)closePick();else updateTeams()}if(conflictMsg&&$('banner'))$('banner').insertAdjacentHTML('beforeend',`<div class="cflict" id="conflict">${conflictMsg}</div>`);const sb=stuckBar();if(sb&&$('banner'))$('banner').insertAdjacentHTML('afterbegin',sb);
   if(keep){const b=$('pickbtn');if(b&&document.activeElement!==b)b.focus({preventScroll:true})}}
 /* Pick stuck: a pick slot the draft server cannot read or save right now (Store.stuck). Plain wording; the on-the-clock manager and the commissioner still have a way forward. */
 function stuckBar(){if(!M||!S||!loaded)return'';const st=Store.stuck();if(!st.length)return'';const ns=st.map(x=>'#'+x.n).join(', ');const cur=S.status==='live'?F.onClock(S):null;const cm=commish()&&!WATCH&&cur&&!S.paused;
   return `<div class="alertbar stuckbar" id="stuckbar" role="status"><b>Pick stuck.</b> The draft server is not answering for pick ${esc(ns)}. This is a problem on the server's side, not with your phone. Nothing is lost: the picks already made are safe, and we keep trying every few seconds. ${S.paused?'The draft is paused. When the manager is ready, the commissioner resumes it (More tab, Draft controls, Resume); the pick clock then starts fresh.':(cur?'The manager on the clock can still pick; the pick is saved to a backup spot automatically and counts the same.':'')}<div class="row" style="margin-top:6px"><button class="btn sm" data-a="stuckretry" id="stuckretry">Try again now</button>${cm?'<button class="btn sm pri" data-a="force" id="forcepick">Force a pick for '+esc(mg(cur.owner).name)+'</button>':''}</div></div>`}
+function mockEndBtns(){const bk=UI.mockBack(M);return `<a class="btn pri" id="bnrecap" href="${esc(recapUrl())}">Draft recap</a><a class="btn" id="mockagain" href="${esc(UI.mockAgain(M))}">Run another</a><a class="btn" id="mockback" href="${esc(bk.href)}">${esc(bk.label)}</a>`}
 function renderBanner0(){const b=$('banner');
   if(!loaded||(!S&&!notFound)){const off=connState()==='offline';b.innerHTML=`<div class="banner"><div class="bm"><div class="nm">${off?'Offline, retrying…':'Connecting…'}</div><div class="sb">${off?'Trying to reach the draft server again':'Reaching the draft server'}</div></div></div>`;return}
   if(notFound||S.status==='lobby'){b.innerHTML='';return}
   if(S.status==='live'&&!S.logReady){b.innerHTML=`<div class="banner"><div class="bm"><div class="nm">Loading the board…</div><div class="sb">Fetching picks made so far</div></div></div>`;return}
   /* s23 (item 10): one compact end-of-draft card: small FINAL line, title, three equal buttons (See my team / Draft recap / League site). No giant League site bar, no "locked" text. */
-  if(S.status==='complete'){const isMgr=!!myMid();const rd=M.redraft&&M.redraft.phase==='live';b.innerHTML=`<div class="banner finalbn" id="finalbanner"><div class="bm"><div class="lbl" id="finallbl">${S.endedEarly?'ENDED EARLY':'FINAL'} · ${S.real.length} of ${S.realTotal} picks</div><div class="nm" id="finalhead">${S.endedEarly?'Draft ended early':(rd?'Redraft complete 🎉':'Draft complete 🎉')}</div></div><div class="endbtns3"><button class="btn" id="seemy" data-a="tab" data-t="my">${isMgr?'See my team':'See the teams'}</button><a class="btn pri" id="bnrecap" href="${esc(recapUrl())}">Draft recap</a><a class="btn" id="bigsite" href="${esc(siteUrl())}">League site</a></div></div>`;stickySite();return}
+  if(S.status==='complete'){const isMgr=!!myMid();const rd=M.redraft&&M.redraft.phase==='live';b.innerHTML=`<div class="banner finalbn" id="finalbanner"><div class="bm"><div class="lbl" id="finallbl">${S.endedEarly?'ENDED EARLY':'FINAL'} · ${S.real.length} of ${S.realTotal} picks</div><div class="nm" id="finalhead">${S.endedEarly?(isMock()?'Mock draft ended early':'Draft ended early'):(isMock()?'Mock draft complete 🎉':(rd?'Redraft complete 🎉':'Draft complete 🎉'))}</div></div><div class="endbtns3">${isMock()?mockEndBtns():`<button class="btn" id="seemy" data-a="tab" data-t="my">${isMgr?'See my team':'See the teams'}</button><a class="btn pri" id="bnrecap" href="${esc(recapUrl())}">Draft recap</a><a class="btn" id="bigsite" href="${esc(siteUrl())}">League site</a>`}</div></div>`;stickySite();return}
   stickySite();
   const s=F.onClock(S),o=mg(s.owner),mine=!isSpec()&&myMid()===s.owner;const myA=(!isSpec())?F.picksAway(S,myMid()):null;
   let sub='Pick #'+s.n+' · Round '+s.round+' of '+S.rounds+(o.team?' · '+esc(o.team):'');if(!mine&&myA!=null)sub+=` · <b>${myA===1?'You\'re up next':'You\'re '+myA+' picks away'}</b>`;
   const rem=remaining();let cd='';
   if(S.clockSecs){cd=S.paused?`<div class="cd">⏸<small>PAUSED ${rem!=null?UI.fmtClock(rem):''}</small></div>`:`<div class="cd${rem!=null&&rem<(S.warn15?15000:10000)?' low':''}" id="cdv">${rem!=null?(rem<=0?'0:00':UI.fmtClock(rem)):'–'}<small>${rem!=null&&rem<=0?(S.autoPick?'AUTO-PICKING':"TIME'S UP · waiting"):'PICK CLOCK'}</small></div>`}
   else if(S.paused)cd=`<div class="cd">⏸<small>PAUSED</small></div>`;
-  const tags=(S.away[s.owner]?' · away, auto-pick':S.auto[s.owner]?' · auto-pick on':'');
+  const tags=(isBot(s.owner)?' · bot, picks by itself':S.away[s.owner]?' · away, auto-pick':S.auto[s.owner]?' · auto-pick on':'');
   b.innerHTML=`<div class="banner${mine?' me':''}" id="oncard">${UI.avatar(o,mine?52:46)}<div class="bm"><div class="lbl">${mine?"YOU'RE ON THE CLOCK":'ON THE CLOCK'}</div><div class="nm">${mine?'Make your pick, '+esc(o.name):esc(o.name)}${esc(tags)}</div><div class="sb">${sub}</div></div>${cd}</div>`}
 function tickClock(){const lc=$('lobbycd');if(lc&&M&&S&&S.status==='lobby')lc.textContent=lobbyCountdown();const el=$('cdv');if(!el||!S)return;const rem=remaining();if(rem==null)return;
   el.firstChild.nodeValue=rem<=0?'0:00':UI.fmtClock(rem);el.classList.toggle('low',rem<(S.warn15?15000:10000));const sm=el.querySelector('small');if(sm)sm.textContent=rem<=0?(S.autoPick?'AUTO-PICKING':"TIME'S UP · waiting"):'PICK CLOCK';
@@ -395,6 +402,8 @@ function lobbyView(){const s=M.settings;const j=MG;const N=s.managers;const cm=c
   h+=`</div>`;
   if(cm){h+=`<div class="card"><h3>Draft order</h3><div class="row"><button class="btn grow" data-a="randomize" id="randomize" ${j.length<2?'disabled':''}>Randomize</button>${spinBtn(j)}</div><div class="small mut" style="margin-top:6px">${F.spinCompleted(M)?'The order was set with the wheel. There is only one spin. You can still move people by hand. ':''}Drag a manager by the ⠿ handle, or tap ▲ ▼. The order locks when the draft starts.</div></div>
     <div class="card"><h3>Start</h3><button class="btn pri block" data-a="start" id="startbtn" ${full8()?'':'disabled'} style="margin-top:6px">Start draft</button><div class="small mut" style="margin-top:6px" id="startnote">${full8()?'Everyone is in.':esc(waitTxt())+'. The draft starts only when all '+F.MANAGERS+' managers have joined.'}</div></div>`}
+  if(!isMock()&&!WATCH)h+=`<div class="card" id="practicecard"><h3>Practice while you wait</h3><div class="small mut">Run a quick mock draft with this league's settings against bots. It opens in a new tab and never changes this league.</div><a class="btn block" style="margin-top:8px" id="practicewait" href="${esc(UI.pageUrl('mock.html',{from:LID}))}" target="_blank" rel="noopener">Practice while you wait</a></div>`;
+  if(isMock()&&cm&&!full8())h+=`<div class="card" id="botcard"><h3>Fill empty seats with bots</h3><div class="small mut">Every mock has exactly ${F.MANAGERS} seats. Bots take the open ones and pick by themselves.</div><button class="btn pri block" style="margin-top:8px" data-a="fillbots" id="fillbots">Fill ${esc(missing())} empty seat${missing()===1?'':'s'} with bots</button></div>`;
   h+=inviteCard();return h}
 function inviteCard(){return `<div class="card" id="invitecard"><h3>Invite managers</h3><div class="row"><button class="btn pri grow" data-a="share" id="shareinvite">Share invite</button><button class="btn grow" data-a="copyrem" id="copyrem">Copy reminder message</button></div><div class="row" style="margin-top:8px"><button class="btn grow" data-a="invite" id="showqr">Links &amp; QR</button></div></div>`}
 function reminderMsg(){const s=M.settings;return F.reminderText({name:M.name,startAt:s.startAt,timeLink:UI.pageUrl('time.html',{t:s.startAt||'',n:M.name}),inviteLink:UI.pageUrl('join.html',{l:LID}),rounds:s.rounds,type:s.type,clockSecs:s.clockSecs})}
@@ -411,7 +420,7 @@ function inviteWatchCard(){const u=UI.pageUrl('room.html',{l:LID,watch:1});retur
 const homeTip=()=>`<div class="card small" id="hometip"><b>Save to your home screen.</b> iPhone: tap Share, then Add to Home Screen. Android: open the menu, then Install app.</div>`;
 function completeCard(){return `<div class="card" id="donecard"><h3>${S.endedEarly?'Draft ended early':(M.redraft&&M.redraft.phase==='live'?'Redraft complete':'Draft complete')}</h3><div class="small mut">${S.real.length} of ${S.realTotal} picks</div>
   <div class="row" style="margin-top:10px"><button class="btn grow" data-a="csv" id="csvbtn">Export CSV</button><button class="btn grow" data-a="json" id="jsonbtn">Export JSON</button></div>
-  ${S.endedEarly?'':`<div style="margin-top:8px"><a class="btn block" id="redraftroomlink" href="${esc(UI.pageUrl('redraft.html',{l:LID}))}">Redraft · ${esc(F.REDRAFT.asOfLabel)}</a></div>`}</div>`+whatsNext()+inviteWatchCard()+homeTip()}
+  ${S.endedEarly||isMock()?'':`<div style="margin-top:8px"><a class="btn block" id="redraftroomlink" href="${esc(UI.pageUrl('redraft.html',{l:LID}))}">Redraft · ${esc(F.REDRAFT.asOfLabel)}</a></div>`}</div>`+(isMock()?'':whatsNext()+inviteWatchCard()+homeTip())}
 function viewBoard(){if(!S)return'';if(S.status==='lobby')return lobbyView();return(S.status==='complete'?completeCard():'')+boardTable()}
 /* ---- teams ---- */
 let WATCHSET=new Set((()=>{try{return JSON.parse(lsGet(L('watch'))||'[]')}catch(e){return[]}})());
@@ -550,7 +559,7 @@ function centerBoard(sl,st){const w=document.querySelector('.bwrap');if(!w||!S)r
   boardCenteredFor=key;const c=w.querySelector('td.cur')||w.querySelector('td.mine');if(c){w.scrollLeft=Math.max(0,c.offsetLeft-34-(w.clientWidth-34)/2+c.offsetWidth/2);w.scrollTop=Math.max(0,c.offsetTop-w.clientHeight/2)}}
 function renderAll(){document.body.dataset.tab=tab;renderTop();renderBanner();renderTabs();renderView();renderPresence();updateTitle();
   if(resumeErr&&$('view')&&S)$('view').insertAdjacentHTML('afterbegin',`<div class="cflict" id="resumeerr">${esc(resumeErr)}</div>`)}
-function setTab(t){tab=t;document.body.dataset.tab=t;lsSet(L('tab'),t);$('view').innerHTML='';if(t==='chat'){seenChat=C.msgs.length;lsSet(L('seenChat'),String(seenChat))}renderTabs();renderView();renderPresence();window.scrollTo(0,0)}
+function setTab(t,fromHistory){if(TABN.indexOf(t)<0)t='board';UI.setHashTab(t,!fromHistory&&t!==tab);tab=t;document.body.dataset.tab=t;lsSet(L('tab'),t);saveLast();$('view').innerHTML='';if(t==='chat'){seenChat=C.msgs.length;lsSet(L('seenChat'),String(seenChat))}renderTabs();renderView();renderPresence();window.scrollTo(0,0)}
 /* ---- drag to reorder (lobby, commissioner) ---- */
 let drag=null;
 document.addEventListener('pointerdown',e=>{const h=e.target.closest('[data-handle]');if(!h||!commish())return;e.preventDefault();const row=h.closest('.mrow');const rows=Array.from(document.querySelectorAll('#orderlist .mrow'));
@@ -561,7 +570,10 @@ document.addEventListener('pointerup',async()=>{if(!drag)return;const d=drag;dra
 /* ===================== events ===================== */
 const shareU=(u,t)=>UI.share({title:M.name,text:t||'Join '+M.name,url:u});
 const ACT={
- tab:el=>setTab(el.dataset.t),switch:()=>{identityShown=true;showIdentity()},idclose:()=>{identityShown=false;closeIdentity()},
+ fillbots:async el=>{if(!needUnlock()||!isMock()||!window.FBNMock)return;el.disabled=true;el.textContent='Adding bots…';
+   try{const mids=await FBNMock.fillBots(M);if(mids.length){await simple(m=>{const n=F.clone(m);mids.forEach(x=>{n.over[x]=Object.assign({},n.over[x],{away:true,bot:true})});return{state:n}},null,chk=>mids.every(x=>chk.over[x]&&chk.over[x].bot))}await pollOnce();toast(mids.length?mids.length+' bot'+(mids.length===1?'':'s')+' joined':'No empty seats left')}catch(e){toast(NOCONN,5000)}rebuild(true);renderAll()},
+ /* s24: tabs are real links (#tab=<name>): a plain left click switches in place; Ctrl / Cmd / Shift / Alt or a non-left button is left to the browser (new tab / window) */
+ tab:(el,e)=>{if(el.tagName==='A'&&e&&(e.button!==0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey))return;if(e&&e.preventDefault)e.preventDefault();setTab(el.dataset.t)},switch:()=>{identityShown=true;showIdentity()},idclose:()=>{identityShown=false;closeIdentity()},
  ilinkgo:async()=>{const v=($('ilink')||{}).value||'';const x=F.extractMgr(v);const e=$('ilinkerr');if(!x){if(e)e.textContent='That does not look like a private manager link.';return}
    const r=await adoptManager(x.mid,x.k);if(r===null){if(e)e.textContent='That manager is not in this league (yet). Try again in a moment.';return}if(r){if(e)e.textContent=r;return}closeIdentity();identityShown=false;viewOwner=null;renderAll();kick();presBeat()},
  invite:()=>showInvite(),share:()=>shareU(UI.pageUrl('join.html',{l:LID}),'Join '+M.name+' on Fantasy BBALL NCAA'),shareu:el=>shareU(el.dataset.u),copy:el=>UI.copy(el.dataset.u,'Copied'),
@@ -598,6 +610,9 @@ const ACT={
 function showInvite(){const url=UI.pageUrl('join.html',{l:LID});UI.openSheet(`<h2>Invite managers</h2><div class="small mut">Scan, tap Share, or copy the link. League code: <b class="code" style="font-size:15px">${esc(F.formatCode(LID))}</b></div><div style="text-align:center;margin:10px 0"><div class="qr">${UI.qrSvg(url)}</div></div><div class="urlbox">${esc(url)}</div>
   <div class="row"><button class="btn pri grow" data-a="share">Share…</button><button class="btn grow" data-a="copy" data-u="${esc(url)}">Copy link</button><button class="btn grow" data-a="copyrem">Copy reminder</button><button class="btn grow" data-a="sheetbg">Close</button></div>`)}
 UI.bind(ACT);
+UI.setHashTab(tab,false);
+/* back / forward between tabs (the hash only ever holds the tab name) */
+window.addEventListener('popstate',()=>{const t=UI.hashTab(TABN);const nt=t||'board';if(nt!==tab)setTab(nt,true);else if(t!==nt)UI.setHashTab(nt,false)});
 document.addEventListener('change',e=>{const el=e.target;if(el.id==='w15')actFlags({warn15:el.checked});if(el.id==='atime')actFlags({autoPick:el.checked});if(el.id==='notes')actFlags({notes:el.checked});if(el.id==='clk')actClock(+el.value);
   if(el.id==='tmode'||el.id==='tmodeP'){TF.mode=el.value;lsSet('tmode',TF.mode);updateTeams()}});
 document.addEventListener('input',e=>{if(e.target.id==='tq'||e.target.id==='tqP'){TF.q=e.target.value;updateTeams()}});

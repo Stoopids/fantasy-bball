@@ -81,10 +81,11 @@ select{width:auto}
 body.room{--tabh:55px}
 html:has(body.room){scroll-padding-top:60px}
 .tabs{position:sticky;top:0;z-index:20;background:#0b0e14;border-bottom:1px solid var(--line);display:flex;padding:0 max(env(safe-area-inset-right),calc((100vw - 1100px)/2)) 0 max(env(safe-area-inset-left),calc((100vw - 1100px)/2))}
-.tabs button{flex:1 1 0;min-width:0;min-height:54px;background:none;border:0;padding:6px 2px 5px;color:var(--mut);font:inherit;font-size:11px;font-weight:800;position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:inset 0 -3px 0 transparent}
-.tabs button:focus-visible{outline:2px solid var(--acc);outline-offset:-3px}
-@media (min-width:900px){body.room{--tabh:59px}.tabs button{font-size:14px;min-height:58px}.tabs button span{display:inline-block;margin-right:7px;vertical-align:-2px}}
-.tabs button span{display:block;font-size:19px;line-height:1.1}.tabs button.on{color:var(--acc);box-shadow:inset 0 -3px 0 var(--acc)}
+.tabs a{display:block;text-align:center;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.tabs button,.tabs a{flex:1 1 0;min-width:0;min-height:54px;background:none;border:0;padding:6px 2px 5px;color:var(--mut);font:inherit;font-size:11px;font-weight:800;position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:inset 0 -3px 0 transparent}
+.tabs button:focus-visible,.tabs a:focus-visible{outline:2px solid var(--acc);outline-offset:-3px}
+@media (min-width:900px){body.room{--tabh:59px}.tabs button,.tabs a{font-size:14px;min-height:58px}.tabs button span,.tabs a span{display:inline-block;margin-right:7px;vertical-align:-2px}}
+.tabs button span,.tabs a span{display:block;font-size:19px;line-height:1.1}.tabs button.on,.tabs a.on{color:var(--acc);box-shadow:inset 0 -3px 0 var(--acc)}
 
 .tabs .bd{position:absolute;top:3px;left:55%;background:var(--bad);color:#fff;border-radius:99px;font-size:10px;padding:0 5px;font-weight:900}
 .banner{border-radius:16px;padding:12px 14px;margin:8px 0;background:var(--card);border:1px solid var(--line);display:flex;gap:12px;align-items:center}
@@ -489,3 +490,13 @@ a.btn{min-height:44px}
 @media (min-width:700px){.rcnext{grid-template-columns:1fr 1fr}.grb{max-width:200px}}
 @media (max-width:360px){.grrow{grid-template-columns:32px 42px minmax(0,1fr) 16px}.grb{display:none}.endbtns3 .btn{font-size:14px}}
 .grpicks a,.grpicks .tlink{min-height:44px;display:inline-flex;align-items:center;box-sizing:border-box}
+/* s24 mock drafts */
+.practicebn{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;background:repeating-linear-gradient(135deg,#3b2a05 0 12px,#2d2004 12px 24px);border:2px dashed #ffd23f;color:#ffe9a3;border-radius:12px;padding:9px 12px;margin:8px 0}
+.practicebn b{color:#ffd23f;letter-spacing:.08em;font-size:13px}.practicebn span{font-size:13px}
+.pill.prac{background:#ffd23f;color:#111;font-weight:800}
+.vsbots{margin:6px 0;padding:6px 10px;border-radius:8px;background:rgba(255,210,63,.12);color:#ffe9a3;font-size:13px;font-weight:700}
+#trymock{margin-top:10px}
+.rcnav{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;padding:6px 2px;margin:6px 0 10px;background:var(--bg,#10131a);scrollbar-width:none}
+.rcnav a{flex:0 0 auto;min-height:44px;display:inline-flex;align-items:center;padding:0 12px;border-radius:99px;border:1px solid var(--line,#2a3142);color:var(--tx,#eee);text-decoration:none;font-size:13px;font-weight:800;white-space:nowrap}
+.rcnav a[aria-current]{background:var(--acc,#ffd23f);color:#111;border-color:transparent}
+.rsec{scroll-margin-top:64px}

@@ -201,3 +201,38 @@ Known limits: the league page still counts a team's wins for its current owner f
 - Draft start countdown (item 12): the commissioner sets the time under More > League settings (Draft time + "Start by itself"), changes or clears it before the start. Every page counts down in its own time. At 0:00 any open page starts the draft (the commissioner's page can be closed). If nobody spun the wheel, the start spins it by itself: the order comes from the league's stored seed, so every page that fires computes the same order, and it is recorded as the one spin. A spin running right at 0:00 is left to finish first (60 s). Not 8 managers at 0:00: no start, "Waiting for all 8 managers", and it starts by itself as soon as all 8 are in (or the commissioner changes/clears the time).
 - A–Z sort uses the full team name; a private link shows "Checking your link…" instead of "Not joined" while it is checked.
 - Tests: `node tests/e2e_s23b.js`, `node tests/e2e_s23c.js` (mock on 8480/8481), plus test_core additions.
+
+## s24 mock drafts (practice leagues, Draft Room)
+- **What a mock is:** a normal league made by `js/mock.js` (`FBNMock.create`) with `meta.mock=true`, its own random code, and the real league's settings copied once (draft style, rounds, pick clock; start "now", random order, auto-pick on). `meta.parent` points one way to the real league; nothing ever writes the real league's keys. It opens in the same `room.html` and `recap.html`.
+- **Bots** are seats marked away (`meta.over[mid]={away:true,bot:true}`), named "Bot 1 (CPU)" to "Bot 7 (CPU)". The room's auto-pick picks for them after 1 to 2 seconds. Every mock has exactly 8 seats.
+- **Solo** (default): you + 7 bots; the room starts it at once. **With others:** share the invite link; the commissioner taps "Fill empty seats with bots", then Start.
+- **Entry points:** "Try a mock draft" on the home page (no league needed); "Practice this draft" on the joined page (`join.html`) before the draft; "Practice while you wait" in the countdown lobby (opens a new tab, hidden once the draft is live). All open `mock.html` (`?from=<code>` copies that league's settings).
+- **After a mock:** PRACTICE banner on the room, recap and mock page; the recap says grades were against bots; buttons "Run another" and "Back to my league"; no League site button and no Redraft.
+- **On the device:** mocks are never added to "Your leagues" (`fbn.leagues`); the last 5 go to `fbn.mocks` (with your grade). `tests/e2e_mock.js` proves that a mock writes no key of the real league and does not change `fbn.leagues` / `fbn.me.<real code>`.
+- Not done here (League Site owns these files): a "Practice this draft" button on the League site page and a "What is a mock draft" entry in help.html.
+
+### s24: refresh and relaunch keep your place
+Cause: the installed app always launches at the manifest `start_url` (`./index.html`), and nothing sent it back to the room. An iPhone home-screen "refresh" is a relaunch, so it landed on Home too. In the browser, the room and recap URLs keep `?l=` on reload (the service worker matches pages by path and the address bar keeps the query), but the tab was not in the URL. s24 adds `#tab=<name>`.
+- `#tab=<name>` wins. With no hash, the last tab or section used for that league opens (`fbn.last.<id>`).
+- There is one resume statement in index.js, used by the draft room and the League site. On the FIRST page of a standalone app session (sessionStorage `fbn.launched`), it reopens the newest place used within 14 days:
+  - the room or recap (`fbn.lastnav` = `{kind, id, path, tab, ts}`);
+  - or the League site tab (`fbn.lastsite` = `{id, t, at}`, written by league.html).
+- The league must still exist and must not be a mock (offline, this device is trusted). Later visits to Home stay on Home.
+- The records hold a league code, a clean path (`l`, `watch`) and a tab name only, never `k=`, a manager id or a secret. Mock drafts never write them. The manifest is unchanged.
+
+### s24: tabs are links in the URL
+- Every draft room tab (Board, Teams, My Team, Chat, More) and every recap section is an `<a href="#tab=<name>">`. The hash holds only the tab name; the query string is kept. Refresh or a shared link opens that tab, Back / Forward follow the tabs, an unknown hash falls back to the default tab. Works in mocks.
+- A plain left click switches in place. Ctrl / Cmd / Shift-click, middle-click and right-click "Open in new tab" are left to the browser. Tabs keep 44px targets, `role=tab` and `aria-selected`.
+
+## s24 (League site Bets, on top of s23)
+- Edit: a pending bet you placed has an Edit button. It withdraws the bet (normal withdraw event in your own log) and opens the New bet form filled with the old bet. If the other side answered first, it says "Too late to edit".
+- Fix result: on a settled bet either side can ask for a corrected result (fr); only the other side can confirm (fc) or decline (fd; from the asker = withdraw). The result and pushup totals change only after a confirm. The card lists every change (who asked, old → new result, who answered, times). Details: CHANGE-NOTES-s24.md.
+- Below 380px the opponent chips wrap 4 per row and pushup buttons 3 per row (44px tap targets). The totals box (#b27Board) is now closed, so bet cards no longer sit inside it.
+- Tests: `node tests/e2e_bets_s24.js` (APP / API env, mock store).
+- Tab URLs: every League site tab has its own hash (`#standings #games #rosters #bets #teams #postseason #redraft #archive #rules`); refresh stays on the tab, Back / Forward move between tabs. Deep links `#bets/<betId>` and `#games/<gameId>` scroll to the card and highlight it (short "not found" note if it is gone). "Copy link" / "Share" above each tab and a 🔗 button on bet and game cards; links are only origin + path + `?l=CODE` + hash, never a manager link or k=. Test: `node tests/e2e_deeplink_s24.js`.
+- Tabs are real links (`<a href="?l=CODE#tab">`): a plain click switches in place; Ctrl/Cmd/Shift/middle-click or Open in new tab open the tab in a new browser tab.
+- Bets page layout (block order copied from the partner site): no headline; New bet form, who owes who + Still open, the filter row (with a small "Showing 3 of 9 bets" count), Waiting for your answer, bet cards, then the intro card (unchanged text) with the live line last.
+- Loader: every League site loading state uses one shared loader, the partner site ball loader (3 bouncing 🏀, CSS only, `LLOADER()` in leaguehome.js, `.bl*` in league-app.css; static under reduced motion). Test: `node tests/e2e_loader_s24.js`.
+- Recap power rankings use the same ball loader (CSS in css/power.css). Mock leagues never write or follow `fbn.lastsite` / the last-tab memory (draft room HOOK.md hook 1).
+- Refresh / home-screen app: the League site remembers the last tab per league on this device (no identity stored), so a reload without a hash and a home-screen app launch (manifest start_url is index.html) reopen it; index.js sends a fresh standalone launch to the last League site tab (used in the last 14 days). Test: `node tests/e2e_refresh_s24.js`.
+- Bets filters: one row (Person, Status, "search terms..."), combined, remembered per league on the device and kept in the URL (`#bets/f=me-waiting`, `/q=<terms>`); a deep link to a hidden bet clears them. Test: `node tests/e2e_betfilter_s24.js`.
