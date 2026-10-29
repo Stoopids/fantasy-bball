@@ -7,12 +7,12 @@ const P=UI.qs();const LID=F.parseCode(P.get('l')||'');const WATCH=P.get('watch')
 const FR=UI.takeFragment();const CMFRAG=F.extractSecret(FR.get('cm')||'','cm');const ASFRAG=FR.get('as')||P.get('as')||'',KFRAG=FR.get('k')||P.get('k')||'';
 if(!LID){location.replace('index.html');return}
 const K=F.Keys(LID);const T=UI.loadTeams();const {TEAMS,POOL,POOLSET,META}=T;const TZ=UI.tz();
-const CFG={pollLobbyMs:4000,pollLiveMs:2500,pollDoneMs:15000,backoffMaxMs:30000,graceMs:1800};
+const CFG={stuckHoldMs:15000,pollLobbyMs:4000,pollLiveMs:2500,pollDoneMs:15000,backoffMaxMs:30000,graceMs:1800};
 const L=k=>'x.'+LID+'.'+k;
 /* ===================== state ===================== */
 let M=null,Mraw='',notFound=false,CL={},CLraw={},PROF={},PROFraw={},profAt={},MG=[],S=null,C=F.normChat(null),Craw='',pendingChat=[];
 let ENT={},ENTraw={},PREF={},PREFraw={},SPIN={},SPINraw={},logReady=false,prefsLoaded=false,epochSeen=0,pollNo=0,sweepAt=0,srvOff=0,srvSync=0,srvInfo='device clock';
-let loaded=false,lastOk=0,failCount=0,polling=false,pendingKick=false,lastSig='',busy=false,resumeErr='';
+let badMetaN=0,loaded=false,lastOk=0,failCount=0,polling=false,pendingKick=false,lastSig='',busy=false,resumeErr='';
 let me=UI.getMe(LID);
 const WRITER=lsGet('writer')||(function(){const w=F.hexId(6);lsSet('writer',w);return w})();
 const nowSrv=()=>Date.now()+srvOff;
@@ -68,13 +68,15 @@ const normChatRaw=txt=>F.normChat(F.parseJ(txt));
 async function pollOnce(){if(polling){pendingKick=true;return}polling=true;
   try{pollNo++;
     const pMeta=readRaw(K.meta).then(a=>{lastOk=Date.now();failCount=0;
-      if(a!==Mraw||!loaded){Mraw=a;notFound=!F.exists(F.parseJ(a))}
+      if(a!==Mraw||!loaded){const good=F.exists(F.parseJ(a));
+        /* s23 (BUG-5): a read that succeeds but is not a league (e.g. a transient empty 200 from the store) never replaces a league we already have; only after ~20 such reads in a row is it shown as not found */
+        if(!good&&M&&F.exists(F.parseJ(Mraw))&&++badMetaN<20){}else{if(good)badMetaN=0;Mraw=a;notFound=!good}}else badMetaN=0
       if(!loaded)loaded=true;
       if(!notFound){const mm=F.normalizeMeta(F.parseJ(Mraw));if(epochSeen!==mm.epoch){ENT={};ENTraw={};SPIN={};SPINraw={};logReady=false;epochSeen=mm.epoch}
         if(JSON.stringify(mm.slotGen)!==JSON.stringify((M||{}).slotGen||{}))CLraw={}}
       rebuild(true);return true});
     const doChat=(pollNo%3===1||tab==='chat'||!loaded);
-    const pChat=doChat?readRaw(K.chat).then(b=>{if(b!==Craw||pendingChat.length){Craw=b;const pc=C;C=F.mergeChat(normChatRaw(b),pendingChat);onChat(pc,C)}}).catch(()=>{}):Promise.resolve();
+    const pChat=doChat?readRaw(K.chat).then(b=>{if(b!==Craw||pendingChat.length){Craw=b;const pc=C;C=F.mergeChat(normChatRaw(b),pendingChat);onChat(pc,C)}chatHeal(normChatRaw(b))}).catch(()=>{}):Promise.resolve();
     const metaOk=await pMeta.catch(e=>{failCount++;return false});
     if(metaOk&&!notFound&&M){const paint=r=>{if(r)rebuild(true);return r};const rest=[];
       if(M.status==='lobby'||pollNo%6===0||!Object.keys(CLraw).length)rest.push(syncClaims().catch(()=>false).then(paint));
@@ -129,6 +131,11 @@ async function mutatePref(mid,fn,verify){for(let attempt=0;attempt<2;attempt++){
 async function submitPick(n,owner,tid,by,o){o=o||{};const prevId=n>1&&S.picks.length===n-1?S.picks[n-2].id:(n>1?null:'');const entry=F.makeEntry(n,owner,tid,{by,now:nowSrv(),writer:WRITER,epoch:M.epoch,prev:prevId});
   const io={read:u=>Store.get(u,undefined,{write:1}).then(r=>{storeOk();return r}),write:postJ,sleep,adopt:(k,e)=>{ENT[k]=e||null;ENTraw[k]=e?JSON.stringify(e):'';rebuild()},later:fn=>{fn()},alert:k=>toast('Pick #'+k+' was replaced by a simultaneous write — check the board.',6000)};
   return F.submitSlot(io,{meta:M,url:K.pick(M.epoch,n),n,entry,taken:F.takenMap({picks:S.picks.filter(p=>p.n<n),kept:S.kept}),pool:POOLSET,prevId:prevId==null?undefined:prevId,fast:o.fast})}
+/* s23 (BUG-2): the chat is one key (read-modify-write), so two people sending at the same moment can overwrite each other. Every message this device sent is remembered for 3 minutes; if a later read of the chat does not have it, it is shown again at once and written back (merged), until it sticks. */
+let SENTCHAT=[],chatHealing=false;
+function chatHeal(srv){const now=Date.now();SENTCHAT=SENTCHAT.filter(x=>now-x.at<180000);if(chatHealing||!srv)return;const miss=SENTCHAT.filter(x=>now-x.at>2500&&!srv.msgs.some(m=>m.id===x.m.id)).map(x=>x.m);if(!miss.length)return;
+  miss.forEach(m=>{if(!pendingChat.some(p=>p.id===m.id))pendingChat.push(m)});const pc=C;C=F.mergeChat(srv,pendingChat);onChat(pc,C);chatHealing=true;
+  chatWrite(cur=>{let st=cur;miss.forEach(m=>{if(!st.msgs.some(x=>x.id===m.id))st=F.addMsg(st,m)});return{state:st}},chk=>miss.every(m=>chk.msgs.some(x=>x.id===m.id))).catch(()=>{}).finally(()=>{chatHealing=false})}
 async function chatWrite(fn,verify){for(let attempt=0;attempt<4;attempt++){let raw;try{raw=await readRaw(K.chat)}catch(e){return{ok:false,msg:NOCONN}}
     const cur=normChatRaw(raw);const r=fn(cur);if(r.error)return{ok:false,msg:r.error};const ns=r.state;ns.version=(cur.version||0)+1;
     try{await postJ(K.chat,ns)}catch(e){return{ok:false,msg:'Message not sent (server hiccup).'}}
@@ -158,7 +165,9 @@ function showConflict(n,tid,w,forOwner){conflictMsg=w.owner===forOwner?'<b>Alrea
 async function simple(fn,okMsg,verify){const res=await mutateMeta(fn,verify);if(!res.ok&&!res.noop)toast(res.msg,5000);else if(okMsg)toast(okMsg);return res}
 const seedOf=m=>m.id+':'+(m.settings.startAt||0);
 async function actStart(auto){if(!auto&&!needUnlock())return;await pollOnce();
-  return simple(m=>F.mStart(m,joinedMids(),nowSrv(),seedOf(m),POOL.length),auto?null:'The draft is LIVE!',chk=>chk.status==='live')}
+  /* s23 (BUG-4): every wheel result is saved but the order was not applied yet (e.g. the wheel was hidden during "saving…"): apply the wheel order first, never start with a different order */
+  if(M&&M.status==='lobby'&&M.spin&&!F.spinCompleted(M)&&spinInfo().done){if(!await applySpin()){if(!auto)toast('Could not save the wheel order. Tap Start again.',5000);return}await pollOnce();if(!F.spinCompleted(M))return}
+  return simple(m=>F.mStart(m,joinedMids(),nowSrv(),seedOf(m),POOL.length,{autoSpin:!!auto}),auto?null:'The draft is LIVE!',chk=>chk.status==='live')}
 const actPause=p=>needUnlock()&&simple((m,st)=>F.mPause(m,st,p,nowSrv()),p?'Paused':'Resumed',chk=>chk.paused===p);
 const actUndo=async exp=>{if(!needUnlock())return;await pollOnce();return simple((m,st)=>F.mUndo(m,st,exp||null,nowSrv()),'Last pick undone',(chk,ns)=>chk.voided.length>=ns.voided.length)};
 const actClock=s=>needUnlock()&&simple(m=>F.mClock(m,s,nowSrv()),s?'Pick clock: '+s+'s':'Pick clock off',(chk,ns)=>chk.settings.clockSecs===ns.settings.clockSecs);
@@ -180,17 +189,21 @@ async function actUnlock(pass){if(Date.now()<pinLock)return{ok:false,msg:'Too ma
   pinTries++;if(pinTries>=5){pinLock=Date.now()+30000;pinTries=0;return{ok:false,msg:'That is not the commissioner secret. Locked for 30 seconds.'}}return{ok:false,msg:'That is not the commissioner secret. Paste the whole commissioner link, or its 32-character code ('+(5-pinTries)+' tries left).'}}
 const prankOf=t=>(META[t]||{}).p||0;
 let autoPlan={n:0,at:0},autoBusy=false;
-function autoTick(){if(!S||!loaded||autoBusy||busy||!S.logReady)return;if(Store.stuck().length)return;   /* s22b: never auto-pick while a pick slot cannot be read or saved (Pick stuck banner): the manager or the commissioner decides */
+function autoTick(){if(!S||!loaded||autoBusy||busy||!S.logReady)return;{const stk=Store.stuck();if(stk.length){const cs=F.onClock(S);const sk=cs&&stk.find(x=>x.n===cs.n);if(!sk||Date.now()-(sk.since||Date.now())<CFG.stuckHoldMs)return}}   /* s23: a stuck slot gets a short hold (manager / commissioner first), then auto-pick goes ahead through the backup spot; never for a stuck slot that is not the one on the clock */
   const s=F.onClock(S);if(!s){autoPlan={n:0,at:0};return}
   const reason=F.autoReason(S,nowSrv(),CFG.graceMs);if(!reason){autoPlan={n:0,at:0};return}
+  /* s23: right after an Undo the slot is the manager's again: an away / auto-pick-on manager is not re-picked for at once (only when the pick clock runs out) */
+  {const ue=ENT[s.n];if(reason!=='expired'&&ue&&M.voided.indexOf(ue.id)>=0){autoPlan={n:0,at:0};return}}
   if(autoPlan.n!==s.n){autoPlan={n:s.n,at:Date.now()+(reason==='expired'?0:900)+Math.random()*1500};return}if(Date.now()<autoPlan.at)return;
   autoBusy=true;autoPlan.at=Date.now()+5000;const n=s.n;
   (async()=>{await pollOnce();const s2=F.onClock(S);if(!s2||s2.n!==n||!F.autoReason(S,nowSrv(),CFG.graceMs-200))return;
     const ch=F.autoChoice(S,s2.owner,POOL,F.mulberry(n*7919),prankOf);if(!ch)return;const r=await submitPick(n,s2.owner,ch.tid,'auto');if(r&&r.ok)toast('Auto-pick: '+tn(ch.tid)+' for '+mg(s2.owner).name)})().finally(()=>{autoBusy=false})}
 let startTried=0;
 function autoStartTick(){if(!M||busy||M.status!=='lobby'||M.settings.startMode!=='auto'||M.settings.startAt==null)return;if(nowSrv()<M.settings.startAt+500)return;if(!full8())return;if(Date.now()<startTried)return;
+  /* s23 (item 12): a wheel spin that is running right now is left to finish first (it is stale after 60 s, then the auto-spin takes over) */
+  if(M.spin&&!F.spinCompleted(M)&&!spinInfo().done&&spinState()==='fresh')return;
   startTried=Date.now()+4000+Math.random()*2500;actStart(true)}
-async function sendMsg(text){text=(text||'').trim().slice(0,280);const mm=myMid();if(!text||!mm||WATCH)return;const id=Math.random().toString(36).slice(2,10);const msg={id,ts:nowSrv(),who:mm,text};pendingChat.push(msg);
+async function sendMsg(text){text=(text||'').trim().slice(0,280);const mm=myMid();if(!text||!mm||WATCH)return;const id=Math.random().toString(36).slice(2,10);const msg={id,ts:nowSrv(),who:mm,text};SENTCHAT.push({m:msg,at:Date.now()});pendingChat.push(msg);
   const pc=C;C=F.mergeChat(C,pendingChat);onChat(pc,C);const r=await chatWrite(cur=>({state:F.addMsg(cur,msg)}),chk=>chk.msgs.some(m=>m.id===id));if(!r.ok)toast(r.msg)}
 async function react(id,emoji){const mm=myMid();if(!mm||WATCH){toast('Only managers can react.');return}
   const r=await chatWrite(cur=>F.toggleReact(cur,id,emoji,mm),(chk,ns)=>{const a=((ns.msgs.find(m=>m.id===id)||{}).r||{})[emoji]||[];const b=((chk.msgs.find(m=>m.id===id)||{}).r||{})[emoji]||[];return a.includes(mm)===b.includes(mm)});if(!r.ok)toast(r.msg)}
@@ -201,8 +214,14 @@ const wlabel=mid=>mg(mid).name;
 const wheelTapClose=()=>!!M&&(!commish()||(M.spin&&M.spin.done&&!WH.playing));
 const seenKey=()=>'fbn.spinseen.'+LID;const seenId=()=>{try{return localStorage.getItem(seenKey())||''}catch(e){return''}};const setSeen=id=>{try{localStorage.setItem(seenKey(),id)}catch(e){}};
 function spinInfo(){return M&&M.spin&&!M.spin.done?F.spinReplay(M,SPIN):{winners:[],recs:[],done:false,total:0}}
+/* s23 (item 6): everyone sees the spin. A manager who opens the room while a spin is running sees the wheel with the results so far; one who opens it after the order was set sees the result once. */
+const resKey=()=>'fbn.spinres.'+LID;const resId=()=>M&&M.spin?String(M.spin.sid||M.spin.gen||'')+'-'+(M.spin.ts||''):'';
+function setResSeen(){try{localStorage.setItem(resKey(),resId())}catch(e){}}
+function lateSpinView(){if(!M||M.status!=='lobby'||commish()||WATCH||!(me||KFRAG)||!M.spin)return;let seen='';try{seen=localStorage.getItem(resKey())||''}catch(e){}
+  if(F.spinCompleted(M)){if(seen!==resId()){WH.open=true;setResSeen()}return}
+  const st=F.spinStatus(M,SPIN,nowSrv());if(st.state!=='stale')WH.open=true}
 function onSpinState(){if(!M)return;const gen=M.spin&&!M.spin.done?M.spin.gen:0;
-  if(WH.resp==null)WH.resp=M.respins.length;else if(M.respins.length>WH.resp){WH.resp=M.respins.length;toast('The commissioner set the draft order with the wheel.',5000)}
+  if(WH.resp==null){WH.resp=M.respins.length;lateSpinView()}else if(M.respins.length>WH.resp){WH.resp=M.respins.length;toast((M.respins[M.respins.length-1]||{}).auto?'The wheel spun by itself at the start time and set the draft order.':'The commissioner set the draft order with the wheel.',5000);setResSeen();if(M.status==='lobby'&&!commish()&&!WH.open)WH.open=true}
   if(gen!==WH.gen){WH.gen=gen;SPIN={};SPINraw={};if(WH.shown!=null){WH.shown=0;WH.queue=[]}}
   const sp=spinInfo();if(WH.shown==null){WH.shown=sp.winners.length;return}
   if(!WH.loadTs)WH.loadTs=nowSrv();
@@ -287,7 +306,9 @@ function onState(prev,next){if(!prev){updateTitle();return}
   if(prev.epoch!==next.epoch)toast('The draft was reset by the commissioner.',5000);
   const wasLive=prev.status==='live',nowLive=next.status==='live';
   if(prev.status==='lobby'&&nowLive)toast('The draft is LIVE!');
-  if(next.status==='complete'&&prev.status!=='complete')toast(next.endedEarly?'The commissioner ended the draft.':'Draft complete!',6000);
+  if(next.status==='complete'&&prev.status!=='complete'){toast(next.endedEarly?'The commissioner ended the draft.':'Draft complete! Opening the recap…',6000);
+    /* s23 (item 9): the end of the draft goes straight to the recap page (only when it ends while this page is open; opening a finished draft later stays here) */
+    if(prev.status==='live'&&!NOREDIR)setTimeout(()=>{location.href=recapUrl()},1800)}
   const mm=myMid();
   if(mm&&!WATCH&&nowLive){const a=F.picksAway(next,mm),pa=wasLive?F.picksAway(prev,mm):null;
     if(a===0&&pa!==0){vib([250,120,250,120,500]);setAlertBar('')}
@@ -301,9 +322,9 @@ function updateTitle(){const base=(M?M.name+' · ':'')+'Fantasy BBALL NCAA';cons
   else{setFavicon(false);document.title=S&&S.status==='live'?base+' · #'+(S.picks.length+1):base}}
 function beep(){try{if(lsGet('sound')==='0')return;const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const c=beep.c||(beep.c=new A());const o=c.createOscillator(),g=c.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.18)}catch(e){}}
 /* ===================== render ===================== */
-let tab=lsGet(L('tab'))||'board',chatSub='chat',viewOwner=null,reactOpen=null,identityShown=false;
+const QTAB=new URLSearchParams(location.search).get('tab');const NOREDIR=new URLSearchParams(location.search).get('stay')==='1';let tab=(['board','teams','my','chat','more'].indexOf(QTAB)>=0?QTAB:null)||lsGet(L('tab'))||'board',chatSub='chat',viewOwner=null,reactOpen=null,identityShown=false;
 const TABS=[['board','Board','🧩'],['teams','Teams','🏀'],['my','My Team','👤'],['chat','Chat','💬'],['more','More','⚙️']];
-function stickySite(){let el=$('stickysite');const done=!!(S&&S.status==='complete');if(!done){if(el)el.remove();document.body.classList.remove('hasstick');return}
+function stickySite(){let el=$('stickysite');const done=false;/* s23: the sticky League site bar is gone (the end card has the button) */if(!done){if(el)el.remove();document.body.classList.remove('hasstick');return}
   if(!el){el=document.createElement('a');el.id='stickysite';el.className='stickysite btn pri';el.textContent='League site';document.body.appendChild(el)}
   const show=tab!=='chat';el.href=siteUrl();el.hidden=!show||bigVis;document.body.classList.toggle('hasstick',show);watchBig()}
 /* the sticky League site button only shows while the big one at the top of the end-of-draft banner is off screen, so two big buttons are never visible together */
@@ -317,7 +338,7 @@ function renderTabs(){stickySite();const unread=Math.max(0,C.msgs.length-seenCha
   $('view').setAttribute('aria-labelledby','tab_'+tab);measureTabs();if(af){const b=el.querySelector('[data-t="'+af+'"]');if(b)b.focus()}}
 $('tabs').addEventListener('keydown',e=>{const k=e.key;if(!['ArrowLeft','ArrowRight','Home','End'].includes(k))return;const bs=[...$('tabs').querySelectorAll('button')];let i=bs.indexOf(document.activeElement);if(i<0)return;e.preventDefault();i=k==='Home'?0:k==='End'?bs.length-1:(i+(k==='ArrowRight'?1:-1)+bs.length)%bs.length;setTab(bs[i].dataset.t);const nb=$('tabs').querySelector('[data-t="'+TABS[i][0]+'"]');if(nb)nb.focus()});
 const siteUrl=()=>UI.pageUrl('league.html',{l:LID}),recapUrl=()=>UI.pageUrl('recap.html',{l:LID});
-function renderTop(){const done=!!(S&&S.status==='complete');const site=done?`<a class="pill" id="sitelink" href="${esc(siteUrl())}">League site</a>`:'<span class="pill dis" id="sitelink" aria-disabled="true">League site · after the draft</span>';const who=WATCH?'<span class="pill" id="who">Spectator</span>':(myMid()?`<span class="pill" id="who">${UI.avatar(mg(myMid()),18)} ${esc(mg(myMid()).name)}${commish()?' · commissioner':''}</span>`:'<span class="pill" id="who">Not joined</span>');
+function renderTop(){const done=!!(S&&S.status==='complete');const site=done?`<a class="pill" id="sitelink" href="${esc(siteUrl())}">League site</a>`:'<span class="pill dis" id="sitelink" aria-disabled="true">League site · after the draft</span>';const who=WATCH?'<span class="pill" id="who">Spectator</span>':(myMid()?`<span class="pill" id="who">${UI.avatar(mg(myMid()),18)} ${esc(mg(myMid()).name)}${commish()?' · commissioner':''}</span>`:((me||KFRAG)&&!authReady&&!removed()?'<span class="pill" id="who">Checking your link…</span>':'<span class="pill" id="who">Not joined</span>'));/* s23 (LOW-2): no "Not joined" while a private link is still being checked */
   $('top').innerHTML=UI.header({below:true,sub:M?M.name:'Draft room',right:'<span id="conn" class="pill bad"><i></i>Connecting…</span>'+who+site});renderConn()}
 function canPick(){if(!S||!S.logReady)return false;if(WATCH)return false;const s=F.onClock(S);if(!s||S.paused)return false;return(!isSpec()&&s.owner===myMid())||commish()}
 function remaining(){if(!S||!S.clockSecs)return null;if(S.paused)return S.pausedLeft;return S.deadline?S.deadline-nowSrv():null}
@@ -337,7 +358,8 @@ function renderBanner0(){const b=$('banner');
   if(!loaded||(!S&&!notFound)){const off=connState()==='offline';b.innerHTML=`<div class="banner"><div class="bm"><div class="nm">${off?'Offline, retrying…':'Connecting…'}</div><div class="sb">${off?'Trying to reach the draft server again':'Reaching the draft server'}</div></div></div>`;return}
   if(notFound||S.status==='lobby'){b.innerHTML='';return}
   if(S.status==='live'&&!S.logReady){b.innerHTML=`<div class="banner"><div class="bm"><div class="nm">Loading the board…</div><div class="sb">Fetching picks made so far</div></div></div>`;return}
-  if(S.status==='complete'){const isMgr=!!myMid();b.innerHTML=`<div class="banner finalbn" id="finalbanner"><a class="btn pri block endbig" id="bigsite" href="${esc(siteUrl())}">League site</a><div class="bm"><div class="lbl">${S.endedEarly?'ENDED EARLY':'FINAL'}</div><div class="nm" id="finalhead">${S.endedEarly?'Draft ended by the commissioner':(M.redraft&&M.redraft.phase==='live'?'Redraft complete':'Draft complete')}</div><div class="sb">${S.real.length} of ${S.realTotal} picks made · locked</div></div><button class="btn block endsec" id="seemy" data-a="tab" data-t="my">${isMgr?'See my team':'See the teams'}</button><div class="endsmall"><a class="btn sm" id="bnrecap" href="${esc(recapUrl())}">Draft recap</a></div></div>`;stickySite();return}
+  /* s23 (item 10): one compact end-of-draft card: small FINAL line, title, three equal buttons (See my team / Draft recap / League site). No giant League site bar, no "locked" text. */
+  if(S.status==='complete'){const isMgr=!!myMid();const rd=M.redraft&&M.redraft.phase==='live';b.innerHTML=`<div class="banner finalbn" id="finalbanner"><div class="bm"><div class="lbl" id="finallbl">${S.endedEarly?'ENDED EARLY':'FINAL'} · ${S.real.length} of ${S.realTotal} picks</div><div class="nm" id="finalhead">${S.endedEarly?'Draft ended early':(rd?'Redraft complete 🎉':'Draft complete 🎉')}</div></div><div class="endbtns3"><button class="btn" id="seemy" data-a="tab" data-t="my">${isMgr?'See my team':'See the teams'}</button><a class="btn pri" id="bnrecap" href="${esc(recapUrl())}">Draft recap</a><a class="btn" id="bigsite" href="${esc(siteUrl())}">League site</a></div></div>`;stickySite();return}
   stickySite();
   const s=F.onClock(S),o=mg(s.owner),mine=!isSpec()&&myMid()===s.owner;const myA=(!isSpec())?F.picksAway(S,myMid()):null;
   let sub='Pick #'+s.n+' · Round '+s.round+' of '+S.rounds+(o.team?' · '+esc(o.team):'');if(!mine&&myA!=null)sub+=` · <b>${myA===1?'You\'re up next':'You\'re '+myA+' picks away'}</b>`;
@@ -351,8 +373,10 @@ function tickClock(){const lc=$('lobbycd');if(lc&&M&&S&&S.status==='lobby')lc.te
   const sl=F.onClock(S);const wk=sl?S.epoch+':'+sl.n:'';el.classList.toggle('warn',!!(S.warn15&&rem>0&&rem<=15000));
   if(S.warn15&&sl&&rem>0&&rem<=15000&&warnedFor!==wk){warnedFor=wk;if(!isSpec()&&myMid()===sl.owner){vib([200,100,200]);beep();toast('15 seconds left!',3000)}}}
 /* ---- lobby ---- */
+/* s23 (item 12): the start is stored as one UTC instant; every viewer sees it in their own zone with the zone named ("Saturday, November 7, 2026, 8:00 PM GMT+7"); the countdown is computed from the same instant, so it is identical everywhere */
+function startLocal(t){try{const d=new Date(+t);const day=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:TZ});const tm=d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:TZ,timeZoneName:'short'});return day+', '+tm}catch(e){return F.fmtUtc(t)}}
 function lobbyCountdown(){const s=M.settings;if(s.startAt==null)return full8()?'Waiting for the commissioner to press Start':waitTxt();const d=s.startAt-nowSrv();
-  if(d>0)return (s.startMode==='auto'?'Auto-start in ':'Scheduled in ')+F.countdownText(d);return s.startMode==='auto'?(full8()?'Starting now…':waitTxt()):(full8()?'Draft time has arrived — waiting for the commissioner to press Start':waitTxt())}
+  if(d>0)return (s.startMode==='auto'?'Auto-start in ':'Scheduled in ')+F.countdownText(d);return s.startMode==='auto'?(full8()?(F.spinCompleted(M)||M.orderSet?'Starting now…':'Spinning for the order and starting now…'):'Waiting for all '+F.MANAGERS+' managers — the draft starts by itself as soon as everyone is in. '+waitTxt()+'.'):(full8()?'Draft time has arrived — waiting for the commissioner to press Start':waitTxt())}
 function settingsLine(){const s=M.settings;return [s.type==='snake'?'Snake':'Linear',s.rounds+' teams each',s.clockSecs?s.clockSecs+' sec per pick':'no pick clock',s.autoPick?'auto-pick when time runs out':'waits when time runs out'].join(' · ')}
 function orderListHTML(editable){const o=F.effectiveOrder(M,joinedMids());const cm=editable&&commish()&&M.status==='lobby';
   return '<div id="orderlist">'+o.map((mid,i)=>{const m=mg(mid);return `<div class="mrow" data-mid="${esc(mid)}"><span class="no">${i+1}</span>${UI.avatar(m,32)}<div class="grow" style="min-width:0"><div class="nm">${esc(m.name)}${m.mid===myMid()?' <span class="tag mut">you</span>':''}${m.cm?' <span class="tag ok">commissioner</span>':''}${m.away?' <span class="tag pri">away</span>':''}</div><div class="tm2">${esc(m.team)}</div></div>${cm?`<button class="btn sm" data-a="om" data-m="${esc(mid)}" data-d="-1" aria-label="Move up">▲</button><button class="btn sm" data-a="om" data-m="${esc(mid)}" data-d="1" aria-label="Move down">▼</button><span class="handle" data-handle="${esc(mid)}" aria-label="Drag to reorder" role="img">⠿</span>`:''}</div>`}).join('')+'</div>'}
@@ -361,7 +385,7 @@ function spinBtn(j){if(F.spinCompleted(M))return '';
   if(spinInfo().done)return `<button class="btn pri grow" data-a="spinfinish" id="spinfinish">Finish setting the order</button>`;
   const st=spinState();const lbl=st==='stale'?'Spin again (last spin didn’t finish)':'Spin the wheel';return `<button class="btn grow" data-a="spinopen" id="spinopen" ${full8()?'':'disabled'}>${lbl}</button>`}
 function lobbyView(){const s=M.settings;const j=MG;const N=s.managers;const cm=commish();let tl='';
-  if(s.startAt!=null){const l=F.startsLine(s.startAt,TZ,s.tz);tl=`<div style="margin-top:8px"><b style="color:var(--acc)" id="startsline">${esc(l.you)}</b><div class="small mut">${esc(l.utc)}${l.commish?' · '+esc(l.commish):''}</div></div>`}
+  if(s.startAt!=null){const l=F.startsLine(s.startAt,TZ,s.tz);tl=`<div style="margin-top:8px"><b style="color:var(--acc)" id="startsline">Starts ${esc(startLocal(s.startAt))}</b><div class="small mut">${esc(l.utc)}${l.commish?' · '+esc(l.commish):''}</div></div>`}
   const notIn=!WATCH&&!myMid();
   const orderNote=M.orderSet?'Order set by the commissioner. It can change until the draft starts.':(s.orderMode==='random'?'Random — decided when the draft starts. Shown in join order for now.':'The commissioner sets the order before the draft starts.');
   let h=`<div class="card" id="lobbycard"><div class="small mut">LOBBY</div><h2 style="margin:2px 0 2px">${esc(M.name)}</h2><div class="small mut">${esc(settingsLine())}</div>${tl}<div style="margin-top:8px;font-weight:800" id="lobbycd">${esc(lobbyCountdown())}</div></div>`;
@@ -385,15 +409,16 @@ function whatsNext(){const cd=F.redraftCountdown(Date.now(),TZ);const rl=M.redra
   return `<div class="card" id="nextcard"><h3 style="margin:0 0 4px">What’s next</h3><ol class="nextlist small"><li id="nx1">${esc(F.NEXT.season)}</li><li id="nx2">${esc(F.NEXT.points)}</li><li id="nx3">${l3}</li></ol></div>`}
 function inviteWatchCard(){const u=UI.pageUrl('room.html',{l:LID,watch:1});return `<div class="card" id="watchcard"><h3 style="margin:0 0 4px">Invite friends to watch</h3><div class="small mut">Anyone with this link can watch. They cannot pick.</div><div class="row" style="margin-top:8px"><button class="btn pri grow" data-a="shareu" data-u="${esc(u)}" id="sharewatch">Share</button><button class="btn grow" data-a="copy" data-u="${esc(u)}" id="copywatch">Copy link</button></div></div>`}
 const homeTip=()=>`<div class="card small" id="hometip"><b>Save to your home screen.</b> iPhone: tap Share, then Add to Home Screen. Android: open the menu, then Install app.</div>`;
-function completeCard(){return `<div class="card" id="donecard"><h3>${S.endedEarly?'Draft ended early':(M.redraft&&M.redraft.phase==='live'?'Redraft complete':'Draft complete')}</h3><div class="small mut">${S.real.length} of ${S.realTotal} picks · the draft is locked.</div>
+function completeCard(){return `<div class="card" id="donecard"><h3>${S.endedEarly?'Draft ended early':(M.redraft&&M.redraft.phase==='live'?'Redraft complete':'Draft complete')}</h3><div class="small mut">${S.real.length} of ${S.realTotal} picks</div>
   <div class="row" style="margin-top:10px"><button class="btn grow" data-a="csv" id="csvbtn">Export CSV</button><button class="btn grow" data-a="json" id="jsonbtn">Export JSON</button></div>
   ${S.endedEarly?'':`<div style="margin-top:8px"><a class="btn block" id="redraftroomlink" href="${esc(UI.pageUrl('redraft.html',{l:LID}))}">Redraft · ${esc(F.REDRAFT.asOfLabel)}</a></div>`}</div>`+whatsNext()+inviteWatchCard()+homeTip()}
 function viewBoard(){if(!S)return'';if(S.status==='lobby')return lobbyView();return(S.status==='complete'?completeCard():'')+boardTable()}
 /* ---- teams ---- */
 let WATCHSET=new Set((()=>{try{return JSON.parse(lsGet(L('watch'))||'[]')}catch(e){return[]}})());
 const saveWatch=()=>lsSet(L('watch'),JSON.stringify(Array.from(WATCHSET)));
-const TF={q:'',mode:(lsGet('tmode')&&F.TMODES.some(m=>m[0]===lsGet('tmode')))?lsGet('tmode'):'power',hide:lsGet('thide')!=='0',watch:false,queue:false,conf:''};
-function viewTeams(s){s=s||'';return `<div class="ctl"><input type="search" id="tq${s}" placeholder="Search team, mascot, conference…" aria-label="Search teams" value="${esc(TF.q)}" autocomplete="off"><label class="sortlbl" for="tmode${s}">Sort &amp; group</label><select id="tmode${s}" class="sortsel" aria-label="Sort and group teams" tabindex="-1">${F.TMODES.map(m=>`<option value="${m[0]}" ${TF.mode===m[0]?'selected':''}>Sort: ${m[1]}</option>`).join('')}</select><div class="pills srt" id="tsort${s}" role="group" aria-label="Sort teams"></div><div class="ffil"><div class="pills tgl" id="tpills${s}"></div><div class="pills cfs" id="tconf${s}" role="group" aria-label="Filter by conference"></div></div></div><div id="tlist${s}"></div>`}
+const TF={q:'',mode:(lsGet('tmode')&&F.TMODES.some(m=>m[0]===lsGet('tmode')))?lsGet('tmode'):'power',hide:lsGet('thide')!=='0',watch:false,queue:false,conf:'',confOpen:false};
+function viewTeams(s){s=s||'';return `<div class="ctl"><input type="search" id="tq${s}" placeholder="Search team, mascot, conference…" aria-label="Search teams" value="${esc(TF.q)}" autocomplete="off"><label class="sortlbl" for="tmode${s}">Sort &amp; group</label><select id="tmode${s}" class="sortsel" aria-label="Sort and group teams" tabindex="-1">${F.TMODES.map(m=>`<option value="${m[0]}" ${TF.mode===m[0]?'selected':''}>Sort: ${m[1]}</option>`).join('')}</select><div class="cwrap"><div class="pills srt" id="tsort${s}" role="group" aria-label="Sort teams"></div><div class="pills tgl" id="tpills${s}"></div></div><div class="cfs" id="tconf${s}" role="group" aria-label="Filter by conference" hidden></div></div><div id="tlist${s}"></div>`}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&TF.confOpen){TF.confOpen=false;updateTeams();const b=$('tconfbtn');if(b)b.focus()}});
 function modeNote(){const m=TF.mode;const n=Object.values(META).filter(x=>x.p).length;
   if(m==='power')return 'Power rank is a rough preseason ranking from our model; '+n+' teams are ranked, the rest show —.';if(m==='tiers')return 'Tiers from power rank: Elite 1–12 · Solid 13–30 · Sleeper 31+ · Unranked.';
   if(m==='seed')return 'Projected 2027 tournament seed (an estimate, not official). — means not modeled.';if(m==='record')return 'Last season’s final overall record (ESPN standings). Best win % first.';if(m==='conf')return 'Conference for 2026-27 (ESPN standings).';return ''}
@@ -401,9 +426,9 @@ const SORTCH=[['power','Power rank'],['record','Win %'],['alpha','A–Z'],['conf
 let CONFS=null;const confList=()=>{if(!CONFS){const n={};POOL.forEach(t=>{const c=META[t]&&META[t].c;if(c)n[c]=(n[c]||0)+1});CONFS=Object.keys(n).sort((a,b)=>n[b]-n[a]||a.localeCompare(b))}return CONFS};
 const updateTeams=()=>['','P'].forEach(updateTeamsIn);
 function updateTeamsIn(sfx){const pills=$('tpills'+sfx);if(!pills)return;const qi=$('tq'+sfx);if(qi&&qi.value!==TF.q&&document.activeElement!==qi)qi.value=TF.q;const ms=$('tmode'+sfx);if(ms&&ms.value!==TF.mode)ms.value=TF.mode;
-  pills.innerHTML=`<button class="${TF.hide?'on':''}" data-a="thide">Hide drafted</button><button class="${TF.watch?'on':''}" data-a="twatch">⭐ Starred${WATCHSET.size?' ('+WATCHSET.size+')':''}</button><button class="${TF.queue?'on':''}" data-a="tqueue">Queue</button>`;
+  pills.innerHTML=`<button class="${TF.hide?'on':''}" data-a="thide">Hide drafted</button><button class="${TF.watch?'on':''}" data-a="twatch">⭐ Starred${WATCHSET.size?' ('+WATCHSET.size+')':''}</button><button class="${TF.queue?'on':''}" data-a="tqueue">Queue</button><button class="${esc(TF.conf?'on':'')}" data-a="tconfopen" id="tconfbtn${esc(sfx)}" aria-expanded="${esc(TF.confOpen?'true':'false')}" aria-controls="tconf${esc(sfx)}">${esc(TF.conf?TF.conf:'All conf.')} ▾</button>`;
   const so=$('tsort'+sfx);if(so)so.innerHTML=SORTCH.map(m=>`<button class="${esc(TF.mode===m[0]?'on':'')}" data-a="tsort" data-m="${esc(m[0])}" aria-pressed="${esc(TF.mode===m[0]?'true':'false')}">${esc(m[1])}</button>`).join('');
-  const cf=$('tconf'+sfx);if(cf)cf.innerHTML=`<button class="${esc(TF.conf?'':'on')}" data-a="tconf" data-c="" aria-pressed="${esc(TF.conf?'false':'true')}">All conf.</button>`+confList().map(c=>`<button class="${esc(TF.conf===c?'on':'')}" data-a="tconf" data-c="${esc(c)}" aria-pressed="${esc(TF.conf===c?'true':'false')}">${esc(c)}</button>`).join('');
+  const cf=$('tconf'+sfx);if(cf){cf.hidden=!TF.confOpen}if(cf)cf.innerHTML=`<button class="${esc(TF.conf?'':'on')}" data-a="tconf" data-c="" aria-pressed="${esc(TF.conf?'false':'true')}">All conf.</button>`+confList().map(c=>`<button class="${esc(TF.conf===c?'on':'')}" data-a="tconf" data-c="${esc(c)}" aria-pressed="${esc(TF.conf===c?'true':'false')}">${esc(c)}</button>`).join('');
   if(!S){$('tlist'+sfx).innerHTML='';return}
   const mm=myMid();const taken=F.takenMap(S);const q=((S.queues&&S.queues[mm])||[]);
   const groups0=F.teamView({teams:TEAMS,meta:META,pool:POOL,taken,watch:WATCHSET,q:TF.q,mode:TF.mode,hideDrafted:TF.hide,onlyWatch:TF.watch,onlyQueue:TF.queue,queue:q});
@@ -543,7 +568,7 @@ const ACT={
  copyrem:()=>UI.copy(reminderMsg(),'Reminder message copied'),
  copymine:()=>{if(me&&ME_OK&&me.k)UI.copy(UI.pageUrl('room.html',{l:LID},{as:me.mid,k:me.k}),'Private link copied');else toast('This phone has no private link. Open the link you were given when you joined.')},
  popen:()=>openPick(),pclose:()=>closePick(),stuckretry:()=>{Store.retryNow();toast('Trying the draft server again…',2000);pollOnce()},force:()=>actForce(),
- tsort:el=>{TF.mode=el.dataset.m;lsSet('tmode',TF.mode);updateTeams()},tconf:el=>{TF.conf=el.dataset.c||'';updateTeams()},thide:()=>{TF.hide=!TF.hide;lsSet('thide',TF.hide?'1':'0');updateTeams()},twatch:()=>{TF.watch=!TF.watch;updateTeams()},tqueue:()=>{TF.queue=!TF.queue;updateTeams()},
+ tsort:el=>{TF.mode=el.dataset.m;lsSet('tmode',TF.mode);updateTeams()},tconf:el=>{TF.conf=el.dataset.c||'';TF.confOpen=false;updateTeams()},tconfopen:()=>{TF.confOpen=!TF.confOpen;updateTeams()},thide:()=>{TF.hide=!TF.hide;lsSet('thide',TF.hide?'1':'0');updateTeams()},twatch:()=>{TF.watch=!TF.watch;updateTeams()},tqueue:()=>{TF.queue=!TF.queue;updateTeams()},
  watch:(el,e)=>{e.stopPropagation();const t=el.dataset.t;if(WATCHSET.has(t))WATCHSET.delete(t);else WATCHSET.add(t);saveWatch();updateTeams()},
  draftrow:el=>confirmDraft(el.dataset.t),confirm:async el=>{UI.closeSheet();await doPick(el.dataset.t,el.dataset.o)},
  q:(el,e)=>{e.stopPropagation();const mm=myMid();if(mm)actQueue(mm,el.dataset.t)},qm:el=>actQMove(myMid(),el.dataset.t,+el.dataset.d),autotog:el=>actAuto(myMid(),el.checked),
@@ -554,7 +579,7 @@ const ACT={
  cfyes:el=>{const need=el.dataset.typed;if(need){const v=(($('cft')||{}).value||'').trim().toUpperCase();if(v!==need){const e=$('cferr');if(e)e.textContent='Type '+need+' exactly to continue.';return}}const cb=confirmCb;confirmCb=null;UI.closeSheet();if(cb)cb()},
  catchup:()=>{if(!needUnlock())return;if(M.status==='lobby')return actStart(false);const sl=F.onClock(S);if(sl){autoPlan={n:sl.n,at:0};autoTick()}},
  start:()=>{if(!needUnlock())return;if(!full8()){toast(waitTxt()+'. The draft needs all '+F.MANAGERS+' managers.');return}
-   askConfirm({title:'Start the draft?',body:'The order locks when you start'+(M.orderSet?'.':' and is '+(M.settings.orderMode==='random'?'shuffled randomly.':'taken as listed.')),label:'Start draft',onYes:()=>actStart(false)})},
+   askConfirm({title:'Start the draft?',body:'The order locks when you start'+(M.orderSet?'.':(M.spin&&spinInfo().done)?' and uses the wheel order.':' and is '+(M.settings.orderMode==='random'?'shuffled randomly.':'taken as listed.')),label:'Start draft',onYes:()=>actStart(false)})},
  pause:()=>actPause(true),resume:()=>actPause(false),
  undo:()=>{if(!needUnlock())return;const l=S.real[S.real.length-1];askConfirm({title:'Undo the last pick?',body:l?('Pick #'+l.n+' ('+esc(tn(l.tid))+' by '+esc(mg(l.owner).name)+') will be removed and the clock restarts.'):'',label:'Undo pick',danger:true,onYes:()=>actUndo(l?{n:l.n,id:l.id}:null)})},
  endearly:()=>{if(!needUnlock())return;askConfirm({title:'End the draft early?',body:'The draft is marked <b>complete and locked</b> with the '+S.real.length+' picks made so far ('+(S.realTotal-S.real.length)+' left empty). This cannot be undone.',label:'End draft',typed:'END',danger:true,onYes:actEnd})},

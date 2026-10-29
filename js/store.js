@@ -49,7 +49,11 @@ Store.get=async function(key,ms,o){if(!PICKRE.test(String(key)))return rawGet(ke
   note(key,'fail');const e=new Error(origErr.message||'HTTP 500');e.stuck=true;throw e};
 Store.set=async function(key,obj,ms){if(!PICKRE.test(String(key)))return rawSet(key,obj,ms);const q=ps(key);const now=Date.now();
   const useAlt=q.src>0||q.badR>now||q.badW>now;let origErr=null;
-  if(!useAlt){try{const r=await tries(()=>rawSet(key,obj,ms),3);note(key,'ok');return r}catch(e){if(!transient(e))throw e;origErr=e;q.badW=Date.now()+BADMS}}
+  if(!useAlt){let r;try{r=await tries(()=>rawSet(key,obj,ms),3)}catch(e){if(!transient(e))throw e;origErr=e;q.badW=Date.now()+BADMS}
+    if(!origErr){/* s23 (BUG-3): textdb can accept the WRITE and then answer every READ of that key with 500. Read it back once; if the read fails, keep a copy in the first alternate right away so every page can read the pick. */
+      let rbErr=null;try{await rawGet(key,ms)}catch(e){if(/^HTTP 5\d\d/.test((e&&e.message)||''))rbErr=e}   /* only a server error counts here; a rate limit, timeout or offline moment does not move the pick */
+      if(!rbErr){note(key,'ok');return r}
+      q.badR=Date.now()+BADMS;q.err=rbErr;origErr=rbErr}}
   const order=q.src>0?[q.src].concat(ALTS.filter(a=>a!==q.src)):ALTS;let last=origErr;
   for(const a of order){try{const r=await tries(()=>rawSet(Store.altKey(key,a),obj,ms),3);q.src=a;note(key,'ok');fire(key,'alt',q.state);return r}catch(e){last=e;if(!transient(e))throw e}}
   note(key,'fail');throw last};

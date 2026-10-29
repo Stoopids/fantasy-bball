@@ -161,11 +161,13 @@ F.exists=d=>!!(d&&typeof d==='object'&&d.v&&d.settings&&d.id);
 /* the order that would be used right now: the commissioner's saved order (kept in sync with who has joined) or join order */
 F.effectiveOrder=function(meta,joinedMids){const j=joinedMids.slice();if(!meta.orderSet)return j;const o=meta.order.filter(x=>j.indexOf(x)>=0);j.forEach(x=>{if(o.indexOf(x)<0)o.push(x)});return o};
 /* ---- commissioner actions (pure functions on meta; return {state}|{error}|{noop}) ---- */
-F.mStart=function(m,joined,now,seedStr,poolSize){if(m.status!=='lobby')return{error:'The draft already started.'};
+F.mStart=function(m,joined,now,seedStr,poolSize,opt){opt=opt||{};if(m.status!=='lobby')return{error:'The draft already started.'};
   if(joined.length!==F.MANAGERS)return{error:joined.length<F.MANAGERS?'Waiting for '+(F.MANAGERS-joined.length)+' more manager'+(F.MANAGERS-joined.length===1?'':'s')+'. The draft needs exactly '+F.MANAGERS+' managers to start.':'The draft needs exactly '+F.MANAGERS+' managers to start.'};
   const s=m.settings;if(joined.length*s.rounds>(poolSize||1e9))return{error:'Not enough teams for that many managers and rounds.'};
   const n=clone(m);let order=F.effectiveOrder(m,joined);
   if(!m.orderSet&&s.orderMode==='random')order=F.shuffled(order,F.mulberry(F.hash32(seedStr||m.id)));      /* deterministic: two phones starting at once get the same order */
+  /* s23 (item 12): the scheduled auto-start spins the wheel by itself when nobody spun it: the result comes from the league's stored seed (id + start time), so every device that fires at 0:00 computes the SAME order and the meta write is one compare-and-set: one result, one start */
+  if(opt.autoSpin&&!m.orderSet&&!F.spinCompleted(m)){order=F.shuffled(F.effectiveOrder(m,joined),F.mulberry(F.hash32('spin:'+(seedStr||m.id))));n.spinDone=true;n.respins=(m.respins||[]).concat([{gen:m.spinGen||0,ts:now,kind:'spin',auto:true}]);if(n.spin&&!n.spin.done)n.spin=null}
   n.order=order;n.orderSet=true;n.status='live';n.paused=false;n.pausedLeft=null;n.startedAt=now;n.resumeAt=now;return{state:n}};
 F.mPause=function(m,st,pause,now){if(m.status!=='live'||st.status==='complete')return{error:'Draft is not live.'};const n=clone(m);
   if(pause){if(n.paused)return{error:'Already paused.'};n.paused=true;n.pausedLeft=st.deadline?Math.max(0,st.deadline-now):null}
@@ -271,7 +273,7 @@ F.checkMgrSecret=async function(claim,k){if(!claim||!k)return false;if(!claim.sh
 F.extractSecret=function(text,key){text=String(text||'').trim();let m;if(key==='cm'){m=/[#&?]cm=([0-9a-f]{32})\b/i.exec(text)}else if(key==='k'){m=/[#&?]k=([0-9a-f]{32})\b/i.exec(text)}if(m)return m[1].toLowerCase();return /^[0-9a-f]{32}$/i.test(text)?text.toLowerCase():''};
 F.extractMgr=function(text){text=String(text||'');const a=/[#&?]as=([0-9a-f]{8,32})\b/i.exec(text);const k=F.extractSecret(text,'k');return a&&k?{mid:a[1].toLowerCase(),k}:null};
 /* ============================ picks: entries, replay, derived state ============================ */
-F.makeEntry=function(n,owner,tid,o){o=o||{};const by=o.by||'owner';return{id:o.id||((by==='auto')?('a'+o.epoch+'-'+n+'-'+tid):(Math.random().toString(36).slice(2,10)+n)),n,owner,tid:String(tid),ts:o.now,by,w:o.writer||'?',e:o.epoch,prev:o.prev==null?undefined:String(o.prev)}};
+F.makeEntry=function(n,owner,tid,o){o=o||{};const by=o.by||'owner';return{id:o.id||((by==='auto')?('a'+o.epoch+'-'+n+'-'+tid+(o.prev?'-'+String(o.prev).replace(/[^A-Za-z0-9]/g,'').slice(-6):'')):(Math.random().toString(36).slice(2,10)+n)),n,owner,tid:String(tid),ts:o.now,by,w:o.writer||'?',e:o.epoch,prev:o.prev==null?undefined:String(o.prev)}};
 F.parseEntry=function(txt){const d=F.parseJ(txt);if(d&&typeof d==='object'&&typeof d.id==='string'&&+d.n>0&&typeof d.owner==='string'&&d.tid!=null){d.tid=String(d.tid);d.n=+d.n;return d}return null};
 F.entryProblem=function(meta,e,n,taken,pool,prevId){if(!e)return'empty';if(meta.voided.indexOf(e.id)>=0)return'voided';if(e.n!==n)return'wrong-slot';if(e.e!=null&&+e.e!==meta.epoch)return'old-epoch';
   const sl=F.slotAt(meta.order,n,meta.settings.type,meta.settings.rounds);if(!sl)return'beyond';if(e.owner!==sl.owner)return'wrong-owner';if(prevId!=null&&e.prev!=null&&e.prev!==prevId)return'stale-chain';if(pool&&!pool.has(e.tid))return'not-in-pool';if(taken[e.tid])return'duplicate-team';return null};
@@ -312,7 +314,8 @@ F.claimOutcome=(slotEntry,mine,meta)=>{if(!slotEntry||(meta&&meta.voided.indexOf
 F.slotWritable=(meta,existing,n,taken,pool,prevId)=>!existing||F.entryProblem(meta,existing,n,taken||{},pool,prevId)!==null;
 F.submitSlot=async function(io,o){const NOCONN="Can't reach the draft server. Check your connection and try again.";
   for(let attempt=0;attempt<3;attempt++){let ex;try{ex=F.parseEntry(await io.read(o.url))}catch(e){return{ok:false,msg:NOCONN}}
-    if(ex&&ex.id===o.entry.id)break;
+    /* s23 (BUG-1): an auto-pick id is deterministic (epoch-slot-team), so after an Undo the slot can hold an OLD auto-pick with the same id whose prev points at the voided pick ('stale-chain'). Same id is only 'mine' when its chain is current; otherwise overwrite it. */
+    if(ex&&ex.id===o.entry.id&&(o.prevId==null||ex.prev==null||String(ex.prev)===String(o.prevId))&&(o.meta.voided||[]).indexOf(ex.id)<0)break;
     if(!F.slotWritable(o.meta,ex,o.n,o.taken,o.pool,o.prevId)){io.adopt(o.n,ex);return{ok:false,beaten:true,by:ex}}
     /* never write an entry that the replay would reject (duplicate team, not in the pool, wrong slot or owner): a rejected entry would sit in the slot and stall the draft until it is overwritten */
     {const bp=F.entryProblem(o.meta,o.entry,o.n,o.taken||{},o.pool,undefined);if(bp&&bp!=='voided'&&bp!=='old-epoch')return{ok:false,msg:bp==='duplicate-team'?'That team was already taken. Pick another team. Nothing was saved.':'That pick is not valid right now. Nothing was saved.',rejected:bp}}
@@ -381,7 +384,7 @@ F.recParse=r=>{const x=/^(\d+)-(\d+)$/.exec(r||'');if(!x)return null;const w=+x[
 F.searchMatch=(t,m,q)=>{q=(q||'').trim().toLowerCase();if(!q)return true;return[t.name,t.short,t.abbr,t.mascot,m&&m.c].filter(Boolean).join(' ').toLowerCase().indexOf(q)>=0};
 F.TMODES=[['power','Power rank'],['alpha','A–Z'],['conf','Conference'],['seed','Proj. seed'],['record','Last season'],['tiers','Tiers']];
 F.teamView=function(o){const TEAMS=o.teams,META=o.meta||{},pool=o.pool,taken=o.taken||{},watch=o.watch||new Set(),q=o.q||'',mode=o.mode||'power';
-  const nm=t=>TEAMS[t].short||TEAMS[t].name;const alpha=(a,b)=>nm(a).localeCompare(nm(b));const P=t=>(META[t]&&META[t].p)||0;
+  const nm=t=>TEAMS[t].name||TEAMS[t].short;/* s23 (LOW-1): A–Z follows the full name that the list shows */const alpha=(a,b)=>nm(a).localeCompare(nm(b));const P=t=>(META[t]&&META[t].p)||0;
   const ids=pool.filter(t=>{if(!TEAMS[t])return false;if(o.hideDrafted&&taken[t])return false;if(o.onlyWatch&&!watch.has(t))return false;if(o.onlyQueue&&(o.queue||[]).indexOf(t)<0)return false;return F.searchMatch(TEAMS[t],META[t],q)});
   const cmps={power:(a,b)=>(P(a)||9999)-(P(b)||9999)||alpha(a,b),alpha,
    seed:(a,b)=>{const x=F.seedNum(META[a]),y=F.seedNum(META[b]);return(x==null?99:x)-(y==null?99:y)||(P(a)||9999)-(P(b)||9999)||alpha(a,b)},

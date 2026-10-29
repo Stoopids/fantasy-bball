@@ -97,10 +97,10 @@ U.roomHref=function(id){const me=U.getMe(id);const cm=!!U.lsGet('cm.'+id);return
 window.UI=U;
 })();
 /* final rosters, shared by the room and the recap page */
-UI.rosters=function(st,mgrs,T){const F=FBN;const rs=F.rosters(st,mgrs);const rt=F.rosterRatings(rs.map(r=>({mid:r.mgr.mid,picks:r.picks})),T.META);
+UI.rosters=function(st,mgrs,T){const F=FBN;const rs=F.rosters(st,mgrs);const rt=T.RK||F.rosterRatings(rs.map(r=>({mid:r.mgr.mid,picks:r.picks})),T.META);
   return '<div class="rosgrid" id="rosgrid">'+rs.map(r=>{const stt=F.rosterStats(r.picks,T.META);const q=rt[r.mgr.mid]||{};
   return '<div class="card roster" data-mid="'+UI.esc(r.mgr.mid)+'"><div class="row nw">'+UI.avatar(r.mgr,42)+'<div class="grow"><b>'+UI.esc(r.mgr.name)+'</b><div class="small mut">'+UI.esc(r.mgr.team)+'</div></div><div class="small mut" style="text-align:right">'+r.picks.length+' team'+(r.picks.length===1?'':'s')+(stt.avgRank!=null?'<br>avg rank '+stt.avgRank:'')+'</div></div>'
-   +'<div class="strength small"><b>Strength '+(q.strength==null?'–':q.strength)+'</b>'+(q.place?' <span class="mut">· #'+q.place+' of '+rs.length+'</span>':'')+'</div>'
+   +'<div class="strength small">'+(q.strength==null?(q.place?'<b>Rank #'+q.place+' of '+rs.length+'</b>':'<b>Strength –</b>'):'<b>Strength '+q.strength+'</b>'+(q.place?' <span class="mut">· #'+q.place+' of '+rs.length+'</span>':''))+'</div>'
    +'<div class="rost">'+(r.picks.map(p=>UI.teamChip(T.TEAMS,p.tid)).join('')||'<span class="small mut">No picks</span>')+'</div></div>'}).join('')+'</div>'};
 /* the same two buttons everywhere (room, recap, league site): Draft recap and League site. current = 'recap' | 'site' | '' marks the page you are on. Links hold the league code only. */
 UI.siteButtons=function(lid,domId,current){const E=UI.esc;const c=k=>E('btn grow'+(current===k?' cur':''));const a=k=>E(current===k?'page':'false');

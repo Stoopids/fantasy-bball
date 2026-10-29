@@ -114,6 +114,9 @@ async function doCreate(){if(busy)return;readInputs();const s=settingsOf();const
       time:UI.pageUrl('time.html',{t:ns.startAt||'',n:meta.name})};
     created={id,mid,secret,cmSecret,settings:Object.assign({name:meta.name},ns),links:L};render();window.scrollTo(0,0)
   }catch(e){ce.textContent=String(e.message||e);$('create').disabled=false;$('create').textContent='Create league'}finally{busy=false}}
+/* s23 (item 8): a mailto: draft with every link (no address is asked for or stored) */
+function mailLinks(c){const L=c.links,nm=c.settings.name||'Draft';const body=['Links for '+nm+' (league code '+F.formatCode(c.id)+')','','Invite link (share): '+L.invite,'Draft room link (share): '+L.room,'Spectator link (read-only): '+L.watch,'','Your manager link (PRIVATE, do not share): '+L.mine,'Commissioner link (PRIVATE, keep it to yourself): '+L.commish,'','The commissioner link cannot be recovered if every copy is lost.'].join('\r\n');
+  return 'mailto:?subject='+encodeURIComponent(nm+' draft links')+'&body='+encodeURIComponent(body)}
 function linksView(){const c=created,L=c.links,s=c.settings;const when=s.startAt!=null?F.startsLine(s.startAt,TZ,TZ):null;
   const lk=(k,title,tag,why,extra)=>`<div class="lnk" id="lnk_${k}"><h3>${title} ${tag}</h3><div class="why">${why}</div><a class="url" href="${esc(L[k])}" target="_blank" rel="noopener">${esc(L[k].indexOf('#')>0?L[k].split('#')[0]+'#••••••••••••••••':L[k])}</a><div class="row"><button class="btn sm" data-a="copy" data-u="${esc(L[k])}">Copy</button><button class="btn sm" data-a="share" data-k="${k}">Share</button>${extra||''}</div></div>`;
   return `<div class="prog"><div class="bar"><i style="width:100%"></i></div><div class="lbl"><span>League created</span><span></span></div></div>
@@ -121,6 +124,7 @@ function linksView(){const c=created,L=c.links,s=c.settings;const when=s.startAt
   <div class="card"><div class="k mut small">League code</div><div class="code" id="code">${esc(F.formatCode(c.id))}</div><div class="hint">Managers can also type this code on the home page. Keep the code private: anyone with it can read the league.</div>
   ${when?`<div class="hint" style="margin-top:8px"><b style="color:var(--tx)">${esc(when.you)}</b> · ${esc(when.utc)}</div>`:''}</div>
   <div class="note" id="saveNote"><b>Save these links now.</b> They are stored on this phone only. The commissioner link cannot be recovered: if every copy is lost, nobody can get the commissioner tools back.</div>
+  <a class="btn pri block" id="emailme" href="${esc(mailLinks(c))}">Email me these links</a><div class="hint" style="margin:6px 0 12px">Opens your email app with every link filled in. Send it to yourself. Nothing is stored or sent by this site.</div>
   <div class="card">${lk('invite','Invite link','<span class="tag ok">SHARE</span>','Send this to your managers. It opens the join page with the code filled in.','<button class="btn sm" data-a="qr">Show QR</button>')}
   ${lk('room','Draft room link','<span class="tag ok">SHARE</span>','Where everyone drafts. People who already joined open this one.')}
   ${lk('watch','Spectator link','<span class="tag mut">READ-ONLY</span>','Friends and family can watch live. They cannot pick or chat.')}

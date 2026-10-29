@@ -22,7 +22,7 @@ const idOk=v=>typeof v==='string'&&/^[a-z0-9]{6,24}$/.test(v);
 const midOk=v=>typeof v==='string'&&/^[0-9a-f]{8,32}$/.test(v);
 let H=null;const SENT=new Map();   /* events this device wrote, kept so a lost update (two devices of mine writing at the same instant) is healed on the next look */
 const S={logs:{},got:{},state:'init',fails:0,timer:null,busy:false,msg:'',bad:false,started:false,sig:'',ask:null,me:null,stale:0,
-  f:{opps:[],open:false,text:'',amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false},fid:null};
+  f:{opps:[],open:false,text:'',amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false},fid:null,qb:'',q:{g:null,amt:5,vs:null,msg:''},undoT:null};
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const KEY=mid=>FBN.Keys(H.id).base+'-bets-'+mid;
 /* ---------- pure helpers ---------- */
@@ -93,7 +93,7 @@ async function poll(manual){
   if(bad===0){S.fails=0;S.state='ok'}else{S.fails=Math.min(S.fails+1,5);if(bad===ids.length&&S.state==='init')S.state='error';else if(S.state==='init')S.state='ok'}
   const sig=JSON.stringify(S.logs)+'|'+S.state+'|'+S.stale;const changed=sig!==S.sig;S.sig=sig;
   schedule();
-  if(changed||manual){if(H.active())render()}
+  if(changed||manual){if(H.active())render();else if(H.rerender){const nb=badge();if(nb!==S.nb){S.nb=nb;const a=document.activeElement;if(!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))H.rerender()}}}
 }
 function schedule(){clearTimeout(S.timer);S.timer=null;if(document.hidden||!H||H.demo)return;
   const base=(H.active()?C.pollOpenMs:C.pollMs)*Math.pow(2,S.fails),d=Math.min(base,240000)*(0.85+Math.random()*0.3);S.timer=setTimeout(()=>poll(false),d)}
@@ -154,7 +154,7 @@ function resultLine(b){if(b.status!=='settled')return'';const p=payFor(b);const 
   return b.res==='b'?nm(b.by)+' won ('+nm(b.acc)+' owes '+pu(p.right)+')'+d:nm(b.acc)+' won ('+nm(b.by)+' owes '+pu(p.wrong)+')'+d}
 function card(b,me){const L=lines(b.by,b.acc||b.to,b.amt,b.a,b.b);const st=STX[b.status];const party=me&&(b.by===me||b.acc===me);
   const other=b.acc||b.to;const vs=b.to==='*'&&!b.acc?'anyone who takes it':nm(other);
-  let h=`<div class="card b27-c" data-bet="${esc(b.id)}"><div><b>Bet #${b.n}</b> <span class="st ${st[1]}">${esc(st[0])}</span> <span class="mut" style="font-size:12px">${esc(day(b.ts))}</span></div>
+  let h=`<div class="card b27-c" data-bet="${esc(b.id)}"><div><b>Bet #${b.n}</b> <span class="st ${st[1]}">${esc(st[0])}</span> <span class="mut" style="font-size:12px">${esc(day(b.ts))}</span>${b.g&&CUR.filter(x=>x.g===b.g).length>1?` <span class="mut" style="font-size:12px">· 1 of ${CUR.filter(x=>x.g===b.g).length} placed together</span>`:''}</div>
    <div class="b27-t">${esc(b.text)}</div><div class="b27-m"><b>${esc(nm(b.by))}</b> vs <b>${esc(vs)}</b> · <b>${esc(pu(b.amt))}</b> · ${esc(oddsLabel(b.a,b.b))}</div>
    <div class="b27-w">${esc(L.win)}</div><div class="b27-l">${esc(L.lose)}</div>${L.rounded?'<div class="mut b27-r">Rounded to a whole number.</div>':''}`;
   const rl=resultLine(b);if(rl)h+=`<div class="note" style="margin-top:4px"><b>Result:</b> ${esc(rl)}</div>`;
@@ -162,7 +162,7 @@ function card(b,me){const L=lines(b.by,b.acc||b.to,b.amt,b.a,b.b);const st=STX[b
   const btn=(k,label,extra,r)=>`<button type="button" class="btn ${extra||'sec'} b27-b" data-lb="${k}" data-id="${esc(b.id)}"${r?` data-r="${r}"`:''}${S.busy?' disabled':''}>${ask(k,r)?'Tap again to confirm':label}</button>`;
   if(b.status==='pending'){
     if(me&&me!==b.by&&(b.to==='*'||b.to===me))h+=`<div class="note" style="margin-top:4px">${b.to==='*'?esc(nm(b.by))+' is open to anyone: take it?':esc(nm(b.by))+' is asking you.'}</div><div class="b27-act">${btn('accept','✅ Accept','pri')}${b.to===me?btn('decline','✖ Decline'):''}</div>`;
-    else if(me===b.by)h+=`<div class="note" style="margin-top:4px">Waiting for ${b.to==='*'?'someone to take it':esc(nm(b.to))+' to answer'}.</div><div class="b27-act">${btn('withdraw','↩ Withdraw this bet')}</div>`;
+    else if(me===b.by)h+=`<div class="note" style="margin-top:4px">Waiting for ${b.to==='*'?'someone to take it':esc(nm(b.to))+' to answer'}.</div><div class="b27-act">${btn('withdraw',undoable(b,me)?'↩ Undo this bet (30 s)':'↩ Withdraw this bet')}</div>${(()=>{const gu=grpUndo(b.g,me);return gu.length>1&&gu.slice().sort((p,q)=>q.n-p.n)[0].id===b.id?`<div class="b27-act"><button type="button" class="btn sec b27-b" data-lb="undogroup" data-g="${esc(b.g)}"${S.busy?' disabled':''}>↩ Undo all ${gu.length} bets placed together (30 s)</button></div>`:''})()}`;
     else h+=`<div class="note" style="margin-top:4px">Waiting for ${b.to==='*'?'someone to take it':esc(nm(b.to))+' to answer'}.</div>`}
   if((b.status==='open'||b.status==='reported'||b.status==='disputed')&&party){
     const o=me===b.by?b.acc:b.by,ro=b.reps[o],rm=b.reps[me];
@@ -172,6 +172,9 @@ function card(b,me){const L=lines(b.by,b.acc||b.to,b.amt,b.a,b.b);const st=STX[b
     else if(b.status==='disputed')h+=`<div class="note" style="margin-top:4px">${esc(nm(b.by))} says <b>${esc(labels[b.reps[b.by].r])}</b>, ${esc(nm(b.acc))} says <b>${esc(labels[b.reps[b.acc].r])}</b>. Talk it over, then either of you can change the answer.</div>`;
     h+=`<div class="b27-act"><span class="note">Who won?</span>${['b','o','p'].map(r=>btn('settle',(ro&&ro.r===r&&b.status==='reported'?'👍 Agree: ':'')+labels[r],ro&&ro.r===r&&b.status==='reported'?'pri':'sec',r)).join('')}</div>`}
   return h+'</div>'}
+let CUR=[];const UNDO_MS=30000;
+const undoable=(b,me)=>!!me&&b.status==='pending'&&b.by===me&&Date.now()-b.ts<UNDO_MS;
+const grpUndo=(g,me)=>g?CUR.filter(x=>x.g===g&&undoable(x,me)):[];
 const nmHtml=mid=>{const o=own(mid),sh=shortName(o.name);return`<span class="oqn${sh!==o.name?' hs':''}" data-em="${esc(o.emoji||'')}" data-e1="${esc(first(o.emoji))}"><span class="f">${esc(o.name)}</span>${sh!==o.name?`<span class="s">${esc(sh)}</span>`:''}</span>`};
 const first=e=>{e=String(e||'');try{return new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(e)[Symbol.iterator]().next().value.segment}catch(_){return Array.from(e)[0]||''}};
 function owesHtml(T){const ppl=Object.entries(T.per).sort((a,b)=>b[1].net-a[1].net||nm(a[0]).localeCompare(nm(b[0])));
@@ -185,7 +188,7 @@ function owesHtml(T){const ppl=Object.entries(T.per).sort((a,b)=>b[1].net-a[1].n
   h+=`<div class="b27-q">Net pushups per manager <span class="note">(+ is owed to them, − is what they owe)</span></div><div class="oqc" role="list" aria-label="Net pushups per manager">${ppl.map(([m,p])=>{const w=p.net?Math.max(.03,Math.abs(p.net)/mx):0;return`<div class="cr" role="listitem"><span class="cn">${nmHtml(m)}</span><span class="ct"><i class="cb ${p.net>0?'pos':'neg'}" style="--w:${w.toFixed(3)}"></i></span><b class="cv ${p.net>0?'good':p.net<0?'bad':''}">${signed(p.net)}</b></div>`}).join('')}</div>`;
   return h}
 function formHtml(me){const f=S.f,oth=others();const err=formOK();
-  return`<div class="card b27-form" id="b27Form"><b>New bet</b> <span class="note">· you are <b>${esc(nm(me))}</b></span>
+  return`<div class="card b27-form" id="b27Form"><b>New bet</b> <span class="note">· you are <b>${esc(nm(me))}</b></span>${qbHint()}
    <div class="b27-q">1. Who are you betting against? <span class="note">Tap one or more, or Anyone. Each one answers on their own.</span></div>
    <div class="b27-opps" role="group" aria-label="Opponents" style="--n:${oth.length}">${oth.map(o=>`<button type="button" class="b27-chip op" data-lb="opp" data-mid="${esc(o.mid)}" aria-label="${esc(o.name)}" aria-pressed="${!f.open&&f.opps.includes(o.mid)}"><span class="ck" aria-hidden="true">✓</span><span class="em" aria-hidden="true">${esc(o.emoji||'')}</span><span class="nm" aria-hidden="true"><span class="f">${esc(o.name)}</span><span class="sh">${esc(shortName(o.name))}</span><span class="xs">${esc(tinyName(o.name))}</span></span></button>`).join('')}</div>
    <div class="b27-selbar"><button type="button" class="b27-sm" data-lb="anyone" aria-pressed="${f.open}">🌍 Anyone</button><button type="button" class="b27-sm" data-lb="oppall">Select all</button><button type="button" class="b27-sm" data-lb="oppclear">Clear</button><span class="cnt" id="b27SelCnt" aria-live="polite">${f.open?'Open to anyone':f.opps.length?f.opps.length+' selected':'None selected'}</span></div>
@@ -199,11 +202,11 @@ function formHtml(me){const f=S.f,oth=others();const err=formOK();
 function view(){
   if(!H)return'';
   if(H.demo)return'<div class="card" id="b27Demo"><b>💪 Bets</b><div class="note">Bets are switched off in the demo, so nothing here can touch a real league.</div></div>';
-  const me=meMid(),bets=compute().sort((a,b)=>b.n-a.n),T=tally(bets);
+  const me=meMid(),bets=compute().sort((a,b)=>b.n-a.n),T=tally(bets);CUR=bets;markSeen();clearTimeout(S.undoT);{const left=bets.filter(b=>undoable(b,me)).map(b=>UNDO_MS-(Date.now()-b.ts));if(left.length)S.undoT=setTimeout(()=>{if(H&&H.active()){const a=document.activeElement;if(!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))render(true)}},Math.max(300,Math.min(...left)+250))}
   const top=S.state==='ok'?(S.stale?`<span class="bad" id="b27Off">● offline: showing the last saved bets. Retrying…</span>`:'<span class="good">● live</span> · everyone in this league sees the same bets')
     :S.state==='error'?`<span class="bad" id="b27Off">● can’t reach the bets right now. Retrying… <button type="button" class="btn sec b27-b" data-lb="retry" id="b27Retry">Try now</button></span>`:'Connecting…';
   let h=`<div class="card" id="b27Head"><b>💪 Bets</b><div class="note b27-note" id="b27Note">Bets here are just for fun, a challenge between friends, and are always paid in <b>pushups</b>.</div><div class="note" style="margin-top:6px">This page just <b>records</b> who bet what and who owes whom. The other manager has to accept a bet, and a result counts when both sides agree.</div><div class="note" id="b27Top" style="margin-top:6px">${top}</div></div>`;
-  if(S.msg)h+=`<div class="card ${S.bad?'b27-bad':'b27-ok'}" role="status" id="b27Msg">${esc(S.msg)}</div>`;
+  if(S.msg)h+=`<div class="card ${S.bad?'b27-bad':'b27-ok'}" role="status" id="b27Msg">${esc(S.msg)}${(()=>{const gu=me&&S.undoG?grpUndo(S.undoG,me):[];return gu.length>1?`<div class="b27-act"><button type="button" class="btn sec b27-b" data-lb="undogroup" data-g="${esc(S.undoG)}"${S.busy?' disabled':''}>↩ Undo all ${gu.length} bets (30 s)</button></div>`:''})()}</div>`;
   const mine=me?bets.filter(b=>b.status==='pending'&&b.by!==me&&(b.to==='*'||b.to===me)):[];
   if(!me)h+=`<div class="card" id="b27Watch"><b>👀 Watching only</b><div class="note">You can read every bet here. To place or answer a bet, open this page from your own manager link (the League site button in the draft room).</div><p style="margin:8px 0 0"><a class="btn b27-b" id="b27Room" href="${esc(H.roomHref())}">Open the draft room</a></p></div>`;
   if(mine.length)h+=`<h2 id="b27ForYou">Waiting for your answer (${mine.length})</h2>`+mine.map(b=>card(b,me)).join('');
@@ -231,6 +234,11 @@ const ACT={
   decline:el=>doBet(el,'d','Declined.'),
   withdraw:el=>doBet(el,'w','Withdrawn.'),
   settle:el=>{const id=el.dataset.id,r=el.dataset.r,w='settle'+r;if(S.ask&&S.ask.id===id&&S.ask.w===w){doBet(el,'s','Saved. A result counts once both sides agree.',{r})}else{S.ask={id,w};render(true)}},
+  qbtoggle:el=>{const g=el.dataset.g||null;S.q.g=(!g||S.q.g===g)?null:g;S.q.msg='';redraw();if(S.q.g)setTimeout(()=>{try{const b=document.querySelector('.qb-pick [data-lb=qbpick]');if(b)b.focus({preventScroll:true})}catch(_){}},20)},
+  qbamt:el=>{S.q.amt=+el.dataset.v===10?10:5;redraw()},
+  qbvs:el=>{S.q.vs=el.dataset.mid;S.q.msg='';redraw()},
+  qbpick:el=>qbPickGo(el),
+  undogroup:el=>{const me=meMid(),gu=grpUndo(el.dataset.g,me);if(!gu.length)return;S.undoG=null;act(gu.map(b=>mkEv('w',{id:b.id})),'Undone: '+gu.length+' bets withdrawn.')},
   retry:()=>poll(true),
   startform:()=>{const i=document.getElementById('b27Text');if(i){i.scrollIntoView({block:'center'});i.focus()}}};
 function doBet(el,k,msg,extra){const id=el.dataset.id,b=compute().find(x=>x.id===id);if(!b)return;
@@ -246,14 +254,56 @@ async function confirmPlace(){if(S.busy)return;const e=formOK();if(e){S.msg=e;S.
   const ts=Date.now();
   const evs=S.fid.evs.map((x,i)=>Object.assign({k:'p',u:x.u,ts:ts+i,id:x.id,to:x.to,amt:f.amt,a:f.odds[0],b:f.odds[1],text:clean(f.text)},S.fid.g?{g:S.fid.g}:{}));
   const ok=await act(evs,'Placed! '+(f.open?'Anyone can take it now.':(targets.length>1?targets.length+' bets sent.':nm(targets[0])+' can accept it now.'))+' You can withdraw it until it is answered.');
-  if(ok){S.f={opps:[],open:false,text:'',amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false};S.fid=null;render(true)}else{S.f.confirm=true;render(true)}}
+  if(ok){S.undoG=S.fid.g||null;S.f={opps:[],open:false,text:'',amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false};S.fid=null;render(true)}else{S.f.confirm=true;render(true)}}
+/* "new" mark on the Bets tab: the highest bet number this device has looked at is kept in localStorage (fbn.x.<league>.betseen); a higher number now = something new */
+const seenKey=()=>'fbn.x.'+(H&&H.id)+'.betseen';
+const maxN=()=>compute().reduce((m,b)=>Math.max(m,b.n),0);
+function markSeen(){try{if(H&&!H.demo&&S.state==='ok'&&!S.stale)localStorage.setItem(seenKey(),String(maxN()))}catch(e){}}
+function badge(){try{if(!H||H.demo||S.state!=='ok'||S.stale)return false;const raw=localStorage.getItem(seenKey());if(raw==null){markSeen();return false}return maxN()>(parseInt(raw,10)||0)}catch(e){return false}}
+/* ---------- Quick bet (the pill on a Games card; s22) ----------
+   Shown only when the two teams belong to DIFFERENT managers of this league, the game has not started, and this device has a manager link (watchers get no button).
+   The picker lists the sides of up to three bet types: Winner (always, even odds), Spread / Over-under ONLY when the game data really carries a posted line (g.line = {fav,sp,ou}); the schedule feeds carry no lines, so today it is Winner only.
+   Tapping a side only PREFILLS the New bet form (opponent, text, pushups, Even odds) and switches to the Bets tab. Nothing is saved until Place bet and then Yes, place it. The other manager still has to accept. */
+const qbOwn=s=>{const n=s&&s.owners&&s.owners[0];const o=n==null?null:owners().find(x=>x.name===n);return o?o.mid:null};
+const qbNm=(s,ctx)=>String((ctx&&ctx.name?ctx.name(s):'')||s.short||s.name||s.id);
+function qbDate(g){try{const d=/^\d{4}-\d{2}-\d{2}$/.test(g.day||'')?new Date(g.day+'T12:00:00Z'):new Date(g.start);return new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:/^\d{4}-\d{2}-\d{2}$/.test(g.day||'')?'UTC':'America/New_York'}).format(d).replace(/,/g,'')}catch(e){return''}}
+function qbOk(g){if(!H||H.demo||!g||g.status!=='scheduled'||!g.home||!g.away||!meMid())return false;
+  const a=g.away.owners||[],h=g.home.owners||[];if(!a.length||!h.length||a.some(n=>h.includes(n)))return false;
+  if(!qbOwn(g.away)||!qbOwn(g.home))return false;const t=Date.parse(g.start);if(!isNaN(t)&&t<=Date.now())return false;return true}
+function qbOpts(g,ctx){const A=g.away,Hm=g.home,ln=(g.line&&typeof g.line==='object')?g.line:{},d=qbDate(g),o=[];const nm_=s=>qbNm(s,ctx);
+  const fav=String(ln.fav)===String(A.id)?A:String(ln.fav)===String(Hm.id)?Hm:null,sp=Number(ln.sp);
+  if(fav&&isFinite(sp)&&sp>0){const dog=fav===A?Hm:A;o.push({k:'sp',t:'Spread',s:[fav,dog].map(x=>{const y=x===fav?dog:fav,sx=x===fav?'-':'+',sy=y===fav?'-':'+';return{lab:nm_(x)+' '+sx+sp,team:x,txt:nm_(x)+' '+sx+sp+' vs '+nm_(y)+' '+sy+sp+', '+d}})})}
+  o.push({k:'win',t:'Winner',s:[A,Hm].map(x=>{const y=x===A?Hm:A;return{lab:nm_(x),team:x,txt:nm_(x)+' beats '+nm_(y)+', '+d}})});
+  const ou=Number(ln.ou);if(isFinite(ou)&&ou>0){const m=nm_(A)+' v '+nm_(Hm);o.push({k:'ou',t:'Over/under',s:[['Over','Under'],['Under','Over']].map(([x,y])=>({lab:x+' '+ou,team:null,txt:x+' '+ou+' vs '+y+' '+ou+', '+m+', '+d}))})}
+  return o}
+/* the button + (when open) the picker for one Games card. ctx.name(side) = the short team name the card shows. Returns '' when no button applies. */
+function quickHtml(g,ctx){if(!qbOk(g))return'';const id=String(g.id),q=S.q,open=q.g===id;
+  let h=`<div class="qbw"><button type="button" class="qb-btn" data-lb="qbtoggle" data-g="${esc(id)}" aria-expanded="${open}" aria-label="Quick bet: ${esc(qbNm(g.away,ctx))} vs ${esc(qbNm(g.home,ctx))}">⚡ Quick bet</button></div>`;
+  if(!open)return h;
+  const ma=qbOwn(g.away),mh=qbOwn(g.home),me=meMid(),need=me!==ma&&me!==mh;
+  h+=`<div class="qb-pick" role="group" aria-label="Quick bet picker" data-qbp="${esc(id)}">`;
+  if(need)h+=`<div class="qb-r v"><span class="qb-l">I'm betting against</span><span class="qb-g w">${[ma,mh].map(m=>`<button type="button" data-lb="qbvs" data-mid="${esc(m)}" aria-pressed="${q.vs===m}">${esc(own(m).emoji||'')} ${esc(nm(m))}</button>`).join('')}</span></div>`;
+  h+=`<div class="qb-r"><span class="qb-l">Pushups</span>${[5,10].map(a=>`<button type="button" data-lb="qbamt" data-v="${a}" aria-pressed="${q.amt===a}">${a}</button>`).join('')}<span class="note">more in the form</span></div>`;
+  qbOpts(g,ctx).forEach(o=>{h+=`<div class="qb-r v"><span class="qb-l">${esc(o.t)}</span><span class="qb-g">${o.s.map((x,i)=>`<button type="button" class="qb-s" data-lb="qbpick" data-g="${esc(id)}" data-k="${o.k}" data-i="${i}" title="${esc(x.txt)}">${esc(x.lab)}</button>`).join('')}</span></div>`});
+  if(q.msg)h+=`<div class="qb-m" role="alert">${esc(q.msg)}</div>`;
+  return h+`<div class="qb-r"><button type="button" class="qb-x" data-lb="qbtoggle" data-g="">Close</button><span class="note">Nothing is placed yet: the form opens filled in. The other manager still has to accept.</span></div></div>`}
+const qbHint=()=>S.qb&&S.qb===S.f.text&&!S.f.confirm?'<div class="qb-hint note" role="status" id="qbHint">⚡ Quick bet filled in — check and place it.</div>':'';
+let QCTX=null;
+const gameById=id=>((H&&H.games&&H.games())||[]).find(x=>String(x.id)===String(id));
+const redraw=()=>{if(H&&H.rerender)H.rerender();else H.render()};
+function qbPickGo(el){const g=gameById(el.dataset.g);if(!g||!qbOk(g))return;const o=qbOpts(g,QCTX).find(x=>x.k===el.dataset.k),x=o&&o.s[+el.dataset.i];if(!x)return;
+  const ma=qbOwn(g.away),mh=qbOwn(g.home),me=meMid();let opp=me===ma?mh:me===mh?ma:S.q.vs;
+  if(!opp||opp===me||(opp!==ma&&opp!==mh)){S.q.msg='Tap who you are betting against first.';redraw();return}
+  const t=clean(x.txt);S.f={opps:[opp],open:false,text:t,amt:S.q.amt,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false};S.fid=null;S.qb=t;S.msg='';S.bad=false;
+  S.q.g=null;S.q.msg='';if(H.goBets)H.goBets();
+  setTimeout(()=>{try{const f=document.getElementById('b27Form');if(f){f.scrollIntoView({block:'start'});const b=document.getElementById('b27Place');if(b&&!b.disabled)b.focus({preventScroll:true})}}catch(_){}},30)}
 function bind(){
   document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('[data-lb]');if(!el||!H||!document.getElementById('main')||!document.getElementById('main').contains(el))return;const f=ACT[el.dataset.lb];if(f){e.preventDefault();f(el,e)}});
   document.addEventListener('input',e=>{const t=e.target;if(!t||!t.id||!H)return;if(t.id==='b27Text'){S.f.text=t.value;sync()}else if(t.id==='b27Ao'){applyAmt(t.value);sync()}else if(t.id==='b27Co'){applyOdds(t.value);sync()}});
-  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&/^b27(Text|Ao|Co)$/.test(e.target.id)){e.preventDefault();ACT.place()}});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.q.g&&H&&document.getElementById('main')&&!(e.target&&/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))){const g=S.q.g;S.q.g=null;redraw();setTimeout(()=>{try{const b=document.querySelector('.qb-btn[data-g="'+g+'"]');if(b)b.focus({preventScroll:true})}catch(_){}},20);return}if(e.key==='Enter'&&e.target&&/^b27(Text|Ao|Co)$/.test(e.target.id)){e.preventDefault();ACT.place()}});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.started)poll(false)});
   window.addEventListener('online',()=>{if(S.started)poll(true)})}
 function init(h){H=h;if(!S.started){S.started=true;bind()}}
 function start(){if(!H||H.demo)return;poll(false)}
-window.LBETS={init,start,view,poll,reduce,tally,parseLog,win,_state:S};
+window.LBETS={init,start,view,badge,poll,reduce,tally,parseLog,win,quickHtml:(g,ctx)=>{QCTX=ctx||null;try{return quickHtml(g,ctx)}catch(e){return''}},_state:S};
 })();

@@ -138,7 +138,9 @@ function gameCard(g){const fin=g.status==='final',live=g.status==='live';
   if(g.civil)head+=`<span class="h2b">🙃 SAME OWNER (${esc(g.away.owners.join('/'))} wins either way)</span>`;
   let foot='';if(fin&&g.upset&&g.kind==='ncaa'){if(g.upset.is)foot+=` <span class="up">😱 UPSET +${esc(D.meta.points.upset)}</span>`}
   foot+=lvNote(g);
-  return `<div class="gm${g.h2h||g.civil?' h2h':''}"><div class="gh">${head}</div>${row(g.away)}${row(g.home)}${foot.trim()?`<div class="gl">${foot}</div>`:''}</div>`}
+  return `<div class="gm${g.h2h||g.civil?' h2h':''}"><div class="gh">${head}</div>${row(g.away)}${row(g.home)}${foot.trim()?`<div class="gl">${foot}</div>`:''}${quick(g)}</div>`}
+/* s22: the "Quick bet" pill + picker of a Games card is built by js/league-bets.js (it knows the managers, the viewer and the form); '' when it does not apply */
+function quick(g){try{return window.LBETS&&LBETS.quickHtml?LBETS.quickHtml(g,{name:s=>{const t=T.TEAMS[s.id];return(t&&(t.short||t.name))||s.short||''}}):''}catch(e){return''}}
 function vGames(){const every=D.games||[],nHidden=every.filter(g=>!gOwned(g)).length;if(!nHidden)gAll=false;const all=gAll?every:every.filter(gOwned);
   const ups=all.filter(g=>g.status!=='final'),fin=all.filter(g=>g.status==='final');if(!gMode)gMode=ups.length?'upcoming':'scores';
   let list=(gMode==='upcoming'?ups:fin.slice().reverse());if(gOwner!=='all')list=list.filter(g=>g.home.owners.includes(gOwner)||g.away.owners.includes(gOwner));if(gH2H)list=list.filter(g=>g.h2h||g.civil);
@@ -228,9 +230,10 @@ function header(){const m=L.meta;
   <div id="fresh" class="fresh" role="button" tabindex="0" hidden data-a="fresh"><span></span></div>
   <div id="live" class="lv" hidden><span id="lvT" aria-live="polite"></span><button id="lvB" type="button" data-a="lvrefresh" aria-label="Refresh live games">&#8635; Refresh Live Games</button><span id="lvU" class="lvU" hidden></span></div>
   <p class="tag" id="tag">${esc(tagFor())}</p></div><div class="sub" id="badges" style="margin:0">${D.meta.mode==='demo'?'<span class="badge warn" id="samplenote">DEMO DATA</span>':''}</div></header>`}
+const nbNew=on=>{try{return !on&&!DEMO&&window.LBETS&&LBETS.badge&&LBETS.badge()}catch(e){return false}};   /* s22: small "new" mark on the Bets tab when someone has added since this device last looked */
 function navHtml(){return `<nav id="ltabs" aria-label="League site">${TABS.map(t=>{const sp=t[1].indexOf(' '),ic=t[1].slice(0,sp),full=t[1].slice(sp+1),on=t[0]===tab;
-    return `<button class="${on?'on':''}" data-a="tab" data-v="${esc(t[0])}" aria-label="${esc(full)}"${on?' aria-current="page"':''}><span class="ni" aria-hidden="true">${ic}</span><span class="nl f">${esc(full)}</span><span class="nl s" aria-hidden="true">${esc(t[2])}</span><span class="nl m" aria-hidden="true">${esc(t[3]||t[2])}</span></button>`}).join('')}<a class="nd" id="tab_room" href="${esc(roomHref())}" aria-label="Draft room (opens the draft room)"><span class="ni" aria-hidden="true">\u{1F4DD}</span><span class="nl f">Draft</span><span class="nl s" aria-hidden="true">Draft</span><span class="nl m" aria-hidden="true">Draft</span></a></nav>`}
-function chatBar(){return `<section id="chat" class="chat" aria-label="Chat"><a class="chat-t" id="chatbar" data-a="chatopen" href="${esc(roomHref())}"><span class="ca" aria-hidden="true">▸</span><span class="cbm"><span class="cb1" id="chatpres">💬 Chat in the draft room</span><span class="cb2 mut" id="chatlast">Open the draft room chat</span></span><i class="cdot" id="chatbadge" hidden></i></a></section>`}
+    return `<button class="${on?'on':''}" data-a="tab" data-v="${esc(t[0])}" aria-label="${esc(full)}${t[0]==='bets'&&nbNew(on)?', new bets':''}"${on?' aria-current="page"':''}><span class="ni" aria-hidden="true">${ic}</span>${t[0]==='bets'&&nbNew(on)?'<b class="nb" aria-hidden="true">new</b>':''}<span class="nl f">${esc(full)}</span><span class="nl s" aria-hidden="true">${esc(t[2])}</span><span class="nl m" aria-hidden="true">${esc(t[3]||t[2])}</span></button>`}).join('')}<a class="nd" id="tab_room" href="${esc(roomHref())}" aria-label="Draft room (opens the draft room)"><span class="ni" aria-hidden="true">\u{1F4DD}</span><span class="nl f">Draft</span><span class="nl s" aria-hidden="true">Draft</span><span class="nl m" aria-hidden="true">Draft</span></a></nav>`}
+function chatBar(){const o=!!CHAT.open;return `<section id="chat" class="chat" aria-label="Chat"><button type="button" class="chat-t" id="chatbar" data-a="chatopen" aria-expanded="${o}" aria-controls="chatpanel"><span class="ca" aria-hidden="true">${o?'▾':'▸'}</span><span class="cbm"><span class="cb1" id="chatpres">💬 Chat with the league</span><span class="cb2 mut" id="chatlast">Tap to open the chat</span></span><i class="cdot" id="chatbadge" hidden></i></button><div class="chat-b" id="chatpanel" role="region" aria-label="League chat"${o?'':' hidden'}><div class="chat-h"><span class="note">The same chat as the draft room</span><a class="chat-room" id="chatroom" data-a="chatroom" href="${esc(roomHref())}">Open in the draft room</a></div><div class="chat-l" id="chatlist" role="log" aria-live="polite"></div>${ME&&!DEMO?'<form class="chat-f" id="chatform" autocomplete="off"><label class="sr" for="chatin">Message</label><input id="chatin" maxlength="280" autocomplete="off" enterkeyhint="send" placeholder="Message the league"><button type="submit" id="chatsend">Send</button></form>':'<div class="chat-p"><div class="note" id="chatwatch">👀 Watching only: you can read the chat. To write, open this page from your own manager link.</div></div>'}<div class="chat-m" id="chatmsg" role="status" aria-live="polite"></div></div></section>`}
 function footer(){return `<footer id="foot">${esc(L.meta.name)} · times in your time zone (${esc(TZ_NAME)}) · ${DEMO?`<a href="${esc(U.pageUrl('league.html',{l:id}))}">back to the real league</a>`:`<a id="demolink" href="${esc(U.pageUrl('league.html',{l:id,demo:1}))}">see the demo (invented scores)</a>`} · <a id="tab_recap" href="${esc(recapHref())}">Draft recap</a> · ${homeLink()}${U.buildTag()}</footer>`}
 const dataNote=()=>errS&&!(window.LSCHED&&LSCHED.has())&&(tab==='standings'||tab==='teams')?`<div class="card" id="nodata"><b>No scores yet.</b><div class="note">The scores file could not be loaded (${esc(errS)}), so everyone shows zero. A maintainer can refresh it; see the README.</div></div>`:'';
 /* s20: before the season (the data has no game for any rostered school, so every manager is 0-0) say so, instead of an unexplained 0-0 / "No games". The live ESPN overlay only updates games that are
@@ -261,17 +264,37 @@ async function heroChange(file){if(!F.heroWritable(CM)){U.toast('Only the commis
 async function heroReset(){if(!F.heroWritable(CM)){U.toast('Only the commissioner can change the photo.',4500);return}
   if(await heroWrite(null)){HERO_CUSTOM=null;U.heroRemember(id,null);U.toast('Back to the default photo.',3500);render()}else U.toast('Could not reset the photo. Try again.',5000)}
 /* ---------- chat bar: last message + who is around (read-only; the chat itself lives in the draft room) ---------- */
-let CHAT={n:0,last:null},PRES=[];
-async function loadChat(){if(DEMO)return;try{const c=F.normChat(F.parseJ(await Store.get(F.Keys(id).chat)));CHAT.n=c.msgs.length;CHAT.last=c.msgs.length?c.msgs[c.msgs.length-1]:null;FAIL.chat=false}catch(e){FAIL.chat=true}
+let CHAT={n:0,last:null,msgs:[],open:false,pend:[],draft:'',sig:'',timer:null},PRES=[];
+async function loadChat(){if(DEMO)return;try{const c=F.normChat(F.parseJ(await Store.get(F.Keys(id).chat)));CHAT.n=c.msgs.length;CHAT.msgs=c.msgs;CHAT.last=c.msgs.length?c.msgs[c.msgs.length-1]:null;FAIL.chat=false}catch(e){FAIL.chat=true}
   try{const now=Date.now();const rs=await Promise.all(MG.map(async m=>{try{const p=F.parsePresence(await Store.get(F.Keys(id).pres(m.mid)));return p&&now-p.t<=F.PRES.onlineMs?A.disp(m.name):null}catch(e){return null}}));PRES=rs.filter(Boolean)}catch(e){}}
+const chatName=w=>{const m=MG.find(x=>x.mid===w);return m?A.disp(m.name,isTestL()):'Someone'};
+const chatTime=ts=>{try{const d=new Date(ts),t=new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit'}).format(d);return Date.now()-ts>20*3600e3?new Intl.DateTimeFormat('en-US',{weekday:'short'}).format(d)+' '+t:t}catch(e){return''}};
+function chatMsg(t,bad){const m=document.getElementById('chatmsg');if(m)m.innerHTML=t?`<span class="${bad?'bad':''}">${esc(t)}</span>`:''}
+function paintChatList(){const el=document.getElementById('chatlist');if(!el||!CHAT.open)return;
+  const have=new Set(CHAT.msgs.map(m=>m.id)),all=CHAT.msgs.concat(CHAT.pend.filter(m=>!have.has(m.id))).sort((a,b)=>(a.ts||0)-(b.ts||0));
+  const sig=all.map(m=>m.id+(CHAT.pend.includes(m)?'p':'')).join(',')+'|'+all.length;if(sig===CHAT.sig&&el.childNodes.length)return;CHAT.sig=sig;
+  const near=!el.childNodes.length||el.scrollHeight-el.scrollTop-el.clientHeight<80;
+  el.innerHTML=all.length?all.map(m=>`<div class="cm${m.who&&m.who===ME?' me':''}${CHAT.pend.includes(m)?' pend':''}"><span class="cw">${esc(chatName(m.who))}</span><span class="ct">${esc(chatTime(m.ts))}</span><div class="cx">${esc(m.text)}</div></div>`).join(''):'<div class="ce">No messages yet.</div>';
+  if(near)el.scrollTop=el.scrollHeight}
+function chatPoll(){clearInterval(CHAT.timer);CHAT.timer=null;if(CHAT.open&&!DEMO)CHAT.timer=setInterval(()=>{if(!document.hidden)loadChat().then(()=>{paintChat()})},7000)}
+async function sendChat(text){const key=F.Keys(id).chat,msg={id:Math.random().toString(36).slice(2,10),ts:Date.now(),who:ME,text:String(text).slice(0,280)};CHAT.pend.push(msg);paintChat();chatMsg('');
+  const fail=t=>{CHAT.pend=CHAT.pend.filter(m=>m.id!==msg.id);CHAT.draft=msg.text;const i=document.getElementById('chatin');if(i)i.value=msg.text;chatMsg(t,1);paintChat()};
+  for(let a=0;a<3;a++){let cur;try{cur=F.normChat(F.parseJ(await Store.get(key)))}catch(e){return fail('Message not sent (no connection). Tap Send again.')}
+    const ns=F.addMsg(cur,msg);ns.version=(cur.version||0)+1;try{await Store.set(key,ns)}catch(e){return fail('Message not sent (server hiccup). Tap Send again.')}
+    await new Promise(r=>setTimeout(r,600));try{const chk=F.normChat(F.parseJ(await Store.get(key)));if(chk.msgs.some(m=>m.id===msg.id)){CHAT.pend=CHAT.pend.filter(m=>m.id!==msg.id);CHAT.msgs=chk.msgs;CHAT.n=chk.msgs.length;CHAT.last=chk.msgs[chk.msgs.length-1]||null;paintChat();return}}catch(e){}}
+  fail('Message may not have been delivered (busy server). Tap Send to try again.')}
 function paintChat(){const last=document.getElementById('chatlast'),pr=document.getElementById('chatpres'),bd=document.getElementById('chatbadge');if(!last)return;
-  if(pr)pr.textContent=PRES.length?'🟢 '+PRES.slice(0,3).join(', ')+(PRES.length>3?' +'+(PRES.length-3):'')+' online':'💬 Chat in the draft room';
+  if(pr)pr.textContent=PRES.length?'🟢 '+PRES.slice(0,3).join(', ')+(PRES.length>3?' +'+(PRES.length-3):'')+' online':'💬 Chat with the league';
   if(CHAT.last){const w=MG.find(m=>m.mid===CHAT.last.who);last.textContent=(w?A.disp(w.name,isTestL()):'Someone')+': '+CHAT.last.text;last.classList.remove('mut')}
-  if(bd){const seen=+(U.lsGet('lchat.'+id)||0);const un=Math.max(0,CHAT.n-seen);bd.hidden=!un;bd.textContent=un>9?'9+':String(un)}}
+  if(CHAT.open)U.lsSet('lchat.'+id,String(CHAT.n));
+  if(bd){const seen=+(U.lsGet('lchat.'+id)||0);const un=Math.max(0,CHAT.n-seen);bd.hidden=!un;bd.textContent=un>9?'9+':String(un)}
+  if(CHAT.open){const ci=document.getElementById('chatin');if(ci&&CHAT.draft&&!ci.value)ci.value=CHAT.draft;paintChatList()}}
 /* a logo that fails to load becomes the plain initials chip (no inline handler) */
 document.addEventListener('error',e=>{const t=e.target;if(t&&t.tagName==='IMG'&&t.closest&&t.closest('.chip')){const s=document.createElement('span');s.className='nologo';s.setAttribute('aria-hidden','true');s.textContent=t.getAttribute('data-ini')||'?';t.replaceWith(s)}},true);
 const ACT={trynow:()=>boot(true),herochange:()=>{const f=document.getElementById('herofile');if(f&&CM)f.click()},heroreset:()=>heroReset(),
-  chatopen:()=>{U.lsSet('x.'+id+'.tab','chat');U.lsSet('lchat.'+id,String(CHAT.n))},
+  chatopen:()=>{CHAT.open=!CHAT.open;CHAT.sig='';const pn=document.getElementById('chatpanel'),bt=document.getElementById('chatbar');if(pn)pn.hidden=!CHAT.open;if(bt){bt.setAttribute('aria-expanded',String(CHAT.open));const ca=bt.querySelector('.ca');if(ca)ca.textContent=CHAT.open?'▾':'▸'}
+    if(CHAT.open){U.lsSet('lchat.'+id,String(CHAT.n));paintChat();syncChat();loadChat().then(()=>{paintChat()});const ci=document.getElementById('chatin');if(ci)setTimeout(()=>ci.focus(),30)}else syncChat();chatPoll();paintChat()},
+  chatroom:()=>{U.lsSet('x.'+id+'.tab','chat');U.lsSet('lchat.'+id,String(CHAT.n))},
   tab:el=>{tab=el.dataset.v;hashPut();render();window.scrollTo(0,0)},
   owner:(el,e)=>{if(e.target.closest('a.chip,a.tl'))return;goOwner(el.dataset.mid)},
   pickowner:el=>{ownerSel=el.dataset.mid;render()},
@@ -280,6 +303,9 @@ const ACT={trynow:()=>boot(true),herochange:()=>{const f=document.getElementById
   fresh:()=>freshToggle(),lvrefresh:()=>lvManual()};
 document.addEventListener('change',e=>{const el=e.target;if(el.id==='herofile'){const f=el.files&&el.files[0];el.value='';if(f)heroChange(f);return}
   if(el.id==='gOwnerSel'){gOwner=el.value;render()}else if(el.id==='gDaySel'){gDay=el.value;render()}else if(el.id==='gUnowned'){gAll=el.checked;render()}});
+document.addEventListener('submit',e=>{if(e.target&&e.target.id==='chatform'){e.preventDefault();const i=document.getElementById('chatin');const t=i?i.value.trim():'';if(!t||!ME||DEMO)return;i.value='';CHAT.draft='';sendChat(t)}});
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='chatin')CHAT.draft=e.target.value});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&CHAT.open&&e.target&&e.target.closest&&e.target.closest('#chat')){ACT.chatopen();const b=document.getElementById('chatbar');if(b)b.focus()}});
 document.addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;const el=e.target;if(el&&el.getAttribute&&(el.getAttribute('role')==='button')&&el.dataset&&el.dataset.a&&el.tagName!=='BUTTON'){e.preventDefault();el.click()}});
 U.bind(ACT);U.registerSW();
 /* the first draft is over when every pick is made (derived from the picks, not from meta.status) or it was ended early; a started redraft (epoch 2+) implies it */
@@ -304,7 +330,7 @@ let ME=null;
 async function resolveMe(){try{if(DEMO)return null;const me=U.getMe(id);if(!me||!me.mid||!me.k)return null;const c=F.joinedList(L.meta,L.claims).find(x=>x.mid===me.mid);return c&&await F.checkMgrSecret(c,me.k)?me.mid:null}catch(e){return null}}
 async function start(d){const m=d.meta;L=d;MG=d.managers;
   if(/[#&]cm=/.test(location.hash)){const fr=U.takeFragment();const cmF=F.extractSecret(fr.get('cm')||'','cm');if(cmF&&await F.checkPass(m,cmF)){U.lsSet('cm.'+id,cmF);U.rememberLeague(id,m.name,'commissioner')}}
-  CM=!DEMO&&await U.isCommish(m);ME=await resolveMe();LBETS.init({id,demo:DEMO,owners:()=>D?D.owners:[],me:()=>ME,active:()=>tab==='bets'&&!document.hidden,roomHref:()=>U.roomHref(id),render:()=>{if(tab!=='bets')return;const b=document.getElementById('lbody');if(b){b.innerHTML=LBETS.view()}}});if(window.LSCHED&&!DEMO){LSCHED.init({ids:()=>(L.state.roster||L.state.picks||[]).map(p=>p&&p.tid).filter(x=>x!=null),enabled:()=>!DEMO,onUpdate:schedUpdate})}await loadHero(false);await loadScores();rebuild();hashSet();render();BO.booted=true;LBETS.start();if(window.LSCHED&&!DEMO)LSCHED.start();
+  CM=!DEMO&&await U.isCommish(m);ME=await resolveMe();LBETS.init({id,demo:DEMO,owners:()=>D?D.owners:[],me:()=>ME,games:()=>D?D.games:[],rerender:()=>render(),goBets:()=>{tab='bets';hashPut();render();window.scrollTo(0,0)},active:()=>tab==='bets'&&!document.hidden,roomHref:()=>U.roomHref(id),render:()=>{if(tab!=='bets')return;const b=document.getElementById('lbody');if(b){b.innerHTML=LBETS.view()}}});if(window.LSCHED&&!DEMO){LSCHED.init({ids:()=>(L.state.roster||L.state.picks||[]).map(p=>p&&p.tid).filter(x=>x!=null),enabled:()=>!DEMO,onUpdate:schedUpdate})}await loadHero(false);await loadScores();rebuild();hashSet();render();BO.booted=true;LBETS.start();if(window.LSCHED&&!DEMO)LSCHED.start();
   loadChat().then(()=>{paintChat();setOff()});setInterval(()=>{if(!document.hidden)loadChat().then(()=>{paintChat();setOff()})},30000);
   /* scores / tournament refresh every 5 min; after a failed refresh it retries with back-off and keeps the last good data on screen */
   let rf=0;const refresh=async()=>{const a=document.activeElement,t=a&&a.tagName;if(document.hidden||t==='INPUT'||t==='SELECT'){setTimeout(refresh,15000);return}
