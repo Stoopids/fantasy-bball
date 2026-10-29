@@ -385,3 +385,45 @@ span.chip.nolink{cursor:default}
 .ocl{align-items:stretch}
 .ocl>.card.oc{align-self:stretch}
 .card.oc .who .nm,.card.oc .who small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* s22: Quick bet pill + picker on a Games card (same class names as the reference; every tap target 44px) */
+.qbw{margin-top:8px;display:flex;justify-content:flex-end}
+.qb-btn{min-width:44px;font:inherit;font-size:13px;font-weight:800;min-height:44px;padding:0 14px;border-radius:99px;border:1px solid var(--acc);background:transparent;color:var(--acc);cursor:pointer}
+.qb-btn[aria-expanded=true]{background:var(--acc);color:#111}
+.qb-pick{margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card2);font-size:13px;min-width:0}
+.qb-pick .qb-r{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0}
+.qb-pick .qb-l{font-weight:800}
+.qb-pick .qb-r.v{display:block}
+.qb-pick .qb-r.v .qb-l{display:block;margin-bottom:4px;font-size:12px;color:var(--mut)}
+.qb-pick .qb-g{display:flex;gap:6px;min-width:0}
+.qb-pick .qb-g button{flex:1 1 0;min-width:0}
+.qb-pick .qb-g.w{flex-wrap:wrap}
+.qb-pick .qb-g.w button{flex:1 1 auto}
+.qb-pick button{min-width:44px;font:inherit;font-weight:800;font-size:14px;min-height:44px;padding:0 12px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--tx);cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qb-pick button[aria-pressed=true]{border-color:var(--acc);color:var(--acc)}
+.qb-pick button:focus-visible,.qb-btn:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.qb-pick .qb-x{border:0;background:transparent;color:var(--mut);font-weight:600}
+.qb-pick .qb-m{color:var(--bad,#ff6b6b);font-weight:700;margin:4px 0}
+.qb-hint{margin:6px 0 2px;padding:6px 10px;border-radius:10px;background:var(--card2);border:1px solid var(--acc);color:var(--tx)}
+.b27-form{scroll-margin-top:84px}
+/* s22: chat panel (the chat bar opens upward as a sheet; same chat as the draft room) */
+.chat-b{display:flex;flex-direction:column;max-height:70vh;max-height:70dvh;overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:12px;margin-top:6px;padding:8px;min-width:0}
+.chat-b[hidden]{display:none}
+.chat-h{display:flex;gap:6px;align-items:center;justify-content:space-between;margin:0 0 6px;min-width:0}
+.chat-h .chat-room{display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--acc);font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
+.chat-l{height:min(46vh,320px);overflow-y:auto;overflow-x:hidden;padding:2px 2px 4px;overscroll-behavior:contain}
+.chat-l .ce{color:var(--mut);font-size:13px;text-align:center;padding:18px 8px}
+.cm{max-width:90%;margin:6px 0;padding:6px 10px;border-radius:12px;background:var(--card2);border:1px solid var(--line);min-width:0}
+.cm.me{margin-left:auto;background:#3a3010;border-color:#8a6d12}
+.cm .cw{font-weight:800;color:var(--acc);font-size:12px}
+.cm .ct{color:var(--mut);font-size:11px;margin-left:6px;white-space:nowrap}
+.cm .cx{font-size:14px;overflow-wrap:anywhere;word-break:break-word}
+.cm.pend{opacity:.6}
+.chat-f{display:flex;gap:6px;margin-top:8px}
+.chat-f input{flex:1;min-width:0;min-height:44px;font-size:16px;background:var(--card2);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-family:inherit}
+.chat-f button{flex:none;min-height:44px;min-width:64px;border:0;border-radius:10px;background:var(--acc);color:#111;font:inherit;font-weight:800;cursor:pointer;padding:0 14px}
+.chat-p{margin-top:8px}
+.chat-m{min-height:18px;margin-top:4px;font-size:12px;color:var(--mut)}
+.chat-m .bad{color:var(--bad)}
+.chat-t{font:inherit;text-align:left}
+/* s22: "new" mark on the Bets tab (same look as the reference) */
+nav button .nb{position:absolute;top:-5px;right:6px;background:var(--acc);color:#111;border-radius:99px;font-size:9px;font-weight:900;line-height:1;padding:2px 5px;pointer-events:none}
