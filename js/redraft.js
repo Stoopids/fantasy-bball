@@ -13,7 +13,7 @@ const plural=(n,a,b)=>n+' '+(n===1?a:b);
 async function getJ(p){const r=await fetch(p+'?b='+encodeURIComponent(window.FBN_BUILD||''));if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
 const meta=()=>D.meta,rd=()=>D.meta.redraft;
 /* ---------- who am I (same secrets the room uses) ---------- */
-async function auth(){CM=false;ME='';const m=D.meta;const fr=U.takeFragment();const cmF=F.extractSecret(fr.get('cm')||'','cm');const asF=fr.get('as')||'',kF=fr.get('k')||'';
+async function auth(){CM=false;ME='';const m=D.meta;const fr=F.consumeUrlSecret(['cm','as','k']);const cmF=F.extractSecret(fr.cm||'','cm');const asF=fr.as||'',kF=fr.k||'';
   if(cmF&&await F.checkPass(m,cmF)){U.lsSet('cm.'+id,cmF)}
   if(asF&&kF){const c=F.joinedList(m,D.claims).find(c=>c.mid===asF);if(c&&await F.checkMgrSecret(c,kF)){U.setMe(id,{mid:asF,k:kF})}}
   const tok=U.lsGet('cm.'+id)||'';CM=!!(tok&&await F.checkPass(m,tok));

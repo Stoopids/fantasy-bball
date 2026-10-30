@@ -15,7 +15,7 @@ const NCAA_ROUND={'First Four':'First Four','First Round':'1st Round','Second Ro
 const ST={opts:null,busy:false,done:false,err:false,errN:0,fetched:0,requests:0,inflight:0,maxInflight:0,cacheAt:null,okAt:null,cache:{},ids:[],started:false};
 const ls=(()=>{try{const k='__t';localStorage.setItem(k,'1');localStorage.removeItem(k);return localStorage}catch(e){return null}})();
 const num=v=>(typeof v==='number'&&isFinite(v))?v:null;
-const etDay=ms=>{try{return new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(ms))}catch(e){return new Date(ms).toISOString().slice(0,10)}};
+const etDay=ms=>{try{return S25.etDay(ms)||new Date(ms).toISOString().slice(0,10)}catch(e){return new Date(ms).toISOString().slice(0,10)}};   /* game.day = ESPN (US Eastern) game day, S25.etDay (US Eastern, shared file); display uses LTIME */
 function status(e,c){const n=(((c||{}).status||(e||{}).status||{}).type||{}).name||'';if(n==='STATUS_FINAL')return 'final';if(n==='STATUS_SCHEDULED')return 'scheduled';if(/POSTPONED|CANCELED|CANCELLED|SUSPENDED/.test(n))return null;return n?'live':'scheduled'}
 function scoreOf(x){const s=x&&x.score;let v=null;if(s&&typeof s==='object')v=s.value!=null?s.value:s.displayValue;else v=s;if(v==null||v==='')return null;const t=Number(v);return isFinite(t)?Math.round(t):null}
 /* one ESPN schedule event -> one scores.json game, or null (preseason, postponed, NIT and other postseason events, malformed) */
@@ -35,7 +35,7 @@ function readCache(id){if(!ls)return null;try{const j=JSON.parse(ls.getItem(C.pr
 function writeCache(id,t,g){if(!ls)return;try{ls.setItem(C.pre+id,JSON.stringify({t:t,g:g}))}catch(e){try{ls.removeItem(C.pre+id)}catch(_){}}}
 const failState=()=>{if(!ls)return{n:0,t:0};try{return JSON.parse(ls.getItem('fbn.sched.fail')||'{"n":0,"t":0}')}catch(e){return{n:0,t:0}}};
 const setFail=o=>{if(ls)try{o.n?ls.setItem('fbn.sched.fail',JSON.stringify(o)):ls.removeItem('fbn.sched.fail')}catch(e){}};
-function seasonYear(now){const p=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit'}).formatToParts(new Date(now));const y=+p.find(x=>x.type==='year').value,m=+p.find(x=>x.type==='month').value;return{y:m>=8?y+1:y,m:m}}
+function seasonYear(now){const p=LTIME.dayKey(now).split('-');const y=+p[0],m=+p[1];return{y:m>=8?y+1:y,m:m}}
 function urls(id,now){const s=seasonYear(now);const u=[C.base+encodeURIComponent(id)+'/schedule?season='+s.y+'&seasontype=2'];if(s.m>=3&&s.m<=6)u.push(C.base+encodeURIComponent(id)+'/schedule?season='+s.y+'&seasontype=3');return u}
 async function fetchJ(u){const ctl=typeof AbortController!=='undefined'?new AbortController():null,tm=ctl?setTimeout(()=>ctl.abort(),C.timeoutMs):null;
   try{const r=await fetch(u,{credentials:'omit',signal:ctl?ctl.signal:undefined});if(!r.ok){const e=new Error('http '+r.status);e.status=r.status;throw e}const j=await r.json();if(!j||!Array.isArray(j.events))throw new Error('bad payload');return j.events}finally{if(tm)clearTimeout(tm)}}

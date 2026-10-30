@@ -62,7 +62,7 @@ function mount(host,o){
   const old=host.querySelector('#powerrank');if(old)old.remove();
   const sec=document.createElement('section');sec.id='powerrank';sec.setAttribute('aria-label','Power rankings');host.appendChild(sec);
   const st={rows:'loading',open:{},deep:{}};
-  const paint=(focusId)=>{sec.innerHTML='<h2 class="ph">⚡ Power rankings</h2>'+view(st.rows,st,o.teams||{});if(focusId){const b=sec.querySelector('#'+focusId);if(b)b.focus()}};
+  const paint=(focusId)=>{(window.LKEEP||(f=>f()))(()=>{sec.innerHTML='<h2 class="ph">⚡ Power rankings</h2>'+view(st.rows,st,o.teams||{})});if(focusId){const b=sec.querySelector('#'+focusId);if(b)b.focus({preventScroll:true})}};   /* s25j: no jump when it repaints (loading -> rows, open/close) */
   sec.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-pa]');if(!b||!sec.contains(b))return;const i=+b.dataset.i;
     if(b.dataset.pa==='open'){st.open[i]=!st.open[i];if(!st.open[i])st.deep[i]=false;paint('prb'+i)}else{st.deep[i]=!st.deep[i];paint('prd'+i)}});
   paint();

@@ -19,6 +19,10 @@ U.qs=()=>new URLSearchParams(location.search);
 U.getMe=id=>U.lsJSON('me.'+id,null);
 U.setMe=(id,v)=>U.lsSet('me.'+id,v?JSON.stringify(v):null);
 U.myLeagues=()=>U.lsJSON('leagues',[]);
+/* s25b: device-only archive of leagues in "Your leagues" (fbn.archived = [ids]). Never touches the league or any server data. */
+U.archivedIds=()=>{const a=U.lsJSON('archived',[]);return Array.isArray(a)?a.filter(x=>typeof x==='string'):[]};
+U.isArchived=id=>!!id&&U.archivedIds().indexOf(String(id))>=0;
+U.setArchived=function(id,on){id=String(id||'');if(!id)return;const a=U.archivedIds().filter(x=>x!==id);if(on)a.push(id);U.lsSet('archived',JSON.stringify(a.slice(-50)))};
 U.rememberLeague=function(id,name,role){const a=U.myLeagues().filter(x=>x.id!==id);a.unshift({id,name,role,ts:Date.now()});U.lsSet('leagues',JSON.stringify(a.slice(0,12)))};
 /* avatar: photo, else emoji, else initial on a colour */
 U.avatar=function(m,px){px=px||32;const a=FBN.avatarSpec(m);const st='width:'+px+'px;height:'+px+'px;font-size:'+Math.round(px*.5)+'px;background:'+a.color;
@@ -44,8 +48,8 @@ U.topDialog=()=>document.querySelector('#overlay .ov')||U.$('wheelov')||document
 document.addEventListener('keydown',e=>{const d=U.topDialog();if(!d)return;
   if(e.key==='Escape'&&!e.defaultPrevented){e.preventDefault();if(typeof d._esc==='function')d._esc();else if(d.classList.contains('sheet'))U.closeSheet();return}
   if(e.key==='Tab'){const f=[].slice.call(d.querySelectorAll(FOCUSABLE)).filter(x=>x.offsetParent!==null||x===document.activeElement);if(!f.length){e.preventDefault();return}
-    const first=f[0],last=f[f.length-1],a=document.activeElement;if(!d.contains(a)){e.preventDefault();first.focus();return}
-    if(e.shiftKey&&(a===first||a===d)){e.preventDefault();last.focus()}else if(!e.shiftKey&&a===last){e.preventDefault();first.focus()}}});
+    const first=f[0],last=f[f.length-1],a=document.activeElement;if(!d.contains(a)){e.preventDefault();first.focus({preventScroll:true});return}
+    if(e.shiftKey&&(a===first||a===d)){e.preventDefault();last.focus({preventScroll:true})}else if(!e.shiftKey&&a===last){e.preventDefault();first.focus({preventScroll:true})}}});
 U.copy=async function(text,msg){try{await navigator.clipboard.writeText(text);U.toast(msg||'Copied')}catch(e){const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');U.toast(msg||'Copied')}catch(e2){U.toast('Copy failed — press and hold the text to copy it')}ta.remove()}};
 U.canShare=()=>typeof navigator.share==='function';
 U.share=async function(data){if(U.canShare()){try{await navigator.share(data);return true}catch(e){if(e&&e.name==='AbortError')return false}}await U.copy((data.text?data.text+'\n':'')+(data.url||''),'Share is not available here — copied instead');return false};
@@ -78,6 +82,13 @@ U.teamLink=function(team,inner,cls){const t=(team&&typeof team==='object')?team:
   return '<a class="tlink '+U.esc(cls||'')+'" href="'+U.esc(url)+'" target="_blank" rel="noopener noreferrer"'+(nm?' title="'+U.esc(nm+' on ESPN (opens in a new tab)')+'"':'')+'>'+inner+'</a>'};
 U.teamChip=function(TEAMS,tid,opt){return U.teamLink(TEAMS[tid],U.chip(TEAMS,tid,opt),(opt&&opt.lcls)||'')};
 document.addEventListener('click',e=>{const a=e.target&&e.target.closest&&e.target.closest('a.tlink');if(a)e.stopPropagation()},true);
+/* s25-full (Paul via NCAA): a short, soft, self-made crowd cheer (assets/cheer.mp3, made by tools/make_cheer.js) plays ONCE per draft when it completes,
+   at volume 0.35, on the room or the recap page (whichever this device shows first). Remembered per league + draft; a device-wide mute toggle; a blocked autoplay fails silently. */
+U.CHEER_MUTE='fbn.cheer.mute';U.cheerMuted=()=>{try{return localStorage.getItem(U.CHEER_MUTE)==='1'}catch(e){return false}};
+U.cheerOnce=function(lid,draftKey,lastTs,now){try{const key='fbn.cheer.'+lid+'.'+draftKey;if(localStorage.getItem(key))return false;if(lastTs&&now-lastTs>15*60000){localStorage.setItem(key,'old');return false}/* opened long after the end: no cheer */
+  localStorage.setItem(key,'1');if(U.cheerMuted())return false;const a=new Audio('assets/cheer.mp3');a.volume=0.35;const p=a.play();if(p&&p.catch)p.catch(()=>{});return true}catch(e){return false}};
+U.cheerBtn=function(){const m=U.cheerMuted();return '<button type="button" class="btn sm cheermute" data-a="cheermute" id="cheermute" aria-pressed="'+(m?'true':'false')+'" aria-label="'+(m?'Cheer sound off. Turn it on':'Cheer sound on. Turn it off')+'">'+(m?'🔇 Sound off':'🔊 Sound on')+'</button>'};
+U.cheerToggle=function(el){const m=!U.cheerMuted();try{localStorage.setItem(U.CHEER_MUTE,m?'1':'0')}catch(e){}if(el)el.outerHTML=U.cheerBtn()};
 U.fmtClock=ms=>{ms=Math.max(0,Math.ceil(ms/1000));return Math.floor(ms/60)+':'+String(ms%60).padStart(2,'0')};
 /* team pool from assets/teams.js */
 U.loadTeams=function(){const D=window.TEAMS_DATA||{teams:[],meta:{}};const TEAMS={},POOL=[];D.teams.forEach(r=>{TEAMS[r[0]]={espn_id:r[0],name:r[1],short:r[2],abbr:r[3],color:r[4],alt:r[5],logo:r[6],mascot:r[7]};POOL.push(r[0])});
@@ -97,10 +108,11 @@ U.roomHref=function(id){const me=U.getMe(id);const cm=!!U.lsGet('cm.'+id);return
 window.UI=U;
 })();
 /* final rosters, shared by the room and the recap page */
-UI.rosters=function(st,mgrs,T){const F=FBN;const rs=F.rosters(st,mgrs);const rt=T.RK||F.rosterRatings(rs.map(r=>({mid:r.mgr.mid,picks:r.picks})),T.META);
+/* o.compact (s25-full recap, Paul via NCAA): avatar, manager, team name and the picks only (no team count, avg rank or Strength line). Other callers unchanged. */
+UI.rosters=function(st,mgrs,T,o){o=o||{};const F=FBN;const rs=F.rosters(st,mgrs);const rt=T.RK||F.rosterRatings(rs.map(r=>({mid:r.mgr.mid,picks:r.picks})),T.META);
   return '<div class="rosgrid" id="rosgrid">'+rs.map(r=>{const stt=F.rosterStats(r.picks,T.META);const q=rt[r.mgr.mid]||{};
-  return '<div class="card roster" data-mid="'+UI.esc(r.mgr.mid)+'"><div class="row nw">'+UI.avatar(r.mgr,42)+'<div class="grow"><b>'+UI.esc(r.mgr.name)+'</b><div class="small mut">'+UI.esc(r.mgr.team)+'</div></div><div class="small mut" style="text-align:right">'+r.picks.length+' team'+(r.picks.length===1?'':'s')+(stt.avgRank!=null?'<br>avg rank '+stt.avgRank:'')+'</div></div>'
-   +'<div class="strength small">'+(q.strength==null?(q.place?'<b>Rank #'+q.place+' of '+rs.length+'</b>':'<b>Strength –</b>'):'<b>Strength '+q.strength+'</b>'+(q.place?' <span class="mut">· #'+q.place+' of '+rs.length+'</span>':''))+'</div>'
+  return '<div class="card roster" data-mid="'+UI.esc(r.mgr.mid)+'"><div class="row nw">'+UI.avatar(r.mgr,42)+'<div class="grow"><b>'+UI.esc(r.mgr.name)+'</b><div class="small mut">'+UI.esc(r.mgr.team)+'</div></div>'+(o.compact?'':'<div class="small mut" style="text-align:right">'+r.picks.length+' team'+(r.picks.length===1?'':'s')+(stt.avgRank!=null?'<br>avg rank '+stt.avgRank:'')+'</div>')+'</div>'
+   +(o.compact?'':'<div class="strength small">'+(q.strength==null?(q.place?'<b>Rank #'+q.place+' of '+rs.length+'</b>':'<b>Strength –</b>'):'<b>Strength '+q.strength+'</b>'+(q.place?' <span class="mut">· #'+q.place+' of '+rs.length+'</span>':''))+'</div>')
    +'<div class="rost">'+(r.picks.map(p=>UI.teamChip(T.TEAMS,p.tid)).join('')||'<span class="small mut">No picks</span>')+'</div></div>'}).join('')+'</div>'};
 /* the same two buttons everywhere (room, recap, league site): Draft recap and League site. current = 'recap' | 'site' | '' marks the page you are on. Links hold the league code only. */
 UI.siteButtons=function(lid,domId,current){const E=UI.esc;const c=k=>E('btn grow'+(current===k?' cur':''));const a=k=>E(current===k?'page':'false');
@@ -143,4 +155,24 @@ UI.lastPlace=function(){const c=[];const ok=t=>/^[a-z]{2,16}$/.test(String(t||''
   const a=UI.lsJSON('lastnav',null);if(a&&(a.kind==='room'||a.kind==='recap')&&!a.mock&&ok(a.tab)&&!UI.isMockId(a.id)){const id=FBN.parseCode(String(a.id||''));const path=UI.cleanPath(a.path||'');
     if(id&&path&&path.indexOf('l='+id)>=0&&path.indexOf(a.kind+'.html')>=0)c.push({kind:a.kind,id,url:path+'#tab='+a.tab,ts:+a.ts||0})}
   const b=UI.lsJSON('lastsite',null);if(b&&!b.mock&&!UI.isMockId(b.id)){const id=FBN.parseCode(String(b.id||''));if(id&&/^[a-z]{3,12}$/.test(String(b.t||'')))c.push({kind:'league',id,url:UI.pageUrl('league.html',{l:id})+'#'+b.t,ts:+b.at||0})}
-  const now=Date.now();const v=c.filter(x=>x.ts>0&&now-x.ts<UI.RESUME_MS&&x.ts<=now+6e4).sort((x,y)=>y.ts-x.ts);return v[0]||null};
+  const now=Date.now();const v=c.filter(x=>x.ts>0&&now-x.ts<UI.RESUME_MS&&x.ts<=now+6e4&&!UI.isArchived(x.id)).sort((x,y)=>y.ts-x.ts);return v[0]||null};
+(function(){const U=window.UI;const esc=U.esc;
+/* s25-full invite / share row, used on every invite or share spot (setup links, room invite card + sheet, the links card).
+   Share (native sheet, when the device has one) · Copy link (with "Copied") · Text and WhatsApp (only when there is no native share) · Email.
+   A shared link or text may NEVER carry a secret: U.shareSafe() refuses k= / as= / cm= values and 32-hex secrets, and then no row is drawn. */
+U.SECRET_RE=/(^|[#?&;\s])(k|as|cm)=|\b[0-9a-f]{32}\b/i;
+U.shareSafe=(url,text)=>!U.SECRET_RE.test(String(url||''))&&!U.SECRET_RE.test(String(text||''));
+U.shareTargets=function(url,text,subject){const body=[text,url].filter(Boolean).join('\n');return{
+  sms:'sms:?&body='+encodeURIComponent(body),wa:'https://wa.me/?text='+encodeURIComponent(body),
+  email:'mailto:?subject='+encodeURIComponent(subject||'Draft invite')+'&body='+encodeURIComponent(body)}};
+U.shareRow=function(o){const url=o.url||'',text=o.text||'',p=o.id||'sr';if(!U.shareSafe(url,text))return'';const T=U.shareTargets(url,text,o.subject);const sh=U.canShare();
+  const d=`data-sru="${esc(url)}" data-srt="${esc(text)}" data-srs="${esc(o.subject||'')}"`;
+  return `<div class="row srow" id="${esc(p)}">`+(sh?`<button type="button" class="btn pri grow" data-sr="share" id="${esc(p)}_share" ${d}>${esc(o.shareLabel||'Share…')}</button>`:'')
+   +`<button type="button" class="btn grow${sh?'':' pri'}" data-sr="copy" id="${esc(p)}_copy" ${d}>${esc(o.copyLabel||(url?'Copy link':'Copy message'))}</button>`
+   +(sh?'':`<a class="btn grow" data-sr="sms" id="${esc(p)}_sms" href="${esc(T.sms)}">Text</a><a class="btn grow" data-sr="wa" id="${esc(p)}_wa" href="${esc(T.wa)}" target="_blank" rel="noopener">WhatsApp</a>`)
+   +`<a class="btn grow" data-sr="email" id="${esc(p)}_email" href="${esc(T.email)}">Email</a></div>`};
+if(typeof document!=='undefined')document.addEventListener('click',async ev=>{const b=ev.target.closest&&ev.target.closest('[data-sr="share"],[data-sr="copy"]');if(!b)return;ev.preventDefault();
+  const url=b.dataset.sru||'',text=b.dataset.srt||'';if(!U.shareSafe(url,text))return;
+  if(b.dataset.sr==='copy'){await U.copy([text,url].filter(Boolean).join('\n'),'Copied');const t=b.textContent;b.textContent='Copied ✓';b.classList.add('ok');setTimeout(()=>{b.textContent=t;b.classList.remove('ok')},2000);return}
+  try{const d={title:b.dataset.srs||'Draft invite'};if(text)d.text=text;if(url)d.url=url;await navigator.share(d)}catch(e){if(!(e&&e.name==='AbortError'))U.copy([text,url].filter(Boolean).join('\n'),'Share is not available here — copied instead')}});
+})();

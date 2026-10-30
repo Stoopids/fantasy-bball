@@ -1,3 +1,111 @@
+# s25-full (build 2026-10-30s25l): changed files vs s25b
+Draft room NCAA checklist (a)-(k), DR2 rules/lobby, SS recap grid, League restage merged. s25k: League leaguehome.js, league-bets.js, league-app.css re-copied unchanged from s25b-league; shared-s25.js kept (League b8c38b44 + QA focus({preventScroll:true}) at line 247). power-render.js md5 f41ca47bcf06390f70dd76b03c8df980 (League, unchanged by Draft Room). tests/, shots/ and node_modules not listed. s25l: version bump only (test-only fix: tests/xss_safe_exprs.json reviews the League Bets sub-tab exprs; no app file changed).
+
+| file | md5 | owner | why |
+|---|---|---|---|
+| CHANGE-NOTES-s25.md | fdb538b9a8247a3f56406fb69fa80031 | Draft Room | notes |
+| UNCLEAR.md | dc050cbfbdc4a7acac091c14b90bb9d0 | DR2 (merged) | new: merged as delivered |
+| assets/cheer.mp3 | d64b4a5bc83d7d701430bd795594d5bf | Draft Room | new: draft-done cheer (16 KB, tools/make_cheer.js) |
+| css/app.css | 31e8991b30ba2628129c48404da8b909 | Draft Room | room/recap s25-full styles (trow min-height, queue panel, picks-away, invite card, recap layout) |
+| css/league-app.css | 16a417545f7e791990662317f7c28c40 | League | s25k: re-copied unchanged from s25b-league, unchanged by Draft Room |
+| css/recap-rosters.css | b9f73c3f451d83ad9229aafeb5ea9368 | Stoopids Site (merged) | new: merged as delivered |
+| css/rules-lobby.css | 23ec9ff1f0f2d44fee14f4436484d8da | DR2 (merged) | new: merged as delivered |
+| data/net.json | 2931bf38f01c5f4dc10f27d05bf98f9f | League | new: League restage merge (65b8fe80 / s25b-league), unchanged by Draft Room |
+| js/core.js | bdd69382fb06819e7a0c2fd39c63caae | Draft Room | legacy autoPick:false derives auto-pick on (stored setting untouched) |
+| js/league-bets.js | d4a0f8ebbd87670d28ab4d91f008b6b9 | League | s25k: re-copied unchanged from s25b-league, unchanged by Draft Room |
+| js/league-d.js | 4be068d4c9248ec9e691d22ced01df11 | League | League restage merge (65b8fe80 / s25b-league), unchanged by Draft Room |
+| js/league-sched.js | 93bef2c3d8fb3e2699766d943fc00b57 | League | League restage merge (65b8fe80 / s25b-league), unchanged by Draft Room |
+| js/leaguehome.js | e350c22642ffdf508e8bb42b88a85203 | League | s25k: re-copied unchanged from s25b-league, unchanged by Draft Room |
+| js/links-card.js | 500c5794a8653c2d5efba42f02d9a996 | Draft Room | links card markup tweaks |
+| js/power-render.js | f41ca47bcf06390f70dd76b03c8df980 | League | League restage merge (65b8fe80 / s25b-league), unchanged by Draft Room |
+| js/recap.js | 05298d87ae7ba8f247c66491c9b8fb20 | Draft Room | compact hero, layout reorg (What's next top, How grades + build small print last), rounds collapsible, no How the order was set, compact rosters, inline mock recap, XSS esc; s25j: scroll-spy picks section nearest the top line (deep link #tab=awards kept) |
+| js/redraft.js | 757c3c165a79010c4b592f2eeffcb64c | Draft Room | Draft Room redraft wording |
+| js/room.js | 77b68136eaf36c364596393a471abc04 | Draft Room | row-tap on turn + confirm modal, no ESPN in Teams/pop-up, Queued chip, star removed, legend, queue panel, picks-away line, invite+Mock Draft card, instant autopick, autonote in commish tools, clock-out read-only, Rules buttons, cheer, Links h3 spacing, scroll anchor by data-k |
+| js/rules.js | a132aa8407a9547d9a0b393c2f975d90 | DR2 (merged) | new: merged as delivered |
+| js/setup.js | 325fd1c31be3daa075c692517c505d03 | Draft Room | clock-out step info only, no Wait option |
+| js/shared-s25.js | 8bdd1fd8d7928c3c7e085de801925234 | shared (s25d partner, scroll focus) | League b8c38b44 + QA-requested focus({preventScroll:true}) at line 247; kept as is in s25k |
+| js/ui.js | 492ccd9c76149ab8aa02333f688bf449 | Draft Room | rosters {compact:1}, focus preventScroll |
+| js/version.js | dbbe6d30e570c02b7c4c63b08ac399f3 | Draft Room | build 2026-10-30s25l + FBN_TITLE |
+| league.html | d3b6f53ee707b59cd40376a4074ae674 | League | League restage merge (65b8fe80 / s25b-league), unchanged by Draft Room |
+| recap.html | 0f266bd8a433e2e46c44f4ba05dd5fa6 | Draft Room | loads recap-rosters.css |
+| room.html | 134e6e7647318ff230f715f573896a66 | Draft Room | loads rules.js, rules-lobby.css |
+| sw.js | 29fa7a2305fe68ea6dec70da0098dcd6 | Draft Room | build 2026-10-30s25l (comment; cache name follows FBN_BUILD); precache rules.js, rules-lobby.css, recap-rosters.css, cheer.mp3 |
+| tools/make_bundle.sh | 1760e479a35e108232d3af8f0bb4ce33 | Draft Room | new: bundle helper |
+| tools/make_cheer.js | eec74fd3057df72e16b0c7f1ede9dbde | Draft Room | new: generates cheer.mp3 |
+| tools/mock_textdb.js | 564a76fc93bd657cffacd255c20ebb3e | Draft Room | new: local test server |
+
+## League changes vs s25j (copied from s25b-league/CHANGED-FILES.md; s25k/s25l re-copied these League files)
+- js/league-bets.js: the Bets sub-tabs ('✏️ Write it Up' / '💰 Tally', the obSeg() bar placed before the form); Tally with netted pushup settle lines; the Who Owes Who 8x8 grid always shown, with the "Nothing settled yet (N bets still open)" note; team nicknames in CAPS.
+- js/leaguehome.js: nav tab renamed '💵 Bets' (icon approved by Paul via NCAA at 18:43 WIB); keepPos/LKEEP scroll restore; manual scrollRestoration; a tab's first open goes to the top; a user scroll of more than 40px cancels the snap; focus() calls use preventScroll.
+- css/league-app.css: the .ob-seg / .tabs.ob-seg sub-tab bar (max-width 440px on purpose, copied from the partner build at owes_s25i_upload L132), 44px taps.
+- js/shared-s25.js: L247 Escape focus uses preventScroll (from Draft Room/QA).
+
+# s25b (build 2026-10-30s25b): changed files vs s25
+Recap layout, mock coaching tips, viewer time zone, home Archive. League files same as s25 (incl. s25-league-links patch).
+
+| file | md5 | owner | why |
+|---|---|---|---|
+| css/app.css | 3c7c07d5a6fddd6f0f87ec00a21d1aa7 | Draft Room | recap s25b layout (small card, grade line, How grades work, Your 8 picks, coaching tips), archive section styles |
+| js/core.js | 223470587db1bb11a20a0bfbbe975b0c | Draft Room | viewer time zone helpers F.zoneAbbr/zoneLabel/fmtClock/fmtLong (Intl timeZoneName short); no hard-coded ET |
+| js/index.js | d5a4b4dd98032b2bdbd076984e172487 | Draft Room | home: Archive / Restore per league (device-only), collapsed Archived leagues (N), League site button skips archived |
+| js/links-card.js | bdce9a228602e1bef4d663b0149aa1ad | Draft Room | links text uses viewer time + zone label |
+| js/recap.js | 8c3d2b0ae183c07552278669b522e5f1 | Draft Room | s25b real/mock recap layout, See my grade, mock coaching tips (better pick available checked vs pick log), viewer time zone |
+| js/room.js | f1a8554eee006f7068aeb73c9deeff27 | Draft Room | pick/chat/countdown times in viewer time zone with short label |
+| js/setup.js | da167626cb22246d75ce8852bb7314d5 | Draft Room | date/time step shows commissioner local time + zone label (live), stores UTC |
+| js/ui.js | 926fd500f4199fd4437097458d9fc4f7 | Draft Room | U.archivedIds/isArchived/setArchived; lastPlace (resume) skips archived |
+| js/version.js | c74e5d26735628fea75ada7df0c46510 | Draft Room | tag 2026-10-30s25b |
+
+# s25 (build 2026-10-30s25): changed files vs s24c (MD5SUMS.txt md5 5edc883171e2a8c389c52dbb943adb83)
+Draft Room setup polish (items 1-11) + League s25 merged. League CHANGED-FILES (s25-league) entries folded in below.
+
+| file | md5 | owner | why |
+|---|---|---|---|
+| setup.html | ba0bad6039db68759ec53e44ca6569dd | Draft Room | items 1-6: banner img, setup.css + links-card.js |
+| css/setup.css | d1d9f2f57bdc8060aedc91603cfcc6f4 | Draft Room | new: setup-only styles (body.setup): centered 560px card, nav right under the form (not sticky), banner, What you get, league photo, locked continue |
+| assets/setup-banner.svg | 8495ef48ff34e2986385d382d6572174 | Draft Room | new: original basketball banner (own SVG, no hotlink) |
+| js/setup.js | 6363ec7ea117ef9766855e0b4ae53f3b | Draft Room | step 1 What you get list (8 managers, snake draft, 64 picks, season-long scoring, pushup challenges); optional league photo (on-device resize to 256px JPEG under 40 KB, preview, remove, polite errors, saved in meta.settings.photo); links card replaces Email me these links, continue locked until one is used; Copy draft reminder |
+| js/links-card.js | 0be80f3f4322500bd839f2c0f51546ae | Draft Room (shared) | new shared module window.LinksCard: Share / Copy all / Download file (.txt Blob) / Email; fromDevice() rebuilds links from localStorage; no network, no logging |
+| js/room.js | 3f54f4fe9ca4ac60c8d9b9aabdfd92f8 | Draft Room | Your links (commissioner only, More tab); Send invite link / Copy draft reminder; How your queue works note under Auto-pick for me |
+| room.html | 20abfd684bfb969d32e49a3ce6454576 | Draft Room | loads js/links-card.js |
+| js/core.js | dbe3338bb3c204b7b216f1f00c29bbf3 | Draft Room | settings.photo kept through normalizeSettings / normalizeMeta / mSettings (F.leaguePhotoOk, JPEG data URL <= 40 KB) |
+| js/recap.js | 39ddb4c17679265daec1faa2119355bd | Draft Room | seeded one-liners on Top 3 steals / reaches (stable per league); compact end card markup (.rctop) |
+| css/app.css | 085e73354eb3fb616db7447bb21ec789 | Draft Room | .lcbtns shared links card; .rcquip; compact end card (mock + real); recap tab bar wraps (4 per row, 3 under 360px, one row on desktop), no sideways scroll |
+| sw.js | 02d95fb2f5e4aab59cfb0f31b9df4d72 | shared | SHELL adds css/setup.css, assets/setup-banner.svg, js/links-card.js, js/shared-s25.js; cache name from version.js |
+| js/version.js | 928375802fe6d6d35b8e82eea125a9c6 | shared | build tag 2026-10-30s25 (sw cache fbnc-2026-10-30s25) |
+| js/league-bets.js | bcea3db8d1aee74cd8aab09e9217b85b | League | copied unchanged from s25-league |
+| css/league-app.css | 4d56a407d5291815a000770b8bcc9626 | League | copied unchanged from s25-league |
+| js/leaguehome.js | af7e882e8ec318d27bf0cb81910898e0 | League | copied unchanged from s25-league |
+| js/power-gen.js | e23c8f96ab3ce7de4c03ce8625002c85 | League | copied unchanged from s25-league |
+| help.html | 8e37f14c044757c2c7e89fc62efb0488 | League | copied unchanged from s25-league |
+| league.html | dc9cc1c5fb21a7f9e380ddf454f75b32 | League | copied unchanged from s25-league |
+| js/shared-s25.js | 8e463fd88a7a4978a6ab52fb24091a3d | League | new, copied unchanged from s25-league (partner League edition) |
+| CHANGE-NOTES-s25.md | 108a443c72ab6889d9d59526369887b2 | League | copied unchanged from s25-league |
+| CHANGED-FILES.md | (this file) | | s25 section |
+
+Test-only (not shipped): tests/e2e_setup_s25.js, e2e_links_s25.js, e2e_tabbars_s25.js, quip_shots.js (new); test_core.js (help limit 2900; settings.photo test; no word-rule exception); test_xss_static.js (3 reviewed constant exprs; League shared-s25 skip + meme img-only check); e2e_tabs.js (Ctrl-click check scrolls the non-sticky phone tab bar into view first); League tests copied from s25-league.
+
+## League s25 entries (from s25-league/CHANGED-FILES.md)
+
+# s25-league (build 2026-10-30s25): changed files vs s24-league
+Base: /workspace/fantasy-bball-releases/s24-league (MD5SUMS.txt md5 605cfe478a857ada34be07488c2ba4a8). Stage only. Notes: CHANGE-NOTES-s25.md. Shipped: the partner's League edition js/shared-s25.js (md5 8e463fd88a7a4978a6ab52fb24091a3d). Its first version, shared-s25.js (md5 eb87a816…), was not shipped because it broke the word rule. Shared spec: league-site-work/s25-autosettle-spec.md.
+
+| file | md5 | why |
+|---|---|---|
+| js/league-bets.js | bcea3db8d1aee74cd8aab09e9217b85b | creator-only settle for new actions; v:25 marker, unmarked (pre-s25) settles keep the s24 rule; save confirm; bet reading; proposed result from the final score; settle sound = shared synth (S25.synth), pop-up = shared SVG memes as <img> data URL (our mute / reduced-motion / after-tap rules kept); reactions; card grid wrappers |
+| css/league-app.css | 4d56a407d5291815a000770b8bcc9626 | read-as / proposal / sound / pop-up / reactions styles; card grid 1 / 2 (700px, partner breakpoint) / 3 (1400px); tab bar wraps into equal-width rows (3 per row at 360px and below, 4 per row 361-559px, one row from 560px when the tabs fit, else wraps; same as the partner site), not sticky under 760px |
+| js/leaguehome.js | af7e882e8ec318d27bf0cb81910898e0 | tagline (one placeholder line, 2-day rotation from 2026-11-01 ET); league photo hook (meta.settings.photo as the banner fallback, validated) |
+| js/power-gen.js | e23c8f96ab3ce7de4c03ce8625002c85 | funnier power-ranking text (kind one-liners appended to existing sentences); facts, grades and 4 / 10 sentence counts unchanged |
+| help.html | 8e37f14c044757c2c7e89fc62efb0488 | "How your queue works" in the Managers card (text from draftroom-notes/s25-setup/HELP-QUEUE.md) |
+| js/version.js | 928375802fe6d6d35b8e82eea125a9c6 | build tag 2026-10-30s25 |
+| js/shared-s25.js | 8e463fd88a7a4978a6ab52fb24091a3d | new: partner site's League-safe shared file (shared-s25-league.js), copied unchanged; md5 matches the source |
+| league.html | dc9cc1c5fb21a7f9e380ddf454f75b32 | loads js/shared-s25.js before league-bets.js |
+| sw.js | f8c093770c96f522fe8a7bd9491bc13a | **OVERLAP (shared file)**: 'js/shared-s25.js' added to the SHELL list (test_core requires every loaded script in it); nothing else changed |
+| CHANGE-NOTES-s25.md | 108a443c72ab6889d9d59526369887b2 | new |
+| CHANGED-FILES.md | (this file) | s25 section |
+
+Test-only (not shipped): tests/e2e_tabs_s25.js (new, 27a6ccfecc6129ce45344cf2118059a7; checks 320, 359, 360, 361, 390, 559, 560, 700, 760, 1280); tests/e2e_s25_addon.js (new, a82d7bdc121a1f07d0e09e440a99153a); tests/test_powerfun_s25.js (new, 8c01d23d24dd807a8aabafe9ef272b64); tests/e2e_lsite.js (dea5e4de2779aaca26d5457eaeacffae) and tests/e2e_alignment.js (a6a302adce9debe7847635ba362917d5): tab bar now wraps instead of scrolling; tests/test_core.js (20e7ad0371cb31a8aee695830e149f3a): help length limit 2600 -> 2900 for the approved queue note; tests/e2e_s25.js now 2d5a30d7182e89e706a45f47f9d8ec9c (grid checks at 699 / 700px; shared synth + memes); tests/test_xss_static.js (0bd1486014b380eff3e28b5821211dbe): js/shared-s25.js skipped for the attribute check (SVG from numeric literals), plus a check that the memes are used only as an <img> data URL; tests/e2e_legacy_s25.js (new, 0d70c60457da4101a7c5df33abf8f30e); tests/e2e_s25.js (new, 82323d1fac965136318cfc48c75036a9); tests/test_tagline_s25.js (new, 0dd65a886b73c62caa45adb874a9216d); tests/e2e_bets.js (b5cf2b869d7fe04f5013dbd3913f281b), tests/e2e_bets_s24.js (26c3ff8dff1b8cef3bdf8693812a4ffd), tests/e2e_betfilter_s24.js (7e7b62b46a4a546d76cfb375ed2acc88): updated for creator-only settle and the card grid (e2e_betfilter_s24 is back to the s24 expectations for its legacy reports: only the card selector and intro wording changed).
+
+
 # s24c (build 2026-10-29s24c) — changes vs s24b. League source: s24-league MD5SUMS.txt 605cfe478a857ada34be07488c2ba4a8
 | file | md5 | owner | why |
 |---|---|---|---|
@@ -88,7 +196,7 @@ Base: /workspace/fantasy-bball-releases/s22b (MD5SUMS.txt md5 4ac201a69189bf10f4
 
 Test-only (not shipped): tests/e2e.js line 260 time.html New York check accepts UTC-4 or UTC-5 (DST ends Nov 1 2026); tests/s23_extra_shots.js (new).
 
-## League site part of s23 = the s22 League items (STOOPIDS Bets page + Quick bet)
+## League site part of s23 = the s22 League items (partner-site Bets page + Quick bet)
 Merged in `/workspace/fantasy-bball-releases/s23-full` (= s23 + these files). League changes copied unchanged from `/workspace/fantasy-bball-releases/s22`; build tag stays 2026-10-29s23; sw.js unchanged (no new files).
 
 | file | md5 | why |

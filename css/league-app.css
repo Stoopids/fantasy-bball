@@ -471,3 +471,120 @@ nav a.tb{text-decoration:none;box-sizing:border-box;-webkit-tap-highlight-color:
 @media (prefers-reduced-motion:reduce){.bl-b i,.bl-b s{animation:none}.bl-b i{transform:translateY(34px)}.bl-b s{transform:none;opacity:.7}}
 /*</BALL-LOADER>*/
 @media (max-width:359px){.b27-selbar{flex-wrap:wrap}}   /* s24b: the 3 buttons + counter do not fit below 360px: let the row wrap */
+.b27-sndrow{margin-top:8px}.b27-snd{min-height:44px}.b27-propc{margin:8px 0 0;padding:10px;background:var(--card2)}.b27-read,.b27-prop{margin-top:4px}
+/* s25: settle pop-up */
+.b27-pop{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.6);box-sizing:border-box;animation:b27PopIn .18s ease-out}
+.b27-popc{max-width:min(320px,100%);box-sizing:border-box;background:var(--card);border:2px solid var(--acc);border-radius:16px;padding:18px;text-align:center;color:var(--tx)}
+.b27-popc img{max-width:100%;max-height:50vh;display:block;margin:0 auto 8px;border-radius:10px}
+.b27-popi{font-size:56px;line-height:1.1}.b27-popt{font-size:18px;font-weight:800;margin:6px 0}
+.b27-pop[data-kind=win] .b27-popc{border-color:var(--good)}.b27-pop[data-kind=loss] .b27-popc{border-color:var(--bad)}
+@keyframes b27PopIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.b27-pop{animation:none}}
+/* s25: reactions row (6 emoji, fits 320px: equal columns, each >= 44px) */
+.b27-rx{display:grid;grid-template-columns:repeat(6,minmax(44px,1fr));gap:2px;margin-top:8px}
+.b27-rxb{min-height:44px;min-width:44px;box-sizing:border-box;padding:0 2px;border:1px solid var(--line);border-radius:10px;background:var(--card2);color:var(--tx);font:inherit;display:flex;align-items:center;justify-content:center;gap:3px;cursor:pointer;-webkit-touch-callout:none;user-select:none}
+.b27-rxb .e{font-size:18px;line-height:1}.b27-rxb .n{font-size:12px;font-weight:700;color:var(--mut)}
+.b27-rxb.on{border-color:var(--acc);background:rgba(255,210,63,.14)}.b27-rxb.on .n{color:var(--acc)}
+.b27-rxwho{margin-top:4px}
+/* s25: bet cards in a grid: 1 column under 700px, 2 from 700px, 3 from 1400px (same breakpoints as the partner site) */
+.b27-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:0 12px;align-items:start}
+@media (min-width:700px){.b27-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1400px){.b27-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* s25: no sideways-scrolling tab bar. The tabs wrap into rows of equal-width buttons (CSS grid): 3 per row at 360px and below, 4 per row at 361-559px,
+   from 560px one row when it fits (else it wraps). All tabs visible at once, every tap >= 44px, labels never cut off, active state unchanged. */
+nav#ltabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;overflow:visible;overflow-x:visible;padding:6px 8px;justify-content:stretch}
+nav#ltabs button,nav#ltabs a.tb,nav#ltabs a.nd{flex:none;min-width:0;width:auto;min-height:48px;padding:4px 2px;white-space:normal;text-align:center}
+nav#ltabs .nl{max-width:100%;overflow:visible;white-space:normal;overflow-wrap:normal;word-break:normal;line-height:1.1}
+@media (max-width:360px){nav#ltabs{grid-template-columns:repeat(3,minmax(0,1fr));padding:6px 4px}}
+@media (min-width:560px){nav#ltabs{grid-template-columns:repeat(auto-fit,minmax(48px,1fr))}}   /* one row from 560px when the 10 tabs fit (same as the partner site), else they wrap */
+@media (max-width:759px){nav#ltabs{position:static}}   /* s25: the wrapped bar is 3-4 rows on a phone, so it no longer sticks to the top and covers the page */
+/* s25: equal-size bet cards. The partner site has no card height / clamp rules yet (checked owes_s25b_upload + audit), so these values are ours:
+   min-height 220px on every card, bet text clamped to 3 lines with a 'more' / 'less' button, card = flex column with the buttons and reactions pinned to the bottom. */
+.b27-grid{align-items:stretch}
+.b27-grid>.b27-c{display:flex;flex-direction:column;min-height:220px;box-sizing:border-box;min-width:0}
+.b27-grid>.b27-c>.b27-sp{flex:1 1 auto;min-height:0}
+.b27-c .b27-t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden}
+.b27-c .b27-t.open{display:block;-webkit-line-clamp:unset;line-clamp:none;overflow:visible}
+.b27-more{align-self:flex-start;min-height:44px;min-width:44px;margin:-6px 0 2px -6px;padding:0 10px;border:0;background:none;color:var(--acc);font:inherit;font-weight:700;font-size:14px;cursor:pointer;text-decoration:underline}
+.b27-more[hidden]{display:none}
+/* s25 Games page: grid (1 col, 2 from 700px, 3 from 1400px, same breakpoints as .b27-grid), equal-height cards per row, two tight lines,
+   full-width Quick bet pinned to the bottom, finished games as one-line rows that open with a 44px button. Own values (the partner site has no Games grid yet). */
+.ggrid{display:grid;grid-template-columns:minmax(0,1fr);gap:8px 12px;align-items:stretch}
+@media (min-width:700px){.ggrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1400px){.ggrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.ggrid>.gm{margin:0;display:flex;flex-direction:column;min-width:0;box-sizing:border-box;padding:6px 10px}
+.ggrid.gfins{align-items:start}
+.gday .gtz{font-size:11px;font-weight:700;color:var(--mut);margin-left:4px}
+.gm .gl1{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:6px}
+.gm .gl1 .gside{padding:0;min-width:0;gap:6px}
+.gm .gl1 .gside.gh2{flex-direction:row-reverse;text-align:right}
+.gm .gl1 .gside.gh2 .nm{justify-content:flex-end}
+.gm .gl1 .gside .nm{flex:1 1 0}
+.gm .gl1 .gside .chip.school-chip{width:100%;max-width:150px;min-width:0;flex:0 1 auto;overflow:hidden}   /* one size per viewport: min(150px, the column) */
+.gm .gl1 .gside .chip .cn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gm .gl1 .gside .sc2{font-size:20px;width:36px;min-width:36px;flex:none;text-align:center}
+.gm .gl1 .gat{color:var(--mut);font-size:12px;font-weight:700}
+.gm .gh.gl2{margin:2px 0 0;gap:4px 6px}
+.gm .gl2 .cpl{min-height:44px}
+.gm .gl{margin-top:4px;padding-top:4px}
+.ggrid>.gm .qbw,.gm .qbw{margin-top:auto;padding-top:6px;display:flex;justify-content:flex-end}   /* bottom row pinned; Quick bet bottom-right (Paul) */
+.ggrid>.gm .qb-btn,.gm .qb-btn{display:inline-flex;align-items:center;justify-content:center;width:auto;min-height:44px;padding:8px 16px;font-size:.9em;font-weight:700;border-radius:10px;border:0;background:#FFD400;color:#111;line-height:1.2;box-sizing:border-box}
+.gm .qb-btn[aria-expanded=true]{background:#FFD400;color:#111;box-shadow:0 0 0 2px var(--tx) inset}
+.gm.gfin{padding:0 10px}
+.gfr{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0;border:0;background:transparent;color:var(--tx);font:inherit;font-size:14px;text-align:left;cursor:pointer}
+.gfr .gfn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mut)}
+.gfr .gfn.w{color:var(--tx);font-weight:700}
+.gfr .gdash{color:var(--mut)}
+.gfr .gfl{margin-left:auto;font-size:12px;font-weight:800;color:var(--mut);flex:none}
+.gfr .gchev{flex:none;transition:transform .15s}
+.gfr[aria-expanded=true] .gchev{transform:rotate(180deg)}
+.gfr:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:8px}
+.gm.gfin .gx{padding:2px 0 8px;border-top:1px dashed var(--line)}
+/* s25 AP Top 25 badge (partner site spec): pill before the name, 4px gap */
+.rkb{display:inline-block;margin-right:4px;font-size:.72em;font-weight:700;line-height:1;padding:1px 5px;border-radius:999px;background:#FFD400;color:#111;vertical-align:1px;white-space:nowrap}
+/* s25 Standings toggle (partner site spec; segments keep our 44px tap height) */
+.segw{margin:0 0 10px}
+.segv{display:inline-flex;background:#222;border:1px solid #444;border-radius:999px;padding:2px;max-width:100%}
+.segv .seg{min-height:44px;padding:6px 14px;font:inherit;font-size:.85em;font-weight:600;border:0;border-radius:999px;background:transparent;color:#bbb;cursor:pointer}
+.segv .seg[aria-pressed=true]{background:#FFD400;color:#111}
+.segv .seg:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.rkh{margin:0 0 8px;font-size:17px}
+.rkl{list-style:none;margin:0;padding:0}
+.rkrow{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:6px 0;border-top:1px solid var(--line);min-width:0}
+.rkrow:first-child{border-top:0}
+.rkrow .chip{max-width:100%}
+.rkv{font-weight:700;font-variant-numeric:tabular-nums}
+.rko{margin-left:auto;font-size:13px}
+/* s25 Redraft tab: full-width practice button */
+#redraftmock.prac{display:flex;align-items:center;justify-content:center;width:100%;box-sizing:border-box;min-height:44px;margin:0 0 10px;background:var(--acc);color:#10131a;font-weight:800;border-radius:10px;text-decoration:none}
+/* s25c shared reaction row (js/shared-s25.js): keep our 44px tap rule on top of the shared 36px sizes */
+.b27-c .s25rx,.b27-c .s25add{min-height:44px;min-width:44px}
+.b27-c .s25pk button{width:44px;height:44px}
+
+/* s25 bet time stamps (partner site spec) */
+.b27-c .b27-stamp{font-size:.75em;font-weight:400;color:#9a9a9a;line-height:1.3;margin:6px 0 4px;overflow-wrap:anywhere}
+
+/* s25 League header title (option 1): small gold presenter line, title, muted subtitle; wraps cleanly from 320px */
+.lbrand{padding:12px 14px 8px;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere}
+.lbrand .lb-pre{display:flex;align-items:center;gap:8px;color:#FFD400;font-size:.8em;font-weight:800;letter-spacing:.04em;line-height:1.2}
+.lbrand .lb-ball{width:24px;height:24px;border-radius:50%;flex:none}
+.lbrand .lb-main{font-size:clamp(1.35em,5.2vw,2.2em);font-weight:800;line-height:1.15;margin-top:4px;color:var(--tx)}
+.lbrand .lb-sub{font-size:clamp(1em,3.6vw,1.35em);font-weight:400;color:var(--mut);line-height:1.25;margin-top:2px}
+/* s25 Quick bet panel: every chip and pick button is a 44x44 minimum tap target, no overflow at 320px */
+.qb-pick button,.qb-pick .qb-g button,.qb-pick .qb-g.w button,.gm .qb-pick button{min-height:44px;min-width:44px;box-sizing:border-box}
+.qb-pick .qb-g{flex-wrap:wrap}
+.qb-pick,.qb-pick .qb-r{max-width:100%;box-sizing:border-box}
+
+/* s25 GOLD-LINE (partner site s25g, exact values) */
+.who .gold{display:block;font-size:12px;line-height:1.3;color:var(--mut);font-weight:400;white-space:nowrap;letter-spacing:1px}   /* s25g */
+.who .gold{max-width:100%;overflow:hidden;text-overflow:clip}   /* League: a long row never pushes past the name column at 320px (title/aria-label keep the count) */
+.who .gold0{height:1.3em}
+
+/* s25g WHO-CENTER (phones: name block centered, rank left, points right) and QB-BOLT, exact s25g values */
+@media (max-width:600px){.card.oc .who{text-align:center;overflow-wrap:anywhere}.card.oc .who small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+.qb-bolt{display:inline-block;vertical-align:-.125em;flex:none;margin-right:.35em}
+.lbrand .lb-pre[hidden]{display:none}   /* neutral fallback: no presenter line */
+.oqe{margin:2px 0 6px}   /* s25k: "Nothing settled yet" note over the all-zero Who owes who grid */
+.mx.oqm .nk{letter-spacing:.02em}.mx.oqm th.nk{white-space:normal;overflow-wrap:normal;word-break:keep-all;font-size:11px;line-height:1.15;vertical-align:bottom;min-width:3.5em}.mx.oqm td.rn.nk{white-space:normal;overflow-wrap:normal;font-size:12px;line-height:1.2;min-width:7em;max-width:16em}.oqc .cn.nk{overflow-wrap:anywhere;font-weight:700;font-size:13px;line-height:1.15}   /* s25k: team nicknames: column heads wrap between words only (the grid scrolls sideways); row names wrap, a long single word stays whole and the grid scrolls sideways */
+/*<BETS-TALLY> s25k: Bets sub-tabs, CSS from the partner build (ONE-BETS .ob-seg + TAB-GRID .tabs.ob-seg) */.ob-seg{flex-wrap:nowrap;gap:0;max-width:440px}.ob-seg button{flex:1 1 0;min-width:0;position:relative;border-radius:0;white-space:nowrap;padding:10px 6px}.ob-seg button:first-child{border-radius:10px 0 0 10px}.ob-seg button:last-child{border-radius:0 10px 10px 0;margin-left:-1px}.ob-seg button.on{background:var(--acc);color:#111;border-color:var(--acc);font-weight:800}.tabs.ob-seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0}.tabs.ob-seg button{white-space:normal;min-height:44px}#b27People td.n,#b27People th.n{text-align:right}/*</BETS-TALLY>*/
+#b27Settle .tset{padding:6px 0;font-weight:700;overflow-wrap:anywhere;line-height:1.3}#b27Settle .tset+.tset{border-top:1px solid var(--line)}   /* s25l: Tally settle lines (partner S25J) */

@@ -1,0 +1,6 @@
+/* SS s25: recap roster chips as an equal 2 x 4 grid (Rosters side by side + league grade picks). ssr- prefix, no app.css clash. */
+.ssr-rosters .rost,.grpicks.ssr-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:44px;gap:6px;align-items:stretch}
+.ssr-rosters .rost>*,.grpicks.ssr-grid>*{min-width:0;width:100%;height:44px;min-height:44px;box-sizing:border-box;display:flex;align-items:center;margin:0}
+.ssr-rosters .rost .chip,.grpicks.ssr-grid .chip{display:block;line-height:28px;width:100%;height:32px;min-width:0;max-width:100%;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;padding:0 8px 0 3px;gap:6px}
+.ssr-rosters .rost .chip img,.ssr-rosters .rost .chip .nologo,.grpicks.ssr-grid .chip img,.grpicks.ssr-grid .chip .nologo{width:24px;height:24px;vertical-align:middle;margin-right:5px;display:inline-block}
+.ssr-rosters .rosgrid .roster{min-width:0}

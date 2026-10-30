@@ -460,11 +460,12 @@ a.btn{min-height:44px}
 .banner.finalbn .lbl{font-size:12px;letter-spacing:.06em}
 .endbtns3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px;width:100%}
 .endbtns3 .btn{min-height:48px;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px 6px;font-size:15px;font-weight:800;line-height:1.15}
-.rchero{position:relative;overflow:hidden;min-height:calc(100svh - 70px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:24px 16px;margin:0 0 16px;border-radius:18px;background:radial-gradient(circle at 50% 30%,#2a2f45,#10131a 70%);border:1px solid var(--line)}
-.rchero .rcemo{font-size:44px;line-height:1}
-.rchero .rclbl{font-weight:900;letter-spacing:.08em;color:var(--acc);font-size:14px}
-.rchero .rcmsg{font-size:clamp(24px,6.4vw,40px);line-height:1.15;margin:0;max-width:760px}
-.rchero .rcdown{min-height:48px;display:inline-flex;align-items:center;margin-top:8px;padding:0 20px}
+/* s25: compact end card (~25% of the viewport at 390px) so the tabs below show without scrolling */
+.rchero{position:relative;overflow:hidden;min-height:0;max-height:none;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;padding:12px 14px;margin:0 0 16px;border-radius:18px;background:radial-gradient(circle at 50% 30%,#2a2f45,#10131a 70%);border:1px solid var(--line)}
+.rchero .rcemo{font-size:24px;line-height:1}
+.rchero .rclbl{font-weight:900;letter-spacing:.08em;color:var(--acc);font-size:12px}
+.rchero .rcmsg{font-size:clamp(17px,4.6vw,24px);line-height:1.2;margin:0;max-width:760px}
+.rchero .rcdown{min-height:44px;display:inline-flex;align-items:center;margin-top:4px;padding:0 18px}
 .confetti{position:absolute;inset:0;pointer-events:none}
 .confetti i{position:absolute;top:-20px;width:9px;height:15px;border-radius:2px;opacity:.9;animation:cfall 4.2s linear infinite}
 @keyframes cfall{0%{transform:translateY(-20px) rotate(0)}100%{transform:translateY(105svh) rotate(540deg)}}
@@ -500,3 +501,127 @@ a.btn{min-height:44px}
 .rcnav a{flex:0 0 auto;min-height:44px;display:inline-flex;align-items:center;padding:0 12px;border-radius:99px;border:1px solid var(--line,#2a3142);color:var(--tx,#eee);text-decoration:none;font-size:13px;font-weight:800;white-space:nowrap}
 .rcnav a[aria-current]{background:var(--acc,#ffd23f);color:#111;border-color:transparent}
 .rsec{scroll-margin-top:64px}
+/* s25 shared links card (setup + room) */
+.lcbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}.lcbtns .btn{width:100%;text-align:center;padding:12px}
+@media(min-width:700px){.lcbtns{grid-template-columns:repeat(4,1fr)}}
+.rcquip{font-style:italic;color:var(--acc);margin-top:2px}
+/* s25: recap tab bar never scrolls sideways: equal buttons, 4 per row on phones (3 under 360px), one wrapping row on desktop */
+.rcnav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;overflow:visible;position:static}
+.rcnav a{flex:none;min-width:0;justify-content:center;text-align:center;padding:2px 4px;border-radius:10px;font-size:12px;line-height:1.15;white-space:normal;overflow-wrap:anywhere}
+@media(max-width:359px){.rcnav{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:900px){.rcnav{display:flex;flex-wrap:wrap;position:sticky}.rcnav a{flex:1 1 auto;white-space:nowrap;padding:0 10px}}
+.rchero .rccount{font-size:14px;line-height:1.25}.rchero .rccount b{font-size:16px}.rchero .small{font-size:12px}
+@media(max-width:899px){.rcnav a{overflow-wrap:normal;word-break:normal;padding:2px 1px;font-size:11.5px;letter-spacing:-.01em}}
+.rchero .rctop{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap}.rchero .rcemo{font-size:20px}
+.rchero .rccount{margin:0;font-size:13px}.rchero .rccount b{font-size:15px}
+@media(max-width:899px){.rchero .rcmsg{font-size:16.5px}}
+/* s25b recap layout */
+.rcgline{margin:0 0 6px;color:var(--mut);font-size:14px}
+.rchow{margin:0 0 10px}.rchow summary{min-height:44px;display:inline-flex;align-items:center;color:var(--acc);font-weight:800;cursor:pointer}
+.mplist,.cblist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.mprow{display:flex;gap:10px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+@media(min-width:900px){.mplist{grid-template-columns:1fr 1fr}}
+.rccoach{margin-bottom:12px}.rccoach h3{margin:0 0 6px}.rctake{font-weight:800;margin:0 0 8px}.cbline{line-height:1.35}.cbline .rcquip{display:block}
+.rcextra>summary{min-height:48px;display:flex;align-items:center;padding:0 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-weight:800;cursor:pointer}
+.rcextra[open]>summary{margin-bottom:12px}
+/* s25b home: Archive / Restore beside each league row */
+.mrw{display:flex;gap:8px;align-items:center}.mrw .mrow{flex:1;min-width:0}.mrw .arch{min-height:44px;min-width:44px;flex:none}
+#archived>summary{min-height:44px;display:flex;align-items:center;font-weight:800;cursor:pointer}
+/* s25-full share rows: wrap into equal buttons, 44px targets */
+.srow{display:flex;flex-wrap:wrap;gap:8px}.srow>.btn{flex:1 1 calc(50% - 8px);min-height:44px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+@media(min-width:700px){.srow>.btn{flex:1 1 0}}.srow>.btn.ok{border-color:#3fb950;color:#3fb950}
+/* s25-full load flash: while html.loading, only the loader is visible (no tabs, views, banners, pop-ups or sheets) */
+.loader{display:none}html.loading .loader{display:flex;position:fixed;inset:0;align-items:center;justify-content:center;gap:10px;color:var(--mut,#9aa4b2);font-size:15px;z-index:50}
+html.loading #top,html.loading #tabs,html.loading .wrap,html.loading #overlay,html.loading #sheetwrap,html.loading #pickov,html.loading .toast{visibility:hidden!important}
+.lspin{width:18px;height:18px;border-radius:50%;border:3px solid currentColor;border-right-color:transparent;animation:lspin .8s linear infinite}@keyframes lspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.lspin{animation:none}}
+
+/* s25-full row-tap pick rows: the whole row is the target (>= 60px), ESPN is a separate small link */
+.trow[data-k]{min-height:60px}.trow.go{cursor:pointer}.trow.go:active,.trow.go:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
+.trow .espn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;font-size:11px;font-weight:700;color:var(--mut,#9aa4b2);text-decoration:none;border-radius:8px}
+/* s25-full load flash: while html.loading, only the loader is visible (no tabs, views, banners, pop-ups or sheets) */
+.loader{display:none}html.loading .loader{display:flex;position:fixed;inset:0;align-items:center;justify-content:center;gap:10px;color:var(--mut,#9aa4b2);font-size:15px;z-index:50}
+html.loading #top,html.loading #tabs,html.loading .wrap,html.loading #overlay,html.loading #sheetwrap,html.loading #pickov,html.loading .toast{visibility:hidden!important}
+.lspin{width:18px;height:18px;border-radius:50%;border:3px solid currentColor;border-right-color:transparent;animation:lspin .8s linear infinite}@keyframes lspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.lspin{animation:none}}
+
+/* s25-full confirm-pick box (Paul): centred modal with a dimmed backdrop, only slightly bigger than the old sheet; buttons >= 48px */
+.sheetbg.cmodal{align-items:center;padding:16px;box-sizing:border-box}
+.sheetbg.cmodal .sheet{border:2px solid var(--acc);border-radius:18px;max-width:460px;padding:20px 18px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.sheetbg.cmodal .sheet h2{font-size:22px}
+.sheetbg.cmodal .sheet .chip{font-size:1.12em}
+.sheetbg.cmodal .sheet .btn{min-height:52px;font-size:16px}
+
+/* s25-full picks-away line (Paul): own line, accent yellow, bold, 1.25x body */
+#oncard .away-big{display:block;color:var(--acc);font-weight:900;font-size:1.25rem;line-height:1.25;margin-top:4px}
+
+/* s25-full recap compact banner + What's next row (Paul via NCAA) */
+.rchero{padding:8px 12px;gap:2px;margin:0 0 10px}
+.rchero .rctop{gap:6px;font-size:12px}.rchero .rcemo{font-size:16px;line-height:1}.rchero .rclg{font-size:12px;color:var(--mut)}
+.rchero .rcmsg{font-size:20px!important;line-height:1.2}
+@media(min-width:900px){.rchero .rcmsg{font-size:22px!important}}
+.rchero .confetti i{animation-duration:1.5s;animation-iteration-count:1;animation-fill-mode:forwards}
+.rcnextrow{margin:0 0 10px}.rcnextrow .rcrow{display:flex;flex-wrap:wrap;gap:8px}.rcnextrow .rcrow>.btn{flex:1 1 0;min-height:44px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;padding:0 12px}
+.rchowd>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700}
+
+/* s25-full one compact invite card (Paul FINAL SPEC) */
+.invc{padding:10px 12px}.invc .invr1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.invc .invlbl{flex:1 1 auto;font-size:15px}
+.invc .invr1 .btn,.invc .invr2 .btn,.invc .invmore .btn{min-height:44px;padding:0 14px;flex:0 0 auto}
+.invc .invr2{display:flex;align-items:center;gap:12px;margin-top:8px}.invc .invr2 .lnkbtn{min-height:44px}
+.invc .invmore{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.invc .invmore[hidden]{display:none}
+.invc .invbtns{display:flex;gap:8px;flex:0 0 auto}
+
+/* s25-full Auto-pick switch under the On the clock card */
+.atog{display:flex;align-items:center;gap:8px;min-height:44px;margin:6px 2px 0;font-weight:700;font-size:14px}
+/* s25-full queue beside the Teams list (Paul) */
+.tqwrap{display:block}.qpanel{margin:0 0 8px}.qpanel[hidden]{display:none}
+.qpanel .qbar{width:100%;min-height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:inherit;font-weight:800;font-size:15px}
+.qpanel #qbody{padding:6px 2px}.qpanel .qrow{display:flex;align-items:center;gap:6px;min-height:48px}.qpanel .qtm{flex:1 1 auto;min-width:0;overflow:hidden}
+.qpanel .qb{min-width:44px;min-height:44px;padding:0}
+@media(min-width:900px){.tqwrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;align-items:start}.tqwrap .qpanel{order:2;position:sticky;top:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;margin:0;max-height:80vh;overflow:auto}.tqwrap .qpanel h3{margin:0 0 6px;font-size:15px}}
+/* s25-full compact Teams search (Paul): 44 px tall (our tap-target floor, matches the Power sort pill), 16px text so iOS does not zoom, less padding */
+.ctl input[type=search]{height:44px;min-height:44px;padding:0 12px;font-size:16px;box-sizing:border-box}
+.tnote{font-size:12px;margin:4px 2px}
+@media(max-width:899px){.tqwrap{display:flex;flex-direction:column}.tqwrap .qpanel{order:-1}}
+#banner .atog{flex:1 1 100%;width:100%}
+/* s25-full profile buttons (Paul): equal size, one row, labels on one line; stacked full width under 420px */
+#youcard .pbtns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}#youcard .pbtns>.btn{min-height:44px;white-space:nowrap;display:flex;align-items:center;justify-content:center;padding:0 8px;margin:0;font-size:13px}
+@media(max-width:419px){#youcard .pbtns{grid-template-columns:1fr}}
+
+/* s25-full Rules button + page */
+.rulesbtn{min-height:44px;min-width:44px;padding:0 10px;font-size:13px}#lobbycard{position:relative}#lobbycard .rulesbtn{position:absolute;top:10px;right:10px}
+.sheetbg.rulesbg{align-items:stretch}.sheetbg.rulesbg .sheet{max-width:760px;border-radius:0;max-height:100vh;max-height:100dvh;height:100%}
+.rulespage .phead{display:flex;justify-content:space-between;align-items:center;position:sticky;top:-16px;background:var(--card);padding:8px 0;z-index:2}.rulespage .phead small{display:block;color:var(--mut)}
+.rulespage h3{font-size:16px;margin:14px 0 4px}.rulespage .rn{color:var(--acc)}.rulespage p{margin:4px 0;font-size:15px;line-height:1.45}
+
+/* s25-full lobby compact (Paul via NCAA) */
+#youcard.ycompact{padding:10px 12px}#youcard.ycompact .pbtns{margin-top:8px!important;gap:6px}#youcard.ycompact .pbtns>.btn{font-size:12.5px;padding:0 6px}#youcard.ycompact>.small{margin-top:4px!important;font-size:12px}
+@media(max-width:419px){#youcard .pbtns{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:299px){#youcard .pbtns{grid-template-columns:1fr}}
+#linkscard.lcompact{padding:10px 12px}#linkscard.lcompact h3{margin:0 8px 2px 0}#linkscard .lk{margin:6px 0 2px}
+#linkscard .lrow{display:flex;align-items:center;gap:6px}#linkscard .lrow .urlbox{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:0;min-height:44px;display:flex;align-items:center;box-sizing:border-box}
+#linkscard .lrow .btn{flex:0 0 auto;min-height:44px;padding:0 10px}#linkscard .lextra{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}#linkscard .lextra .btn{min-height:44px}
+/* s25-full: Queued filter chip (pill, not a tab) */
+.ctl .qchip{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px dashed var(--mut,#888);background:transparent;color:inherit;font-size:13px;font-weight:700;cursor:pointer;flex:0 0 auto}
+.ctl .qchip::before{content:'☐ ';margin-right:4px}.ctl .qchip.on{border-style:solid;border-color:var(--acc);background:var(--acc);color:#111}.ctl .qchip.on::before{content:'✓ '}
+.ctl .cwrap{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+/* s25-full: Board pills ~12% bigger (font 12.5 -> 14px, logo 22 -> 25px), still inside the cell */
+.board td .chip{font-size:14px;gap:4px;padding:2px 7px 2px 2px}.board td .chip img,.board td .chip .nologo{width:25px;height:25px}
+/* s25-full: Teams rows are the tap target on your turn, with hover and press states; off-turn a tap does nothing */
+.trow.go[data-a=draftrow]{cursor:pointer;transition:background .12s,transform .06s}.trow.go[data-a=draftrow]:hover{background:#232a3b}.trow.go[data-a=draftrow]:active{background:#2e3650;transform:scale(.99)}/* only on your turn (or commish picking for someone); off-turn rows are plain */
+/* s25-full: recap What's next stays ONE row down to 320px */
+#rc_site .rcrow{display:flex;flex-wrap:nowrap;gap:6px}#rc_site .rcrow>a,#rc_site .rcrow>button{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:6px;padding-right:6px;font-size:13px;min-height:44px}
+@media(max-width:400px){#rc_site .rcrow>a,#rc_site .rcrow>button{font-size:12px;padding-left:4px;padding-right:4px}}
+/* s25-full: draft-complete cheer mute toggle */
+#donecard{position:relative}#donecard .cheermute{position:absolute;top:8px;right:8px;min-height:44px;min-width:44px;padding:0 12px;font-size:13px}
+/* s25-full: recap Full draft order rounds as collapsible headers */
+#rc_order .tiny{font-size:11px;margin:0 0 6px}#rc_order details.rdgrp{border:1px solid var(--line);border-radius:12px;margin:0 0 6px;overflow:hidden}
+#rc_order details.rdgrp>summary.rdh{min-height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;cursor:pointer;font-weight:800;font-size:15px;list-style:none;margin:0}
+#rc_order details.rdgrp>summary.rdh::-webkit-details-marker{display:none}#rc_order details.rdgrp>summary.rdh::after{content:'▾';transition:transform .15s;color:var(--mut)}#rc_order details.rdgrp:not([open])>summary.rdh::after{transform:rotate(-90deg)}
+#rc_order details.rdgrp>.dolist{margin:0;padding:0 8px 8px}
+#recaphead .cheermute{min-height:44px;min-width:44px;padding:0 10px;font-size:12px;margin-left:auto}
+#linkscard .lextra{flex-wrap:nowrap}#linkscard .lextra .btn{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px}
+@media(max-width:359px){#linkscard .lextra .btn{font-size:12px;padding:0 4px}}
+/* s25-full QA: every draft-room button is a 44px tap target at every width (e.g. 'Make the auto-pick now' was 30.8px at 1280) */
+body.room [data-a=idclose],body.room [data-a=vo],body.room [data-a=csub]{min-height:44px}body.room label.sw{min-height:44px;display:flex;align-items:center}
+/* s25-full QA (qa-2): the room keeps the page still itself (Teams spacer + anchor restore); the browser's own scroll anchoring would move scrollY when a drafted row above the screen is removed */
+html:has(body.room),body.room{overflow-anchor:none}.tspacer{pointer-events:none}

@@ -57,7 +57,9 @@ F.validateStep=function(step,s,o){o=o||{};const full=F.validateSettings(Object.a
   if(step==='confirm')return full;return{ok:!Object.keys(errors).length,errors}};
 F.normalizeSettings=function(s){const d=F.DEFAULTS;return{managers:(isInt(+s.managers)&&+s.managers>=1&&+s.managers<=24)?+s.managers:d.managers,rounds:isInt(+s.rounds)?+s.rounds:d.rounds,type:s.type==='linear'?'linear':'snake',
   startAt:s.startAt!=null&&isFinite(+s.startAt)?Math.round(+s.startAt):null,startMode:s.startMode==='auto'&&s.startAt!=null?'auto':'manual',orderMode:s.orderMode==='manual'?'manual':'random',
-  clockSecs:F.CLOCKS.indexOf(+s.clockSecs)>=0?+s.clockSecs:d.clockSecs,autoPick:s.autoPick!==false,warn15:s.warn15!==false,tz:typeof s.tz==='string'?s.tz.slice(0,60):'UTC'}};
+  clockSecs:F.CLOCKS.indexOf(+s.clockSecs)>=0?+s.clockSecs:d.clockSecs,autoPick:s.autoPick!==false,warn15:s.warn15!==false,tz:typeof s.tz==='string'?s.tz.slice(0,60):'UTC',...(F.leaguePhotoOk(s.photo)?{photo:s.photo}:{})}};
+/* s25: optional league photo from setup step 1: a small JPEG data URL (<= 40 KB). Kept through save / load / sanitize; anything else is dropped. */
+F.LPHOTO_MAX=40*1024;F.leaguePhotoOk=u=>typeof u==='string'&&u.length<=Math.ceil(F.LPHOTO_MAX*4/3)+64&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(u);
 /* ============================ pick order: snake / linear ============================ */
 F.slotAt=function(order,n,type,rounds){const L=order.length;if(!L||n<1||n>L*rounds)return null;const r=Math.floor((n-1)/L),i=(n-1)%L;
   const col=(type==='snake'&&r%2)?L-1-i:i;return{n,round:r+1,col,owner:order[col]}};
@@ -81,10 +83,15 @@ F.parseLocalInput=function(str,tz){const m=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d
 F.localInputValue=function(ms,tz){const p=parts(ms,tz);const z=n=>String(n).padStart(2,'0');return p.y+'-'+z(p.mo)+'-'+z(p.d)+'T'+z(p.h)+':'+z(p.mi)};
 F.offsetLabel=function(ms,tz){const m=F.tzOffsetMin(ms,tz);const s=m<0?'-':'+';const a=Math.abs(m);const h=Math.floor(a/60),mm=a%60;return 'UTC'+s+h+(mm?':'+String(mm).padStart(2,'0'):'')};
 F.fmtWhen=function(ms,tz,o){o=o||{};return new Intl.DateTimeFormat(o.locale||'en-US',{timeZone:tz,weekday:'short',month:o.year?'long':'short',day:'numeric',year:o.year?'numeric':undefined,hour:'numeric',minute:'2-digit'}).format(new Date(ms)).replace(',',',')};
+/* s25b: the viewer's short zone name from Intl (PDT, GMT+7, GMT+1 …) for ms in tz; never a hard-coded zone */
+F.zoneAbbr=function(ms,tz){try{const p=new Intl.DateTimeFormat('en-US',{timeZone:tz,timeZoneName:'short'}).formatToParts(new Date(ms)).find(x=>x.type==='timeZoneName');return p?p.value:F.offsetLabel(ms,tz)}catch(e){return F.offsetLabel(ms,tz)}};
+F.zoneLabel=function(ms,tz){const a=F.zoneAbbr(ms,tz),o=F.offsetLabel(ms,tz);return /^(GMT|UTC)/.test(a)?a:a+' · '+o};
+F.fmtClock=function(ms,tz){try{return new Intl.DateTimeFormat('en-US',{timeZone:tz,hour:'numeric',minute:'2-digit'}).format(new Date(ms))+' '+F.zoneAbbr(ms,tz)}catch(e){return ''}};
+F.fmtLong=function(ms,tz){try{const d=new Date(ms);return new Intl.DateTimeFormat('en-US',{timeZone:tz,weekday:'long',month:'long',day:'numeric',year:'numeric'}).format(d)+' at '+F.fmtClock(ms,tz)}catch(e){return ''}};
 F.fmtUtc=function(ms){const d=new Date(ms);const z=n=>String(n).padStart(2,'0');return d.toUTCString().slice(0,16)+', '+z(d.getUTCHours())+':'+z(d.getUTCMinutes())+' UTC'};
 /* "Starts Sat, October 31, 2026 at 8:00 PM your time (UTC+7)" ; commissioner zone line is added when it differs */
-F.startsLine=function(ms,viewerTz,commishTz){const own='Starts '+F.fmtWhen(ms,viewerTz,{year:1})+' your time ('+F.offsetLabel(ms,viewerTz)+')';
-  if(commishTz&&commishTz!==viewerTz&&F.tzOffsetMin(ms,commishTz)!==F.tzOffsetMin(ms,viewerTz))return{you:own,commish:'Commissioner’s time: '+F.fmtWhen(ms,commishTz,{year:1})+' ('+F.tzCity(commishTz)+', '+F.offsetLabel(ms,commishTz)+')',utc:F.fmtUtc(ms)};
+F.startsLine=function(ms,viewerTz,commishTz){const own='Starts '+F.fmtWhen(ms,viewerTz,{year:1})+' your time ('+F.zoneLabel(ms,viewerTz)+')';
+  if(commishTz&&commishTz!==viewerTz&&F.tzOffsetMin(ms,commishTz)!==F.tzOffsetMin(ms,viewerTz))return{you:own,commish:'Commissioner’s time: '+F.fmtWhen(ms,commishTz,{year:1})+' ('+F.tzCity(commishTz)+', '+F.zoneLabel(ms,commishTz)+')',utc:F.fmtUtc(ms)};
   return{you:own,commish:commishTz?'Commissioner’s zone: '+F.tzCity(commishTz)+' ('+F.offsetLabel(ms,commishTz)+')':'',utc:F.fmtUtc(ms)}};
 F.tzCity=tz=>String(tz||'UTC').split('/').pop().replace(/_/g,' ');
 F.countdownText=function(ms){ms=Math.max(0,ms);const s=Math.floor(ms/1000);const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sec=s%60;
@@ -211,6 +218,20 @@ F.mReset=function(m){if(m.status==='complete')return{error:'The draft is complet
    4. Each owner may drop up to 2 of their teams first (dropping is optional). Dropped teams go back into the pool and are redrafted; an owner drafts one team for each team they dropped.
    Stored in meta.redraft; each owner's choices live under their own key (K.rd(mid)) so nobody overwrites anybody. */
 F.REDRAFT={asOf:'2027-01-20',asOfLabel:'January 20, 2027',maxDrops:2,worstFirst:false};
+/* s25-full shared helper (League may reuse): F.consumeUrlSecret(names[, win]) -> {name: value}
+   Reads each named secret (e.g. 'k', 'as', 'cm') from the URL fragment AND the query, removes them at once with history.replaceState
+   (every other param, e.g. ?l= and #tab=, is kept; nothing secret is left in the address bar or in history), and returns the values.
+   The caller validates them and saves the device identity only on success. A wrong secret is stripped too; sign-in later comes only from the stored device key. */
+F.consumeUrlSecret=function(names,win){win=win||(typeof window!=='undefined'?window:null);const one=typeof names==='string';names=Array.isArray(names)?names:[names];const out={};
+  /* one name (League's call shape, F.consumeUrlSecret('k')) returns that value as a string; a list returns {name:value} */
+  if(!win||!win.location)return one?'':out;const L=win.location;
+  const strip=(raw,lead)=>{const parts=String(raw||'').replace(lead,'').split('&').filter(Boolean);const keep=[];let hit=false;
+    for(const p of parts){const eq=p.indexOf('=');const k=decodeURIComponent(eq<0?p:p.slice(0,eq));if(names.indexOf(k)>=0){hit=true;if(eq>=0&&!out[k]){try{out[k]=decodeURIComponent(p.slice(eq+1).replace(/\+/g,' '))}catch(e){out[k]=p.slice(eq+1)}}}else keep.push(p)}
+    return{rest:keep.join('&'),hit}};
+  /* the fragment wins over the query; every other part (tab=board, a bare route name) is kept exactly as it was */
+  const h=strip(L.hash,/^#/),q=strip(L.search,/^\?/);
+  if(q.hit||h.hit){try{win.history.replaceState(win.history.state,'',L.pathname+(q.rest?'?'+q.rest:'')+(h.rest?'#'+h.rest:''))}catch(e){}}
+  return one?String(out[names[0]]||''):out};
 F.redraftLive=m=>!!(m&&m.redraft&&m.redraft.phase==='live');
 F.redraftSkip=function(meta,sl){const r=meta&&meta.redraft;return !!(r&&r.phase==='live'&&sl&&sl.round>(+r.need[sl.owner]||0))};
 const hexs=v=>typeof v==='string'&&/^[0-9a-f]{4,32}$/.test(v);
@@ -289,7 +310,7 @@ F.deadlineOf=function(meta,picks){const c=meta.settings.clockSecs;if(meta.status
   const lp=picks.slice().reverse().find(p=>!p.skip);const base=Math.max(lp?(+lp.ts||0):(+meta.startedAt||0),+meta.resumeAt||0);return base?base+c*1000:null};
 /* state: the shape the UI reads. prefs: {mid:{auto,queue}} */
 F.deriveState=function(meta,entries,prefs,pool){const r=meta.status==='lobby'?{picks:[],rejected:[]}:F.replay(meta,entries,pool);const s=meta.settings;const tot=F.totalPicks(meta.order,s.rounds);
-  const st={meta,order:meta.order.slice(),picks:r.picks,rejected:r.rejected,type:s.type,rounds:s.rounds,clockSecs:s.clockSecs,warn15:s.warn15,autoPick:s.autoPick,paused:meta.paused,pausedLeft:meta.pausedLeft,epoch:meta.epoch,total:tot,
+  const st={meta,order:meta.order.slice(),picks:r.picks,rejected:r.rejected,type:s.type,rounds:s.rounds,clockSecs:s.clockSecs,warn15:s.warn15,autoPick:true/* s25-full (k, Paul): every league auto-picks at clock-out, older autoPick:false leagues too; the stored setting is ignored, never rewritten */,paused:meta.paused,pausedLeft:meta.pausedLeft,epoch:meta.epoch,total:tot,
     away:{},auto:{},queues:{}};
   Object.keys(meta.over).forEach(k=>{if(meta.over[k].away)st.away[k]=true});
   Object.keys(prefs||{}).forEach(o=>{const p=prefs[o]||{};st.auto[o]=!!p.auto;st.queues[o]=Array.isArray(p.queue)?p.queue.map(String):[]});

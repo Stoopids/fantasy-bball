@@ -11,10 +11,13 @@ if(RL){document.getElementById('app').innerHTML='<div class="card mut" id="relau
     const R2=U.lastPlace();if(R2&&R2.id!==RL.id&&!U.isMockId(R2.id)){location.replace(R2.url);return}home()})();return}
 home();
 function home(){
-const ls=U.myLeagues();
-const mineOk=ls.filter(l=>l&&typeof l.id==='string'&&F.parseCode(l.id));const lead=mineOk[0];
+const all=U.myLeagues();const arch=U.archivedIds();const ls=all.filter(l=>l&&arch.indexOf(l.id)<0),ar=all.filter(l=>l&&arch.indexOf(l.id)>=0);
+const mineOk=ls.filter(l=>l&&typeof l.id==='string'&&F.parseCode(l.id));const lead=mineOk[0];   /* s25b: archived leagues never lead the League site button */
 const site=lead?`<a class="btn pri block" id="sitebtn" href="${esc(U.pageUrl('league.html',{l:F.parseCode(lead.id)}))}">League site · ${esc(lead.name||'League')}</a>`:'';
-const rows=ls.map(l=>`<a class="mrow" href="${esc(U.pageUrl('room.html',{l:l.id}))}" data-id="${esc(l.id)}"><div class="grow" style="min-width:0"><div class="nm">${esc(l.name||'League')}</div><div class="tm2">${esc(F.formatCode(l.id))} · ${esc(l.role||'manager')}</div></div><span class="btn sm">Open</span></a>`).join('');
+const row=(l,btn)=>`<div class="mrw" data-id="${esc(l.id)}"><a class="mrow" href="${esc(U.pageUrl('room.html',{l:l.id}))}" data-id="${esc(l.id)}"><div class="grow" style="min-width:0"><div class="nm">${esc(l.name||'League')}</div><div class="tm2">${esc(F.formatCode(l.id))} · ${esc(l.role||'manager')}</div></div><span class="btn sm">Open</span></a>${btn}</div>`;
+const rows=ls.map(l=>row(l,`<button type="button" class="btn sm arch" data-a="archive" data-id="${esc(l.id)}" aria-label="Archive ${esc(l.name||'League')} on this device">Archive</button>`)).join('');
+const arows=ar.map(l=>row(l,`<button type="button" class="btn sm arch" data-a="restore" data-id="${esc(l.id)}" aria-label="Restore ${esc(l.name||'League')}">Restore</button>`)).join('');
+const archBox=ar.length?`<details class="card" id="archived"><summary>Archived leagues (${ar.length})</summary><div class="small mut" style="margin:6px 0">Hidden on this device only. The leagues themselves are not changed.</div>${arows}</details>`:'';
 document.getElementById('top').innerHTML=U.header({});
 document.getElementById('app').innerHTML=`<div class="landing" id="landing"><div class="ball">🏀</div><h1>${esc(FBN_NAME)}</h1><p class="mut">Run a friends fantasy draft of NCAA basketball teams. Set up a league in a minute, invite your managers with a link, and draft live from your phones. One draft covers the full season and the tournament.</p>
 ${site}<a class="btn pri block" id="create" href="setup.html">Create a league</a><a class="btn block" id="trymock" href="mock.html">Try a mock draft</a><div class="small mut" id="trymocknote" style="margin:-4px 0 10px;text-align:center">Practice against 7 bots. No league needed.</div>
@@ -22,8 +25,8 @@ ${site}<a class="btn pri block" id="create" href="setup.html">Create a league</a
 ${ls.length?`<div class="card" id="mine"><h3>Your leagues on this device</h3>${rows}</div>`:''}
 <a class="btn block" id="helplink" href="help.html">How to run a league (help)</a>
 <div class="card small mut"><b>How it works.</b> No accounts. Your league lives behind a long private link; anyone who has the link can read it. The commissioner and manager links hold secrets that stop other players from acting as you, but this is a friendly lock for a friends league, not real security.</div>
-</div>`+U.buildTag();
+${archBox}</div>`+U.buildTag();
 document.getElementById('codeform').addEventListener('submit',e=>{e.preventDefault();const id=F.parseCode(document.getElementById('code').value);if(!id){document.getElementById('codeerr').textContent='That does not look like a league code. Paste the invite link or the full code.';return}location.href=U.pageUrl('join.html',{l:id})});
-U.bind({});U.registerSW();
+if(!window.__homeBound){window.__homeBound=1;U.bind({archive:el=>{U.setArchived(el.dataset.id,true);home();U.toast('Archived on this device')},restore:el=>{U.setArchived(el.dataset.id,false);home();const d=document.getElementById('archived');if(d)d.open=true;U.toast('Restored')}})}U.registerSW();
 }
 })();

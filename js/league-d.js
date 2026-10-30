@@ -1,3 +1,18 @@
+/* s25 League URL secrets ("remember this device"): a shared or copied link never signs anyone in; League never builds a URL with k=.
+   league.html loads core.js, scoring.js, then this file (league-d.js) before store.js / ui.js / any fetch, so the URL step runs first. as / k / cm in the query or the hash are taken out of the
+   address bar AT ONCE (history.replaceState, other params kept, wrong values stripped too) and kept in memory only; leaguehome.js
+   validates them once after the league loads and saves the device identity. league.html also sets <meta name="referrer" content="no-referrer">.
+   TEMPORARY SHIM: Draft Room's s25-full core.js ships F.consumeUrlSecret(name) with this behaviour; when present it is used and this shim does nothing. */
+(function(){if(typeof window==='undefined'||typeof location==='undefined')return;const F=window.FBN;if(!F)return;
+  if(typeof F.consumeUrlSecret!=='function'){
+    F.consumeUrlSecret=function(name){let v='';try{const u=new URL(location.href);const h=new URLSearchParams((u.hash||'').replace(/^#/,''));
+      const hasQ=u.searchParams.has(name),hasH=/=/.test(u.hash)&&h.has(name);if(!hasQ&&!hasH)return'';
+      v=(hasQ?u.searchParams.get(name):'')||(hasH?h.get(name):'')||'';if(hasQ)u.searchParams.delete(name);
+      if(hasH){const rest=(u.hash||'').replace(/^#/,'').split('&').filter(x=>x&&x.split('=')[0]!==name).join('&');u.hash=rest?'#'+rest:''}   /* keeps a bare route hash such as the tab name */
+      history.replaceState(history.state,'',u.pathname+(u.searchParams.toString()?'?'+u.searchParams.toString():'')+u.hash)}catch(e){}return String(v||'')};
+    F.consumeUrlSecret._leagueShim=true}
+  const as=F.consumeUrlSecret('as'),k=F.consumeUrlSecret('k'),cm=F.consumeUrlSecret('cm');
+  window.LURL={as:/^[0-9a-f]{8,32}$/i.test(as)?as.toLowerCase():'',k:F.extractSecret(k,'k'),cm:F.extractSecret(cm,'cm'),had:!!(as||k||cm)}})();
 /* League site data adapter (pure, no DOM; loads in the browser as FBNLeagueD and in Node via require()).
    Turns a finished draft (managers, rosters) plus the static score files (data/scores.json, data/tournament.json) into the one object `D`
    that the League site page (js/leaguehome.js) draws: owners with rank / points / schools, per-school records, games with owners,
@@ -29,7 +44,7 @@ A.build=function(a){
     const f=S.isFinal(g),w=f?S.winnerSide(g):null;
     const side=s=>({id:String(s.id),short:shortOf(String(s.id),s.short),score:num(s.score),win:!!(w&&w===s),seed:num(s.seed),owners:ownersOf(s.id)});
     const home=side(g.home),away=side(g.away);
-    const o={id:String(g.id),day:g.day||'',start:g.start||null,status:g.status||'scheduled',kind:g.kind||'reg',round:g.round||'',neutral:!!g.neutral,home,away};
+    const o={id:String(g.id),day:g.day||'',start:g.start||null,status:g.status||'scheduled',kind:g.kind||'reg',round:g.round||'',neutral:!!g.neutral,home,away};if(g.line&&typeof g.line==='object')o.line={fav:String(g.line.fav),sp:Number(g.line.sp),ou:Number(g.line.ou)};   /* s25: a posted line (when the data has one) for the Games card spread */
     o.h2h=!!(home.owners.length&&away.owners.length&&home.owners[0]!==away.owners[0]);
     o.civil=!!(home.owners.length&&away.owners.length&&home.owners[0]===away.owners[0]);
     if(f&&g.kind==='ncaa')o.upset={is:S.isUpset(g),scored:true};
@@ -64,3 +79,55 @@ A.build=function(a){
 };
 if(typeof module!=='undefined'&&module.exports)module.exports=A;else root.FBNLeagueD=A;
 })(typeof window!=='undefined'?window:globalThis);
+/* s25 LTIME: the ONE time helper of the League site. Every time and date shown is in the viewer's own device time zone (Intl.DateTimeFormat,
+   no fixed zone anywhere), times carry a short zone label (timeZoneName:'short', e.g. WIB, PST), and day grouping uses local calendar dates. */
+(function(){const g=typeof window!=='undefined'?window:(typeof globalThis!=='undefined'?globalThis:null);if(!g)return;
+  const mk=o=>{try{return new Intl.DateTimeFormat('en-US',o)}catch(e){return new Intl.DateTimeFormat('en-US')}};
+  const FZS=[...new Set([].concat((typeof navigator!=='undefined'&&navigator.languages)||[],'en-US'))].map(l=>{try{return new Intl.DateTimeFormat(l,{timeZoneName:'short'})}catch(e){return null}}).filter(Boolean),FT=mk({hour:'numeric',minute:'2-digit',hour12:true}),FK=new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit'}),
+    FD=mk({weekday:'short',month:'short',day:'numeric'}),FDY=mk({weekday:'short',month:'short',day:'numeric',year:'numeric'}),FMD=mk({month:'short',day:'numeric'}),FW=mk({weekday:'short'});
+  const D=x=>x instanceof Date?x:new Date(x),okD=d=>!isNaN(d.getTime());
+  const T={
+    zone(x){const d0=x==null?new Date():D(x),d=okD(d0)?d0:new Date();let first='';for(const f of FZS){try{const p=f.formatToParts(d).find(q=>q.type==='timeZoneName'),v=p?p.value:'';if(!first)first=v;if(v&&!/^(GMT|UTC)[+-]/.test(v))return v}catch(e){}}return first},   /* a named short zone (WIB, PST) when any device locale has one, else GMT+7 */
+    time(x){const d=D(x);return okD(d)?FT.format(d)+' '+T.zone(d):''},              /* 7:00 PM WIB */
+    stamp(x){const d=D(x);return okD(d)?FMD.format(d)+', '+FT.format(d)+' '+T.zone(d):''},   /* Nov 3, 7:00 PM WIB */
+    wdTime(x){const d=D(x);return okD(d)?FW.format(d)+' '+FT.format(d)+' '+T.zone(d):''},     /* Tue 7:00 PM WIB */
+    dayKey(x){const d=D(x);if(!okD(d))return'';const p={};FK.formatToParts(d).forEach(q=>p[q.type]=q.value);return p.year+'-'+p.month+'-'+p.day},   /* local YYYY-MM-DD */
+    dayNum(k){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(k||'');return m?Math.round(Date.UTC(+m[1],+m[2]-1,+m[3])/864e5):NaN},
+    daysSince(k0,x){return T.dayNum(T.dayKey(x))-T.dayNum(k0)},                     /* whole local days from key k0 to the local date of x */
+    dayDate(k){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(k||'');return m?FD.format(new Date(+m[1],+m[2]-1,+m[3],12)).replace(/,/g,''):(k||'')},   /* Fri Oct 30 */
+    dayLabel(k,now){const n=T.dayNum(k)-T.dayNum(T.dayKey(now==null?Date.now():now));const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(k||''),ds=m?FDY.format(new Date(+m[1],+m[2]-1,+m[3],12)):(k||'');   /* Mon, Mar 29, 2027 */
+    return n===0?'Today · '+ds:n===1?'Tomorrow · '+ds:n===-1?'Yesterday · '+ds:ds}};
+  g.LTIME=T})();
+/* s25 LRANK: the ONE rank helper of the League site. AP Top 25 from ESPN's public rankings API (read in the browser, CORS open, GET only, cached 6 h),
+   NET from the staged data/net.json (NCAA.com sends no CORS header; the file carries its own date). Real data only: a team with no rank renders nothing. */
+(function(){const g=typeof window!=='undefined'?window:null;if(!g)return;
+  const AP_URL='https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/rankings',CK='fbn.rank.ap.v1',TTL=6*3600e3;
+  const R={ap:{},apList:[],apDate:'',net:{},netList:[],netLabel:'',netThrough:'',ready:false,
+    badge(tid){const r=R.ap[String(tid)];return Number.isInteger(r)&&r>=1&&r<=25?'<span class="rkb" title="AP Top 25">#'+r+'</span>':''},
+    apOf:tid=>R.ap[String(tid)]||null,netOf:tid=>R.net[String(tid)]||null};
+  const setAP=j=>{try{const p=(j&&j.rankings||[]).find(x=>x&&x.type==='ap');if(!p||!Array.isArray(p.ranks))return false;const m={},l=[];
+      p.ranks.forEach(x=>{const r=Number(x.current),id=x&&x.team&&String(x.team.id);if(Number.isInteger(r)&&r>=1&&r<=25&&/^\d{1,8}$/.test(id||'')&&!(id in m)){m[id]=r;l.push({rank:r,id,school:String(x.team.location||x.team.nickname||'').slice(0,40)})}});
+      if(!l.length)return false;R.ap=m;R.apList=l.sort((a,b)=>a.rank-b.rank);R.apDate=/^\d{4}-\d{2}-\d{2}/.test(p.date||'')?p.date.slice(0,10):'';return true}catch(e){return false}};
+  const setNET=j=>{try{if(!j||!Array.isArray(j.ranks))return;const m={},l=[];j.ranks.forEach(x=>{const r=Number(x.rank),id=String(x.id||'');if(Number.isInteger(r)&&r>=1&&r<=400&&/^\d{1,8}$/.test(id)&&!(id in m)){m[id]=r;l.push({rank:r,id,school:String(x.school||'').slice(0,40)})}});
+      R.net=m;R.netList=l.sort((a,b)=>a.rank-b.rank);R.netLabel=String(j.label||'NET').slice(0,80);R.netThrough=/^\d{4}-\d{2}-\d{2}$/.test(j.through||'')?j.through:''}catch(e){}};
+  const get=async(u,o)=>{const c=typeof AbortController!=='undefined'?new AbortController():null,t=c?setTimeout(()=>c.abort(),10000):null;try{const r=await fetch(u,Object.assign({signal:c?c.signal:undefined},o||{}));if(!r.ok)throw new Error('http');return await r.json()}finally{if(t)clearTimeout(t)}};
+  const slim=j=>({rankings:(j.rankings||[]).filter(x=>x&&x.type==='ap').map(x=>({type:'ap',date:x.date,ranks:(x.ranks||[]).map(y=>({current:y.current,team:{id:y.team&&y.team.id,location:y.team&&y.team.location}}))}))});
+  R.load=async function(){let ch=false;
+    try{const c=JSON.parse(localStorage.getItem(CK)||'null');if(c&&Date.now()-c.at<TTL&&setAP(c.j))ch=true;
+      else{const j=await get(AP_URL,{credentials:'omit',cache:'no-store'});if(setAP(j)){ch=true;try{localStorage.setItem(CK,JSON.stringify({at:Date.now(),j:slim(j)}))}catch(e){}}}}catch(e){}
+    try{setNET(await get('data/net.json',{cache:'no-cache'}));ch=true}catch(e){}R.ready=true;return ch};
+  g.LRANK=R})();
+/* s25 LTABS: which League tabs show on a given day (pure; local device dates; 'now' is injectable for tests).
+   Redraft: from 2027-01-06 until the redraft is complete (league state); a league with no redraft state at all hides it after 2027-01-20 (end of that local day).
+   Postseason: from 2027-03-01 through the NCAA championship game day + 1 when the data has that game, else through 2027-04-06. */
+(function(){const g=typeof window!=='undefined'?window:(typeof globalThis!=='undefined'?globalThis:null);if(!g)return;
+  const W={REDRAFT_FROM:'2027-01-06',REDRAFT_LAST:'2027-01-20',POST_FROM:'2027-03-01',POST_LAST:'2027-04-06'};
+  const plus1=k=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(k||'');if(!m)return null;const d=new Date(Date.UTC(+m[1],+m[2]-1,+m[3]+1));return d.toISOString().slice(0,10)};
+  W.visible=function(t,now,ctx){ctx=ctx||{};const k=g.LTIME.dayKey(now==null?Date.now():now);
+    if(t==='redraft'){if(k<W.REDRAFT_FROM)return false;const s=ctx.redraft||'none';if(s==='done')return false;if(s==='none')return k<=W.REDRAFT_LAST;return true}
+    if(t==='postseason'){const last=plus1(ctx.champDay)||W.POST_LAST;return k>=W.POST_FROM&&k<=last}
+    return true};
+  W.list=(tabs,now,ctx)=>tabs.filter(t=>W.visible(Array.isArray(t)?t[0]:t,now,ctx));
+  /* Practice the Redraft button: Jan 6-20, 2027 by the viewer's local day, and hidden once the real Redraft is live (meta.redraft.phase==='live') */
+  W.pracOpen=function(now,meta){const k=g.LTIME.dayKey(now);const r=meta&&meta.redraft;if(r&&r.phase==='live')return false;return k>=W.REDRAFT_FROM&&k<=W.REDRAFT_LAST};
+  g.LTABS=W})();

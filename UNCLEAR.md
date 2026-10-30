@@ -1,0 +1,18 @@
+# DR2 s25-full — unclear points / code vs plan (v2, rebased on /workspace/fantasy-bball as of 2026-10-30, room.js dated 02:55 WIB)
+
+1. **Rebase target is older than the first snapshot.** The current /workspace/fantasy-bball room.js has no Rules buttons, no `showRules`, no `links-card.js`, and no `.pbtns`/`.lrow` markup, all of which the s25 snapshot had. DR2 v2 therefore adds the buttons itself: `js/rules.js` injects `#rulesbtn_lobby` into `#lobbycard` and `#rulesbtn_hdr` into the header row while live, and handles their clicks. room.js gets ONE hook line exposing a read-only meta view (`window.DR2_meta`: name, mock, status, settings; no secrets). If Draft Room brings back its own Rules buttons or `showRules`, keep one of the two.
+2. **links-card.js does not exist in this tree.** The lobby Links card is `linksBlock()` in room.js. Compaction is CSS only, so markup and escaping are unchanged.
+3. **Profile labels.** This tree has the full labels ("Edit profile & photo / Switch who I am / Copy my private link"). They fit on one row from 360 px up (11 px text below 480 px). Below 360 px they stack evenly at full width, so the 320 px profile card is 297 → 232 px, not half.
+4. **Manager count.** Rules now uses `settings.managers` (falling back to 8), and total picks = managers × rounds (10-manager mock league: 10 / 60, tested). The plan says "exactly 8 managers"; legacy leagues show their real count.
+5. **Auto-start time.** It now shows "Month Day, Year at h:mm AM/PM your time (UTC±N)", using the viewer's zone and `F.offsetLabel`. The commissioner's zone (`settings.tz`, which `F.startsLine` uses) is not shown.
+6. **Auto-pick OFF (legacy `settings.autoPick=false`).** Rules always says "when the clock runs out we always pick for you". For those leagues that is not true: the slot waits. This is untested in the UI because every test league has autoPick=true.
+7. **Header button only while live.** No Rules button after the draft is complete.
+8. **Queue control is labeled Q+**, not Q.
+9. **Wheel vs random order.** `orderMode` is only 'manual' or 'random'. The spin-once line is shown for every league.
+10. **"Instantly".** Bots wait 1–2 s, and there is a stuck-slot hold and a grace period.
+11. **Best power-ranked.** If no team in the pool has a rank, `F.autoChoice` falls back to another rule. The Rules page does not mention this.
+12. **sw.js / MD5SUMS not touched.** `test_core` "service worker shell lists every local script…" fails (119/120) until Draft Room adds `js/rules.js` and `css/rules-lobby.css` to sw.js at merge.
+13. **BUG 2 fix scope.** `min-height:44px` applies to buttons in #lobbycard, #mgrs, #orderlist, #controls, #unlockedcard, #lockcard, #mgrcard, #invitecard, #yourlinkscard, plus data-a settings/yourlinks/lock/mgr/om/randomize/spin*/start/copyrem/invite and #startbtn.
+
+14. **fix3: profile labels at 320 px.** The 3 buttons now stay as 3 equal columns on one row at 320 px (10 px text, 44 px tall). With the FULL labels ("Edit profile & photo", "Copy my private link"; the older tree in /workspace/dr2-s25) they do not fit three across even at 10 px, so they ellipsize ("Edit profile & p…", "Copy my privat…"). The full text stays in the button. The s25-full-wip short labels ("Edit profile / Switch user / Copy my link") fit without an ellipsis. Shorter labels are the real fix if the full ones come back.
+15. **fix3: desktop tap targets.** Above 700 px, every `.btn` / `button` in the room view, header, banner and alert bar gets min-height 44 px (app.css only did this for coarse pointers or ≤700 px). This covers "Make the auto-pick now" (#catchup) and the Chat / Pick feed toggles (41.2 px in the older tree).

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 140" role="img" aria-label="Basketball banner">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1b2030"/><stop offset="1" stop-color="#2a1d10"/></linearGradient>
+<radialGradient id="ball" cx=".38" cy=".35" r=".7"><stop offset="0" stop-color="#ffa24a"/><stop offset="1" stop-color="#d4620f"/></radialGradient></defs>
+<rect width="640" height="140" rx="16" fill="url(#bg)"/>
+<g fill="none" stroke="#f5c542" stroke-opacity=".22" stroke-width="3">
+<line x1="320" y1="0" x2="320" y2="140"/><circle cx="320" cy="70" r="42"/>
+<path d="M0 20 H120 A50 50 0 0 1 120 120 H0"/><path d="M640 20 H520 A50 50 0 0 0 520 120 H640"/></g>
+<g transform="translate(520 70)"><circle r="46" fill="url(#ball)" stroke="#3a1a05" stroke-width="3"/>
+<g fill="none" stroke="#3a1a05" stroke-width="3"><line x1="-46" y1="0" x2="46" y2="0"/><line x1="0" y1="-46" x2="0" y2="46"/>
+<path d="M-32 -33 C-14 -14 -14 14 -32 33"/><path d="M32 -33 C14 -14 14 14 32 33"/></g></g>
+<text x="40" y="66" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="30" font-weight="900" fill="#fff">Start your league</text>
+<text x="40" y="96" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="16" font-weight="700" fill="#f5c542">8 managers · snake draft · full season</text>
+</svg>

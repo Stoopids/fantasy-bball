@@ -1,0 +1,34 @@
+/* DR2 s25-full: Rules page + lobby compaction + 44px tap targets (loaded after app.css; CSS only, markup untouched) */
+.rulesbtn{min-height:44px;min-width:44px;padding:0 10px;font-size:13px}
+#lobbycard{position:relative}#lobbycard .rulesbtn{position:absolute;top:8px;right:8px;margin:0}#lobbycard h2{padding-right:96px}
+.toprow .rulesbtn{margin-left:auto}
+.sheetbg.r2bg{align-items:stretch}.sheetbg.r2bg .sheet{max-width:760px;border-radius:0;max-height:100vh;max-height:100dvh;height:100%}
+.r2page .r2head{display:flex;justify-content:space-between;align-items:center;gap:8px;position:sticky;top:-16px;background:var(--card);padding:8px 0;z-index:2}
+.r2page .r2head small{display:block;color:var(--mut)}.r2page .r2head .btn{min-height:44px}
+.r2page h3{font-size:16px;margin:12px 0 4px}.r2page .r2n{color:var(--acc)}.r2page p{margin:4px 0;font-size:15px;line-height:1.45}
+/* profile card: 3 equal buttons on one row, note right under them */
+#youcard{padding:8px 10px}#youcard .row.nw{gap:8px}#youcard .row.nw .av{width:36px!important;height:36px!important;font-size:16px!important}
+#youcard h3{font-size:15px;line-height:1.2}#youcard .row.nw .small{font-size:12px;line-height:1.2}
+#youcard>.row:not(.nw){display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px!important}
+#youcard>.row:not(.nw)>.btn{min-height:44px;margin:0;white-space:nowrap;display:flex;align-items:center;justify-content:center;padding:0 6px;font-size:12.5px;box-sizing:border-box}
+#youcard>.small{margin-top:3px!important;font-size:11px;line-height:1.3}
+/* the full labels do not fit three across on a phone: stack them evenly at full width */
+@media(max-width:479px){#youcard>.row:not(.nw){gap:4px}#youcard>.row:not(.nw)>.btn{font-size:10.5px;padding:0 2px;letter-spacing:-.2px}#youcard{padding:8px}}
+/* fix3 (QA bug 3): below 360px keep the 3 buttons as 3 equal columns on ONE row; smaller text, labels ellipsize if they still do not fit; 44px tall */
+@media(max-width:359px){#youcard>.row:not(.nw),#youcard .pbtns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}
+ #youcard>.row:not(.nw)>.btn,#youcard .pbtns>.btn{min-height:44px;min-width:0;font-size:10px;padding:0 2px;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;line-height:42px;box-sizing:border-box}}
+/* links card: URL field + Copy + Share on ONE row; the label sits inside the field */
+#linkscard{padding:8px 10px}#linkscard h3{display:inline;margin:0 8px 0 0}#linkscard h3+.small{display:inline}
+#linkscard>div[style]:not(.row){display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:4px;margin-top:6px!important}
+#linkscard>div[style]:not(.row)>.small{grid-area:1/1;align-self:start;position:relative;z-index:1;padding:2px 0 0 7px;font-size:10px;line-height:13px;pointer-events:none}
+#linkscard>div[style]:not(.row)>.urlbox{grid-area:1/1;min-width:0;margin:0;min-height:44px;box-sizing:border-box;display:flex;align-items:flex-end;padding:0 6px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;word-break:normal;font-size:11.5px}
+#linkscard>div[style]:not(.row)>.row{grid-area:1/2;display:flex;flex-wrap:nowrap;gap:4px;margin:0}
+#linkscard>div[style]:not(.row)>.row>.btn{min-height:44px;min-width:44px;padding:0 8px;margin:0}
+#linkscard>.row:last-child{display:flex;flex-wrap:nowrap;gap:4px;margin-top:6px!important}
+#linkscard>.row:last-child>.btn{flex:1 1 0;min-width:0;min-height:44px;margin:0;white-space:nowrap;padding:0 4px;font-size:11px}
+/* QA BUG 2 (predates DR2): commissioner lobby / More controls at 1280 were 30.8 / 43.8 px */
+#lobbycard .btn,#mgrs .btn,#orderlist .btn,#controls .btn,#unlockedcard .btn,#yourlinkscard .btn,#mgrcard .btn,#lockcard .btn,
+.btn[data-a="settings"],.btn[data-a="yourlinks"],.btn[data-a="lock"],.btn[data-a="mgr"],.btn[data-a="om"],.btn[data-a="randomize"],.btn[data-a^="spin"],.btn[data-a="start"],#startbtn,#invitecard .btn,.btn[data-a="copyrem"],.btn[data-a="invite"]{min-height:44px;box-sizing:border-box}
+/* fix3 (QA bug 4, predates DR2): app.css gives .btn 44px only under (pointer:coarse),(max-width:700px); on desktop live-room buttons such as
+   'Make the auto-pick now' (#catchup, .btn.sm) were 30.8px. Every room button (view, header, notes) gets a 44px tap target above 700px too. */
+@media(min-width:701px){body.room #view .btn,body.room #view button:not(.sr),body.room #top .btn,body.room #banner .btn,body.room #alertbar .btn,#catchup{min-height:44px;box-sizing:border-box}}

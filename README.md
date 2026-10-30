@@ -236,3 +236,10 @@ Cause: the installed app always launches at the manifest `start_url` (`./index.h
 - Recap power rankings use the same ball loader (CSS in css/power.css). Mock leagues never write or follow `fbn.lastsite` / the last-tab memory (draft room HOOK.md hook 1).
 - Refresh / home-screen app: the League site remembers the last tab per league on this device (no identity stored), so a reload without a hash and a home-screen app launch (manifest start_url is index.html) reopen it; index.js sends a fresh standalone launch to the last League site tab (used in the last 14 days). Test: `node tests/e2e_refresh_s24.js`.
 - Bets filters: one row (Person, Status, "search terms..."), combined, remembered per league on the device and kept in the URL (`#bets/f=me-waiting`, `/q=<terms>`); a deep link to a hidden bet clears them. Test: `node tests/e2e_betfilter_s24.js`.
+
+## s25 (build 2026-10-30s25)
+- Setup (setup.html): an original basketball banner, a centered card, Cancel/Next right under the form, and a "What you get" list on step 1. Step 1 also has an optional league photo (made on your device into a small JPEG under 40 KB and saved as settings.photo).
+- Saving links: Share, Copy all, Download file and Email. You can't continue until you have used one of them. The commissioner can reopen them from "Your links" on the draft room's More tab (js/links-card.js).
+- Labels: "Send invite link" and "Copy draft reminder". A "How your queue works" note sits under Auto-pick for me.
+- Recap: light one-liners on steals and reaches, a compact end card, and a tab bar that wraps instead of scrolling sideways.
+- League s25 work is merged; see CHANGE-NOTES-s25.md.

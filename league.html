@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<meta name="referrer" content="no-referrer">
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://a.espncdn.com; connect-src 'self' https://textdb.dev https://site.api.espn.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -14,7 +15,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="format-detection" content="telephone=no">
 <link rel="stylesheet" href="css/league-app.css">
-<title>League site · Fantasy BBALL NCAA Full Season and NCAA Tournament</title>
+<style>/* s25 LINKS-HOOK: the sheet + .lcbtns rules from css/app.css (that sheet is not loaded on this page) */.sheetbg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:40;display:flex;align-items:flex-end;justify-content:center}.sheet{background:var(--card);border-top:3px solid var(--acc);border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));width:100%;max-width:520px;max-height:90vh;max-height:90dvh;overflow:auto;box-sizing:border-box}.sheet h2{margin:0 0 8px;font-size:20px}.sheet .btn.block{display:block;width:100%;margin-top:12px;min-height:44px}#lcard .hint{color:var(--mut);font-size:13px;margin:6px 0 0}.lcbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}.lcbtns .btn{width:100%;text-align:center;padding:12px;min-height:44px;box-sizing:border-box}@media(min-width:700px){.lcbtns{grid-template-columns:repeat(4,1fr)}}</style>
+<title>League site · NCAA Fantasy Basketball · Season + Tournament</title>
 </head>
 <body class="lsite">
 <div id="top"></div>
@@ -22,12 +24,14 @@
 <script src="js/version.js"></script>
 <script src="js/qr.min.js"></script>
 <script src="js/core.js"></script>
+<script src="js/scoring.js"></script>
+<script src="js/league-d.js"></script>
 <script src="js/store.js"></script>
 <script src="assets/teams.js"></script>
 <script src="js/ui.js"></script>
-<script src="js/scoring.js"></script>
+<script src="js/links-card.js"></script>
 <script src="js/league.js"></script>
-<script src="js/league-d.js"></script>
+<script src="js/shared-s25.js"></script>
 <script src="js/league-bets.js"></script>
 <script src="js/league-sched.js"></script>
 <script src="js/leaguehome.js"></script>
