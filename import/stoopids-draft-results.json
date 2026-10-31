@@ -1,0 +1,655 @@
+{
+ "contract": "v1",
+ "season": "2026-27",
+ "league": "STOOPIDS",
+ "build": "2026-10-31s26c2",
+ "draft": {
+  "type": "snake",
+  "rounds": 8,
+  "managers": 8
+ },
+ "source": {
+  "file": "picks-2026-27-final.json",
+  "md5": "6ca1fda6de3b1a917e173b91f683dbe1",
+  "teams_built": "2026-10-28",
+  "notes": "Wisconsin (275) on Jake confirmed by Stoopids Site on October 31, 2026; the input had no slot for it, so it sits at overall 63 (round 8, pick 7), the only open slot. Graded like any other pick."
+ },
+ "order": [
+  {
+   "manager": "Mark",
+   "mid": "mark",
+   "slot": 1,
+   "owner_name": "Dirty Draymond",
+   "team_name": "Dirty Draymond"
+  },
+  {
+   "manager": "Jake",
+   "mid": "jake",
+   "slot": 2,
+   "owner_name": "Stock",
+   "team_name": "Stock Rising"
+  },
+  {
+   "manager": "Kurt",
+   "mid": "kurt",
+   "slot": 3,
+   "owner_name": "Kurmoji",
+   "team_name": "Kurmoji"
+  },
+  {
+   "manager": "Ken",
+   "mid": "ken",
+   "slot": 4,
+   "owner_name": "Kentut",
+   "team_name": "Kentut"
+  },
+  {
+   "manager": "Murf",
+   "mid": "Murf",
+   "slot": 5,
+   "owner_name": "Murf",
+   "team_name": "Murfcockchalkrock"
+  },
+  {
+   "manager": "Paul",
+   "mid": "paul",
+   "slot": 6,
+   "owner_name": "Paul",
+   "team_name": "Party Paul"
+  },
+  {
+   "manager": "Jim",
+   "mid": "jim",
+   "slot": 7,
+   "owner_name": "Nasty",
+   "team_name": "Nasty Peacock"
+  },
+  {
+   "manager": "Scotty",
+   "mid": "scott",
+   "slot": 8,
+   "owner_name": "En Fuego",
+   "team_name": "En Fuego"
+  }
+ ],
+ "picks": [
+  {
+   "overall": 1,
+   "round": 1,
+   "pick": 1,
+   "manager": "Mark",
+   "teamId": "57",
+   "team": "Florida"
+  },
+  {
+   "overall": 2,
+   "round": 1,
+   "pick": 2,
+   "manager": "Jake",
+   "teamId": "150",
+   "team": "Duke"
+  },
+  {
+   "overall": 3,
+   "round": 1,
+   "pick": 3,
+   "manager": "Kurt",
+   "teamId": "258",
+   "team": "Virginia"
+  },
+  {
+   "overall": 4,
+   "round": 1,
+   "pick": 4,
+   "manager": "Ken",
+   "teamId": "356",
+   "team": "Illinois"
+  },
+  {
+   "overall": 5,
+   "round": 1,
+   "pick": 5,
+   "manager": "Murf",
+   "teamId": "248",
+   "team": "Houston"
+  },
+  {
+   "overall": 6,
+   "round": 1,
+   "pick": 6,
+   "manager": "Paul",
+   "teamId": "41",
+   "team": "UConn"
+  },
+  {
+   "overall": 7,
+   "round": 1,
+   "pick": 7,
+   "manager": "Jim",
+   "teamId": "12",
+   "team": "Arizona"
+  },
+  {
+   "overall": 8,
+   "round": 1,
+   "pick": 8,
+   "manager": "Scotty",
+   "teamId": "2305",
+   "team": "Kansas"
+  },
+  {
+   "overall": 9,
+   "round": 2,
+   "pick": 1,
+   "manager": "Scotty",
+   "teamId": "2250",
+   "team": "Gonzaga"
+  },
+  {
+   "overall": 10,
+   "round": 2,
+   "pick": 2,
+   "manager": "Jim",
+   "teamId": "127",
+   "team": "Michigan St"
+  },
+  {
+   "overall": 11,
+   "round": 2,
+   "pick": 3,
+   "manager": "Paul",
+   "teamId": "66",
+   "team": "Iowa State"
+  },
+  {
+   "overall": 12,
+   "round": 2,
+   "pick": 4,
+   "manager": "Murf",
+   "teamId": "130",
+   "team": "Michigan"
+  },
+  {
+   "overall": 13,
+   "round": 2,
+   "pick": 5,
+   "manager": "Ken",
+   "teamId": "2272",
+   "team": "High Point"
+  },
+  {
+   "overall": 14,
+   "round": 2,
+   "pick": 6,
+   "manager": "Kurt",
+   "teamId": "97",
+   "team": "Louisville"
+  },
+  {
+   "overall": 15,
+   "round": 2,
+   "pick": 7,
+   "manager": "Jake",
+   "teamId": "2599",
+   "team": "St John's"
+  },
+  {
+   "overall": 16,
+   "round": 2,
+   "pick": 8,
+   "manager": "Mark",
+   "teamId": "2641",
+   "team": "Texas Tech"
+  },
+  {
+   "overall": 17,
+   "round": 3,
+   "pick": 1,
+   "manager": "Mark",
+   "teamId": "333",
+   "team": "Alabama"
+  },
+  {
+   "overall": 18,
+   "round": 3,
+   "pick": 2,
+   "manager": "Jake",
+   "teamId": "251",
+   "team": "Texas"
+  },
+  {
+   "overall": 19,
+   "round": 3,
+   "pick": 3,
+   "manager": "Kurt",
+   "teamId": "2633",
+   "team": "Tennessee"
+  },
+  {
+   "overall": 20,
+   "round": 3,
+   "pick": 4,
+   "manager": "Ken",
+   "teamId": "8",
+   "team": "Arkansas"
+  },
+  {
+   "overall": 21,
+   "round": 3,
+   "pick": 5,
+   "manager": "Murf",
+   "teamId": "21",
+   "team": "San Diego St"
+  },
+  {
+   "overall": 22,
+   "round": 3,
+   "pick": 6,
+   "manager": "Paul",
+   "teamId": "158",
+   "team": "Nebraska"
+  },
+  {
+   "overall": 23,
+   "round": 3,
+   "pick": 7,
+   "manager": "Jim",
+   "teamId": "238",
+   "team": "Vanderbilt"
+  },
+  {
+   "overall": 24,
+   "round": 3,
+   "pick": 8,
+   "manager": "Scotty",
+   "teamId": "2509",
+   "team": "Purdue"
+  },
+  {
+   "overall": 25,
+   "round": 4,
+   "pick": 1,
+   "manager": "Scotty",
+   "teamId": "2390",
+   "team": "Miami"
+  },
+  {
+   "overall": 26,
+   "round": 4,
+   "pick": 2,
+   "manager": "Jim",
+   "teamId": "96",
+   "team": "Kentucky"
+  },
+  {
+   "overall": 27,
+   "round": 4,
+   "pick": 3,
+   "manager": "Paul",
+   "teamId": "2377",
+   "team": "McNeese"
+  },
+  {
+   "overall": 28,
+   "round": 4,
+   "pick": 4,
+   "manager": "Murf",
+   "teamId": "2253",
+   "team": "Grand Canyon"
+  },
+  {
+   "overall": 29,
+   "round": 4,
+   "pick": 5,
+   "manager": "Ken",
+   "teamId": "350",
+   "team": "UNC Wilmington"
+  },
+  {
+   "overall": 30,
+   "round": 4,
+   "pick": 6,
+   "manager": "Kurt",
+   "teamId": "252",
+   "team": "BYU"
+  },
+  {
+   "overall": 31,
+   "round": 4,
+   "pick": 7,
+   "manager": "Jake",
+   "teamId": "2608",
+   "team": "Saint Mary's"
+  },
+  {
+   "overall": 32,
+   "round": 4,
+   "pick": 8,
+   "manager": "Mark",
+   "teamId": "328",
+   "team": "Utah State"
+  },
+  {
+   "overall": 33,
+   "round": 5,
+   "pick": 1,
+   "manager": "Mark",
+   "teamId": "300",
+   "team": "UC Irvine"
+  },
+  {
+   "overall": 34,
+   "round": 5,
+   "pick": 2,
+   "manager": "Jake",
+   "teamId": "26",
+   "team": "UCLA"
+  },
+  {
+   "overall": 35,
+   "round": 5,
+   "pick": 3,
+   "manager": "Kurt",
+   "teamId": "30",
+   "team": "USC"
+  },
+  {
+   "overall": 36,
+   "round": 5,
+   "pick": 4,
+   "manager": "Ken",
+   "teamId": "2670",
+   "team": "VCU"
+  },
+  {
+   "overall": 37,
+   "round": 5,
+   "pick": 5,
+   "manager": "Murf",
+   "teamId": "235",
+   "team": "Memphis"
+  },
+  {
+   "overall": 38,
+   "round": 5,
+   "pick": 6,
+   "manager": "Paul",
+   "teamId": "139",
+   "team": "Saint Louis"
+  },
+  {
+   "overall": 39,
+   "round": 5,
+   "pick": 7,
+   "manager": "Jim",
+   "teamId": "167",
+   "team": "New Mexico"
+  },
+  {
+   "overall": 40,
+   "round": 5,
+   "pick": 8,
+   "manager": "Scotty",
+   "teamId": "68",
+   "team": "Boise St"
+  },
+  {
+   "overall": 41,
+   "round": 6,
+   "pick": 1,
+   "manager": "Scotty",
+   "teamId": "194",
+   "team": "Ohio State"
+  },
+  {
+   "overall": 42,
+   "round": 6,
+   "pick": 2,
+   "manager": "Jim",
+   "teamId": "245",
+   "team": "Texas A&M"
+  },
+  {
+   "overall": 43,
+   "round": 6,
+   "pick": 3,
+   "manager": "Paul",
+   "teamId": "2724",
+   "team": "Wichita St"
+  },
+  {
+   "overall": 44,
+   "round": 6,
+   "pick": 4,
+   "manager": "Murf",
+   "teamId": "2181",
+   "team": "Drake"
+  },
+  {
+   "overall": 45,
+   "round": 6,
+   "pick": 5,
+   "manager": "Ken",
+   "teamId": "61",
+   "team": "Georgia"
+  },
+  {
+   "overall": 46,
+   "round": 6,
+   "pick": 6,
+   "manager": "Kurt",
+   "teamId": "142",
+   "team": "Missouri"
+  },
+  {
+   "overall": 47,
+   "round": 6,
+   "pick": 7,
+   "manager": "Jake",
+   "teamId": "2",
+   "team": "Auburn"
+  },
+  {
+   "overall": 48,
+   "round": 6,
+   "pick": 8,
+   "manager": "Mark",
+   "teamId": "2006",
+   "team": "Akron"
+  },
+  {
+   "overall": 49,
+   "round": 7,
+   "pick": 1,
+   "manager": "Mark",
+   "teamId": "2132",
+   "team": "Cincinnati"
+  },
+  {
+   "overall": 50,
+   "round": 7,
+   "pick": 2,
+   "manager": "Jake",
+   "teamId": "2634",
+   "team": "Tennessee St"
+  },
+  {
+   "overall": 51,
+   "round": 7,
+   "pick": 3,
+   "manager": "Kurt",
+   "teamId": "2440",
+   "team": "Nevada"
+  },
+  {
+   "overall": 52,
+   "round": 7,
+   "pick": 4,
+   "manager": "Ken",
+   "teamId": "261",
+   "team": "Vermont"
+  },
+  {
+   "overall": 53,
+   "round": 7,
+   "pick": 5,
+   "manager": "Murf",
+   "teamId": "2750",
+   "team": "Wright St"
+  },
+  {
+   "overall": 54,
+   "round": 7,
+   "pick": 6,
+   "manager": "Paul",
+   "teamId": "222",
+   "team": "Villanova"
+  },
+  {
+   "overall": 55,
+   "round": 7,
+   "pick": 7,
+   "manager": "Jim",
+   "teamId": "153",
+   "team": "North Carolina"
+  },
+  {
+   "overall": 56,
+   "round": 7,
+   "pick": 8,
+   "manager": "Scotty",
+   "teamId": "2142",
+   "team": "Colgate"
+  },
+  {
+   "overall": 57,
+   "round": 8,
+   "pick": 1,
+   "manager": "Scotty",
+   "teamId": "163",
+   "team": "Princeton"
+  },
+  {
+   "overall": 58,
+   "round": 8,
+   "pick": 2,
+   "manager": "Jim",
+   "teamId": "84",
+   "team": "Indiana"
+  },
+  {
+   "overall": 59,
+   "round": 8,
+   "pick": 3,
+   "manager": "Paul",
+   "teamId": "47",
+   "team": "Howard"
+  },
+  {
+   "overall": 60,
+   "round": 8,
+   "pick": 4,
+   "manager": "Murf",
+   "teamId": "2755",
+   "team": "Grambling"
+  },
+  {
+   "overall": 61,
+   "round": 8,
+   "pick": 5,
+   "manager": "Ken",
+   "teamId": "152",
+   "team": "NC State"
+  },
+  {
+   "overall": 62,
+   "round": 8,
+   "pick": 6,
+   "manager": "Kurt",
+   "teamId": "2294",
+   "team": "Iowa"
+  },
+  {
+   "overall": 63,
+   "round": 8,
+   "pick": 7,
+   "manager": "Jake",
+   "teamId": "275",
+   "team": "Wisconsin"
+  },
+  {
+   "overall": 64,
+   "round": 8,
+   "pick": 8,
+   "manager": "Mark",
+   "teamId": "202",
+   "team": "Tulsa"
+  }
+ ],
+ "grades": {
+  "Jim": {
+   "grade": "A+",
+   "rank": 1,
+   "strength": 65.9,
+   "avgPowerRank": 31.3,
+   "summary4": "Nasty Peacock tops the board with an A+, and Jim gets to strut a little. Arizona (power rank #6) and Michigan St (#11) came back-to-back at picks 7 and 10, a one-two punch nobody else matched. Three SEC schools (Vanderbilt, Kentucky, Texas A&M) give the middle real muscle. Indiana at pick 58 was a sneaky-good closer to cap it all off.",
+   "deep": "Nasty Peacock finishes 1st of 8 with an A+. Its strength score is 65.9 out of 100, the best in the league. The league average is 54.5, so Nasty Peacock sits 11.4 points above it. Arizona (power rank #6, Big 12) is the anchor and projects as a 2 seed. Michigan St (#11) at pick 10 gave Jim two top-11 schools before most rosters had one. Vanderbilt at pick 23 with a power rank of #19 kept the early run going. Kentucky at pick 26 (rank #35) came a touch early, but a projected 7 seed is a fine round-4 piece. The roster spans 5 conferences, led by the SEC with 3 schools. North Carolina at #58 is the lowest-ranked school and the one to keep an eye on. Every school on this roster has a power rank, so there are no blank spots at all."
+  },
+  "Paul": {
+   "grade": "A",
+   "rank": 2,
+   "strength": 64.6,
+   "avgPowerRank": 22.3,
+   "summary4": "Party Paul lands a sharp A, 2nd of 8 and just 1.3 points behind the top spot. UConn (power rank #4) leads, with Iowa State (#13) and Nebraska (#16) right behind. All 8 schools are ranked, spread across 7 different conferences. Howard at pick 59 with a power rank of #28 might be the late-round grab of the whole draft.",
+   "deep": "Party Paul finishes 2nd of 8 with an A. Its strength score is 64.6 out of 100, 10.1 points above the league average of 54.5. UConn (power rank #4, Big East) is the anchor and projects as a 2 to 3 seed. Iowa State (#13) at pick 11 and Nebraska (#16) at pick 22 make a sturdy second and third. McNeese at pick 27 with a power rank of #20 was another nice value. Howard at pick 59 came 31 spots after its power rank of #28, the biggest value on this roster. Wichita St (#27) at pick 43 was a quiet win too. The Big East has 2 schools, and no other conference has more than 1. Villanova at #39 is the lowest-ranked school, and that is a pretty high floor. Every school here has a power rank, so Party Paul is built to stay in the race all season."
+  },
+  "Jake": {
+   "grade": "A-",
+   "rank": 3,
+   "strength": 57.5,
+   "avgPowerRank": 41,
+   "summary4": "Stock Rising grabs an A- and 3rd place, powered by the top-ranked school in the field, Duke. St John's, Texas and Saint Mary's give Jake a solid ranked core behind the Blue Devils. Wisconsin in round 8 gives Jake a second Big Ten school. Tennessee St at pick 50 was a bold call, and bold calls make March fun.",
+   "deep": "Stock Rising finishes 3rd of 8 with an A-. Its strength score is 57.5 out of 100, 3 points above the league average of 54.5. Duke is the anchor, power rank #1 and a projected 1 seed. St John's (#17) at pick 15 and Texas (#15) at pick 18 came right around their rankings. Saint Mary's at pick 31 with a power rank of #23 was the best value on the roster. UCLA (#42) at pick 34 is a projected 8 seed. Auburn (#74) at pick 47 and Wisconsin (#77) at pick 63 add two more power-conference schools. Tennessee St at pick 50 (rank #79) was the earliest call relative to its rank. The roster spans 6 conferences, with the SEC and Big Ten tied at 2 each. Every school is ranked, so the depth question is about how high, not whether."
+  },
+  "Kurt": {
+   "grade": "B+",
+   "rank": 4,
+   "strength": 56.8,
+   "avgPowerRank": 33.1,
+   "summary4": "Kurmoji earns a B+ for Kurt, 4th of 8 and just above the league average. Virginia (power rank #8) leads a front three with Louisville and Tennessee, all top-21 schools. The roster spreads evenly across the ACC, SEC and Big Ten with 2 apiece. It is a steady, sensible build that should hang around all season.",
+   "deep": "Kurmoji finishes 4th of 8 with a B+. Its strength score is 56.8 out of 100, 2.3 points above the league average of 54.5. Virginia (power rank #8, ACC) is the anchor and projects as a 4 seed. Louisville (#18) at pick 14 and Tennessee (#21) at pick 19 came right on schedule. USC at pick 35 with a power rank of #38 was close to its spot too. BYU at pick 30 (rank #41) came a little early. Missouri went at pick 46 with a power rank of #46, a perfect match. Nevada (#60) is projected as a 12 seed and could be a fun spoiler. The ACC, SEC and Big Ten have 2 schools each, with BYU and Nevada filling out 5 conferences. Iowa at pick 62 is the only unranked school, so Kurt's depth is in good shape."
+  },
+  "Ken": {
+   "grade": "B",
+   "rank": 5,
+   "strength": 56.3,
+   "avgPowerRank": 32.3,
+   "summary4": "Kentut gets a B for Ken, 5th of 8 and a hair above the league average. Illinois (power rank #5) leads, and High Point (#9) at pick 13 was a gutsy, high-upside call. NC State at pick 61 with a power rank of #40 was a lovely late find. Seven conferences on one roster means Ken has a rooting interest almost everywhere.",
+   "deep": "Kentut finishes 5th of 8 with a B. Its strength score is 56.3 out of 100, 1.8 points above the league average of 54.5. Illinois (power rank #5, Big Ten) is the anchor and projects as a 2 seed. High Point (#9) at pick 13 is ranked high but projects as a 13 seed, a fun mix. Arkansas (#22) at pick 20 and VCU (#24) at pick 36 add solid middle depth. NC State at pick 61 came 21 spots after its power rank of #40, the best value on the roster. Georgia at pick 45 (rank #61) was the earliest call relative to its rank. The SEC leads with 2 schools in a 7-conference mix. Vermont (#64) is projected as a 16 seed and is the lowest-ranked school. Every school is ranked, so Kentut has no empty slots to worry about."
+  },
+  "Mark": {
+   "grade": "B-",
+   "rank": 6,
+   "strength": 51.9,
+   "avgPowerRank": 35.4,
+   "summary4": "Dirty Draymond gets a B- for Mark, 6th of 8. Florida at pick 1 (power rank #2) is a strong place to start any roster. Texas Tech and Alabama, back-to-back at the turn, add two projected 5 seeds. Tulsa at pick 64 is unranked, so Mark is counting on Florida to carry the party.",
+   "deep": "Dirty Draymond finishes 6th of 8 with a B-. Its strength score is 51.9 out of 100, 2.6 points below the league average of 54.5. Florida (power rank #2, SEC) is the anchor and projects as a 1 seed. Texas Tech (#25) at pick 16 and Alabama (#29) at pick 17 both project as 5 seeds. Utah State at pick 32 with a power rank of #30 came right on time. UC Irvine at pick 33 (rank #63) was the earliest call relative to its rank. Akron (#49) and Cincinnati (#50) went at picks 48 and 49, right around their ranks. The SEC and Big 12 tie with 2 schools each across 6 conferences. Tulsa at pick 64 is the only unranked school. A 1-seed anchor gives this roster a real shot to climb."
+  },
+  "Scotty": {
+   "grade": "C",
+   "rank": 7,
+   "strength": 47.4,
+   "avgPowerRank": 21.8,
+   "summary4": "En Fuego gets a C for Scotty, 7th of 8, but the top of this roster is spicy. Kansas (power rank #10) and Gonzaga (#3) at picks 8 and 9 are a fantastic turn. Miami at pick 25 with a power rank of #14 was a lovely value. Three unranked late picks (Boise St, Colgate, Princeton) are what pull the grade down.",
+   "deep": "En Fuego finishes 7th of 8 with a C. Its strength score is 47.4 out of 100, 7.1 points below the league average of 54.5. Gonzaga (power rank #3, Pac-12) is the anchor and projects as a 3 seed. Kansas (#10) at pick 8 is also a projected 3 seed, so the top two are strong. Miami at pick 25 came 11 spots after its power rank of #14, the best value on the roster. Purdue at pick 24 (rank #45) was the earliest call relative to its rank. Ohio State (#37) at pick 41 projects as an 8 seed. Boise St, Colgate and Princeton are unranked, and an unranked school scores 0 in the grade. The Pac-12 and Big Ten tie with 2 schools each across 6 conferences. If the top four deliver, En Fuego can still turn up the heat."
+  },
+  "Murf": {
+   "grade": "D",
+   "rank": 8,
+   "strength": 35.7,
+   "avgPowerRank": 36.8,
+   "summary4": "Murfcockchalkrock gets a D for Murf, 8th of 8, but it starts with a bang. Houston (power rank #7) and Michigan (#26) give Murf two projected top-6 seeds. Grand Canyon at pick 28 with a power rank of #12 was one of the best values in the whole draft. Three unranked schools (Memphis, Drake, Grambling) are what sink the grade, so there is plenty of room to rise.",
+   "deep": "Murfcockchalkrock finishes 8th of 8 with a D. Its strength score is 35.7 out of 100, 18.8 points below the league average of 54.5. Houston (power rank #7, Big 12) is the anchor and projects as a 2 seed. Michigan (#26) at pick 12 projects as a 6 seed. Grand Canyon at pick 28 came 16 spots after its power rank of #12, the best value on the roster. San Diego St at pick 21 (rank #69) was the earliest call relative to its rank. Wright St (#70) projects as a 14 to 15 seed. Memphis, Drake and Grambling are unranked, and an unranked school scores 0 in the grade. All 8 schools come from 8 different conferences, the widest spread in the league. Murf has the most room to climb of anyone, and that makes for a fun season."
+  }
+ }
+}

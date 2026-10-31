@@ -1,3 +1,34 @@
+# s26c2 (build 2026-10-31s26c2): changed files vs s26c (MD5SUMS.txt md5 028bfc8fa7f29b93c501b2f2ddb1b5f6)
+League-approved team names in the JSON, card headers and text; build bump. No League-owned file changed; js/shared-s25.js md5 8bdd1fd8d7928c3c7e085de801925234.
+
+| file | md5 | why |
+|---|---|---|
+| README.md | 262bee0799369fbf2298360c827e790f | s26c2 note |
+| import/README.md | c0a54150fbc6f123b758c2a7fccef478 | s26c2 note |
+| import/stoopids-draft-results.json | cb2f334310b363a0e1c6d957ba52bc4e | approved team names, build tag |
+| js/version.js | 7c1921767ab955e29cdcb9d16ed8feb8 | build 2026-10-31s26c2 |
+| sw.js | a0dfd08d9ac68c3982964792b1fc527a | cache follows build (comment) |
+| tools/gen_stoopids_import.js | 806c1ebcb679950c59121f0d77b3528e | team-name override map |
+| tools/stoopids-2026-27-text.js | 68b4e52ce8e8b897bb68f602a93ba901 | team names in text |
+| CHANGED-FILES.md | (this file) | s26c2 section |
+
+# s26c (build 2026-10-31s26c): changed files vs s25-full (2026-10-30s25l, MD5SUMS.txt md5 48957c8a1f000b6c8c2cb5c08f2411fa)
+STOOPIDS 2026-27 Draft recap from a static import: recap.html?import=stoopids-2026-27. Draft Room files only; no League-owned file changed (league.html, leaguehome.js, league-*.js, power-*.js, css/power.css, css/league-app.css, data/, help.html untouched); js/shared-s25.js md5 8bdd1fd8d7928c3c7e085de801925234 unchanged. Wisconsin (275) on Jake confirmed by Stoopids Site (overall 63, R8 P7), graded normally.
+
+| file | md5 | why |
+|---|---|---|
+| README.md | 85a362a734e132de8a2375eeaab3c4cc | s26c section |
+| import/README.md | e64c43f45fcff1ed2b863575ae9c80e9 | contract v1 spec, grading method, Wisconsin note |
+| import/stoopids-draft-results.json | 010c945a1e46f82409e7b4c6af2e1595 | contract v1 data (64 picks, 8 grades) |
+| js/recap.js | 1a855e97cd40670942d4d9e5bf6ede71 | import mode: 3 sections (Congratulations, Take a look at your draft recap!, League site) |
+| js/version.js | f83718e2beea5ce445e1759c260e0894 | build 2026-10-31s26c |
+| sw.js | dde0ac8afb22c640c7f2018da83a0393 | cache follows build; import JSON in SHELL |
+| tools/gen_stoopids_import.js | 2c88e77aafb9db3f192638bba3de421a | regenerates the import JSON with js/power-gen.js |
+| tools/stoopids-2026-27-text.js | 1632a74d4f523344a620b259cd30c425 | wording pass: hand-written 4- and 10-sentence text per manager |
+| CHANGED-FILES.md | (this file) | s26c section |
+
+Test-only: headless Chromium at 390 and 1280 px; screenshots in /workspace/fantasy-bball-releases/s26c-shots/.
+
 # s25-full (build 2026-10-30s25l): changed files vs s25b
 Draft room NCAA checklist (a)-(k), DR2 rules/lobby, SS recap grid, League restage merged. s25k: League leaguehome.js, league-bets.js, league-app.css re-copied unchanged from s25b-league; shared-s25.js kept (League b8c38b44 + QA focus({preventScroll:true}) at line 247). power-render.js md5 f41ca47bcf06390f70dd76b03c8df980 (League, unchanged by Draft Room). tests/, shots/ and node_modules not listed. s25l: version bump only (test-only fix: tests/xss_safe_exprs.json reviews the League Bets sub-tab exprs; no app file changed).
 

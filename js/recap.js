@@ -3,8 +3,8 @@
    8 pick times (approximate), 9 draft-day awards, 10 the one big League site button, 11 footer (how grades work, share link, small CSV / JSON export). Every school goes through U.teamChip / U.teamLink. */
 (function(){const F=FBN,U=UI,esc=U.esc;const id=F.parseCode(U.qs().get('l')||'')||'';const T=U.loadTeams();
 document.getElementById('top').innerHTML=U.header({sub:'Draft recap'});const app=document.getElementById('app');
-if(!id){app.innerHTML='<div class="card"><h2>No league</h2><a href="index.html">Home</a></div>';return}
-app.innerHTML='<div class="card mut" id="loading">Loading the final rosters…</div>';
+if(!id&&U.qs().get('import')==null){app.innerHTML='<div class="card"><h2>No league</h2><a href="index.html">Home</a></div>';return}
+if(id)app.innerHTML='<div class="card mut" id="loading">Loading the final rosters…</div>';
 const recapUrl=()=>U.pageUrl('recap.html',{l:id});
 const ACT={csv:()=>dl('csv'),json:()=>dl('json'),
   cheermute:el=>U.cheerToggle(el),
@@ -14,6 +14,26 @@ const ACT={csv:()=>dl('csv'),json:()=>dl('json'),
   share:()=>{const m=D&&D.meta?D.meta.name:'';U.share({title:(m||'League')+' draft recap',text:'Take a look at our draft recap!',url:recapUrl()})},
   deep:el=>{const p=document.getElementById(el.getAttribute('aria-controls'));if(!p)return;const open=p.hidden;p.hidden=!open;el.setAttribute('aria-expanded',open?'true':'false');el.querySelector('span').textContent=open?'Hide deeper analysis':'Deeper analysis'}};
 let D=null;
+/* s26c: import mode. recap.html?import=stoopids-2026-27 renders a finished draft from a static contract-v1 file (import/stoopids-draft-results.json): 1 congratulations, 2 "Take a look at your draft recap!" (grade, 4-sentence summary, one-tap deeper analysis), 3 one big League site button. No textdb, no league code needed. Optional &l=CODE points the button at league.html for that league. */
+const IMPORTS={'stoopids-2026-27':'import/stoopids-draft-results.json'};const impKey=U.qs().get('import');
+if(impKey!=null){document.getElementById('top').innerHTML=U.header({sub:'Draft recap'});const app=document.getElementById('app');const src=IMPORTS[impKey];
+ if(!src){app.innerHTML='<div class="card" id="nf"><h2>Draft recap not found</h2><a class="btn" href="index.html">Home</a></div>';return}
+ app.innerHTML='<div class="card mut" id="loading">Loading the draft recap…</div>';
+ const GCI=g=>({'A+':'g-Ap','A':'g-A','A-':'g-A','B+':'g-B','B':'g-B','B-':'g-B','C+':'g-C','C':'g-C','C-':'g-C','D+':'g-D','D':'g-D','D-':'g-D'}[g]||'g-C');
+ const SPL=t=>window.FBNPower&&FBNPower.sentences?FBNPower.sentences(t):String(t||'').split(/(?<=[.!?])\s+/);
+ fetch(src+'?b='+encodeURIComponent(window.FBN_BUILD||''),{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(J=>{
+  if(!J||J.contract!=='v1')throw new Error('unsupported file (contract v1 expected)');
+  const lc=F.parseCode(U.qs().get('l')||'');const site=lc?U.pageUrl('league.html',{l:lc}):'https://stoopids.github.io/stoopids/';
+  const rows=J.order.map(o=>Object.assign({o},J.grades[o.manager]||{})).sort((a,b)=>(a.rank||99)-(b.rank||99));
+  const s1=`<section class="card rsec" id="recaphead" aria-labelledby="rc1_h"><div class="small mut">FINAL · ${esc(J.picks.length)} PICKS · ${esc(J.league||'')} ${esc(J.season)}</div><h2 id="rc1_h" class="rcmsg" style="margin:2px 0 6px">Congratulations! The draft is complete. See you again January 20, 2027 for the Redraft!</h2></section>`;
+  const cards=rows.map((r,i)=>{const mine=J.picks.filter(p=>p.manager===r.o.manager).sort((a,b)=>a.overall-b.overall);const did='impdeep'+i;
+   return `<div class="card rcmine impcard" id="impcard_${esc(r.o.mid||i)}" data-manager="${esc(r.o.manager)}"><div class="rcgrow"><span class="rcgrade ${esc(GCI(r.grade))}" aria-label="Grade ${esc(r.grade)}">${esc(r.grade||'–')}</span><div class="grow"><b>${esc(r.o.team_name)}</b><div class="small mut">${esc(r.o.manager)} · slot ${esc(r.o.slot)} · #${esc(r.rank)} of ${J.order.length}</div></div></div>`
+    +`<p class="rcsum">${esc(r.summary4||'')}</p><div class="school-grid">${mine.map(p=>U.teamChip(T.TEAMS,p.teamId,{sm:1})).join('')}</div>`
+    +`<button type="button" class="btn deepbtn" data-a="deep" aria-expanded="false" aria-controls="${esc(did)}"><span>Deeper analysis</span></button><div id="${esc(did)}" class="rcdeep" hidden>${SPL(r.deep).map(t=>`<p>${esc(t)}</p>`).join('')}</div></div>`}).join('');
+  const s2=`<section class="rsec" id="powerrecap_s" aria-labelledby="rc2_h"><h2 id="rc2_h">Take a look at your draft recap!</h2><p class="small mut rcnote">Grades A+ to D from preseason power rank and projected seed in the team table. A rough preseason guide, just for fun.</p>${cards}</section>`;
+  const s3=`<section class="rsec rcnextrow" id="rc_site" aria-label="League site"><a class="btn pri big" id="rcsite" style="display:block;width:100%;min-height:56px;font-size:20px;text-align:center;line-height:56px;padding:0" href="${esc(site)}">League site</a></section>`;
+  app.innerHTML=s1+s2+s3+U.buildTag();U.bind(ACT)}).catch(e=>{app.innerHTML='<div class="card bad">Could not load the draft recap: '+esc(e.message||e)+'</div>'});
+ U.registerSW();return}
 function dl(k){const nm=(D.meta.name.replace(/[^a-z0-9]+/gi,'-')||'league')+'-draft.';if(k==='csv')U.download(nm+'csv',F.toCSV(D.state,D.managers,T.TEAMS,T.META),'text/csv');else U.download(nm+'json',JSON.stringify(F.toJSONExport(D.state,D.managers,T.TEAMS,T.META,D.meta),null,2),'application/json')}
 /* s23 (item 9): "Share my grade" draws a square image on a canvas (no network) and shares it as a PNG, or downloads it where sharing files is not possible */
 function gradePng(){const g=GRADE;const c=document.createElement('canvas');c.width=c.height=1080;const x=c.getContext('2d');
