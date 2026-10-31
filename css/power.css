@@ -25,16 +25,16 @@
 
 /* s24: shared ball loader (recap.html does not load league-app.css); same block as css/league-app.css */
 /*<BALL-LOADER>*/
-/* ONE reusable loader: 3 basketballs bouncing in a staggered rhythm, each with a ground shadow that squashes / stretches; centered, small "Loading…" line under it. CSS only. Markup comes from ballLoader(). */
-.bl{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:26px 0 20px;text-align:center}
-.bl-row{display:flex;gap:16px;align-items:flex-start}
-.bl-b{position:relative;width:30px;height:66px}
-.bl-b i{position:absolute;left:0;top:0;width:30px;height:30px;font-size:27px;line-height:30px;font-style:normal;text-align:center;transform-origin:50% 100%;animation:blBounce .84s infinite}
-.bl-b s{position:absolute;left:3px;bottom:0;width:24px;height:6px;border-radius:50%;background:rgba(255,255,255,.28);box-shadow:0 0 4px rgba(255,255,255,.12);animation:blShadow .84s infinite}
+/* ONE reusable loader: 3 basketballs bouncing in a staggered rhythm, each with a ground shadow that squashes / stretches; centered "Loading…" line under it. CSS only. Markup comes from ballLoader(). s26c2-loader: huge balls, --bs = clamp(56px,22vw,90px) so 3 balls fit at 320px; bounce/shadow/text scale with --bs. */
+.bl{--bs:clamp(56px,22vw,90px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--bs)*.2);padding:calc(var(--bs)*.6) 0 calc(var(--bs)*.45);text-align:center;max-width:100%;overflow:hidden}
+.bl-row{display:flex;gap:calc(var(--bs)*.3);align-items:flex-start}
+.bl-b{position:relative;width:var(--bs);height:calc(var(--bs)*2.2)}
+.bl-b i{position:absolute;left:0;top:0;width:var(--bs);height:var(--bs);font-size:calc(var(--bs)*.9);line-height:var(--bs);font-style:normal;text-align:center;transform-origin:50% 100%;animation:blBounce .84s infinite}
+.bl-b s{position:absolute;left:10%;bottom:0;width:80%;height:calc(var(--bs)*.2);border-radius:50%;background:rgba(255,255,255,.28);box-shadow:0 0 calc(var(--bs)*.14) rgba(255,255,255,.12);animation:blShadow .84s infinite}
 .bl-b:nth-child(2) i,.bl-b:nth-child(2) s{animation-delay:.14s}
 .bl-b:nth-child(3) i,.bl-b:nth-child(3) s{animation-delay:.28s}
-.bl-t{font-size:12px;color:var(--mut);letter-spacing:.02em}
-@keyframes blBounce{0%,100%{transform:translateY(0) scale(1,1);animation-timing-function:cubic-bezier(.4,0,.9,.6)}46%{transform:translateY(33px) scale(1,1)}50%{transform:translateY(34px) scale(1.14,.84);animation-timing-function:cubic-bezier(.1,.4,.6,1)}56%{transform:translateY(31px) scale(.94,1.08)}}
+.bl-t{font-size:clamp(15px,calc(var(--bs)*.24),22px);color:var(--mut);letter-spacing:.02em}
+@keyframes blBounce{0%,100%{transform:translateY(0) scale(1,1);animation-timing-function:cubic-bezier(.4,0,.9,.6)}46%{transform:translateY(calc(var(--bs)*1.1)) scale(1,1)}50%{transform:translateY(calc(var(--bs)*1.133)) scale(1.14,.84);animation-timing-function:cubic-bezier(.1,.4,.6,1)}56%{transform:translateY(calc(var(--bs)*1.033)) scale(.94,1.08)}}
 @keyframes blShadow{0%,100%{transform:scale(.45,.7);opacity:.3;animation-timing-function:cubic-bezier(.4,0,.9,.6)}50%{transform:scale(1.2,1);opacity:.85;animation-timing-function:cubic-bezier(.1,.4,.6,1)}}
-@media (prefers-reduced-motion:reduce){.bl-b i,.bl-b s{animation:none}.bl-b i{transform:translateY(34px)}.bl-b s{transform:none;opacity:.7}}
+@media (prefers-reduced-motion:reduce){.bl-b i,.bl-b s{animation:none}.bl-b i{transform:translateY(calc(var(--bs)*1.133))}.bl-b s{transform:none;opacity:.7}}
 /*</BALL-LOADER>*/

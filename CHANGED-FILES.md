@@ -1,3 +1,12 @@
+# s26c2-loader (staged on 2026-10-31s26c2 / 76f05fe5; MD5SUMS.txt before md5 b9c8f5980308df031a34305559c26b30)
+Bigger bouncing-basketball loader (Paul): balls 30px -> clamp(56px,22vw,90px) via --bs; bounce height, shadow, gaps and "Loading…" text scale with it. Only the BALL-LOADER blocks changed. version.js / sw.js NOT bumped (Draft Room owns them).
+
+| file | md5 | why |
+|---|---|---|
+| css/league-app.css | 7d1af2d09adce41691998788dd9dc53a | BALL-LOADER block: huge balls |
+| css/power.css | 422f06d20e818a28f93262854539b3da | BALL-LOADER copy: huge balls |
+| CHANGED-FILES.md | (this file) | s26c2-loader section |
+
 # s26c2 (build 2026-10-31s26c2): changed files vs s26c (MD5SUMS.txt md5 028bfc8fa7f29b93c501b2f2ddb1b5f6)
 League-approved team names in the JSON, card headers and text; build bump. No League-owned file changed; js/shared-s25.js md5 8bdd1fd8d7928c3c7e085de801925234.
 
@@ -236,3 +245,12 @@ Merged in `/workspace/fantasy-bball-releases/s23-full` (= s23 + these files). Le
 | js/leaguehome.js | 83d3c73fa9870b7d390ddc46bdc141fa | Quick bet pill hook on Games cards, chat bar panel (league chat key), Bets nav badge |
 | css/league-app.css | 417564e23154768827df0ac9946d538d | qb-*, chat panel, nav badge styles |
 | README.md | see MD5SUMS.txt | s23 README + the s22 "Bets tab and Games cards" section |
+
+## s26c4 = s26c2-loader (League huge ball loader) + version bump
+Base: `/workspace/fantasy-bball-releases/s26c2-loader`. Build tag 2026-10-31s26c4; sw.js cache name follows FBN_BUILD (fbnc-2026-10-31s26c4), only the line 3 build comment changed.
+
+| file | md5 | why |
+|---|---|---|
+| js/version.js | 8188679c5f3d35b5addf53e0af6ea180 | build tag 2026-10-31s26c4 |
+| sw.js | bc56dd427517a61e2cfccd736d82b2aa | line 3 build comment |
+| CHANGED-FILES.md | (this file) | s26c4 section |

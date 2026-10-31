@@ -1,6 +1,6 @@
 aab153233971799b3f33f8771338cdb2  CHANGE-NOTES-s24.md
 fdb538b9a8247a3f56406fb69fa80031  CHANGE-NOTES-s25.md
-9d692894700dca36701c1a82d35b917d  CHANGED-FILES.md
+687ca8c79344b2e93b218209fe58f1c5  CHANGED-FILES.md
 fc4c2520be569d292be962f8ba4efdeb  LICENSE-third-party.txt
 262bee0799369fbf2298360c827e790f  README.md
 dc050cbfbdc4a7acac091c14b90bb9d0  UNCLEAR.md
@@ -9,8 +9,8 @@ d64b4a5bc83d7d701430bd795594d5bf  assets/cheer.mp3
 8495ef48ff34e2986385d382d6572174  assets/setup-banner.svg
 83abcdf7aceb3630c2221ce9bd3d4481  assets/teams.js
 31e8991b30ba2628129c48404da8b909  css/app.css
-16a417545f7e791990662317f7c28c40  css/league-app.css
-1140f2da29cde9770a09178bc02cfd3f  css/power.css
+7d1af2d09adce41691998788dd9dc53a  css/league-app.css
+422f06d20e818a28f93262854539b3da  css/power.css
 b9f73c3f451d83ad9229aafeb5ea9368  css/recap-rosters.css
 23ec9ff1f0f2d44fee14f4436484d8da  css/rules-lobby.css
 d1d9f2f57bdc8060aedc91603cfcc6f4  css/setup.css
@@ -53,7 +53,7 @@ a132aa8407a9547d9a0b393c2f975d90  js/rules.js
 a1c776ffcad4a1e1444e2a41913572c1  js/store.js
 b31b8d130f47a378f2358995614b9470  js/time.js
 492ccd9c76149ab8aa02333f688bf449  js/ui.js
-7c1921767ab955e29cdcb9d16ed8feb8  js/version.js
+8188679c5f3d35b5addf53e0af6ea180  js/version.js
 d3b6f53ee707b59cd40376a4074ae674  league.html
 dde6bc94069703616dc2b911b7422ae9  manifest.webmanifest
 9e86ebb6f16c6d8b8b42bd276371cb9d  mock.html
@@ -61,7 +61,7 @@ dde6bc94069703616dc2b911b7422ae9  manifest.webmanifest
 67894e74e4d6680fd2750e8f15cfaa0c  redraft.html
 134e6e7647318ff230f715f573896a66  room.html
 ba0bad6039db68759ec53e44ca6569dd  setup.html
-a0dfd08d9ac68c3982964792b1fc527a  sw.js
+bc56dd427517a61e2cfccd736d82b2aa  sw.js
 25852915b747ecd22afa1599b4d1357c  time.html
 806c1ebcb679950c59121f0d77b3528e  tools/gen_stoopids_import.js
 1760e479a35e108232d3af8f0bb4ce33  tools/make_bundle.sh
