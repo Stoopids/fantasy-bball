@@ -1,0 +1,32 @@
+/* serve the bundle ONLY from a sub-folder path and check it runs */
+const L=require('./lib.js');const {seed}=require('./seed_league.js');const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const BASE='http://localhost:9995/fantasy-bball/';let bad=0;const ok=(n,c,x)=>{console.log((c?'  ok  ':'FAIL  ')+n+(c?'':' -> '+JSON.stringify(x).slice(0,300)));if(!c)bad++};
+(async()=>{try{const id=await seed('http://localhost:9996/api/data/');const P=await L.phone('bundle');const pg=P.page;const bad404=[];const seen=new Set();
+ pg.on('response',r=>{const u=r.url();if(u.startsWith('http://localhost:9995')){seen.add(u.replace(BASE,''));if(r.status()>=400&&!/favicon/.test(u))bad404.push(r.status()+' '+u)}});
+ const open=async p=>{await pg.goto(BASE+p,{waitUntil:'domcontentloaded'})};
+ await open('index.html');await pg.waitForSelector('h1',{timeout:10000});ok('index loads from /fantasy-bball/ and shows the product name',/Fantasy BBALL NCAA/.test(await pg.$eval('body',e=>e.innerText)));
+ await open('setup.html');await pg.waitForSelector('#f_name',{timeout:10000});ok('setup wizard first screen loads',true);
+ await open('join.html?l='+id);await sleep(1200);ok('join page loads',(await pg.$eval('body',e=>e.innerText)).length>20);
+ await open('room.html?l='+id+'&watch=1');await sleep(2500);ok('room (spectator) shows the finished draft',/complete|FINAL|Draft complete/i.test(await pg.$eval('body',e=>e.innerText)));
+ await open('recap.html?l='+id);await pg.waitForSelector('#recaphead',{timeout:15000});ok('recap loads (teams.js resolved relative)',(await pg.$$('.roster')).length===8);
+ await open('league.html?l='+id+'&demo=1');await pg.waitForSelector('#lapp[data-ready]',{timeout:15000});await sleep(500);ok('league site loads its data/ files from the sub-folder',(await pg.$$('#main .ocl .strow')).length===8&&(await pg.$eval('#main',e=>e.innerText)).length>50);
+ ok('league data files requested under /fantasy-bball/data/',[...seen].some(u=>/^data\/demo\/scores\.json/.test(u)));
+ await open('league.html?l='+id);await pg.waitForSelector('#lapp[data-ready]',{timeout:15000});ok('real league from the sub-folder: populated 0-0 cards, no sample standings',(await pg.$$eval('#main .ocl .strow .score .pv',c=>c.length===8&&c.every(x=>x.innerText==='0')))&&!(await pg.$('#demobar')));
+ await open('time.html?t='+(Date.now()+864e5));await sleep(500);ok('time page loads',true);
+ await open('help.html');await pg.waitForSelector('#helppage',{timeout:10000});ok('help page loads from the sub-folder with both parts',await pg.$('#commissioner')!==null&&await pg.$('#managers')!==null);
+ await open('index.html');await pg.waitForSelector('#helplink',{timeout:10000});ok('home page links to help.html',(await pg.$eval('#helplink',e=>e.getAttribute('href')))==='help.html');
+ ok('home page is not clipped: "Create a league" and the "How it works" card are inside #landing and below the title',await pg.evaluate(()=>{const w=document.getElementById('landing').getBoundingClientRect(),c=document.getElementById('create').getBoundingClientRect();return w.height>=document.getElementById('landing').scrollHeight-1&&c.height>=44&&c.bottom<=w.bottom+1&&/How it works/.test(document.getElementById('landing').innerText)}));
+ await open('time.html?t=1e20&n=x');await sleep(500);ok('time.html with an impossible time shows a plain message',/not valid/i.test(await pg.$eval('body',e=>e.innerText)));
+ await sleep(1500);const sw=await pg.evaluate(async()=>{const r=await navigator.serviceWorker.getRegistration();return r?{scope:r.scope,active:!!(r.active||r.waiting||r.installing)}:null});
+ ok('service worker registered with scope /fantasy-bball/',sw&&sw.scope===BASE&&sw.active,sw);
+ const keys=await pg.evaluate(async()=>{const ks=await caches.keys();const c=await caches.open(ks[0]);return {ks,n:(await c.keys()).length}});ok('service worker cache filled with shell files only from this folder',keys.ks.length===1&&keys.n>=20,keys);
+ ok('no 4xx/5xx for any bundle file',bad404.length===0,bad404);
+ ok('all requests stayed under the sub-folder (no root-relative paths)',[...seen].filter(u=>!/\/api\/data\//.test(u)).every(u=>!u.startsWith('/')&&!u.startsWith('http')),[...seen].filter(u=>!/\/api\/data\//.test(u)&&(u.startsWith('/')||u.startsWith('http'))));
+ {const info=await pg.evaluate(async()=>{const ks=await caches.keys();const out={ks,keys:[]};for(const k of ks){const c=await caches.open(k);out.keys=out.keys.concat((await c.keys()).map(r=>r.url))}return out});
+  ok('service worker cache is named after the build and holds one entry per file (no ?l= copies)',info.ks.length===1&&info.ks[0]==='fbnc-'+require('fs').readFileSync(require('path').join(__dirname,'../js/version.js'),'utf8').match(/FBN_BUILD='([^']+)'/)[1]&&info.keys.every(u=>u.indexOf('?')<0)&&new Set(info.keys).size===info.keys.length,info);
+  if(process.env.MOCKPID)process.kill(+process.env.MOCKPID);await sleep(800);await open('index.html');await sleep(800);ok('offline: a page that was visited opens from the saved copy',/Fantasy BBALL NCAA/.test(await pg.$eval('body',e=>e.innerText).catch(()=>'')));
+  await open('room.html?l='+id+'&watch=1');await sleep(800);ok('offline: the room page itself still opens (league data cannot load)',(await pg.$eval('body',e=>e.innerText).catch(()=>'')).length>10);
+  await pg.goto(BASE+'never-saved.html',{waitUntil:'domcontentloaded'}).catch(()=>{});await sleep(500);ok('offline: a page that was never saved says so in plain words',/You are offline/.test(await pg.$eval('body',e=>e.innerText).catch(()=>'')),await pg.$eval('body',e=>e.innerText).catch(()=>''));
+  }
+ ok('no page errors',P.errs.filter(e=>/pageerror/.test(e)).length===0,P.errs);
+}catch(e){bad++;console.log(e.stack)}finally{await L.close();console.log(bad?'FAILED':'bundle check passed');process.exit(bad?1:0)}})();

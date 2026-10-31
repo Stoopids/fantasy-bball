@@ -31,9 +31,11 @@ A.build=function(a){
   const MG=a.managers||[],roster=a.roster||[],TEAMS=a.teams||{};const SC=a.SC||null,TN=a.TN||null;const games0=SC&&SC.games?SC.games:[];
   const TST=a.testLeague!=null?!!a.testLeague:A.isTestLeague(a.leagueName);const own=S.ownerMap(roster);const nameOf={};MG.forEach(m=>{nameOf[m.mid]=A.disp(m.name,TST)});
   const SEA=S.fullSeason(games0,own,MG),TOU=S.tournament(games0,TN?TN.field||{}:{},own,MG,TN&&TN.points);
+  /* s26c8: League total = season wins + NCAA + conference points (FBNScore.leagueTotals; conference map = scores.json "conf", optional) */
+  const CONF=S.confPoints(SC&&SC.conf,games0,own,MG,TN&&TN.points);const LT=S.leagueTotals(SEA,TOU,CONF);const ltBy={};LT.forEach(r=>{ltBy[r.mid]=r});const confBy={};CONF.forEach(r=>{confBy[r.mid]=r});
   const ord=(a.order||MG.map(m=>m.mid));const oi=mid=>{const i=ord.indexOf(mid);return i<0?99:i};
-  /* standings: S.fullSeason ranks by wins, win %, point difference; fully tied owners keep the draft order and share the rank */
-  const seaSorted=SEA.slice().sort((x,y)=>x.place-y.place||oi(x.mid)-oi(y.mid));
+  /* standings (s26c8): FBNScore.leagueTotals ranks by total, then wins, win %, point difference; fully tied owners keep the draft order and share the rank */
+  const seaBy={};SEA.forEach(r=>{seaBy[r.mid]=r});const seaSorted=LT.slice().sort((x,y)=>x.place-y.place||oi(x.mid)-oi(y.mid)).map(l=>seaBy[l.mid]).filter(Boolean);
   const touBy={};TOU.forEach(r=>{touBy[r.mid]=r});
   const records={};const addRec=(tid,w)=>{const r=records[tid]||(records[tid]={w:0,l:0});if(w)r.w++;else r.l++};
   games0.forEach(g=>{if(!(g.kind==='reg'||g.kind==='conf')||!S.isFinal(g))return;const wn=S.winnerSide(g),ls=S.loserSide(g);if(own[String(wn.id)]!=null||true){addRec(String(wn.id),1);addRec(String(ls.id),0)}});
@@ -54,11 +56,11 @@ A.build=function(a){
     const f=g.status==='final';const row={id:g.id,status:g.status,us:us.score,them:them.score,res:f&&us.score!=null&&them.score!=null?(us.score>them.score?'W':'L'):null,site:g.neutral?'N':(a1==='home'?'H':'A'),opp:them.short,oppId:String(them.id),day:g.day,start:g.start,round:g.round,kind:g.kind,seed:us.seed,oppSeed:them.seed};
     (team_games[us.id]||(team_games[us.id]=[])).push(row)})});
   Object.keys(team_games).forEach(k=>team_games[k].sort((x,y)=>(x.start||x.day||'').localeCompare(y.start||y.day||'')));
-  /* owners (standings = Full Season wins) */
+  /* owners (s26c8: standings = FBNScore.leagueTotals total) */
   const owners=seaSorted.map(r=>{const m=MG.find(x=>x.mid===r.mid)||{};const tr=touBy[r.mid]||{score:0,wins:0,upsets:0,teams:{}};
     const picks=roster.filter(p=>p.owner===r.mid);
-    const teams=picks.map(p=>{const t=r.teams&&r.teams[p.tid];const tt=tr.teams&&tr.teams[p.tid];return{tid:String(p.tid),status:'kept',wins_counted:t?t.w:0,wins:t?t.w:0,losses:t?t.l:0,tpts:tt?tt.pts:0,total:t?t.w:0,window:{start:null,end:null},events:(tr.events||[]).filter(e=>e.tid===String(p.tid))}});
-    return{mid:r.mid,name:A.disp(m.name||r.name,TST),emoji:m.emoji||'',photo:m.photo||'',team_name:A.disp(m.team||'',TST),rank:r.place,tied:!!r.tied,total:r.wins,losses:r.losses,tscore:tr.score||0,tupsets:tr.upsets||0,twins:tr.wins||0,teams,by_cat:{win:r.wins,tourney:tr.score||0}}});
+    const teams=picks.map(p=>{const t=r.teams&&r.teams[p.tid];const tt=tr.teams&&tr.teams[p.tid];return{tid:String(p.tid),status:'kept',wins_counted:t?t.w:0,wins:t?t.w:0,losses:t?t.l:0,tpts:tt?tt.pts:0,total:t?t.w:0,window:{start:null,end:null},events:(tr.events||[]).concat((confBy[r.mid]||{}).events||[]).filter(e=>e.tid===String(p.tid))}});
+    return{mid:r.mid,name:A.disp(m.name||r.name,TST),emoji:m.emoji||'',photo:m.photo||'',team_name:A.disp(m.team||'',TST),rank:(ltBy[r.mid]||r).place,tied:!!(ltBy[r.mid]||r).tied,total:ltBy[r.mid]?ltBy[r.mid].total:r.wins,losses:r.losses,tscore:tr.score||0,tupsets:tr.upsets||0,twins:tr.wins||0,teams,by_cat:ltBy[r.mid]?{win:ltBy[r.mid].breakdown.season_wins,tourney:ltBy[r.mid].breakdown.ncaa,conf_reg:ltBy[r.mid].breakdown.conf_reg,conf_tourn:ltBy[r.mid].breakdown.conf_tourn}:{win:r.wins,tourney:tr.score||0,conf_reg:0,conf_tourn:0}}});
   /* postseason checklist per rostered school */
   const field=TN&&TN.field?TN.field:{};const locked=TOU.locked===true;const missed=new Set(TOU.missed||[]);
   const checklist={};
@@ -75,7 +77,7 @@ A.build=function(a){
   return{owners,teams:TEAMS,records,games,team_games,checklist,upsets,tournament:TOU,season:SEA,
     meta:{mode,season:(SC&&SC.season)||a.season||'2026-27',generated_at_utc:generated?new Date(generated).toISOString():null,points:Object.assign({win:1},S.POINTS,TN&&TN.points||{}),
       redraft:a.redraft||null,final_games,games_loaded:games0.length,haveNcaa,fieldN,locked,
-      cat_labels:{win:'Wins',tourney:'NCAA Tournament points'}}}
+      cat_labels:{win:'Wins',tourney:'NCAA Tournament points',conf_reg:'Conf. season champ',conf_tourn:'Conf. tourney champ'}}}
 };
 if(typeof module!=='undefined'&&module.exports)module.exports=A;else root.FBNLeagueD=A;
 })(typeof window!=='undefined'?window:globalThis);

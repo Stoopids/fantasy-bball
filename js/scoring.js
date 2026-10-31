@@ -4,7 +4,9 @@
 'use strict';
 const S={};
 S.ROUNDS=['First Four','1st Round','2nd Round','Sweet 16','Elite 8','Final Four','National Championship'];
-S.POINTS={entry:5,playin_win:1,win:2,upset:4,final4:3,champ:4,missed:-1};
+S.POINTS={entry:5,playin_win:1,win:2,upset:4,final4:3,champ:4,missed:-1,conf_reg:4,conf_tourn:4};
+/* s26c7: points per Full Season win (STOOPIDS 'win' = 1). S.POINTS.win stays the NCAA-win value (2) for compatibility. */
+S.SEASON_WIN=1;
 S.FIELD_LOCKED_MIN=64;
 const num=v=>(typeof v==='number'&&isFinite(v))?v:null;
 S.isFinal=g=>g&&g.status==='final'&&g.home&&g.away&&num(g.home.score)!=null&&num(g.away.score)!=null&&g.home.score!==g.away.score;
@@ -79,6 +81,32 @@ S.gamesView=function(games,owners,opt){opt=opt||{};const mine=g=>{const a=owners
   const res=inv.filter(g=>g.status==='final').sort((a,b)=>(b.start||b.day||'').localeCompare(a.start||a.day||''));
   const up=inv.filter(g=>g.status==='scheduled'||g.status==='live').sort((a,b)=>(a.start||a.day||'').localeCompare(b.start||b.day||''));
   return{results:res,upcoming:up,total:inv.length}};
+/* ---------- s26c7: conference points (STOOPIDS conf_reg / conf_tourn) ----------
+   confTeams (scores.json -> "conf", optional): {teamId:{conf:'ACC',confRegChamp:true,confTournChamp:true,confTournStarted:true}}
+   - confRegChamp: top seed of its conference tournament (regular-season champ). Scored conf_reg ONCE, and only once the conference
+     tournament has started: confTournStarted===true, or confTournChamp===true, or a live/final kind:'conf' game with a non-empty
+     round involves this team or any team listed with the same conf.
+   - confTournChamp: won the conference tournament. Scored conf_tourn ONCE.
+   Returns rows like S.tournament: {mid,name,score,events[],teams{}} (events kind 'conf_reg' | 'conf_tourn'). */
+S.confStarted=function(tid,confTeams,games){tid=String(tid);const ct=confTeams||{};const me=ct[tid]||{};if(me.confTournStarted===true||me.confTournChamp===true)return true;
+  const mates=new Set([tid]);if(me.conf)Object.keys(ct).forEach(k=>{if(ct[k]&&ct[k].conf===me.conf)mates.add(String(k))});
+  return (games||[]).some(g=>g&&g.kind==='conf'&&g.round&&(g.status==='final'||g.status==='live')&&g.home&&g.away&&(mates.has(String(g.home.id))||mates.has(String(g.away.id))))};
+S.confPoints=function(confTeams,games,owners,managers,points){const P=Object.assign({},S.POINTS,points||{});const rows={};managers.forEach(m=>{rows[m.mid]={mid:m.mid,name:m.name,score:0,events:[],teams:{}}});
+  const ct=(confTeams&&typeof confTeams==='object'&&!Array.isArray(confTeams))?confTeams:{};
+  Object.keys(ct).forEach(tid=>{const c=ct[tid]||{};const o=(owners||{})[String(tid)];if(!o||!rows[o])return;const r=rows[o];const t=r.teams[tid]||(r.teams[tid]={tid:String(tid),pts:0});
+    const give=(kind,pts,label)=>{if(r.events.some(e=>e.tid===String(tid)&&e.kind===kind))return;r.score+=pts;t.pts+=pts;r.events.push({tid:String(tid),pts,label,kind})};
+    if(c.confRegChamp===true&&S.confStarted(tid,ct,games))give('conf_reg',P.conf_reg,'Conference regular-season champion');
+    if(c.confTournChamp===true)give('conf_tourn',P.conf_tourn,'Conference tournament champion')});
+  return Object.values(rows)};
+/* League total = Full Season wins x SEASON_WIN + NCAA tournament points + conference points; breakdown sums to total.
+   season = S.fullSeason(...), tour = S.tournament(...), conf = S.confPoints(...) (optional). */
+S.leagueTotals=function(season,tour,conf){const by=(l)=>Object.fromEntries((l||[]).map(r=>[r.mid,r]));const T=by(tour),C=by(conf);
+  const list=(season||[]).map(r=>{const t=T[r.mid]||{score:0,upsets:0,wins:0},c=C[r.mid]||{score:0,events:[]};
+    const ce=k=>(c.events||[]).filter(e=>e.kind===k).reduce((a,e)=>a+e.pts,0);
+    const breakdown={season_wins:r.wins*S.SEASON_WIN,ncaa:t.score||0,conf_reg:ce('conf_reg'),conf_tourn:ce('conf_tourn')};
+    const total=Object.values(breakdown).reduce((a,b)=>a+b,0);
+    return{mid:r.mid,name:r.name,wins:r.wins,pct:r.pct,diff:r.diff,breakdown,total}});
+  list.sort((a,b)=>b.total-a.total||b.wins-a.wins||b.pct-a.pct||b.diff-a.diff||a.name.localeCompare(b.name));return S.rank(list,r=>[r.total,r.wins,r.pct,r.diff])};
 S.validateScores=function(d){if(!d||typeof d!=='object'||!Array.isArray(d.games))return'The scores file is missing or not in the expected format.';
   for(const g of d.games){if(!g||!g.home||!g.away||g.home.id==null||g.away.id==null)return'The scores file has a game without two teams.'}return null};
 S.validateTournament=function(d){if(!d||typeof d!=='object'||typeof d.field!=='object'||d.field==null||Array.isArray(d.field))return'The tournament file is missing or not in the expected format.';return null};

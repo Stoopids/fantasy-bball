@@ -9,6 +9,8 @@ const botName=n=>'Bot '+n+' (CPU)';
 function mockSettings(src,clock,type){const s=F.normalizeSettings(Object.assign({},F.DEFAULTS,src||{}));
   const c=(clock!=null&&F.CLOCKS.indexOf(+clock)>=0)?+clock:(F.CLOCKS.indexOf(+s.clockSecs)>=0?+s.clockSecs:60);
   return F.normalizeSettings({managers:F.MANAGERS,rounds:s.rounds,type:(type==='snake'||type==='linear')?type:s.type,startAt:null,startMode:'manual',orderMode:'random',clockSecs:c,autoPick:true,warn15:src&&src.warn15===false?false:true})}
+/* s26mo2: 'Any' seat: one crypto byte, 256 % 8 = 0 so each of 1-8 has exactly 32/256 = 1/8 (no modulo bias) */
+function drawSeat(rb){const b=(rb||(n=>crypto.getRandomValues(new Uint8Array(n))))(1)[0];return 1+(b%F.MANAGERS)}
 async function botSeat(K,i,gen,n){const mid=F.hexId(12);const sh=await F.mgrHash(mid,F.newSecret());/* the bot's secret is thrown away: nobody can act as a bot except the auto-pick and the commissioner */
   return{mid,claim:F.makeClaim({mid,i,gen,name:botName(n),team:BOT_TEAMS[(n-1)%BOT_TEAMS.length],sh,w:'bot'}),prof:F.makeProfile({mid,name:botName(n),team:BOT_TEAMS[(n-1)%BOT_TEAMS.length],emoji:'🤖',pv:0})}}
 /* o: {parent, parentName, settings, solo, mgrName, teamName, clockSecs} -> {id, mid, secret, cmSecret} */
@@ -17,7 +19,7 @@ async function create(o){o=o||{};const id=F.makeMockId();const K=F.Keys(id);cons
   const name=(F.clean(o.parentName)?'Practice: '+F.clean(o.parentName):'Mock draft').slice(0,40);
   const ns=mockSettings(o.settings,o.clockSecs,o.type);
   /* s26mo: seat 1-8 or 0 = any (random); bot style 'best' | 'random' */
-  const want=(+o.seat>=1&&+o.seat<=F.MANAGERS)?+o.seat:0;const seat=want||1+Math.floor(Math.random()*F.MANAGERS);const botStyle=o.botStyle==='random'?'random':'best';ns.tz=UI.tz();
+  const want=(+o.seat>=1&&+o.seat<=F.MANAGERS)?+o.seat:0;const seat=want||drawSeat();const botStyle=o.botStyle==='random'?'random':'best';ns.tz=UI.tz();
   const meta=F.defaultMeta(id,Object.assign({name},ns),mid);meta.name=F.clean(name);meta.settings=ns;meta.mock=true;meta.solo=!!o.solo;meta.parent=parent||null;
   meta.pass=await F.makePass(cmSecret);meta.mockOpts={seat:want,botStyle};
   const me=F.clean(o.mgrName)||'You',team=F.clean(o.teamName)||'My practice team';
@@ -43,11 +45,12 @@ async function fillBots(meta){const K=F.Keys(meta.id);const N=meta.settings.mana
     const r=await F.claimKey(io,{url:K.slot(i,gen),mine:b.claim,parse:F.parseClaim,same:(a,c)=>a.mid===c.mid,held:a=>a.i===i&&a.gen===gen,wait:400});
     if(r.ok){await Store.set(K.mgr(b.mid),b.prof);got.push(b.mid)}else n--}
   return got}
-window.FBNMock={create,fillBots,mockSettings,botName};
+window.FBNMock={create,fillBots,mockSettings,botName,drawSeat};
 /* s26mo: bot draft style 'random' on a mock: a bot (any seat that is not you) takes a random team still available instead of the best-ranked one; its queue is empty anyway.
    Only on room.html of a mock this device created (the creator's page runs the bots); nothing changes for real leagues. */
 {const orig=F.autoChoice;F.autoChoice=function(st,owner,poolArr,rng,prank){try{const dm=window.DR2_meta&&window.DR2_meta();const l=UI.qs().get('l');
-  if(dm&&dm.mock&&l){const o=F.parseJ(UI.lsGet('mockopts.'+l)||'');if(o&&o.botStyle==='random'&&owner!==o.me)return orig(st,owner,poolArr,rng,null)}}catch(e){}return orig(st,owner,poolArr,rng,prank)}}
+  if(dm&&dm.mock&&l){const o=F.parseJ(UI.lsGet('mockopts.'+l)||'');if(o&&o.botStyle==='random'&&owner!==o.me){/* s26mo2: seeded per mock AND per pick: the room's rng is seeded by pick number, mixed here with the mock id, so different mocks differ while a reload/resume of one mock repeats the same pick */
+    const r0=rng?Math.floor(rng()*4294967296):0;return orig(st,owner,poolArr,F.mulberry((F.hash32('mockbot:'+l)^r0)>>>0),null)}}}catch(e){}return orig(st,owner,poolArr,rng,prank)}}
 /* ===================== mock.html page ===================== */
 const app=document.getElementById('mockapp');if(!app)return;
 const {esc,$}=UI;const P=UI.qs();const from=F.parseCode(P.get('from')||'');

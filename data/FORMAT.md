@@ -40,7 +40,28 @@ Team ids are **ESPN team ids as strings** (the same ids as `assets/teams.js`, fo
 | `games[].status` | `final`, `scheduled` or `live`. Postponed or canceled games are left out. Only `final` games with two different scores count. |
 | `games[].kind` | `reg` regular season, `conf` conference game or conference tournament game, `ncaa` NCAA tournament. |
 | `games[].round` | for `ncaa`: `First Four`, `1st Round`, `2nd Round`, `Sweet 16`, `Elite 8`, `Final Four`, `National Championship`. For conference tournaments: free text such as `Semifinals`. Empty otherwise. |
+| `conf` | optional, written by `tools/refresh_data.py` (s26-refresh-conf): `{"<espnId>": {"conf": "acc", "confRegChamp": bool, "confTournChamp": bool, "confTournStarted": bool}}` for every school in `assets/teams.js`. Out of season every flag is `false`. Read by `S.confPoints` in `js/scoring.js`. Kept by `--merge`. |
 | `home` / `away` | `id` (required), `score` (number or `null`), `seed` (number or `null`, only for `ncaa` games), optional `short` (display name, used only when the team is not in `assets/teams.js`). |
+### Optional `conf` (conference titles, s26c7/s26c8)
+
+A top-level `conf` object, keyed by ESPN team id (string). Leave it out (or `{}`) until conference titles are known; schools not listed simply score no conference points.
+
+```json
+"conf": {
+  "150":  { "conf": "ACC", "confRegChamp": true,  "confTournChamp": false, "confTournStarted": true },
+  "2509": { "conf": "B1G", "confRegChamp": false, "confTournChamp": true }
+}
+```
+
+| field | meaning |
+|---|---|
+| `conf` | conference name or short code. Schools with the same value are one conference (used to tell whether its tournament has started). |
+| `confRegChamp` | `true` = regular-season champion (the conference tournament's top seed). Scores `conf_reg` (+4) once, and **only once that conference tournament has started**: `confTournStarted` is `true`, or `confTournChamp` is `true`, or a `live`/`final` `kind:"conf"` game with a non-empty `round` involves a school of that conference. |
+| `confTournChamp` | `true` = won the conference tournament. Scores `conf_tourn` (+4) once. |
+| `confTournStarted` | optional `true` once the conference tournament has tipped off (otherwise it is read from the games). |
+
+Points come from `js/scoring.js` (`S.POINTS.conf_reg`, `S.POINTS.conf_tourn`, via `S.confPoints`); the League total is `S.leagueTotals` = season wins x `S.SEASON_WIN` + NCAA tournament points + conference points.
+
 
 ## `data/tournament.json`
 
@@ -79,4 +100,8 @@ Team ids are **ESPN team ids as strings** (the same ids as `assets/teams.js`, fo
 
 Ties: more upsets, then more wins, then name.
 
+
+**Conference titles** (from the optional `conf` map above): regular-season champion +4 (`conf_reg`, once its conference tournament has started), conference tournament champion +4 (`conf_tourn`).
+
+**League total** (Standings, s26c8) = Full Season wins x 1 (`S.SEASON_WIN`) + NCAA Tournament points + conference points (`S.leagueTotals`). Ties: more wins, then win %, then point difference, then name; still tied = shared place. Losses score nothing.
 The point values are fixed in `js/scoring.js` (seed-based scoring only) and can be overridden with a `points` object in `data/tournament.json`.

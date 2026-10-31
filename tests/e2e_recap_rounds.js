@@ -1,0 +1,18 @@
+/* s25-full (Paul via NCAA): recap Full draft order = every round stacked as a collapsible header ('Round N · order 1 to 8' / 'Round N · reversed',
+   chevron, >= 44px); Round 1 open, others closed; tapping a header toggles it without a scroll jump; your picks highlighted. OUT env = shots. */
+const L=require('./lib.js');const {seedRecap}=require('./recap_seed.js');const {sleep}=L;
+let n=0,bad=0;const fails=[];const ok=(m,c,x)=>{n++;if(c)console.log('  ok  '+m);else{bad++;fails.push(m);console.log('FAIL  '+m+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,300):''))}};
+(async()=>{try{const id=await seedRecap(null,{power:true});const info=seedRecap.info;const me=info.managers[5];
+ for(const [w,h,d] of [[390,844,false],[1280,800,true]]){const pre=w+'px: ';const P=await L.phone('rr'+w,{w,h,desktop:d});await P.page.setBypassServiceWorker(true);
+  await P.page.evaluateOnNewDocument((id,me)=>localStorage.setItem('fbn.me.'+id,JSON.stringify({mid:me.id,k:me.k})),id,me);await P.go('recap.html?l='+id);await P.page.waitForSelector('#rc_order',{timeout:25000});await sleep(2000);
+  const r=await P.page.evaluate(()=>{const g=[...document.querySelectorAll('#rc_order details.rdgrp')];return{n:g.length,open:g.map(x=>x.open),heads:g.map(x=>x.querySelector('summary').textContent.trim()),h:g.map(x=>Math.round(x.querySelector('summary').getBoundingClientRect().height)),chev:getComputedStyle(g[0].querySelector('summary'),'::after').content,vis1:[...g[0].querySelectorAll('.dorow')].filter(e=>e.checkVisibility?e.checkVisibility():!!e.offsetParent).length,vis2:[...g[1].querySelectorAll('.dorow')].filter(e=>e.checkVisibility?e.checkVisibility():!!e.offsetParent).length,mine:document.querySelectorAll('#rc_order .dorow.mine').length}});
+  ok(pre+'8 round headers',r.n===8,r.n);ok(pre+'on load only Round 1 is open',r.open[0]&&r.open.slice(1).every(x=>!x)&&r.vis1===8&&r.vis2===0,{vis1:r.vis1,vis2:r.vis2,open:r.open});
+  ok(pre+"headers read 'Round N · order 1 to 8' (odd) / 'Round N · reversed' (even)",r.heads.every((t,i)=>t===(i%2?`Round ${i+1} · reversed`:`Round ${i+1} · order 1 to 8`)),r.heads);
+  ok(pre+'headers are at least 44px tall with a chevron',r.h.every(x=>x>=44)&&/▾/.test(r.chev),{h:r.h,c:r.chev});ok(pre+'your picks are highlighted',r.mine===8,r.mine);
+  await P.page.$eval('#rdg3 > summary',e=>e.scrollIntoView({block:'center'}));await sleep(300);const y0=await P.page.evaluate(()=>({y:scrollY,t:document.querySelector('#rdg3>summary').getBoundingClientRect().top}));
+  await P.page.click('#rdg3 > summary');await sleep(500);const y1=await P.page.evaluate(()=>({y:scrollY,t:document.querySelector('#rdg3>summary').getBoundingClientRect().top,open:document.getElementById('rdg3').open,vis:[...document.querySelectorAll('#rdg3 .dorow')].filter(e=>e.checkVisibility?e.checkVisibility():!!e.offsetParent).length,mine:document.querySelectorAll('#rdg3 .dorow.mine').length}));
+  ok(pre+'tapping Round 3 opens it (8 picks, your pick highlighted)',y1.open&&y1.vis===8&&y1.mine===1,y1);ok(pre+'no scroll jump on toggle',Math.abs(y1.y-y0.y)<=2&&Math.abs(y1.t-y0.t)<=2,{y0,y1});
+  if(process.env.OUT){require('fs').mkdirSync(process.env.OUT,{recursive:true});await P.page.$eval('#rc_order',e=>e.scrollIntoView({block:'start'}));await sleep(300);await P.page.screenshot({path:process.env.OUT+'/recap_rounds_'+w+'.png'})}
+  await P.page.click('#rdg3 > summary');await sleep(400);ok(pre+'tapping again closes it',!(await P.page.evaluate(()=>document.getElementById('rdg3').open)));ok(pre+'no page errors',P.errs.length===0,P.errs);await P.close()}
+}catch(e){bad++;fails.push('exception');console.log('exception: '+(e.stack||e))}
+console.log(`${n-bad} / ${n} checks passed`+(bad?' — FAILED: '+fails.join('; '):''));process.exit(bad?1:0)})();

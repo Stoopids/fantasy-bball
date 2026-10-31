@@ -4,7 +4,7 @@
 body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
 a{color:var(--acc)}
 header{max-width:1000px;margin:0 auto;padding:0 0 8px}
-.hero{position:relative;aspect-ratio:992/340;background:linear-gradient(135deg,#17224a 0%,#2b2a4a 55%,#6b4220 100%) center 14%/cover no-repeat;border-radius:0 0 18px 18px;overflow:hidden}
+.hero{position:relative;aspect-ratio:992/160;background:linear-gradient(135deg,#17224a 0%,#2b2a4a 55%,#6b4220 100%) 50% 50%/cover no-repeat;border-radius:0 0 18px 18px;overflow:hidden}
 .titlebar{padding:12px 10px 4px;text-align:left}
 .titlebar .tag{margin:6px 0 0;color:#e7ecf6}
 .fresh{display:flex;width:fit-content;max-width:100%;align-items:center;min-height:40px;margin:-6px 0 -8px;padding:6px 14px 6px 0;font-size:12px;line-height:1.3;color:var(--mut);opacity:.55;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
@@ -12,7 +12,7 @@ header{max-width:1000px;margin:0 auto;padding:0 0 8px}
 .fresh:hover{opacity:.85}
 .fresh:focus-visible{opacity:.9;outline:1px dashed var(--mut);outline-offset:-2px;border-radius:6px}
 .sub{padding:0 14px}
-@media (max-width:640px){.hero{aspect-ratio:16/10;background-position:center 30%}}
+@media (max-width:640px){.hero{aspect-ratio:16/5;background-position:50% 50%}}   /* s26c5: banner about half its old height (was 16/10) */
 h1{color:var(--acc);margin:0;text-transform:uppercase;overflow-wrap:anywhere;font-size:clamp(34px,9vw,56px);letter-spacing:.04em;font-weight:900;line-height:1}
 h1 span{color:var(--acc)}
 .tag{color:var(--mut);margin:6px 0 0}
@@ -588,3 +588,42 @@ nav#ltabs .nl{max-width:100%;overflow:visible;white-space:normal;overflow-wrap:n
 .mx.oqm .nk{letter-spacing:.02em}.mx.oqm th.nk{white-space:normal;overflow-wrap:normal;word-break:keep-all;font-size:11px;line-height:1.15;vertical-align:bottom;min-width:3.5em}.mx.oqm td.rn.nk{white-space:normal;overflow-wrap:normal;font-size:12px;line-height:1.2;min-width:7em;max-width:16em}.oqc .cn.nk{overflow-wrap:anywhere;font-weight:700;font-size:13px;line-height:1.15}   /* s25k: team nicknames: column heads wrap between words only (the grid scrolls sideways); row names wrap, a long single word stays whole and the grid scrolls sideways */
 /*<BETS-TALLY> s25k: Bets sub-tabs, CSS from the partner build (ONE-BETS .ob-seg + TAB-GRID .tabs.ob-seg) */.ob-seg{flex-wrap:nowrap;gap:0;max-width:440px}.ob-seg button{flex:1 1 0;min-width:0;position:relative;border-radius:0;white-space:nowrap;padding:10px 6px}.ob-seg button:first-child{border-radius:10px 0 0 10px}.ob-seg button:last-child{border-radius:0 10px 10px 0;margin-left:-1px}.ob-seg button.on{background:var(--acc);color:#111;border-color:var(--acc);font-weight:800}.tabs.ob-seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0}.tabs.ob-seg button{white-space:normal;min-height:44px}#b27People td.n,#b27People th.n{text-align:right}/*</BETS-TALLY>*/
 #b27Settle .tset{padding:6px 0;font-weight:700;overflow-wrap:anywhere;line-height:1.3}#b27Settle .tset+.tset{border-top:1px solid var(--line)}   /* s25l: Tally settle lines (partner S25J) */
+/* s26c3 compact owner breakdown (Rosters tab): tighter header card, one subgrid row per school, category point chips under each school */
+#ownercard.ohc{padding:10px 12px}
+#ownercard.ohc .oh{gap:8px}
+#ownercard.ohc .ohn{min-width:0}
+#ownercard.ohc .ohn>b{font-size:17px;line-height:1.2}
+#ownercard.ohc .ohn .note{margin:0;font-size:12px}
+#ownercard.ohc .ohp{margin-top:4px}
+.obk{padding:8px 10px;display:grid;grid-template-columns:minmax(0,max-content) repeat(4,max-content);justify-content:start;column-gap:14px;align-items:center;overflow:hidden}
+.obk .obtg{grid-column:1/-1;contain:inline-size;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:0 0 2px}
+.obk .obtg .note{margin:0}
+.obk .obtg button{min-height:44px;min-width:44px;padding:0 12px;font-size:12.5px;font-weight:700}.obk .obtg button.on{border-color:var(--acc);color:var(--acc)}
+.obk .obh,.obk .obr,.obk .obl{grid-column:1/-1;display:grid;grid-template-columns:subgrid;align-items:center}
+.obk .obh{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);font-weight:800;white-space:nowrap;padding:2px 0 4px;border-bottom:1px solid var(--line)}
+.obk .obr{border-bottom:1px solid var(--line);padding:3px 0 5px}
+.obk .obr:last-child{border-bottom:0}
+.obk .obl{min-height:44px;cursor:pointer;border-radius:10px}
+.obk .n{text-align:right;font-variant-numeric:tabular-nums;font-size:14px;white-space:nowrap}
+.obk .obtot{color:var(--acc);font-size:15px}
+.obk .obt{min-width:0;display:flex}
+.obk .obt .chip.school-chip{width:auto;max-width:100%;height:32px;min-height:32px;font-size:13px;padding:0 9px 0 3px;position:relative;column-gap:5px}
+.obk .obt .chip.school-chip::before{content:'';position:absolute;left:0;right:0;top:-6px;bottom:-6px}   /* 44px tap area around the 32px chip */
+.obk .obt .chip.school-chip img,.obk .obt .chip.school-chip .nologo{width:24px;height:24px}
+.obk .obc{grid-column:1/-1;contain:inline-size;display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;min-width:0}
+.obk .obp{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:99px;background:var(--card2);border:1px solid var(--line);font-size:11.5px;line-height:1.5;white-space:nowrap;color:var(--tx)}
+.obk .obp b{color:var(--good)}
+.obk .obp.neg b{color:var(--bad)}
+.obk .obp.z{opacity:.55}.obk .obp.z b{color:var(--mut)}
+.obk .obz{font-size:11.5px}
+.obk .det{grid-column:1/-1;contain:inline-size;margin:6px 0 2px;min-width:0;overflow-wrap:anywhere}
+@media (max-width:420px){.obk{column-gap:8px;padding:6px 8px}.obk .n{font-size:13px}.obk .obt .chip.school-chip{font-size:12px}}
+@media (max-width:339px){.obk{column-gap:6px}.obk .obt .chip.school-chip{padding-right:6px}}
+/*<S26C4> Standings > Points (.obk.pk) and All teams (.obk.atk): reuse the s26c3 compact grid; no sideways scroll on phones */
+.obk.pk{margin-bottom:10px}.obk.pk .obtg{min-height:36px}.obk.pk .pkn{font-size:16px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.obk.pk .pkt{color:var(--acc);font-size:16px;white-space:nowrap}
+.obk.pk .obl,.obk.atk .obl{cursor:default}
+.obk.atk{grid-template-columns:minmax(0,max-content) minmax(0,1fr) repeat(3,max-content)}
+.obk.atk .ato{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+@media (max-width:480px){.obk.atk{grid-template-columns:minmax(0,1fr) repeat(3,max-content);column-gap:8px}.obk.atk .obh span:nth-child(2){display:none}.obk.atk .obh span:first-child::after{content:' / owner'}.obk.atk .obl{grid-template-rows:auto auto}.obk.atk .obl>.obt{grid-column:1;grid-row:1}.obk.atk .obl>.ato{grid-column:1;grid-row:2;font-size:12px;color:var(--mut);padding:0 0 2px 4px}.obk.atk .obl>.n{grid-row:1/span 2}}
+/*</S26C4>*/
+/* s26c5: header buttons sit on the banner (wrapper .herow), not over the site title */.herow{position:relative}

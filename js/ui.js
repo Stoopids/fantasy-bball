@@ -131,7 +131,8 @@ UI.rememberMock=function(o){try{const all=UI.lsJSON('mockids',[]);const b=(Array
 UI.practiceBanner=function(sub){return '<div class="practicebn" id="practicebn" role="note"><b>PRACTICE DRAFT</b><span>'+UI.esc(sub||'Not your real league. Nothing here changes your league.')+'</span></div>'};
 /* "Back to my league": the league this mock copied, else the first league on this device, else the home page */
 UI.mockBack=function(meta){const p=meta&&meta.parent&&FBN.parseCode(meta.parent);const l=p||((UI.myLeagues().find(x=>x&&typeof x.id==='string'&&FBN.parseCode(x.id))||{}).id);
-  return l?{href:UI.roomHref(FBN.parseCode(l)),label:'Back to my league'}:{href:UI.pageUrl('index.html'),label:'Back to home'}};
+  /* s26mo2: only a mock made from a league (meta.parent) offers Back to my league; a mock with no parent league offers Back to home */
+  return p?{href:UI.roomHref(p),label:'Back to my league'}:{href:UI.pageUrl('index.html'),label:'Back to home'}};
 UI.mockAgain=meta=>UI.pageUrl('mock.html',{from:meta&&meta.parent?FBN.parseCode(meta.parent):''});
 /* s24: the current tab lives in the URL hash as "#tab=<name>" and NOTHING else (never an id, seat, k= or other secret). The query string is kept as is.
    U.hashTab(valid): the tab named in the hash; null when the hash names an unknown tab or holds anything else; undefined when there is no hash. */

@@ -6,8 +6,10 @@
 (function(){const F=FBN,U=UI,esc=U.esc,S=FBNScore,A=FBNLeagueD;const id=F.parseCode(U.qs().get('l')||'')||'';
 /* s25h: every tab opens at the top. The browser must not restore an old scroll position; first loads of a tab end at (0,0) unless a deep link (#bets/<id>, #games/<id>) is open */
 try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(e){}
+let PJV=false;
 let TOP0=true;   /* true until the open tab has finished its first full render (or the user scrolls by hand); live refreshes never jump */
 const topReady=()=>!!D&&(tab!=='bets'||!(window.LBETS&&LBETS._state&&LBETS._state.state==='init'));
+let SUB=null,MISS=null;
 const topNow=()=>{if(SUB)return;try{window.scrollTo(0,0)}catch(e){}};
 /* s25j no scroll jump: any re-render / async height change keeps the element the reader is looking at in the same place on screen (an anchor + offset restore).
    Works without CSS scroll anchoring (iOS Safari has none). Not used for the first open of a tab (TOP0) or a deep link, which move on purpose. */
@@ -44,30 +46,30 @@ if(!id){app.innerHTML='<main><div class="card"><b>No league</b><div class="note"
 const LLOADER=window.LLOADER=t=>{const b='<span class="bl-b"><i>🏀</i><s></s></span>';return '<div class="bl" role="status" aria-live="polite"><div class="bl-row" aria-hidden="true">'+b+b+b+'</div><div class="bl-t">'+esc(t||'Loading…')+'</div></div>'};
 app.innerHTML='<main><div id="loading">'+LLOADER('Loading…')+'</div></main>';
 /* ---------- state ---------- */
-const TABS=[['standings','🏆 Standings','Ranks','Standings'],['games','📅 Games','Games','Games'],['bets','💵 Bets','Bets','Bets'],['rosters','👥 Rosters','Squads','Rosters'],['teams','🏀 All teams','Teams','All teams'],['postseason','✅ Postseason','Post','Postseason'],['redraft','🔄 Redraft','Redraft','Redraft'],['rules','📖 Rules','Rules','Rules'],['archive','🗂️ Archive','Past','Archive']];   /* s25 order (Paul) */
+const TABS=[['standings','🏆 Standings','Ranks','Standings'],['games','📅 Games','Games','Games'],['bets','💵 Bets','Bets','Bets'],['rosters','👥 Rosters','Squads','Rosters'],['teams','🏀 All teams','Teams','All teams'],['redraft','🔄 Redraft','Redraft','Redraft'],['rules','📖 Rules','Rules','Rules'],['archive','🗂️ Archive','Past','Archive']];   /* s25 order (Paul) */
 const KEYS=TABS.map(t=>t[0]);
 let tab='standings',ownerSel=null,openTeam={},gOwner='all',gMode=null,gDay='all',gH2H=false,gAll=false;
 let L=null,D=null,SC=null,TN=null,errS='',errT='',CM=false,HERO_CUSTOM=null,MG=[];
 /* s24 routes: every tab has its own hash (#standings #games #rosters #bets #teams #postseason #redraft #archive #rules), plus deep links #bets/<betId> and #games/<gameId>.
    URLs written by this page (pushState for tab switches, replaceState for the first normalization) and every shared / copied link are built ONLY from
    origin + path + ?l=CODE (+ &demo=1 in the demo) + the route hash: never a manager id, k=, cm= or any other query value. */
-let SUB=null,MISS=null;
 const SUBOK=v=>/^[A-Za-z0-9_.:-]{1,64}$/.test(v);
 const FRE=/^bets\/f=(all|me|[1-8])-(all|waiting|open|settled|wash)(?:\/q=([^\/]{1,180}))?$/;   /* Bets filter in the hash: person (all / me / position 1-8 in the league, never a manager id) - status */
 function readRoute(hs){try{const h=String(hs||'').replace(/^#/,'').split('&')[0];const fm=FRE.exec(h);if(fm)return{t:'bets',sub:null,f:fm[1]+'-'+fm[2],q:fm[3]?decodeURIComponent(fm[3]):''};if(!h||h.indexOf('=')>=0)return null;const p=h.split('/');let t=p[0],sub=p[1]?decodeURIComponent(p[1]):null;if(sub&&!SUBOK(sub))sub=null;
-  if(t==='standings'&&p[1]==='tournament'){t='postseason';sub=null}if(t==='power')t='standings';if(t==='schedule')t='games';if(!KEYS.includes(t))return null;if(t!=='bets'&&t!=='games')sub=null;return{t,sub}}catch(e){return null}}
+  if(t==='postseason'||(t==='standings'&&(p[1]==='tournament'||p[1]==='points'||p[1]==='breakdown')))return{t:'standings',sub:null,pv:true};/* s26c4: no Postseason tab; these open Standings > Breakdown (#standings/points is an alias) */if(t==='power')t='standings';if(t==='schedule')t='games';if(!KEYS.includes(t))return null;if(t!=='bets'&&t!=='games')sub=null;return{t,sub}}catch(e){return null}}
 const standalone=()=>{try{return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true}catch(e){return false}};
 /* read before anything strips the fragment. No route in the URL: a reload / back-forward, or any open inside the home-screen app, falls back to the last tab of
    this browser tab (sessionStorage) and then to the last tab used for THIS league on this device (localStorage fbn.x.<league>.ltab). A plain open in the browser
    (e.g. from the draft room) still starts on Standings. */
 const ROUTE0=(()=>{const r=readRoute(location.hash);if(r)return r;try{const nav=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0];if((nav&&(nav.type==='reload'||nav.type==='back_forward'))||standalone()){const x=readRoute(sessionStorage.getItem('fbn.ltab.'+id)||'')||readRoute(U.lsGet('x.'+id+'.ltab')||'');if(x)return{t:x.t,sub:null}}}catch(e){}return null})();
 /* s24 (draft room HOOK.md, hook 1): mock leagues (meta.mock) never write or use the last-tab / fbn.lastsite memory; any old record of this mock league is cleared */
+if(ROUTE0&&ROUTE0.pv)PJV=true;   /* s26c4: first open on #postseason / #standings/points */
 const MOCK=()=>!!(L&&L.meta&&L.meta.mock===true);
 function saveLast(){const mk=MOCK();try{if(!mk)sessionStorage.setItem('fbn.ltab.'+id,routeHash());else sessionStorage.removeItem('fbn.ltab.'+id);sessionStorage.setItem('fbn.launched','1')}catch(_){}
   if(mk){U.lsSet('x.'+id+'.ltab',null);const ll=U.lsJSON('lastsite',null);if(ll&&ll.id===id)U.lsSet('lastsite',null);return}
   if(DEMO)return;U.lsSet('x.'+id+'.ltab',tab);U.lsSet('lastsite',JSON.stringify({id,t:tab,at:Date.now()}))}
 const fHash=()=>{try{return tab==='bets'&&window.LBETS&&LBETS.filterHash?LBETS.filterHash():''}catch(e){return''}};
-const routeHash=()=>tab+(SUB?'/'+encodeURIComponent(SUB):fHash()?'/'+fHash():'');
+const routeHash=()=>tab+(tab==='standings'&&(()=>{try{return SVIEW==='breakdown'}catch(e){return false}})()?'/breakdown':'')+(SUB?'/'+encodeURIComponent(SUB):fHash()?'/'+fHash():'');
 const cleanPath=h=>location.pathname+'?l='+encodeURIComponent(id)+(DEMO?'&demo=1':'')+(h?'#'+h:'');
 const shareUrl=h=>location.origin+cleanPath(h);
 function hashPut(push){try{const want=cleanPath(routeHash());saveLast();if(location.pathname+location.search+location.hash===want)return;history[push?'pushState':'replaceState'](null,'',want)}catch(e){}}
@@ -81,7 +83,7 @@ function deepGo(){const t=tab,sub=SUB;if(!sub)return;let n=0;
     if(t==='bets'&&window.LBETS&&LBETS.reveal&&LBETS.reveal(sub)&&n++<90){render();setTimeout(go,30);return}   /* the bet exists but the Bets filter hides it: filters go back to Everyone / All */
     MISS=t;const dn=document.getElementById('dlnote');if(dn)dn.innerHTML=missHtml()};
   setTimeout(go,30)}
-function onNav(){const r=readRoute(location.hash)||{t:'standings',sub:null};if(r.t===tab&&r.sub===SUB&&(!r.f||'f='+r.f+(r.q?'/q='+encodeURIComponent(r.q):'')===(fHash()||'f=all-all'))){if(!r.f&&fHash())hashPut(false);return}applyRoute(r);saveLast();TOP0=true;render();if(SUB)deepGo();else window.scrollTo(0,0)}
+function onNav(){const r=readRoute(location.hash)||{t:'standings',sub:null};if(r.pv){SVIEW='breakdown';const re=tab!=='standings';applyRoute(r);saveLast();if(re)TOP0=true;hashPut(false);render();if(re)window.scrollTo(0,0);return}if(r.t===tab&&r.sub===SUB&&(!r.f||'f='+r.f+(r.q?'/q='+encodeURIComponent(r.q):'')===(fHash()||'f=all-all'))){if(!r.f&&fHash())hashPut(false);return}applyRoute(r);saveLast();TOP0=true;render();if(SUB)deepGo();else window.scrollTo(0,0)}
 const canShare=()=>!!(navigator.share&&window.isSecureContext);
 function copyText(url){const done=()=>U.toast('Link copied',2600),fall=()=>{try{const ta=document.createElement('textarea');ta.value=url;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();const okc=document.execCommand('copy');ta.remove();if(okc){done();return}}catch(e){}U.toast('Copy this link: '+url,8000)};
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(done,fall);else fall()}
@@ -205,8 +207,8 @@ const opills=a=>a&&a.length?a.map(n=>`<span class="opill">${esc(ownerEmoji(n))} 
 /* s25 AP Top 25 badge: one helper (LRANK in js/league-d.js); '' when the team is unranked */
 const rkB=tid=>{try{return window.LRANK?LRANK.badge(tid):''}catch(e){return''}};
 /* s25 Standings toggle: League (default) | AP / NET, remembered in localStorage 'standingsView' */
-let SVIEW=(()=>{try{return localStorage.getItem('standingsView')==='apnet'?'rank':'league'}catch(e){return'league'}})();
-const segHtml=()=>`<div class="segw"><div class="segv" role="group" aria-label="Standings view">${[['league','League'],['rank','AP / NET']].map(([v,l])=>`<button type="button" class="seg" data-a="stview" data-v="${v}" aria-pressed="${SVIEW===v}">${esc(l)}</button>`).join('')}</div></div>`;
+let SVIEW=(()=>{if(PJV)return 'breakdown';try{return localStorage.getItem('standingsView')==='breakdown'?'breakdown':'league'}catch(e){return'league'}})();   /* s26c5: League | Breakdown */
+const segHtml=()=>`<div class="segw"><div class="segv" role="group" aria-label="Standings view">${[['league','League'],['breakdown','Breakdown']].map(([v,l])=>`<button type="button" class="seg" data-a="stview" data-v="${v}" aria-pressed="${SVIEW===v}">${esc(l)}</button>`).join('')}</div></div>`;
 function ownerOfTid(){const m={};D.owners.forEach(o=>o.teams.forEach(t=>{m[String(t.tid)]=o}));return m}
 function vRankings(){const R=window.LRANK,own=ownerOfTid();if(!R||!R.ready)return '<div class="card note" id="rkload">Loading rankings…</div>';
   const row=x=>{const o=own[x.id],ap=R.apOf(x.id),nt=R.netOf(x.id),parts=[ap?'AP #'+ap:'',nt?'NET '+nt:''].filter(Boolean).join(' · ');
@@ -223,7 +225,7 @@ function goldN(mid){try{const A=L&&L.meta&&L.meta.archive;if(!A||!Array.isArray(
   A.seasons.forEach(se=>{if(!se||se.no_tournament||!Array.isArray(se.final))return;if(se.final.some(r=>r&&r.mid===mid&&Number(r.place)===1))n++});return n}catch(e){return 0}}
 /* when anyone has a title, the others keep an empty line of the same height so the cards stay equal (nothing is shown in it) */
 function goldLine(mid,any){const n=goldN(mid),t=n+' title'+(n>1?'s':'');return n?`<span class="gold" role="img" aria-label="${esc(t)}" title="${esc(t)}">${'🏆'.repeat(n)}</span>`:any?'<span class="gold gold0" aria-hidden="true"></span>':''}
-function vStandings(){if(SVIEW==='rank')return segHtml()+vRankings();const anyG=D.owners.some(o=>goldN(o.mid)>0);const mx=Math.max(10,...D.owners.map(o=>o.total));
+function vStandings(){if(SVIEW==='breakdown')return segHtml()+vPoints();const anyG=D.owners.some(o=>goldN(o.mid)>0);const mx=Math.max(10,...D.owners.map(o=>o.total));
   return segHtml()+'<div class="ocl">'+D.owners.map(o=>`<div class="card oc strow" data-mid="${esc(o.mid)}"><div class="lb" role="button" tabindex="0" data-a="owner" data-mid="${esc(o.mid)}" aria-label="${esc(o.name)}, ${esc(rankTxt(o))}, ${o.total} points. Open the full breakdown">
     <div class="rank place">${esc(rankTxt(o))}</div>
     <div class="who"><b class="nm">${esc(o.emoji)} ${esc(o.name)}</b>${goldLine(o.mid,anyG)}<small>${esc(o.team_name)}</small></div>
@@ -273,25 +275,51 @@ function vGames(){const every=D.games||[],nHidden=every.filter(g=>!gOwned(g)).le
   if(list.length>300)h+=`<div class="card note">Showing the first 300 games. Use the filters to narrow the list.</div>`;return h}
 function gameLine(g){const fin=g.status==='final';let up='';if(fin&&g.kind==='ncaa'&&g.res==='W'&&g.seed!=null&&g.oppSeed!=null&&+g.seed>+g.oppSeed)up=' <span class="up">😱 UPSET</span>';return up?`<div class="mut" style="font-size:12px">${up}</div>`:''}
 const noPts='No points yet. Everyone starts at 0.';
+/* s26c5 Standings > Breakdown: per manager, the total, then each school with points per category (js/scoring.js values via teamCats(), the s26c3 owner breakdown),
+   – for none, and the school total. Same compact grid as the Rosters breakdown (no sideways scroll on phones). */
+const PCATS=[['wins','Season wins'],['conf_season','Conf. season champ'],['conf_tourney','Conf. tourney champ'],['entry','NCAA entry'],['playin','Play-in win'],['ncaa_wins','NCAA wins'],['upsets','Upsets'],['final4','Final Four'],['champ','National champ'],['missed','Missed dance']];
+function ptsCats(t){const c={};teamCats(t).forEach(x=>{c[x.k]=x.pts});return PCATS.map(([k,l])=>({k,l,pts:c[k]||0}))}
+function vPoints(){const own=D.owners.map(o=>{const ts=o.teams.map(t=>{const cs=ptsCats(t);return{t,cs,tot:cs.reduce((x,c)=>x+c.pts,0)}});return{o,ts,tot:ts.reduce((x,r)=>x+r.tot,0)}});
+  return '<div id="ptsv">'+own.map(({o,ts,tot})=>`<div class="card obk pk" data-mid="${esc(o.mid)}" data-total="${tot}"><div class="obtg"><b class="pkn">${esc(o.emoji)} ${esc(o.name)}</b><b class="pkt"><span class="pv">${tot}</span> pts</b></div><div class="obh" aria-hidden="true"><span>Team</span><span class="n">Rec</span><span class="n">W</span><span class="n">NCAA</span><span class="n">Total</span></div>`+
+    ts.map(({t,cs,tot})=>{const nc=cs.filter(c=>!/^(wins|conf_)/.test(c.k)).reduce((x,c)=>x+c.pts,0);return `<div class="obr" data-tid="${esc(t.tid)}" data-total="${tot}"><div class="obl"><span class="obt">${chip(t.tid)}</span><span class="n">${esc(rec(t.tid))}</span><span class="n">${cs[0].pts||'–'}</span><span class="n">${nc?sign(nc):'–'}</span><b class="n obtot">${tot}</b></div>
+      <div class="obc">${cs.map(c=>`<span class="obp${c.pts===0?' z':c.pts<0?' neg':''}" data-cat="${esc(c.k)}" data-pts="${c.pts}">${esc(c.l)} <b>${c.pts===0?'–':sign(c.pts)}</b></span>`).join('')}</div></div>`}).join('')+'</div>').join('')+
+    `<p class="note">Season wins = 1 point each; losses score nothing (record only). Conference season champ +${D.meta.points.conf_reg}, conference tourney champ +${D.meta.points.conf_tourn}. NCAA points: entry +${D.meta.points.entry}, play-in win +${D.meta.points.playin_win}, each win +${D.meta.points.win}, each upset +${D.meta.points.upset}, Final Four +${D.meta.points.final4}, champion +${D.meta.points.champ}, missed the dance ${D.meta.points.missed}. – = none.</p></div>`}
+let OBALL=false;   /* s26c3: owner breakdown shows every category (zeros too) */
+/* s26c3/s26c8: every scoring category for one school, in the order of the rules. Wins x S.SEASON_WIN; NCAA categories = FBNScore.tournament events;
+   conference titles = FBNScore.confPoints events (scores.json "conf" map; conf_reg only once that conference tournament has started). Losses score nothing (W-L record only). */
+/* s26c3/s26c5: every scoring category for one school, in the order of the rules (losses score nothing, so they only show in the W-L record). */
+function teamCats(t){const ev=t.events||[],sum=k=>ev.filter(e=>e.kind===k).reduce((x,e)=>x+(+e.pts||0),0);
+  return[['wins','Wins',(t.wins||0)*(S.SEASON_WIN||1)],['conf_season','Conf. season champ',sum('conf_reg')],['conf_tourney','Conf. tourney champ',sum('conf_tourn')],   /* s26c8: conference points = FBNScore.confPoints events (scores.json "conf") */
+    
+    ['entry','NCAA entry',sum('entry')],['playin','Play-in win',sum('playin')],['ncaa_wins','NCAA wins',sum('win')],['upsets','Upsets',sum('upset')],
+    ['final4','Final Four',sum('final4')],['champ','National champ',sum('champ')],['missed','Missed dance',sum('missed')]].map(([k,l,pts])=>({k,l,pts}))}
 function vRosters(){if(!ownerSel||!D.owners.some(x=>x.mid===ownerSel))ownerSel=D.owners[0].mid;const o=D.owners.find(x=>x.mid===ownerSel);const mg=MG.find(m=>m.mid===o.mid)||o;
   let h=`<div class="tabs" role="tablist" aria-label="Owner">${D.owners.map(x=>`<button role="tab" aria-selected="${x.mid===ownerSel?'true':'false'}" data-a="pickowner" data-mid="${esc(x.mid)}" class="${x.mid===ownerSel?'on':''}">${esc(x.emoji)} ${esc(x.name)}</button>`).join('')}</div>`;
   const cats=Object.entries(o.by_cat).filter(([k,v])=>v!==0);
-  h+=`<div class="card" id="ownercard"><div class="oh">${U.avatar(dm(mg),48)}<div><b style="font-size:20px">${esc(o.emoji)} ${esc(o.name)} — ${o.total} pts</b> <span class="mut">(${o.tied?'T-'+o.rank:'#'+o.rank})</span><div class="note">${esc(o.team_name)}</div></div></div>
-    <div style="margin-top:6px">${cats.length?cats.map(([k,v])=>`<span class="pill">${esc(D.meta.cat_labels[k]||k)}: <b class="${v<0?'bad':''}">${sign(v)}</b></span>`).join(''):'<span class="mut">'+esc(noPts)+'</span>'}</div></div>`;
-  h+=`<div class="card sc"><table><tr><th>Team</th><th class="n">Record</th><th class="n">Wins</th><th class="n">NCAA pts</th></tr>`;
-  o.teams.forEach((t,ix)=>{const key=o.mid+'|'+t.tid;
-    h+=`<tr class="trow" tabindex="0" role="button" aria-expanded="${openTeam[key]?'true':'false'}" data-a="teamrow" data-key="${esc(key)}"><td>${chip(t.tid,{big:1})}</td><td class="n">${esc(rec(t.tid))}</td><td class="n">${t.wins}</td><td class="n"><b>${t.tpts}</b></td></tr>`;
-    if(openTeam[key]){h+=`<tr><td colspan="4"><div class="det">`;
+  h+=`<div class="card ohc" id="ownercard"><div class="oh">${U.avatar(dm(mg),36)}<div class="ohn"><b>${esc(o.emoji)} ${esc(o.name)} — ${o.total} pts</b> <span class="mut">(${o.tied?'T-'+o.rank:'#'+o.rank})</span><div class="note">${esc(o.team_name)}</div></div></div>
+    <div class="ohp">${cats.length?cats.map(([k,v])=>`<span class="pill">${esc(D.meta.cat_labels[k]||k)}: <b class="${v<0?'bad':''}">${sign(v)}</b></span>`).join(''):'<span class="mut">'+esc(noPts)+'</span>'}</div></div>`;
+  /* s26c3 compact owner breakdown: one grid row per school (chip sized to its name, numbers right next to it, Total = sum of its category points)
+     and under it a wrap of small category chips (non-zero only; "Show all categories" lists every category, zeros dimmed). Points come from
+     FBNScore (js/scoring.js) through the league data: season wins x 1, NCAA events (entry, play-in, wins, upsets, Final Four, champ, missed) as scored. */
+  const allC=!!OBALL;
+  h+=`<div class="card obk"><div class="obtg"><span class="note">Points per category</span><button data-a="oball" aria-pressed="${allC?'true':'false'}" class="btn sec sm${allC?' on':''}">${allC?'Only non-zero':'Show all categories'}</button></div><div class="obh" aria-hidden="true"><span>Team</span><span class="n">Rec</span><span class="n">W</span><span class="n">NCAA</span><span class="n">Total</span></div>`;
+  o.teams.forEach((t,ix)=>{const key=o.mid+'|'+t.tid;const cs=teamCats(t),tot=cs.reduce((x,c)=>x+c.pts,0);const show=allC?cs:cs.filter(c=>c.pts!==0);
+    h+=`<div class="obr" data-tid="${esc(t.tid)}" data-total="${tot}"><div class="obl trow" tabindex="0" role="button" aria-expanded="${openTeam[key]?'true':'false'}" aria-label="${esc((T.TEAMS[t.tid]||{}).name||t.tid)}: ${tot} points. Show details" data-a="teamrow" data-key="${esc(key)}"><span class="obt">${chip(t.tid)}</span><span class="n">${esc(rec(t.tid))}</span><span class="n">${t.wins}</span><span class="n">${t.tpts}</span><b class="n obtot">${tot}</b></div>
+      <div class="obc">${show.length?show.map(c=>`<span class="obp${c.pts===0?' z':c.pts<0?' neg':''}" data-cat="${esc(c.k)}" data-pts="${c.pts}">${esc(c.l)} <b>${c.pts===0?'0':sign(c.pts)}</b></span>`).join(''):'<span class="mut obz">No points yet</span>'}</div>`;
+    if(openTeam[key]){h+=`<div class="det" id="obd-${ix}">`;
       const evs=t.events||[];h+=`<span class="pill">Wins: <b>${sign(t.wins)}</b></span><span class="pill">NCAA Tournament points: <b>${sign(t.tpts)}</b></span>`;
       if(evs.length)h+=`<ul class="it">${evs.map(i=>`<li><b class="${i.pts<0?'bad':'good'}">${sign(i.pts)}</b> ${esc(i.label)}</li>`).join('')}</ul>`;
       const tg=(D.team_games[t.tid]||[]);const gs=tg.filter(g=>g.status==='final').slice(-8).reverse();const nx=tg.filter(g=>g.status!=='final').slice(0,3);
       if(!tg.length)h+=`<div class="note" style="margin-top:6px">No games yet. Scores show up here once games are played.</div>`;
       if(gs.length)h+=`<div class="note" style="margin-top:6px">Last games</div>`+gs.map(g=>`<div style="margin:3px 0">${g.res==='W'?'<b class="good">W</b>':'<b class="bad">L</b>'} ${g.us}-${g.them} ${g.site==='A'?'@':g.site==='N'?'vs (N)':'vs'} ${g.oppId?tlink(g.oppId,g.opp):esc(g.opp)} <span class="mut">${esc(fmtDate(g.day))}${g.round?' · '+esc(g.round):''}</span>${g._lv?' <span class="mut">· live ESPN feed, unofficial</span>':''}${gameLine(g)}</div>`).join('');
       if(nx.length)h+=`<div class="note" style="margin-top:6px">Up next</div>`+nx.map(g=>`<div style="margin:3px 0">${g.status==='live'?'<b class="good">LIVE '+g.us+'-'+g.them+'</b> ':''}${g.site==='A'?'@':'vs'} ${esc(g.opp)} <span class="mut">${esc(g.start?etLabel(etKey(g))+', '+etTime(g):fmtDate(g.day))}</span></div>`).join('');
-      h+=`</div></td></tr>`}});
-  return h+`</table></div>`}
-function vTeams(){const rows=[];D.owners.forEach(o=>o.teams.forEach(t=>rows.push({o:o.name,t})));rows.sort((a,b)=>b.t.wins-a.t.wins||(T.TEAMS[a.t.tid]&&T.TEAMS[b.t.tid]?T.TEAMS[a.t.tid].short.localeCompare(T.TEAMS[b.t.tid].short):0));
-  return `<div class="card sc"><table><tr><th>Team</th><th>Owner</th><th class="n">Record</th><th class="n">Pts</th></tr>${rows.map(r=>`<tr><td>${chip(r.t.tid)}</td><td>${esc(r.o)}</td><td class="n">${esc(rec(r.t.tid))}</td><td class="n"><b>${r.t.wins}</b></td></tr>`).join('')}</table></div><p class="note">Record = regular-season and conference games (the same wins that make a manager's points). NCAA Tournament points are on the Postseason tab. Every school drafted in this league is listed, ${rows.length} in all.</p>`}
+      h+=`</div>`}h+=`</div>`});
+  return h+`</div>`}
+
+function vTeams(){const R_=window.LRANK&&LRANK.ready?LRANK:null;const wl=tid=>(D.records||{})[tid]||{w:0,l:0};const pct=r=>r.w+r.l?r.w/(r.w+r.l):0;const nm=tid=>((T.TEAMS[tid]||{}).short||String(tid));
+  const rows=[];D.owners.forEach(o=>o.teams.forEach(t=>rows.push({o:o.name,t,r:wl(t.tid)})));rows.sort((a,b)=>pct(b.r)-pct(a.r)||b.r.w-a.r.w||a.r.l-b.r.l||nm(a.t.tid).localeCompare(nm(b.t.tid)));   /* s26c4: best record first */
+  const ap=tid=>R_?R_.apOf(tid):null,nt=tid=>R_?R_.netOf(tid):null;
+  return `<div class="card obk atk" id="allteams"><div class="obh" aria-hidden="true"><span>Team</span><span>Owner</span><span class="n">Record</span><span class="n">AP</span><span class="n">NET</span></div>${rows.map(r=>`<div class="obr" data-tid="${esc(r.t.tid)}" data-w="${r.r.w}" data-l="${r.r.l}"><div class="obl"><span class="obt">${chip(r.t.tid)}</span><span class="ato">${esc(r.o)}</span><span class="n">${esc(rec(r.t.tid))}</span><span class="n">${ap(r.t.tid)?'#'+ap(r.t.tid):'–'}</span><span class="n">${nt(r.t.tid)||'–'}</span></div></div>`).join('')}</div><p class="note">Sorted by record (best first). Record = regular-season and conference games. AP = AP Top 25 (ESPN)${R_&&R_.apDate?', '+esc(fmtDate(R_.apDate)):''}; NET = NCAA.com NET${R_&&R_.netThrough?', through '+esc(fmtDate(R_.netThrough)):''}${R_?'':' (loading…)'}. – = unranked. NCAA Tournament points are under Standings › Breakdown. Every school drafted in this league is listed, ${rows.length} in all.</p>`}
 function mark(f){if(!f)return '';if(f.v===true)return '✅';if(f.v===false)return '<span class="mut">·</span>';return '<span class="mut" title="not decided yet">⏳</span>'}
 function vPostseason(){const M=D.meta;
   let h=`<div class="swipe">↔ Swipe sideways to see every column</div><div class="card sc"><table><tr><th>Team</th><th>Owner</th><th>Made NCAA</th><th>Play-in win</th><th class="n">NCAA wins</th><th class="n">Upsets</th><th>Final Four</th><th>National champ</th><th>Missed dance</th></tr>`;
@@ -344,7 +372,7 @@ try{let _cf=0;window.addEventListener('resize',()=>{clearTimeout(_cf);_cf=setTim
 const roomHref=()=>U.roomHref(id),recapHref=()=>U.pageUrl('recap.html',{l:id});
 function header(){const m=L.meta;
   const ctl=CM?`<div class="heroctl" id="heroctl"><button class="btn sm" data-a="yourlinks" id="yourlinks">🔗 Your links</button><button class="btn sm" data-a="herochange" id="herochange">Change photo</button>${HERO_CUSTOM?'<button class="btn sm" data-a="heroreset" id="heroreset">Reset to default</button>':''}<input type="file" id="herofile" accept="image/jpeg,image/png,image/webp,image/*" hidden></div>`:'';
-  return `<header id="lhdr">${brandHtml()}<div class="hero" id="hero" role="img" aria-label="College basketball banner"></div>${ctl}<div class="titlebar" id="lhead"><h1 id="ltitle">${esc(m.name)}</h1>
+  return `<header id="lhdr">${brandHtml()}<div class="herow" id="herow"><div class="hero" id="hero" role="img" aria-label="College basketball banner"></div>${ctl}</div><div class="titlebar" id="lhead"><h1 id="ltitle">${esc(m.name)}</h1>
   <div id="fresh" class="fresh" role="button" tabindex="0" hidden data-a="fresh"><span></span></div>
   <div id="live" class="lv" hidden><span id="lvT" aria-live="polite"></span><button id="lvB" type="button" data-a="lvrefresh" aria-label="Refresh live games">&#8635; Refresh Live Games</button><span id="lvU" class="lvU" hidden></span></div>
   <p class="tag" id="tag">${esc(tagFor())}</p></div><div class="sub" id="badges" style="margin:0">${D.meta.mode==='demo'?'<span class="badge warn" id="samplenote">DEMO DATA</span>':''}</div></header>`}
@@ -442,10 +470,11 @@ const ACT={trynow:()=>boot(true),
   cplink:el=>{const r=readRoute(el.dataset.h||'');if(r)shareLink(r.t+(r.sub?'/'+encodeURIComponent(r.sub):''),tabTitle())},
   owner:(el,e)=>{if(e.target.closest('a.chip,a.tl'))return;goOwner(el.dataset.mid)},
   pickowner:el=>{ownerSel=el.dataset.mid;render()},
+  oball:()=>{OBALL=!OBALL;render()},
   teamrow:(el,e)=>{if(e.target.closest('a.chip,a.tl'))return;const k=el.dataset.key;openTeam[k]=!openTeam[k];render()},
   gfin:el=>{const id=el.dataset.g||'',o=el.getAttribute('aria-expanded')!=='true';if(o)GEXP.add(id);else GEXP.delete(id);el.setAttribute('aria-expanded',String(o));const c=el.closest('.gm'),x=c&&c.querySelector('.gx');if(x)x.hidden=!o;if(c)c.classList.toggle('open',o);
     const a=el.getAttribute('aria-label')||'';el.setAttribute('aria-label',a.replace(/(Show|Hide) details$/,o?'Hide details':'Show details'))},
-  stview:el=>{SVIEW=el.dataset.v==='rank'?'rank':'league';try{localStorage.setItem('standingsView',SVIEW==='rank'?'apnet':'league')}catch(e){}render()},
+  stview:el=>{SVIEW=el.dataset.v==='breakdown'?'breakdown':'league';hashPut(false);try{localStorage.setItem('standingsView',SVIEW)}catch(e){}render()},
   gmode:el=>{gMode=el.dataset.v;gDay='all';render()},gh2h:()=>{gH2H=!gH2H;render()},
   fresh:()=>freshToggle(),lvrefresh:()=>lvManual()};
 document.addEventListener('change',e=>{const el=e.target;if(el.id==='herofile'){const f=el.files&&el.files[0];el.value='';if(f)heroChange(f);return}

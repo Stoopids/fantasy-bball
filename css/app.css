@@ -531,19 +531,15 @@ a.btn{min-height:44px}
 .srow{display:flex;flex-wrap:wrap;gap:8px}.srow>.btn{flex:1 1 calc(50% - 8px);min-height:44px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
 @media(min-width:700px){.srow>.btn{flex:1 1 0}}.srow>.btn.ok{border-color:#3fb950;color:#3fb950}
 /* s25-full load flash: while html.loading, only the loader is visible (no tabs, views, banners, pop-ups or sheets) */
-.loader{display:none}html.loading .loader{display:flex;position:fixed;inset:0;align-items:center;justify-content:center;gap:10px;color:var(--mut,#9aa4b2);font-size:15px;z-index:50}
+/* s25m: the "Loading the draft room…" spinner is ~3x bigger (54px ring, 45px text at desktop); clamp() shrinks it to fit 320px with no overflow; the duplicate copy of this block (was ~line 542) removed */
+.loader{display:none}html.loading .loader{display:flex;flex-direction:column;position:fixed;inset:0;align-items:center;justify-content:center;gap:clamp(12px,4vw,24px);padding:0 12px;box-sizing:border-box;text-align:center;color:var(--mut,#9aa4b2);font-size:clamp(20px,6vw,45px);line-height:1.2;z-index:50}
 html.loading #top,html.loading #tabs,html.loading .wrap,html.loading #overlay,html.loading #sheetwrap,html.loading #pickov,html.loading .toast{visibility:hidden!important}
-.lspin{width:18px;height:18px;border-radius:50%;border:3px solid currentColor;border-right-color:transparent;animation:lspin .8s linear infinite}@keyframes lspin{to{transform:rotate(360deg)}}
+.lspin{width:clamp(40px,14vw,54px);height:clamp(40px,14vw,54px);box-sizing:border-box;flex:none;border-radius:50%;border:clamp(6px,2.2vw,9px) solid currentColor;border-right-color:transparent;animation:lspin .8s linear infinite}@keyframes lspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.lspin{animation:none}}
 
 /* s25-full row-tap pick rows: the whole row is the target (>= 60px), ESPN is a separate small link */
 .trow[data-k]{min-height:60px}.trow.go{cursor:pointer}.trow.go:active,.trow.go:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
 .trow .espn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;font-size:11px;font-weight:700;color:var(--mut,#9aa4b2);text-decoration:none;border-radius:8px}
-/* s25-full load flash: while html.loading, only the loader is visible (no tabs, views, banners, pop-ups or sheets) */
-.loader{display:none}html.loading .loader{display:flex;position:fixed;inset:0;align-items:center;justify-content:center;gap:10px;color:var(--mut,#9aa4b2);font-size:15px;z-index:50}
-html.loading #top,html.loading #tabs,html.loading .wrap,html.loading #overlay,html.loading #sheetwrap,html.loading #pickov,html.loading .toast{visibility:hidden!important}
-.lspin{width:18px;height:18px;border-radius:50%;border:3px solid currentColor;border-right-color:transparent;animation:lspin .8s linear infinite}@keyframes lspin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.lspin{animation:none}}
 
 /* s25-full confirm-pick box (Paul): centred modal with a dimmed backdrop, only slightly bigger than the old sheet; buttons >= 48px */
 .sheetbg.cmodal{align-items:center;padding:16px;box-sizing:border-box}
@@ -625,3 +621,12 @@ html.loading #top,html.loading #tabs,html.loading .wrap,html.loading #overlay,ht
 body.room [data-a=idclose],body.room [data-a=vo],body.room [data-a=csub]{min-height:44px}body.room label.sw{min-height:44px;display:flex;align-items:center}
 /* s25-full QA (qa-2): the room keeps the page still itself (Teams spacer + anchor restore); the browser's own scroll anchoring would move scrollY when a drafted row above the screen is removed */
 html:has(body.room),body.room{overflow-anchor:none}.tspacer{pointer-events:none}
+
+/* s25m (QA BUG-1): the "2 picks away" alert floats over the page (fixed) instead of being inserted in the flow, so nothing below it moves (was ~64 px) */
+#alertbar .alertbar{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:min(560px,calc(100% - 24px));box-sizing:border-box;margin:0;z-index:44;box-shadow:0 6px 18px rgba(0,0,0,.45);pointer-events:none}
+/* s25m (QA BUG-2): profile button labels wrap onto 2 lines below 360px (where rules-lobby.css ellipsized them) instead of being cut off (one row, 44 px floor kept) */
+@media(max-width:359px){body.room #youcard .pbtns>.btn{white-space:normal;text-align:center;line-height:1.15;overflow-wrap:break-word;text-overflow:clip;overflow:visible;display:flex;align-items:center;justify-content:center}}
+
+/* s26mo3: queue drag grip (touch-action:none so a finger drag reorders instead of scrolling) + Show picked chip */
+.qpanel .qgrip{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:32px;min-height:44px;font-size:18px;color:var(--mut,#888);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.qpanel .qrow.qdrag{position:relative;z-index:6;background:var(--card2,#222);box-shadow:0 4px 12px rgba(0,0,0,.5)}

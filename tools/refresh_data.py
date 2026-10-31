@@ -4,6 +4,10 @@
 Sources (public scoreboards):
   1. ESPN scoreboard   https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=YYYYMMDD&groups=50&limit=500
   2. fallback, per day  https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1/<y>/<m>/<d>/all-conf   (names are matched to ids through assets/teams.js)
+  3. ESPN conference standings  https://site.api.espn.com/apis/v2/sports/basketball/mens-college-basketball/standings?group=50&season=<year>
+     -> scores.json "conf": {espnId: {conf, confRegChamp, confTournChamp, confTournStarted}} (consumer: S.confPoints in js/scoring.js).
+     Regular-season champ = first place in conference play (best conference win %, ties = co-champs, needs >=1 conference game).
+     Conference tournament flags come from the scoreboard games above (kind "conf" with a round; champ = winner of the "Final"/"Championship" round).
 Only scores, dates, rounds and seeds are read. Games without a team from assets/teams.js are dropped.
 
 Examples:
@@ -164,14 +168,97 @@ def trim(g, pool):
     return g
 
 
-def build(games, year, season, as_of, src, extra_field=None):
+ESPN_STANDINGS = "https://site.api.espn.com/apis/v2/sports/basketball/mens-college-basketball/standings?group=50&season=%d"
+FINAL_ROUNDS = {"final", "finals", "championship", "championship game", "title game"}
+
+
+def _stat(entry, typ):
+    for x in entry.get("stats") or []:
+        if x.get("type") == typ:
+            v = x.get("value")
+            if v is None:
+                v = x.get("displayValue")
+            try:
+                return float(v)
+            except Exception:
+                return None
+    return None
+
+
+def parse_standings(d):
+    """ESPN standings payload -> ({teamId: conf abbr}, set(regular-season champ ids)). Never raises on odd shapes."""
+    team_conf, champs = {}, set()
+    for ch in (d or {}).get("children") or []:
+        conf = ch.get("abbreviation") or ch.get("shortName") or ch.get("name") or ""
+        rows = []
+        for e in ((ch.get("standings") or {}).get("entries")) or []:
+            tid = str(((e.get("team") or {}).get("id")) or "")
+            if not tid:
+                continue
+            team_conf[tid] = conf
+            w, l = _stat(e, "vsconf_wins"), _stat(e, "vsconf_losses")
+            pct = _stat(e, "vsconf_winpercent")
+            if pct is None:
+                pct = _stat(e, "leaguewinpercent")
+            if w is None or l is None or (w + l) <= 0 or pct is None:
+                continue
+            rows.append((pct, w, tid))
+        if rows:
+            best = max(r[0] for r in rows)
+            champs |= {r[2] for r in rows if abs(r[0] - best) < 1e-9}
+    return team_conf, champs
+
+
+def fetch_standings(year):
+    try:
+        return parse_standings(http_json(ESPN_STANDINGS % year))
+    except Exception as ex:
+        log("standings fetch failed (conf reg champs left as before / false):", ex)
+        return None
+
+
+def build_conf(pool, games, standings, old_conf=None):
+    """scores.json "conf". Every pool team gets an entry (false flags by default). old_conf (from --merge) is the base:
+    its conf names and true flags are kept unless fresh standings replace the regular-season champ / conference."""
+    old_conf = old_conf if isinstance(old_conf, dict) else {}
+    team_conf, reg = standings if standings else ({}, None)
+    out = {}
+    for tid in sorted(pool):
+        o = old_conf.get(tid) if isinstance(old_conf.get(tid), dict) else {}
+        out[tid] = {"conf": team_conf.get(tid) or o.get("conf") or "",
+                    "confRegChamp": (tid in reg) if reg is not None else o.get("confRegChamp") is True,
+                    "confTournChamp": o.get("confTournChamp") is True,
+                    "confTournStarted": o.get("confTournStarted") is True}
+    conf_of = lambda t: team_conf.get(t) or (out.get(t) or {}).get("conf") or ""
+    started_confs, started_ids = set(), set()
+    for g in games:
+        if g.get("kind") != "conf" or not g.get("round") or g.get("status") not in ("final", "live"):
+            continue
+        h, a = (g.get("home") or {}), (g.get("away") or {})
+        for t in (h.get("id"), a.get("id")):
+            if t:
+                started_ids.add(t)
+                if conf_of(t):
+                    started_confs.add(conf_of(t))
+        if g.get("status") == "final" and g["round"].strip().lower() in FINAL_ROUNDS \
+                and isinstance(h.get("score"), int) and isinstance(a.get("score"), int) and h["score"] != a["score"]:
+            w = h["id"] if h["score"] > a["score"] else a["id"]
+            if w in out:
+                out[w]["confTournChamp"] = True
+    for tid, c in out.items():
+        if tid in started_ids or (c["conf"] and c["conf"] in started_confs) or c["confTournChamp"]:
+            c["confTournStarted"] = True
+    return out
+
+
+def build(games, year, season, as_of, src, extra_field=None, conf=None):
     field = dict(extra_field or {})
     for g in games:
         if g["kind"] == "ncaa":
             for s in (g["home"], g["away"]):
                 if s["seed"] is not None and s["id"] and s["id"] not in field:
                     field[s["id"]] = {"seed": s["seed"]}
-    scores = {"format": 1, "sample": False, "label": "", "season": season, "as_of": as_of, "source": src, "games": games}
+    scores = {"format": 1, "sample": False, "label": "", "season": season, "as_of": as_of, "source": src, "games": games, "conf": conf or {}}
     tourney = {"format": 1, "sample": False, "label": "", "year": year, "as_of": as_of, "source": src, "field": field}
     return scores, tourney
 
@@ -227,10 +314,11 @@ def main():
             except Exception as ex_:
                 failed.append(d)
                 log("FAILED", d, ex_)
-    old_field = {}
+    old_field, old_conf = {}, {}
     p_old = os.path.join(a.out, "scores.json")
     if a.merge and os.path.exists(p_old):
         old = json.load(open(p_old))
+        old_conf = old.get("conf") if isinstance(old.get("conf"), dict) else {}
         keep = [g for g in old.get("games", []) if not (start <= g["day"] <= end)]
         games += keep
         try:
@@ -243,10 +331,12 @@ def main():
             seen.add(g["id"])
             uniq.append(g)
     season = "%d-%02d" % (year - 1, year % 100)
-    scores, tourney = build(uniq, year, season, min(today, dt.date.fromisoformat(end)).isoformat(), "espn" if srcs.get("espn") else "ncaa.com", old_field)
+    scores, tourney = build(uniq, year, season, min(today, dt.date.fromisoformat(end)).isoformat(), "espn" if srcs.get("espn") else "ncaa.com", old_field,
+                            build_conf(pool, uniq, fetch_standings(year), old_conf))
     os.makedirs(a.out, exist_ok=True)
     json.dump(scores, open(os.path.join(a.out, "scores.json"), "w"), separators=(",", ":"))
     json.dump(tourney, open(os.path.join(a.out, "tournament.json"), "w"), separators=(",", ":"))
+    log("conf: %d teams, %d reg champs, %d tourney champs" % (len(scores["conf"]), sum(c["confRegChamp"] for c in scores["conf"].values()), sum(c["confTournChamp"] for c in scores["conf"].values())))
     log("wrote %d games, %d teams in the tournament field; days from %s; failed days: %s" % (len(uniq), len(tourney["field"]), srcs, failed or "none"))
     if failed:
         log("Some days failed: run again (use --merge with --start/--end for just those days).")
