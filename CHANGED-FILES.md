@@ -1,3 +1,13 @@
+# s26-mock-options (build 2026-10-31s26mo): changed files vs s26c4
+Draft Room staged test build (not published). Mock setup options: Your draft seat (Any (random) default, or 1-8; solo mocks: the order is fixed when the mock is made, so no wheel spin is needed and you land in your seat), Order (snake / straight = type linear, 1-8 every round), Pick clock (the room's F.CLOCKS: 30, 60, 90 sec, 2 min, 3 min, no clock), Bot draft style (best available / random). Query presets: mock.html?seat=1-8|any&order=snake|straight&clock=30|60|90|120|180|0&bots=best|random. No core.js / room.js change: the random bot style wraps F.autoChoice inside js/mock.js, only for a mock this device created (localStorage mockopts.<id>). New dev-copy test tests/e2e_mock_options_s26.js (not in the bundle). tests/, shots/ and node_modules not listed.
+
+| file | md5 | owner | why |
+|---|---|---|---|
+| js/mock.js | 1cc07c3c42401757f817f6c4ba749799 | Draft Room | seat, order, clock, bot style options; meta.mockOpts |
+| mock.html | 6332a6756cea5487f30b2cc3471b753a | Draft Room | inline style: option grid, selects min-height 44px |
+| js/version.js | dddd057c57b509124c68d04bcbfcb7ea | Draft Room | build 2026-10-31s26mo |
+| sw.js | 422a736718e6de5b64ae00d172131cca | Draft Room | build comment 2026-10-31s26mo (cache name follows FBN_BUILD) |
+
 # s26c2-loader (staged on 2026-10-31s26c2 / 76f05fe5; MD5SUMS.txt before md5 b9c8f5980308df031a34305559c26b30)
 Bigger bouncing-basketball loader (Paul): balls 30px -> clamp(56px,22vw,90px) via --bs; bounce height, shadow, gaps and "Loading…" text scale with it. Only the BALL-LOADER blocks changed. version.js / sw.js NOT bumped (Draft Room owns them).
 

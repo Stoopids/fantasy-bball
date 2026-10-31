@@ -1,6 +1,6 @@
 /* Network-first service worker with one shared slow-network deadline. Own cache name (changes with every build); never touches textdb or other origins. */
 self.window=self;try{importScripts('js/version.js')}catch(e){}
-/* s25-full build 2026-10-31s26c4 (cache name follows FBN_BUILD) */
+/* s25-full build 2026-10-31s26mo (cache name follows FBN_BUILD) */
 const CACHE='fbnc-'+(self.FBN_BUILD||'dev');
 const SHELL=['./','index.html','setup.html','join.html','room.html','recap.html','league.html','redraft.html','time.html','help.html','mock.html','css/app.css','css/setup.css','css/rules-lobby.css','css/recap-rosters.css','js/rules.js','assets/setup-banner.svg','assets/cheer.mp3','css/league-app.css','js/version.js','js/core.js','js/store.js','js/ui.js','js/league.js','js/league-d.js','js/shared-s25.js','js/league-bets.js','js/league-sched.js','js/power-render.js','js/power-gen.js','css/power.css','js/scoring.js','js/index.js','js/setup.js','js/links-card.js','js/join.js','js/room.js','js/recap.js','js/leaguehome.js','js/redraft.js','js/time.js','js/mock.js','js/help.js','js/qr.min.js','assets/teams.js','assets/hero-banner.jpg','data/scores.json','data/power-rankings.json','data/tournament.json','data/net.json','import/stoopids-draft-results.json','LICENSE-third-party.txt','manifest.webmanifest','icons/icon-192.png','icons/apple-touch-icon.png','icons/icon-512.png'];
 const NET_MS=3000,SLOW_MS=120000;
