@@ -1,8 +1,8 @@
-/* s26c10: 📝 Draft and 🎓 Recap tabs. Draft before the draft is complete (live mock draft, 10 picks): one 'Go to draft room' link to room.html with ?l=<code>,
-   no pick board. Draft after the draft (completed time set AND all picks made): pick board only, round by round, every pick with manager + school, no room link;
-   all picks made but no completed time -> still the big button. Recap (before and after): quiet 'Draft room →' link at the bottom (league code, >= 44px). Recap: grade cards (A+ to D) on top,
-   weekly placeholder 'First recap coming after opening week', exactly one Recap tab, old routes (#power, #draftrecap) open it, footer link goes to the tab.
-   No 'Test ' prefix shown, no money words, no overflow, taps >= 44px at 320/390/1280.  APP / API env (mock store). SHOTS=dir -> draft-pre/draft-post/recap-<w>.png */
+/* s27 (rewritten from s26c10): no Draft tab once the draft is done; the pick board lives in Recap.
+   Post-draft: #draft and #picks open #recap; Recap order = weekly recaps -> draft grades -> pick board (only when complete) -> quiet 'Draft room →' link (league code, >= 44px).
+   Completion both ways: completed_at/endedAt set (seed, 8 rounds) and all picks made with no completed time (live seed, 6 rounds x 8 = 48 picks).
+   Pre-draft (live, 10 picks): the go-to-draft-room state: #draft/#picks show one 'Go to draft room' link to room.html?l=<code>, no board; #recap has the weekly placeholder + room link, no board.
+   Old routes #power/#draftrecap open Recap; footer link opens the Recap tab. No 'Test ' prefix, no money words, no overflow, taps >= 44px at 320/390/1280. APP / API env. SHOTS=dir optional. */
 const L=require('./lib.js');const {seed}=require('./seed_league.js');const path=require('path');
 let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,500):''))}}
 const MONEY=/\$|\b(money|cash|dollars?|wager|betting|gambl\w*|odds|payout|stake)\b/i;
@@ -13,48 +13,47 @@ async function open(w,id,info,hash){const P=await L.phone('dt'+Math.random().toS
   await P.page.setBypassServiceWorker(true);await P.go('league.html?l='+id+hash);return P}
 const rlink=()=>{const a=document.getElementById('recaproom');if(!a)return null;const b=a.getBoundingClientRect(),lb=document.getElementById('lbody');const u=new URL(a.href);return{t:a.textContent.trim(),path:u.pathname,l:u.searchParams.get('l'),h:b.height,w:b.width,last:lb&&[...lb.querySelectorAll('a')].pop()===a}};
 const shot=async(P,f)=>{if(process.env.SHOTS)await P.page.screenshot({path:path.join(process.env.SHOTS,f+'.png'),fullPage:true})};
+const ORDER=()=>{const q=s=>document.querySelector(s);const ids=['weeklyempty','recapgrades','dboard','recaproom'].map(i=>document.getElementById(i));
+  const fol=(a,b)=>!!(a&&b&&(a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING));const rl=ids[3];const lb=document.getElementById('lbody');
+  const rs=[...document.querySelectorAll('.dround')];const b=rl&&rl.getBoundingClientRect();let u=null;try{u=rl&&new URL(rl.href)}catch(e){}
+  return{h:location.hash,tabs:[...document.querySelectorAll('#ltabs a')].map(x=>x.dataset.v).filter(Boolean),wk:ids[0]&&ids[0].innerText.trim(),has:ids.map(x=>!!x),
+    o1:fol(ids[0],ids[1]),o2:fol(ids[1],ids[2]),o3:fol(ids[2],ids[3]),o13:fol(ids[1],ids[3]),
+    rounds:rs.length,per:rs.map(x=>x.querySelectorAll('.dpick').length),empty:[...document.querySelectorAll('.dpick')].filter(p=>!(p.querySelector('.dpm')||{textContent:''}).textContent.trim()||!(p.querySelector('.dps')||{textContent:''}).textContent.trim()).length,
+    go:!!q('#godraft'),rl:rl&&{t:rl.textContent.trim(),p:u&&u.pathname,l:u&&u.searchParams.get('l'),h:b.height,w:b.width,last:![...lb.querySelectorAll('a,button')].some(x=>fol(rl,x))},
+    grades:((ids[1]&&ids[1].innerText||'').match(/\b(A\+|A-?|B[+-]?|C[+-]?|D[+-]?)\b/g)||[]).length,short:(()=>{const a=q('#ltabs a[data-v=recap]');return a&&a.innerText.replace(/\W*\n?/,'').trim().split('\n').pop()})()}};
+const POSTOK=(w,lab,id,r,rounds)=>{
+  ok(w+' '+lab+': routed to #recap, no Draft tab, Recap last',r.h==='#recap'&&!r.tabs.includes('draft')&&r.tabs[r.tabs.length-1]==='recap'&&r.tabs.filter(t=>t==='recap').length===1,{h:r.h,tabs:r.tabs});
+  ok(w+' '+lab+': order weekly recaps -> draft grades -> pick board -> room link',r.has.every(Boolean)&&r.o1&&r.o2&&r.o3,{has:r.has,o:[r.o1,r.o2,r.o3]});
+  ok(w+' '+lab+': weekly placeholder text',r.wk==='First recap coming after opening week',r.wk);
+  ok(w+' '+lab+': board '+rounds+' rounds x 8 picks, each with manager + school, no big button',r.rounds===rounds&&r.per.every(x=>x===8)&&r.empty===0&&!r.go,{rounds:r.rounds,per:r.per,empty:r.empty,go:r.go});
+  ok(w+' '+lab+': quiet "Draft room →" link last, league code, >= 44px',r.rl&&r.rl.t==='Draft room →'&&/room\.html$/.test(r.rl.p)&&r.rl.l===id&&r.rl.h>=44&&r.rl.w>=44&&r.rl.last,r.rl)};
 (async()=>{try{
   const pre=await seed(null,{live:true,picksMade:10,name:'Test Hoops'});const preI=seed.info;
   const post=await seed(null,{rounds:8,name:'Test Hoops'});const postI=seed.info;
   const noAt=await seed(null,{live:true,rounds:6,picksMade:48,name:'Test Hoops'});const noAtI=seed.info;
   for(const w of [320,390,1280]){
-    let P=await open(w,pre,preI,'#draft');await P.page.waitForSelector('#godraft',{timeout:25000});await L.sleep(500);
-    let r=await P.page.evaluate(()=>{const a=document.getElementById('godraft');const u=new URL(a.href);return{t:a.textContent.trim(),path:u.pathname,l:u.searchParams.get('l'),n:document.querySelectorAll('#godraft').length,board:!!document.querySelector('.dround'),tab:[...document.querySelectorAll('#ltabs a[aria-current=page]')].map(x=>x.dataset.v)}});Object.assign(r,await P.page.evaluate(metr));
-    ok(w+' pre: one big "Go to draft room" link to the room with the league code',r.n===1&&r.t==='Go to draft room'&&/room\.html$/.test(r.path)&&r.l===pre,r);
-    ok(w+' pre: Draft tab current, no pick board',r.tab.join()==='draft'&&!r.board,r);
-    ok(w+' pre: no overflow, taps >= 44px',r.sw<=r.iw&&!r.small.length,{sw:r.sw,iw:r.iw,small:r.small});
-    if(w!==320)await shot(P,'draft-pre-'+w);
-    await P.page.evaluate(()=>document.querySelector('#ltabs a[data-v=recap]').click());await P.page.waitForSelector('#weeklyempty',{timeout:5000}).catch(()=>{});await L.sleep(300);
-    r=await P.page.evaluate(rlink);const r2=await P.page.evaluate(()=>({h:location.hash,wk:(document.getElementById('weeklyempty')||{}).innerText,cur:[...document.querySelectorAll('#ltabs a[aria-current=page]')].map(x=>x.dataset.v).join()}));Object.assign(r2,await P.page.evaluate(metr));
-    ok(w+' pre recap: #recap, weekly placeholder, quiet "Draft room →" link last with the league code, >= 44px',r2.h==='#recap'&&r2.cur==='recap'&&r2.wk==='First recap coming after opening week'&&r&&r.t==='Draft room →'&&/room\.html$/.test(r.path)&&r.l===pre&&r.h>=44&&r.w>=44&&r.last,{r,h:r2.h,cur:r2.cur,wk:r2.wk});
-    ok(w+' pre recap: no overflow, taps >= 44px',r2.sw<=r2.iw&&!r2.small.length,{small:r2.small});
-    if(w===390||w===1280)await shot(P,'recap-pre-'+w);ok(w+' pre: no page errors',!P.errs.length,P.errs);await P.close();
-    P=await open(w,noAt,noAtI,'#draft');await P.page.waitForSelector('#godraft',{timeout:25000}).catch(()=>{});await L.sleep(500);
-    r=await P.page.evaluate(()=>({btn:!!document.getElementById('godraft'),board:!!document.querySelector('.dround')}));ok(w+' all picks made but no completed time: counts as complete (League s26c14 draftComplete): board, no big button',!r.btn&&r.board,r);await P.close();
-    P=await open(w,post,postI,'#draft');await P.page.waitForSelector('#lapp[data-ready]',{timeout:25000});await L.sleep(800);
-    r=await P.page.evaluate(()=>{const rs=[...document.querySelectorAll('.dround')];return{rounds:rs.length,per:rs.map(x=>x.querySelectorAll('.dpick').length),
-      empty:[...document.querySelectorAll('.dpick')].filter(p=>!p.querySelector('.dpm').textContent.trim()||!p.querySelector('.dps').textContent.trim()).length,
-      first:document.querySelector('.dpick')&&document.querySelector('.dpick').innerText,room:[...document.querySelectorAll('#lbody a')].filter(x=>/room\.html/.test(x.href)).length,pre:!!document.getElementById('godraft'),
-      tabs:[...document.querySelectorAll('#ltabs a')].map(x=>x.dataset.v),recapTabs:document.querySelectorAll('#ltabs a[data-v=recap]').length}});Object.assign(r,await P.page.evaluate(metr));
-    ok(w+' post: 8 rounds x 8 picks, each with manager and school',r.rounds===8&&r.per.every(x=>x===8)&&r.empty===0,r);
-    ok(w+' post: pick board only: no draft room link, no big button',r.room===0&&!r.pre,r);
-    ok(w+' post: exactly one Recap tab, Draft tab last',r.recapTabs===1&&r.tabs[r.tabs.length-1]==='draft',r.tabs);
-    ok(w+' post: no "Test " prefix, no money words',!/\bTest\s/.test(r.txt)&&!MONEY.test(r.txt.replace(/Bets/g,'')),r.txt.match(MONEY));
-    ok(w+' post: no overflow, taps >= 44px',r.sw<=r.iw&&!r.small.length,{sw:r.sw,iw:r.iw,small:r.small});
-    if(w!==320)await shot(P,'draft-post-'+w);
-    await P.page.evaluate(()=>document.querySelector('#ltabs a[data-v=recap]').click());await P.page.waitForSelector('#powerrank .pcard, #powerrank [class*=grade], #prempty',{timeout:15000}).catch(()=>{});await L.sleep(1200);
-    r=await P.page.evaluate(()=>{const g=document.getElementById('recapgrades'),wk=document.getElementById('weeklyempty');return{hash:location.hash,cards:document.querySelectorAll('#powerrank .pcard,#powerrank li,#powerrank article').length,
-      grades:(g.innerText.match(/\b(A\+|A-?|B[+-]?|C[+-]?|D[+-]?)\b/g)||[]).length,order:g&&wk&&(g.compareDocumentPosition(wk)&Node.DOCUMENT_POSITION_FOLLOWING)>0,wk:wk&&wk.innerText.trim(),rl:(()=>{const a=document.getElementById('recaproom');if(!a)return null;const b=a.getBoundingClientRect();return{t:a.textContent.trim(),l:new URL(a.href).searchParams.get('l'),p:new URL(a.href).pathname,h:b.height,w:b.width,last:[...document.querySelectorAll('#lbody a')].pop()===a}})(),short:document.querySelector('#ltabs a[data-v=recap] .nl.s').textContent}});Object.assign(r,await P.page.evaluate(metr));
-    ok(w+' recap: #recap route, grade cards on top, weekly placeholder below',r.hash==='#recap'&&r.grades>=8&&r.order&&r.wk==='First recap coming after opening week',{h:r.hash,g:r.grades,o:r.order,wk:r.wk});
-    ok(w+' recap: quiet "Draft room →" link at the bottom, league code, >= 44px',r.rl&&r.rl.t==='Draft room →'&&r.rl.l===post&&/room\.html$/.test(r.rl.p)&&r.rl.h>=44&&r.rl.w>=44&&r.rl.last,r.rl);
-    ok(w+' recap: phone label Recap',r.short==='Recap',r.short);
-    ok(w+' recap: no "Test " prefix, no money words',!/\bTest\s/.test(r.txt)&&!MONEY.test(r.txt.replace(/Bets/g,'')),r.txt.match(MONEY)||r.txt.match(/\bTest\s\S+/g));
-    ok(w+' recap: no overflow, taps >= 44px',r.sw<=r.iw&&!r.small.length,{sw:r.sw,iw:r.iw,small:r.small});
-    if(w!==320)await shot(P,'recap-'+w);ok(w+' post: no page errors',!P.errs.length,P.errs);await P.close()}
+    for(const h of ['#draft','#picks']){
+      const P=await open(w,pre,preI,h);await P.page.waitForSelector('#godraft',{timeout:25000}).catch(()=>{});await L.sleep(500);
+      const r=await P.page.evaluate(()=>{const a=document.getElementById('godraft');let u={};try{u=new URL(a.href)}catch(e){}return{t:a&&a.textContent.trim(),path:u.pathname,l:u.searchParams&&u.searchParams.get('l'),n:document.querySelectorAll('#godraft').length,board:!!document.querySelector('.dround,#dboard')}});Object.assign(r,await P.page.evaluate(metr));
+      ok(w+' pre '+h+': go-to-draft-room state (one "Go to draft room" link, league code, no board)',r.n===1&&r.t==='Go to draft room'&&/room\.html$/.test(r.path)&&r.l===pre&&!r.board,{t:r.t,path:r.path,l:r.l,n:r.n,board:r.board});
+      ok(w+' pre '+h+': no overflow, taps >= 44px',r.sw<=r.iw&&!r.small.length,{sw:r.sw,iw:r.iw,small:r.small});
+      if(h==='#draft'&&w!==320)await shot(P,'pre-draft-'+w);ok(w+' pre '+h+': no page errors',!P.errs.length,P.errs);await P.close()}
+    {const P=await open(w,pre,preI,'#recap');await P.page.waitForSelector('#weeklyempty',{timeout:25000}).catch(()=>{});await L.sleep(800);
+      const r=await P.page.evaluate(ORDER);Object.assign(r,await P.page.evaluate(metr));
+      ok(w+' pre #recap: weekly placeholder, no pick board, room link last with league code, >= 44px',r.h==='#recap'&&r.wk==='First recap coming after opening week'&&!r.rounds&&!r.has[2]&&r.rl&&r.rl.t==='Draft room →'&&r.rl.l===pre&&r.rl.h>=44&&r.rl.last,{h:r.h,wk:r.wk,rounds:r.rounds,rl:r.rl});
+      ok(w+' pre #recap: no overflow, taps >= 44px',r.sw<=r.iw&&!r.small.length,{small:r.small});ok(w+' pre #recap: no page errors',!P.errs.length,P.errs);await P.close()}
+    for(const [lab,id,info,rounds] of [['completed_at/endedAt',post,postI,8],['all picks made, no completed time',noAt,noAtI,6]])
+      for(const h of ['#draft','#picks','#recap']){
+        const P=await open(w,id,info,h);await P.page.waitForSelector('#lapp[data-ready]',{timeout:25000});await P.page.waitForSelector('.dround',{timeout:8000}).catch(()=>{});await L.sleep(1000);
+        const r=await P.page.evaluate(ORDER);Object.assign(r,await P.page.evaluate(metr));POSTOK(w,lab+' '+h,id,r,rounds);
+        if(h==='#recap'){ok(w+' '+lab+': grade cards (A+ to D) for 8 managers',r.grades>=8,r.grades);ok(w+' '+lab+': phone label Recap',r.short==='Recap',r.short)}
+        ok(w+' '+lab+' '+h+': no "Test " prefix, no money words',!/\bTest\s/.test(r.txt)&&!MONEY.test(r.txt.replace(/Bets/g,'')),r.txt.match(MONEY)||r.txt.match(/\bTest\s\S+/g));
+        ok(w+' '+lab+' '+h+': no overflow, taps >= 44px',r.sw<=r.iw&&!r.small.length,{sw:r.sw,iw:r.iw,small:r.small});
+        if(h==='#recap'&&w!==320)await shot(P,'recap-'+(id===post?'endedat':'allpicks')+'-'+w);ok(w+' '+lab+' '+h+': no page errors',!P.errs.length,P.errs);await P.close()}}
   for(const h of ['#power','#draftrecap']){const P=await open(390,post,postI,h);await P.page.waitForSelector('#lapp[data-ready]',{timeout:25000});await L.sleep(500);
-    const r=await P.page.evaluate(()=>({cur:document.querySelector('#ltabs a[aria-current=page]').dataset.v,wk:!!document.getElementById('weeklyempty')}));ok('old route '+h+' opens the Recap tab',r.cur==='recap'&&r.wk,r);await P.close()}
+    const r=await P.page.evaluate(()=>({h:location.hash,wk:!!document.getElementById('weeklyempty'),board:!!document.getElementById('dboard')}));ok('old route '+h+' opens Recap (with the board)',r.wk&&r.board,r);await P.close()}
   {const P=await open(390,post,postI,'#standings');await P.page.waitForSelector('#lapp[data-ready]',{timeout:25000});await L.sleep(500);
-    await P.page.evaluate(()=>document.getElementById('tab_recap').click());await L.sleep(500);const r=await P.page.evaluate(()=>({cur:document.querySelector('#ltabs a[aria-current=page]').dataset.v,h:location.hash,nore:![...document.querySelectorAll('a')].some(a=>/recap\.html/.test(a.href))}));
-    ok('footer Draft recap link opens the Recap tab; no link to recap.html left on the League site',r.cur==='recap'&&r.h==='#recap'&&r.nore,r);await P.close()}
+    await P.page.evaluate(()=>document.getElementById('tab_recap').click());await L.sleep(500);const r=await P.page.evaluate(()=>({h:location.hash,wk:!!document.getElementById('weeklyempty'),nore:![...document.querySelectorAll('a')].some(a=>/recap\.html/.test(a.getAttribute('href')||''))}));
+    ok('footer Draft recap link opens the Recap tab; no link to recap.html left',r.h==='#recap'&&r.wk&&r.nore,r);await P.close()}
 }catch(e){bad++;console.log('FAIL  crashed: '+(e&&e.stack||e))}
 console.log('\n'+(n-bad)+' / '+n+' checks passed'+(bad?' — FAILED':''));await L.close();process.exit(bad?1:0)})();

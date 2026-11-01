@@ -88,7 +88,7 @@ function render(){const s=mockSettings(parentMeta?parentMeta.settings:null,clock
   <div class="err" id="mockerr" role="alert"></div>
   <button class="btn pri block" data-a="go" id="startmock" style="margin-top:12px">${mode==='solo'?'Start mock draft':'Create mock and invite'}</button>
   <div class="hint" style="margin:8px 0 12px">Grades at the end compare you with the bots${mode==='group'?' and the people who joined':''}. The device keeps your last ${UI.MOCK_KEEP} mocks.</div>
-  ${recentHTML()}<a class="btn block" id="mockback" href="${esc(from?UI.roomHref(from):UI.pageUrl('index.html'))}">${from?'Back to my league':'Back to home'}</a>`+UI.buildTag()}
+  ${recentHTML()}<a class="btn block" id="mockback" href="${esc(from?UI.roomHref(from):UI.pageUrl('index.html'))}">${esc(from?UI.goLeagueLabel(parentMeta&&parentMeta.name)/* DR2 */:'Back to home')}</a>`+UI.buildTag();try{UI.dr2NewTab('#mockback')}catch(e){}/* DR2 */}
 const ACT={mode:el=>{read();mode=el.dataset.v==='group'?'group':'solo';render()},clock:el=>{read();clock=+el.dataset.v;render()},go:()=>go(),cust:()=>{read();custOpen=true;render();const a=$('m_name');if(a)a.focus()}};
 let nm='',tm='';function read(){const a=$('m_name'),b=$('m_team');if(a)nm=a.value;if(b)tm=b.value;const v=id=>($(id)||{}).value;if($('m_seat')&&!$('m_seat').disabled)seat=+v('m_seat')||0;if(v('m_order'))otype=v('m_order');if(v('m_clock')!=null)clock=+v('m_clock')}
 async function go(){if(busy)return;read();busy=true;const b=$('startmock');b.disabled=true;b.textContent='Setting up…';

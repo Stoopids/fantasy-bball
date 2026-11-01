@@ -24,7 +24,7 @@ function forBot(mockId,mid,dealt){const k=dealt&&dealt[mid];if(k&&BY[k])return k
 /* s26c14 (Paul 'more variety'): consensus = blended rank wo*o (KenPom) + (1-wo)*p (STOOPID rank), wo per personality (0.3-0.7); no p -> behind every ranked team (p = maxP + o).
    wo omitted -> the old p order (power rank first, unranked after, stable by id). */
 const BCACHE=new WeakMap();
-function blendRank(meta,wo){let c=BCACHE.get(meta);if(!c){c={};BCACHE.set(meta,c)}if(c[wo])return c[wo];const ids=Object.keys(meta);const maxP=ids.reduce((a,t)=>Math.max(a,+meta[t].p>0?+meta[t].p:0),0);
+function blendRank(meta,wo){let c=BCACHE.get(meta);if(!c){c={};BCACHE.set(meta,c)}if(c[wo])return c[wo];const ids=Object.keys(meta).filter(t=>meta[t]&&typeof meta[t]==='object');const maxP=ids.reduce((a,t)=>Math.max(a,+meta[t].p>0?+meta[t].p:0),0);
   const O=t=>+meta[t].o>0?+meta[t].o:(+meta[t].p>0?366+(+meta[t].p):999);const sc={};ids.forEach(t=>{const p=+meta[t].p>0?+meta[t].p:maxP+O(t);sc[t]=wo*O(t)+(1-wo)*p});
   const r={};ids.slice().sort((a,b)=>(+meta[b].p>0)-(+meta[a].p>0)||sc[a]-sc[b]||O(a)-O(b)||(a<b?-1:1)).forEach((t,i)=>{r[t]=i+1});return c[wo]=r}
 function consensus(avail,meta,wo){if(wo!=null){const r=blendRank(meta,+wo);return avail.slice().sort((a,b)=>(r[a]||1e9)-(r[b]||1e9)||(a<b?-1:a>b?1:0))}const p=t=>+((meta[t]||{}).p)||0;return avail.slice().sort((a,b)=>{const x=p(a),y=p(b);if(x&&y)return x-y;if(x)return-1;if(y)return 1;return a<b?-1:a>b?1:0})}

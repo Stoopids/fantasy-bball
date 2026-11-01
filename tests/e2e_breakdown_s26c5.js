@@ -38,7 +38,7 @@ const small=()=>[...document.querySelectorAll('#lbody a,#lbody button,#lbody [ro
       const rows=[...k.querySelectorAll('.obr')].map(r=>{const c=[...r.querySelectorAll('.obl > span')].map(s=>s.innerText.trim());return{tid:r.dataset.tid,w:+r.dataset.w,l:+r.dataset.l,owner:c[1],rec:c[2],ap:c[5],net:c[6],apx:window.LRANK.apOf(r.dataset.tid),netx:window.LRANK.netOf(r.dataset.tid)}});
       return{hd,rows,sw:document.documentElement.scrollWidth,iw:innerWidth,out:[...k.querySelectorAll('*')].some(e=>{const b=e.getBoundingClientRect();return b.width&&b.right>kr.right+0.5}),txt:k.innerText,small:SMALL()}}).toString().replace('SMALL()','('+small.toString()+')()')+')()'));
     const tag=w+'px All teams';const pct=x=>x.w+x.l?x.w/(x.w+x.l):0;
-    ok(tag+': columns Team, Owner, Rec, Pts, Conf, AP, NET (s26c11)',JSON.stringify(r.hd)===JSON.stringify(['team','owner','rec','pts','conf','ap','net']),r.hd);
+    ok(tag+': columns Team, Owner, Rec, Pts, Conf, AP, NET, then s27 STOOPID + KenPom sort columns',r.hd.some(x=>/^stoopid/.test(x))&&r.hd.some(x=>/^kenpom/.test(x))&&JSON.stringify(r.hd.filter(x=>!/stoopid|kenpom|^st$|^kp$/.test(x)))===JSON.stringify(['team','owner','rec','pts','conf','ap','net']),r.hd);
     ok(tag+': 64 schools, best record first',r.rows.length===64&&r.rows.every((x,i)=>!i||pct(r.rows[i-1])>pct(x)||(pct(r.rows[i-1])===pct(x)&&r.rows[i-1].w>=x.w)),r.rows.slice(0,6).map(x=>x.rec));
     ok(tag+': record shows W-L',r.rows.every(x=>x.rec===x.w+'-'+x.l));
     ok(tag+': AP and NET from the rankings data (– when unranked), 6 AP ranks shown',r.rows.every(x=>x.ap===(x.apx?'#'+x.apx:'–')&&x.net===(x.netx?String(x.netx):'–'))&&r.rows.filter(x=>x.ap!=='–').length===6,r.rows.filter(x=>x.ap!=='–'||x.net!=='–').slice(0,4));

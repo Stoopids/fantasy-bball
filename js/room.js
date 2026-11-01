@@ -25,7 +25,7 @@ const nowSrv=()=>Date.now()+srvOff;
 const NOCONN="Can't reach the draft server. Check your connection and try again.";
 const storeOk=()=>{lastOk=Date.now();failCount=0;renderConn()};  /* any successful store call clears the Offline pill at once and ends the back-off */
 const readRaw=url=>Store.get(url).then(r=>{storeOk();return r});const postJ=(url,obj)=>Store.set(url,obj).then(r=>{storeOk();return r});
-const mg=mid=>MG.find(m=>m.mid===mid)||{mid,name:'Former manager',team:'',emoji:'',photo:'',away:false};
+const mg=mid=>MG.find(m=>m.mid===mid)||{mid,name:M&&M.seatNames&&M.seatNames[mid]?M.seatNames[mid]:M&&M.over&&M.over[mid]&&M.over[mid].ph?'Empty seat':'Former manager',team:'',emoji:'',photo:'',away:false};/* s27b: a placeholder seat whose claim is not read yet (spectator first paint) says 'Empty seat', never 'Former manager' */
 let CM_OK=false,CM_KEY='',ME_OK=false,ME_KEY='',authReady=false;
 const myMid=()=>me&&ME_OK&&MG.some(m=>m.mid===me.mid&&!m.left)?me.mid:null;
 const removed=()=>!!(me&&ME_OK&&MG.some(m=>m.mid===me.mid&&m.left));
@@ -344,7 +344,8 @@ function onState(prev,next){if(!prev){updateTitle();return}
   if(prev.status==='lobby'&&nowLive)toast('The draft is LIVE!');
   if(next.status==='complete'&&prev.status!=='complete'){toast(next.endedEarly?'The commissioner ended the draft.':'Draft complete! Opening the recap…',6000);
     /* s23 (item 9): the end of the draft goes straight to the recap page (only when it ends while this page is open; opening a finished draft later stays here) */
-    if(prev.status==='live'&&prev.logReady&&!NOREDIR)setTimeout(()=>{location.href=recapUrl()},1800)}
+    if(prev.status==='live'&&prev.logReady&&!NOREDIR){/* DR2: hand the recap the exact server text already read here, so it can render at once */try{sessionStorage.setItem('fbn.recapseed.'+LID,JSON.stringify({id:LID,ts:Date.now(),epoch:M&&M.epoch,meta:Mraw,claims:CLraw,profiles:PROFraw,entries:ENTraw}))}catch(e){}
+      setTimeout(()=>{location.href=recapUrl()},1800)}}
   const mm=myMid();
   if(mm&&!WATCH&&nowLive){const a=F.picksAway(next,mm),pa=wasLive?F.picksAway(prev,mm):null;
     if(a===0&&pa!==0){vib([250,120,250,120,500]);setAlertBar('')}

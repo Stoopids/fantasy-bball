@@ -20,7 +20,7 @@ async function open(P,id,me){await P.page.setBypassServiceWorker(true);if(me)awa
     const Q=await L.phone("rc"+w,desk?{desktop:true,w,h}:{});await open(Q,idP,me);
     const o=await Q.page.evaluate(()=>{const ids=[...document.querySelectorAll('#app>section,#app>footer,#rcextra>section')].map(e=>e.id);const h2=id=>{const e=document.getElementById(id);return e?e.innerText.trim():null};
       return{ids,msg:(document.getElementById('rc1_h')||{}).innerText,h2:(document.getElementById('powerrecap_s_h')||{}).innerText,count:(document.getElementById('rccount')||{}).innerText,over:document.documentElement.scrollWidth>innerWidth+1,
-        txt:document.getElementById('app').innerText,bigline:(document.getElementById('rcsiteline')||{}).innerText,big:[...document.querySelectorAll('#app a,#app button')].filter(e=>/^(League site|Back to my league)$/.test(e.innerText.trim())).map(e=>e.id),
+        txt:document.getElementById('app').innerText,bigline:(document.getElementById('rcsiteline')||{}).innerText,big:[...document.querySelectorAll('#app a,#app button')].filter(e=>/^(League site|Back to my league|Go to .+ League)$/.test(e.innerText.trim())).map(e=>e.id),
         h2s:[...document.querySelectorAll('#app h2')].map(e=>e.innerText.trim())}});
     ok(w+'px: sections in the required order (1 congrats, 2 recap, league grades, 3 order, 4 spin, 5 rosters, 6 outlook, 7 conference, 8 pick times, 9 awards, 10 What\'s next + League site, 11 footer)',JSON.stringify(o.ids)===JSON.stringify(ORDER),o.ids);
     ok(w+'px: section 1 message (s25-full: no repeat of FINAL or the Redraft countdown) reads "Good luck this season!"',o.msg==='Good luck this season!',o.msg);

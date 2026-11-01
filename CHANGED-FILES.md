@@ -1,19 +1,32 @@
-# s26c16d (build 2026-11-01s26c16d): seat sound cues (Paul)
-Base: staged s26c16c = /workspace/fantasy-bball-releases/s26c16c (MD5SUMS e32a9c33d30bc3bbb8d825880c8a221e). Staged only, not published. Only js/room.js changed in code; core.js (34363368) and every League-owned file unchanged. tests/, shots/, node_modules, __pycache__, .git not in MD5SUMS.
-- WebAudio (OscillatorNode, no audio file) cues for THIS device's own seat: 3 beeps when the seat goes on the clock, 2 beeps at 30 s left, 1 beep at 10 s left. Each at most once per pick (localStorage fbn.beepLast.<league> = epoch:n + done keys n:start / n:30 / n:10), so reloads, polls and re-renders never repeat one.
-- Thresholds already passed when a page first sees the pick are skipped silently; at most one cue per check (never a burst).
-- None for spectators (watch=1), the commissioner without a seat, auto-picks (away/auto-pick on), a paused, complete or lobby draft, after the pick is made, or with the clock off (no 30/10 cues).
-- AudioContext is created/resumed on the first pointerdown/keydown (browser autoplay rule). Everything in try/catch.
-- Mute: More tab, Alerts card, "Turn sound" switch (on by default), saved in localStorage fbn.beepMute = '1'. The old single beep at the 15-second warning is removed (the 10 s cue replaces it); the 15 s vibrate and toast stay.
+# s27c (build 2026-11-01s27c): s27b + the s26c16d beep
+Base: s27b (MD5SUMS 69d0f885, kept at s27.prev-s27b). Source: /workspace/fantasy-bball-releases/s26c16d (room.js 5a235eea, built on s26c16c). Staged only, not published.
+- room.js: 3-way merge (base s26c16c, ours s27b, theirs s26c16d), clean; the 24 changed lines are identical to the s26c16c->s26c16d diff. WebAudio cues for this device's own seat (3 beeps on the clock, 2 at 30 s, 1 at 10 s, once per pick via localStorage fbn.beepLast.<league>), More tab Alerts card 'Turn sound' (fbn.beepMute), old 15 s beep removed. No other file changed except version/sw.
+| file | md5 | owner |
+|---|---|---|
+| js/room.js | 9052c149f4bc7c5dcad3e8c02e6c6a06 | Draft Room |
+| js/version.js | 98c2142eb7fa148655054618fbff3544 | Draft Room (build 2026-11-01s27c) |
+| sw.js | 73e081b8e27c533de68cdc8fd5dd0336 | Draft Room (line 3; cache fbnc-2026-11-01s27c) |
+| tests/e2e_beep_s26c16d.js | 894d770c1e4284026ed5eef5c9c0fa42 | Draft Room (not in bundle) |
+| CHANGED-FILES.md / MD5SUMS.txt | - | regenerated |
 
-| file | md5 | owner | why |
-|---|---|---|---|
-| js/room.js | 5a235eea2f3e80856995c4f1dcbb780a | Draft Room | seat sound cues, Turn sound toggle |
-| js/version.js | a85b3c18ffbcf003cf867481b589ae0f | Draft Room | build 2026-11-01s26c16d |
-| sw.js | 192b67d75a35c0bf9018b4aae109d5e8 | Draft Room | line 3 comment; cache -> fbnc-2026-11-01s26c16d |
-| tests/e2e_beep_s26c16d.js | 894d770c1e4284026ed5eef5c9c0fa42 | Draft Room | new e2e (stubbed AudioContext; not in bundle) |
-| CHANGED-FILES.md | (this file) | Draft Room | s26c16d section |
-| MD5SUMS.txt | - | Draft Room | regenerated |
+# s27 rebuilt as build 2026-11-01s27b: s27 rebased onto LIVE-candidate s26c16c (BUG 2 hotfix) + League s27-league-full MD5SUMS 7acc5667
+Base: /workspace/fantasy-bball-releases/s26c16c (MD5SUMS e32a9c33). Previous s27 (on s26c14) kept at s27.prev-s27a. Staged only, not published.
+- 3-way merge (base s26c14, ours s26c16c, theirs old s27). core.js merged clean: vs s26c16c the only change is the F.blendRank null/non-object meta skip. join.js = s26c16c. css/app.css = old s27 (s26c15 pill rules identical; DR2 recap2col block).
+- room.js vs s26c16c: (1) DR2 recapseed hand-off kept inside the s26c16c redirect (redirect still needs prev.logReady); (2) tiny label fix: a seat missing from the managers list shows meta.seatNames[mid], else 'Empty seat' for a placeholder (meta.over[mid].ph), else 'Former manager' as before (spectator first paint showed 'Former manager' for ~2-5 s). redraft.js not changed.
+- League (League-owned, copied after md5 check): js/leaguehome.js 4d9521fc44c34a9bffb26358d6908b66 (STOOPIDS PRESENTS hero line + BUG 1 fix), css/league-app.css aa0f43fa15ad4362f5cf658da698e2b4 (BUG 3 fix + hero). Other old-s27 League files unchanged (power-gen.js, league-bets.js).
+- Tooltip reword: no tooltip text change found in the s27 sources; nothing changed for it. RANK_OK widening is in tests/test_core.js only.
+- Tests: s27 test versions taken where only s27 changed them; test_core.js 3-way merged; League tests/e2e_hero_pres_s27.js added.
+
+| file | md5 | owner |
+|---|---|---|
+| js/room.js | c1595e71af07c84ff49d966bf5f5a4ab | Draft Room |
+| js/core.js | 9fd6efaf2558358fd9a24c36a1a281f7 | Draft Room |
+| css/app.css | 06173ddc96291285e81e7231e2bbc266 | Draft Room |
+| js/version.js | 8121f43fa25eac2783ca7c4afa8a3c3b | Draft Room (build 2026-11-01s27b) |
+| sw.js | 8eff1c214d333e0442d448bc4a547aa1 | Draft Room (line 3; cache fbnc-2026-11-01s27b) |
+| js/leaguehome.js | 4d9521fc44c34a9bffb26358d6908b66 | League |
+| css/league-app.css | aa0f43fa15ad4362f5cf658da698e2b4 | League |
+| js/recap.js, js/ui.js, js/mock.js, js/mock-bots.js, js/power-gen.js, js/league-bets.js | = old s27 | DR2 / League |
 
 # s26c16c (build 2026-11-01s26c16c): hotfix on LIVE s26c16b (QA s27 BUG 2: Back to Draft bounced to the recap)
 Base: LIVE s26c16b = /workspace/fantasy-bball-releases/s26c16b (git bb00eec). Staged only, not published. Only js/room.js changed in code; core.js and every League-owned file unchanged. tests/, shots/, node_modules, __pycache__, .git not in MD5SUMS.

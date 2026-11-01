@@ -734,7 +734,40 @@ body.pdmore #rulescard{padding:8px 12px}body.pdmore #rulescard h3{margin:0 0 6px
 .trow.go{cursor:default}
 @media (max-width:360px){.trow .tbtns{gap:8px}.trow .dbtn{min-width:52px;padding:0 6px;font-size:13px}.trow .tbtns .qbtn{width:52px;min-width:52px}.trow .tr small{display:none}}
 @media (max-width:350px){.tabs button,.tabs a{font-size:10px;padding-left:0;padding-right:0;letter-spacing:-.2px}.trow .tr{display:none}.trow .rkb.rk2{min-width:38px}}
-/* s26c15 (Paul): the name pill is the Draft action on your turn (no separate Draft box) */
+/* DR2 s26c14 recap2col: Your grade / League grades / Awards in two columns from 900px (one column below). CSS only, no wrapper:
+   the recap #app becomes a 2-column grid; every other section spans both columns. Only on a real recap (League grades shown). */
+@media (min-width:900px){
+ #app:has(>#rc_grades:not([hidden])){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:18px;align-items:start}
+ #app:has(>#rc_grades:not([hidden]))>*{grid-column:1/-1;min-width:0}
+ #app:has(>#rc_grades:not([hidden]))>.rsec:not(.rcnextrow){margin:0 0 14px}/* grid items do not collapse margins: keep the one-column spacing */
+ #app:has(>#rc_grades:not([hidden]))>#powerrecap_s{grid-column:1;margin-top:0}
+ #app:has(>#rc_grades:not([hidden]))>#rc_grades{grid-column:2;grid-row:span 2;margin-top:0}
+ #app:has(>#rc_grades:not([hidden]))>#rc_awards{grid-column:1;margin-top:0}
+ #app:has(>#rc_grades:not([hidden])) #awgrid.awgrid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+}
+/* DR2: "Go to <League name> League" never overflows: one line with an ellipsis in the What's next row; wraps on the mock setup page */
+#rc_site .rcrow>a .dr2lbl{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mockapp #mockback{white-space:normal;overflow-wrap:anywhere;max-width:100%}
+/* DR2: Conference breakdown shows every conference; chips wrap and never push the card wider */
+#crows .cch{min-width:0;max-width:100%}#crows .cc2{max-width:100%;overflow-wrap:anywhere;white-space:normal}
+/* DR2: below 900px the What's next row wraps and shows the full league name (no ellipsis); order and styles unchanged */
+@media (max-width:899.98px){
+ #rc_site .rcrow{flex-wrap:wrap}
+ #rc_site .rcrow>a,#rc_site .rcrow>button{flex:1 1 auto;overflow:visible;white-space:normal;text-overflow:clip;height:auto;min-height:44px;line-height:1.25;padding-top:6px;padding-bottom:6px;text-align:center}
+ #rc_site .rcrow>a .dr2lbl{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+}
+/* DR2: the league button text always fits: no uppercase, wraps (up to 2+ lines), button grows; no ellipsis at any width */
+#rc_site .rcrow>#rcsite{text-transform:none;white-space:normal;overflow:visible;text-overflow:clip;height:auto;min-height:44px;line-height:1.25;padding-top:6px;padding-bottom:6px;text-align:center}
+#rc_site .rcrow>#rcsite .dr2lbl{text-transform:none;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+/* DR2: recap loader = 3 bouncing basketballs (emoji, pure CSS) with the loading text as a caption; static under reduced motion */
+.dr2load{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:22px 12px;text-align:center;max-width:100%;overflow:hidden}
+.dr2balls{display:flex;gap:14px;height:56px;align-items:flex-end}
+.dr2balls>span{display:inline-block;font-size:30px;line-height:1;animation:dr2bounce .9s ease-in-out infinite}
+.dr2balls>span:nth-child(2){animation-delay:.15s}.dr2balls>span:nth-child(3){animation-delay:.3s}
+.dr2cap{font-size:14px;overflow-wrap:anywhere}
+@keyframes dr2bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-22px)}}
+@media (prefers-reduced-motion:reduce){.dr2balls>span{animation:none}}
+/* s27 (Paul): the name pill is the Draft action on your turn (no separate Draft box) */
 .trow .tm.dbtn{flex:1 1 0;min-width:0;height:auto;min-height:48px;display:flex;flex-direction:column;gap:2px;align-items:flex-start;justify-content:center;padding:4px 8px;margin:0 2px;border:2px solid var(--acc);border-radius:12px;background:rgba(255,210,63,.12);color:inherit;text-align:left;font-weight:inherit}
 .trow .tm.dbtn small{color:var(--mut)}
 @media (max-width:360px){.trow .tm.dbtn{min-width:0;padding:3px 6px;font-size:inherit}}

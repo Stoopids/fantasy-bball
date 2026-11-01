@@ -132,7 +132,15 @@ UI.practiceBanner=function(sub){return '<div class="practicebn" id="practicebn" 
 /* "Back to my league": the league this mock copied, else the first league on this device, else the home page */
 UI.mockBack=function(meta){const p=meta&&meta.parent&&FBN.parseCode(meta.parent);const l=p||((UI.myLeagues().find(x=>x&&typeof x.id==='string'&&FBN.parseCode(x.id))||{}).id);
   /* s26mo2: only a mock made from a league (meta.parent) offers Back to my league; a mock with no parent league offers Back to home */
-  return p?{href:UI.roomHref(p),label:'Back to my league'}:{href:UI.pageUrl('index.html'),label:'Back to home'}};
+  return p?{href:UI.roomHref(p),label:UI.goLeagueLabel(meta.parentName)}:{href:UI.pageUrl('index.html'),label:'Back to home'}};
+/* DR2 s26c14 recap2col: "Go to <League name> League" (plain text; callers escape it). No name known -> the old "Back to my league". */
+UI.goLeagueLabel=function(name){const n=String(name==null?'':name).replace(/\s+/g,' ').trim();if(!n||/^league$/i.test(n))return'Back to my league';const t=UI.dr2Title(n);return'Go to '+t+(/\bleague$/i.test(t)?'':' League')};
+UI.dr2Title=function(n){/* DR2: a name stored in ALL CAPS shows in title case (display only); mixed-case names are kept. Letters after an apostrophe stay lower case (Don't). */
+  if(!/[A-Z]/.test(n)||/[a-z]/.test(n))return n;return n.toLowerCase().replace(/(^|[\s\-\/(&.])([a-z\u00e0-\u00ff])/g,(m,a,b)=>a+b.toUpperCase())};/* no "League League"; the normalised default name "League" counts as no name */
+/* DR2: league links open in a new tab on desktop (>= 900px wide and not a touch-first coarse pointer), same tab on phones. Re-checked on resize. */
+UI.dr2Desk=function(){try{return matchMedia('(min-width:900px)').matches&&!matchMedia('(pointer:coarse)').matches}catch(e){return false}};
+UI.dr2NewTab=function(sel){const ap=()=>document.querySelectorAll(sel).forEach(a=>{if(UI.dr2Desk()){a.target='_blank';a.rel='noopener noreferrer'}else{a.removeAttribute('target');a.removeAttribute('rel')}});ap();
+  if(!UI.dr2NewTab._w){UI.dr2NewTab._w=[];addEventListener('resize',()=>UI.dr2NewTab._w.forEach(f=>f()))}UI.dr2NewTab._w.push(ap)};
 UI.mockAgain=meta=>UI.pageUrl('mock.html',{from:meta&&meta.parent?FBN.parseCode(meta.parent):''});
 /* s24: the current tab lives in the URL hash as "#tab=<name>" and NOTHING else (never an id, seat, k= or other secret). The query string is kept as is.
    U.hashTab(valid): the tab named in the hash; null when the hash names an unknown tab or holds anything else; undefined when there is no hash. */

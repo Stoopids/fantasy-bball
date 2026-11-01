@@ -13,8 +13,8 @@ const TX=require('./tabs_exp.js');   /* s25: tabs visible at the test clock (LNO
 const tabClick=(P,t)=>P.page.evaluate(t=>document.querySelector('#ltabs [data-v='+t+']').click(),t);
 await C.page.goto(APP+'/league.html?l='+ST.id+'&demo=1',{waitUntil:'domcontentloaded'});await ready(C);await sleep(500);
 ok('league site (demo): title, tab row, DEMO marks, no placeholder',(await exists(C,'#lhead'))&&(await exists(C,'#ltabs'))&&(await exists(C,'#samplenote'))&&(await exists(C,'#demobar'))&&!(await exists(C,'#avail')),await txt(C,'#lhead'));
-const tb=await C.page.$$eval('#ltabs [data-a=tab]',b=>b.map(x=>x.dataset.v));ok('tabs in order (s25): '+TX.labels.join(', '),JSON.stringify(tb)===JSON.stringify(TX.vis),tb);
-const dl=await C.page.$eval('#ltabs a[data-v=draft]',a=>({h:a.getAttribute('href'),t:a.innerText,last:a===[...a.parentNode.querySelectorAll('a')].pop()})).catch(()=>null);ok('Draft is the last tab (s26c10) and opens #draft on the League site with the league code only',!!dl&&dl.last&&/[?&]l=/.test(dl.h)&&dl.h.includes(ST.id)&&/#draft$/.test(dl.h)&&!/k=|cm=/.test(dl.h)&&/Draft/.test(dl.t),dl);
+const tb=await C.page.$$eval('#ltabs [data-a=tab]',b=>b.map(x=>x.dataset.v));const VIS27=TX.vis.filter(v=>v!=='draft');ok('tabs in order (s27: Draft folded into Recap): '+TX.labels.filter(l=>l!=='Draft').join(', '),JSON.stringify(tb)===JSON.stringify(VIS27),tb);
+const dl=await C.page.$$eval('#ltabs [data-v=draft]',a=>a.length);ok('s27: no Draft tab (the pick board lives in Recap)',dl===0,dl);
 ok('no money wording or amounts in the page text on any tab (Bets are pushups)',await (async()=>{let all='';for(const t of tb){await tabClick(C,t);await sleep(120);all+=await txt(C,'body')}await tabClick(C,'standings');return !/\b(wager\w*|prize|payout|jackpot|lottery|gambl\w*|cash|money|dollars?|USD|IDR|Rp)\b|\$\s?\d/i.test(all)})());
 let r=await rows(C);ok('Standings: 8 owner cards, best total first, each with its league total (FBNScore.leagueTotals) and rank (T-n for ties)',r.length===8&&r.every((x,i)=>{const e=LTn[x.name];return e&&x.score===e.total&&x.place===((e.tied?'T-':'')+e.place)&&(!i||r[i-1].score>=x.score)}),{page:r,expect:LT.map(x=>[x.name,x.total,x.place])});
 ok('every standings card has a 4 x 2 grid of school chips with a W-L record',await C.page.$$eval('#main .ocl .strow',c=>c.every(x=>x.querySelectorAll('.chips .chip').length===6&&[...x.querySelectorAll('.chip .cr')].length===6&&/^\d+-\d+$/.test(x.querySelector('.chip .cr').innerText))));
@@ -32,12 +32,12 @@ ok('tournament totals are not all equal (sample has real variety)',new Set(TOU.m
 await C.page.evaluate(()=>window.scrollTo(0,0));await sleep(150);await C.shot('league_postseason');}
 await tabClick(C,'teams');await sleep(300);ok('All teams: one row per drafted school (48) with owner and record (s26c11 #allteams grid)',(await C.page.$$eval('#allteams .obr',x=>x.length))===48&&/\d+-\d+/.test(await txt(C,'#allteams')||''));
 await tabClick(C,'games');await sleep(300);
-const GV=LS.gamesView(scj.games,owners,{});const head=await txt(C,'#main .tabs');
+const GV=LS.gamesView(scj.games,owners,{});const head=await txt(C,'#main .s27-seg');
 ok('Games: toggle labels are exactly Upcoming / Past (no emoji, no counts)',/(^|\n)Upcoming(\n|$)/.test(head)&&/(^|\n)Past(\n|$)/.test(head)&&!/[⏭✅(]/.test(head),{head,res:GV.results.length,up:GV.upcoming.length});
 const g0=await C.page.$$eval('#main .gm',g=>g.length);ok('Games: a list of game cards with a day header',g0>=1&&(await exists(C,'.gday')),g0);
 await C.page.evaluate(()=>document.querySelector('[data-a=gmode][data-v=scores]').click());await sleep(300);
 const firstDay=await txt(C,'.gday');ok('Scores: newest day first',/Mar 2[89], 2027/i.test(firstDay||''),firstDay);
-const gm=MGS[1];await C.page.select('#gOwnerSel',(await C.page.$$eval('#gOwnerSel option',o=>o.map(x=>x.value)))[2]);await sleep(300);const GM=LS.gamesView(scj.games,owners,{mid:gm.mid});ok('Games: owner filter changes the count',(await txt(C,'#main .tabs')).includes('Past')||true);
+const gm=MGS[1];await C.page.select('#gOwnerSel',(await C.page.$$eval('#gOwnerSel option',o=>o.map(x=>x.value)))[2]);await sleep(300);const GM=LS.gamesView(scj.games,owners,{mid:gm.mid});ok('Games: owner filter changes the count',(await txt(C,'#main .s27-seg')||'').includes('Past')||true);
 await C.page.select('#gOwnerSel','all');await sleep(200);
 ok('Games: tournament games flag upsets',(await C.page.$$('.gm .up')).length>=1);
 await C.page.evaluate(()=>window.scrollTo(0,0));await sleep(150);await C.shot('league_games');

@@ -34,9 +34,11 @@ function gather(o){const MG=o.managers||[];const list=(o.picks)||(o.state&&(o.st
   const by={};MG.forEach(m=>{by[m.mid]=[]});
   list.forEach(p=>{const mid=p&&(p.owner||p.managerId||p.mid);if(mid in by&&p.tid!=null)by[mid].push(p)});
   const sizes=MG.map(m=>by[m.mid].length);if(!sizes[0]||sizes.some(z=>z!==sizes[0]))return null;
+  /* s27: grades (strength) rank each school by the 50/50 KenPom/power blend (Draft Room core F.blendRank(meta,0.5)) when that build is loaded; else meta.p as before. Text and the average rank stay on p. */
+  const FB=(typeof window!=='undefined'&&window.FBN)||{};const BR=typeof FB.blendRank==='function'?FB.blendRank(META,0.5):null;const gm=(tid,mt)=>BR&&BR[tid]>0?Object.assign({},mt,{p:BR[tid]}):mt;
   return MG.map(m=>{const sc=by[m.mid].slice().sort((a,b)=>(a.n||0)-(b.n||0)).map((p,i)=>{const t=T[p.tid]||{},mt=META[p.tid]||{};const name=t.short||t.name||String(p.tid);
       return{tid:String(p.tid),name,sn:safeName(name),full:t.name||name,conf:mt.c||null,cs:mt.c?safeName(mt.c):null,rec:mt.r||null,p:num(mt.p),s:num(mt.s),n:p.n==null?i+1:p.n,meta:mt}});
-    return{m,name:String(m.name==null?'':m.name),team:String(m.team==null?'':m.team),schools:sc,strength:strengthOf(sc.map(x=>x.meta))}})}
+    return{m,name:String(m.name==null?'':m.name),team:String(m.team==null?'':m.team),schools:sc,strength:strengthOf(sc.map(x=>gm(x.tid,x.meta)))}})}
 function facts(c,all){const sc=c.schools,N=sc.length;const ranked=sc.filter(x=>x.p!=null).sort((a,b)=>a.p-b.p||a.n-b.n),seeded=sc.filter(x=>x.s!=null);
   const conf={};sc.forEach(x=>{if(x.cs)conf[x.cs]=(conf[x.cs]||0)+1});const cl=Object.entries(conf).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
   const val=ranked.map(x=>({x,d:x.n-x.p})).sort((a,b)=>b.d-a.d||a.x.n-b.x.n);

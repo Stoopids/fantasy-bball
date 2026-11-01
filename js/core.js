@@ -475,7 +475,7 @@ F.NEXT={season:'College basketball games start in early November 2026. Standings
 F.blendScore=(m,wo,maxP)=>{m=m||{};const o=+m.o>0?+m.o:(+m.p>0?366+(+m.p):999);const p=+m.p>0?+m.p:maxP+o;return wo*o+(1-wo)*p};
 F._blendC=new WeakMap();
 F.blendRank=function(META,wo){wo=wo==null?0.5:+wo;let c=F._blendC.get(META);if(!c){c={};F._blendC.set(META,c)}if(c[wo])return c[wo];
-  const ids=Object.keys(META||{});const maxP=ids.reduce((a,t)=>Math.max(a,+META[t].p>0?+META[t].p:0),0);const sc={};ids.forEach(t=>{sc[t]=F.blendScore(META[t],wo,maxP)});
+  const ids=Object.keys(META||{}).filter(t=>META[t]&&typeof META[t]==='object');/* s27: skip null/non-object entries (League power-gen passes such meta) */const maxP=ids.reduce((a,t)=>Math.max(a,+META[t].p>0?+META[t].p:0),0);const sc={};ids.forEach(t=>{sc[t]=F.blendScore(META[t],wo,maxP)});
   const o=t=>+META[t].o>0?+META[t].o:999;const r={};ids.slice().sort((a,b)=>(+META[b].p>0)-(+META[a].p>0)||sc[a]-sc[b]||o(a)-o(b)||(a<b?-1:1)).forEach((t,i)=>{r[t]=i+1});return c[wo]=r};
 F.teamStrength=(tid,META)=>{const m=META&&META[tid];const r=m&&(+m.p>0||+m.o>0)?F.blendRank(META,0.5)[tid]:0;return(r>0&&r<100)?100-r:0};/* s26c14: 50/50 blended rank (was p) */
 F.rosterStrength=function(picks,META){if(!picks||!picks.length)return null;let t=0;picks.forEach(p=>{t+=F.teamStrength(p.tid,META)});return Math.round(t/picks.length*10)/10};

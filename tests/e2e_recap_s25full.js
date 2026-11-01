@@ -21,8 +21,8 @@ const HOW="Each team gets a grade from A+ to D based on how its 8 schools rank a
     heroH:hero?Math.round(hero.getBoundingClientRect().height):0,tfs:h1?parseFloat(getComputedStyle(h1).fontSize):0,last,sw:document.documentElement.scrollWidth,iw:innerWidth,rg,exBtn:ex?[...ex.querySelectorAll('summary:not(.rdh),button.rcjump,[data-a=rcmore]')].length:0/* round headers (collapsible rounds) are allowed */}});
   ok(pre+'no "See how you scored", "See my grade", "See all league grades" or "See full draft recap"',!/See (how you scored|my grade|all league grades|full draft recap)/.test(r.T));
   ok(pre+'no Draft room button and no "Practice only" line',!r.sb.some(b=>/^Draft room/.test(b.t))&&!/Practice only/.test(r.T),r.sb);
-  const want=kind==='mock'?['Run another','Back to my league','Share my grade']:['Back to my league','Share my grade'];
-  ok(pre+"What's next is ONE row: "+want.join(' / '),r.sb.length===want.length&&want.every((t,i)=>r.sb[i].t.indexOf(t)===0)&&new Set(r.sb.map(b=>b.top)).size===1,r.sb);
+  const want=kind==='mock'?['Run another','Back to my league','Share my grade']:['Go to ','Back to Draft','Share my grade'];/* DR2: real recap was ['Back to my league','Share my grade']; now "Go to <League name> League" + Back to Draft */
+  ok(pre+"What's next is ONE row: "+want.join(' / '),r.sb.length===want.length&&want.every((t,i)=>r.sb[i].t.indexOf(t)===0)&&(new Set(r.sb.map(b=>b.top)).size===1||(kind==='real'&&w<900))/* DR2: the real recap row may wrap below 900px (full league name) */,r.sb);
   ok(pre+'grade card above the fold',r.gradeTop<r.vh,{g:r.gradeTop,vh:r.vh});
   ok(pre+'hero title 20-22px',r.tfs>=20&&r.tfs<=22,r.tfs);
   ok(pre+"How grades work is a details at the bottom with the exact text",r.footTag==='DETAILS'&&r.footTxt.replace(/\s+/g,' ').indexOf(HOW)>=0,r.footTxt.slice(0,300));

@@ -13,8 +13,8 @@ let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad
       if(/textdb\.dev/.test(u.hostname))return r.abort();r.continue()});
     await P.go('league.html?l='+id+'#standings');await P.page.waitForSelector('#lapp[data-ready]',{timeout:25000});await L.sleep(2500);const tag=w+'px';
     const h=await P.page.evaluate(()=>{const hd=document.getElementById('lhdr'),t=document.getElementById('ltitle'),tg=document.getElementById('tag');const tr=t.getBoundingClientRect(),hr=document.getElementById('lhead').getBoundingClientRect();
-      const r=document.createRange();r.selectNodeContents(t);const x=r.getBoundingClientRect();
-      return{txt:hd.innerText,fresh:!!hd.querySelector('#fresh'),live:!!hd.querySelector('#live'),next:t.nextElementSibling&&t.nextElementSibling.id,ta:getComputedStyle(t).textAlign,
+      const r=document.createRange();const g=t.closest('.s27-hd');let x;if(g){const a=g.firstElementChild.getBoundingClientRect(),b=g.lastElementChild.getBoundingClientRect();x={left:a.left,right:b.right}}else{r.selectNodeContents(t);x=r.getBoundingClientRect()}   /* s27: title + Share group is what is centred */
+      return{txt:hd.innerText,fresh:!!hd.querySelector('#fresh'),live:!!hd.querySelector('#live'),next:(t.closest('.s27-hd')||t).nextElementSibling&&(t.closest('.s27-hd')||t).nextElementSibling.id,ta:getComputedStyle(t).textAlign,
         cOff:Math.abs((x.left+x.right)/2-(hr.left+hr.right)/2),tgOff:(()=>{const r2=document.createRange();r2.selectNodeContents(tg);const y=r2.getBoundingClientRect();return Math.abs((y.left+y.right)/2-(hr.left+hr.right)/2)})(),
         foot:(document.getElementById('fresh')||{}).innerText||'',footIn:!!document.querySelector('#foot #fresh'),liveAny:!!document.getElementById('live'),sw:document.documentElement.scrollWidth,iw:innerWidth}});
     ok(tag+': header has no Standings updated line and no Refresh Live Games row',!h.fresh&&!h.live&&!/Standings updated|Refresh Live Games|Last updated/.test(h.txt),h.txt);

@@ -4,7 +4,7 @@
 (function(){const F=FBN,U=UI,esc=U.esc;const id=F.parseCode(U.qs().get('l')||'')||'';const T=U.loadTeams();
 document.getElementById('top').innerHTML=U.header({sub:'Draft recap'});const app=document.getElementById('app');
 if(!id&&U.qs().get('import')==null){app.innerHTML='<div class="card"><h2>No league</h2><a href="index.html">Home</a></div>';return}
-if(id)app.innerHTML='<div class="card mut" id="loading">Loading the final rosters…</div>';
+if(id)app.innerHTML='<div class="card mut dr2load" id="loading" role="status" aria-live="polite"><div class="dr2balls" aria-hidden="true"><span>🏀</span><span>🏀</span><span>🏀</span></div><div class="dr2cap">Loading the final rosters…</div></div>';/* DR2: 3 bouncing basketballs (was a plain text box; no role/aria-live before) */
 const recapUrl=()=>U.pageUrl('recap.html',{l:id});
 const ACT={csv:()=>dl('csv'),json:()=>dl('json'),
   cheermute:el=>U.cheerToggle(el),
@@ -59,7 +59,20 @@ const GC=g=>({'A+':'g-Ap','A':'g-A','A-':'g-A','B+':'g-B','B':'g-B','B-':'g-B','
 let TSTL=false;/* League's rule: strip a leading "Test " only when the LEAGUE NAME starts with the whole word "Test" (the example league); a real league shows every name as written */
 const disp=n=>{n=String(n==null?'':n);if(!TSTL)return n;const t=n.replace(/^Test\s+(?=\S)/,'');return(!t.trim()||/^test$/i.test(t.trim()))?n:t};
 const sec=(idv,h,body,cls)=>`<section class="rsec${cls?' '+cls:''}" id="${esc(idv)}" aria-labelledby="${esc(idv)}_h"><h2 id="${esc(idv)}_h">${esc(h)}</h2>${body}</section>`;
-FBNLeague.load(id,{pool:T.POOL}).then(d=>{D=d;if(!d.meta){app.innerHTML='<div class="card" id="nf"><h2>League not found</h2><a class="btn" href="index.html">Home</a></div>';return}
+/* DR2 fast recap: when the room saw the draft end it hands over the exact server text it already read (meta, slots, profiles, every pick) in
+   sessionStorage. If that copy is complete (status complete, every pick present) the recap renders from it at once; the normal server load still runs
+   and, if anything differs, the page reloads from the server. Nothing is synthesized: only raw strings the room read from the store, parsed the same way. */
+const dr2Sig=d=>JSON.stringify([d.meta,d.claims,d.profiles,d.entries]);
+const DR2SEED=(()=>{try{const k='fbn.recapseed.'+id,raw=sessionStorage.getItem(k);if(!raw)return (window.__dr2why='r1',null);sessionStorage.removeItem(k);const z=JSON.parse(raw);
+  if(!z||z.id!==id||Date.now()-z.ts>10*60e3)return (window.__dr2why='r2',null);const md=F.parseJ(z.meta);if(!F.exists(md))return (window.__dr2why='r3',null);const m=F.normalizeMeta(md);if(m.epoch!==z.epoch)return (window.__dr2why='r4',null);/* status comes from the derived state (all picks in), checked below */
+  const out={id,K:F.Keys(id),meta:m,claims:{},profiles:{},managers:[],entries:{},state:null,dr2seed:true};
+  for(let i=1;i<=m.settings.managers;i++){const v=String(z.claims[i]||''),bar=v.indexOf('|');if(bar<0||v.slice(0,bar)!==out.K.slot(i,m.slotGen[i]||0))return (window.__dr2why='r5',null);out.claims[i]=F.parseClaim(v.slice(bar+1))}/* room keeps 'slotKey|raw' */
+  F.joinedList(m,out.claims).forEach(c=>{const p=z.profiles[c.mid]?F.parseProfile(z.profiles[c.mid]):null;if(p)out.profiles[c.mid]=p});
+  out.managers=F.managersView(m,out.claims,out.profiles);
+  const tot=F.totalPicks(m.order,m.settings.rounds);for(let k=1;k<=tot;k++){const sl=F.slotAt(m.order,k,m.settings.type,m.settings.rounds);if(sl&&F.redraftSkip(m,sl))continue;const e=z.entries[k]?F.parseEntry(z.entries[k]):null;if(!e)return (window.__dr2why='r6',null);out.entries[k]=e}
+  out.state=F.deriveState(m,out.entries,{},new Set(T.POOL));return out.state&&out.state.status==='complete'?out:null}catch(e){return (window.__dr2why='r7',null)}})();
+window.__dr2seed=!!DR2SEED;
+(DR2SEED?Promise.resolve(DR2SEED):FBNLeague.load(id,{pool:T.POOL})).then(d=>{D=d;if(!d.meta){app.innerHTML='<div class="card" id="nf"><h2>League not found</h2><a class="btn" href="index.html">Home</a></div>';return}
  const st=d.state,m=d.meta;
  /* s24: a mock (practice league): PRACTICE banner, grades say they were against bots, Run another / Back to my league, no League site and no Redraft */
  const MOCK=!!m.mock;rcMock=MOCK;const nBots=MOCK?Object.keys(m.over||{}).filter(k=>m.over[k]&&m.over[k].bot).length:0,nPeople=MOCK?Math.max(0,(d.managers||[]).length-nBots):0;
@@ -121,7 +134,7 @@ FBNLeague.load(id,{pool:T.POOL}).then(d=>{D=d;if(!d.meta){app.innerHTML='<div cl
  const outl=rosters.map(r=>{const sd=r.picks.map(p=>({tid:p.tid,s:seedOf(p.tid)})).filter(x=>x.s!=null);return{mgr:r.mgr,n:r.picks.length,field:sd.length,top4:sd.filter(x=>x.s<=4).length,long:sd.length?sd.reduce((a,b)=>b.s>a.s?b:a):null,avg:sd.length?Math.round(sd.reduce((a,b)=>a+b.s,0)/sd.length*10)/10:null}});
  const s6=sec('rc_outlook','Tournament outlook',`<p class="small mut rcnote">Projected NCAA Tournament seeds from the team table. They are estimates, not official. A school without a projected seed is not counted.</p><div class="orows" id="orows">${outl.map(o=>`<div class="orow${esc(o.mgr.mid===myMid?' mine':'')}" data-mid="${esc(o.mgr.mid)}"><div class="on"><b>${esc(o.mgr.name)}</b><small>${esc(o.mgr.team)}</small></div><div class="os"><span><b>${o.field}</b> in the field</span><span><b>${o.top4}</b> top-4 seed${o.top4===1?'':'s'}</span><span>${o.avg==null?'avg seed n/a':'avg seed <b>'+o.avg+'</b>'}</span></div><div class="ol">${o.long?'Longest shot: '+chip(o.long.tid,{sm:1})+' <span class="small mut">seed '+o.long.s+'</span>':'<span class="small mut">No projected seeds on this roster</span>'}</div></div>`).join('')}</div>`);
  const conf=rosters.map(r=>{const c={};r.picks.forEach(p=>{const k=(META[p.tid]||{}).c||'Other';c[k]=(c[k]||0)+1});const l=Object.keys(c).sort((a,b)=>c[b]-c[a]||a.localeCompare(b));return{mgr:r.mgr,c,l,n:r.picks.length}});
- const s7=sec('rc_conf','Conference breakdown',`<div class="orows" id="crows">${conf.map(x=>{const top=x.l.slice(0,3),rest=x.l.slice(3).reduce((a,k)=>a+x.c[k],0);const heavy=x.l.length&&x.c[x.l[0]]>=4&&x.l[0]!=='Other';
+ const s7=sec('rc_conf','Conference breakdown',`<div class="orows" id="crows">${conf.map(x=>{const top=x.l/* DR2: every conference as a chip (was the top 3 + "N other") */,rest=0;const heavy=x.l.length&&x.c[x.l[0]]>=4&&x.l[0]!=='Other';
   return `<div class="orow crow${esc(x.mgr.mid===myMid?' mine':'')}" data-mid="${esc(x.mgr.mid)}"><div class="on"><b>${esc(x.mgr.name)}</b><small>${esc(x.mgr.team)}</small></div><div class="cch">${top.map(k=>`<span class="cc2"><b>${x.c[k]}</b> ${esc(k)}</span>`).join('')}${rest?`<span class="cc2"><b>${rest}</b> other</span>`:''}</div>${heavy?`<div class="small mut cheavy">Heavy on ${esc(x.l[0])}: ${x.c[x.l[0]]} of ${x.n}.</div>`:''}</div>`}).join('')}</div>`);
  /* ---- 8 pick times (approximate) ---- */
  const seq=real.filter(p=>p&&!p.skip&&!p.kept&&p.tid&&+p.ts>0);let prev=+m.resumeAt>0?+m.resumeAt:+m.startedAt>0?+m.startedAt:0;const times=[];
@@ -173,7 +186,7 @@ FBNLeague.load(id,{pool:T.POOL}).then(d=>{D=d;if(!d.meta){app.innerHTML='<div cl
  const mb=MOCK?U.mockBack(m):null;
  /* s25-full (Paul via NCAA): What's next is ONE compact row right under the banner: Run another (mock only), Back to my league, Share my grade. No Draft room button, no "Practice only" line. */
  const backHref=MOCK?mb.href:U.pageUrl('league.html',{l:id});
- const s10=`<section class="rsec rcnextrow" id="rc_site" aria-label="What's next"><div class="rcrow">${MOCK?`<a class="btn pri" id="mockagain" href="${esc(U.mockAgain(m))}">Run another</a>`:''}${done||MOCK?`<a class="btn${esc(MOCK?'':' pri')}" id="${esc(MOCK?'mockback':'rcsite')}" href="${esc(backHref)}">${esc(MOCK?mb.label:'Back to my league')}</a>`:`<button class="btn" id="rcsite" disabled aria-disabled="true">League site · after the draft</button>`}<button class="btn" data-a="sharegrade" id="rcsharegrade" hidden>Share my grade</button></div></section>`;
+ const s10=`<section class="rsec rcnextrow" id="rc_site" aria-label="What's next"><div class="rcrow">${MOCK?`<a class="btn pri" id="mockagain" href="${esc(U.mockAgain(m))}">Run another</a>`:''}${done||MOCK?`<a class="btn${esc(MOCK?'':' pri')}" id="${esc(MOCK?'mockback':'rcsite')}" href="${esc(backHref)}" title="${esc(MOCK?mb.label:U.goLeagueLabel(m.name))}"><span class="dr2lbl">${esc(MOCK?mb.label:U.goLeagueLabel(m.name))/* DR2: was 'Back to my league' */}</span></a>`:`<button class="btn" id="rcsite" disabled aria-disabled="true">League site · after the draft</button>`}${done&&!MOCK?`<a class="btn" id="rcdraft" href="${esc(U.roomHref(id))}"><span class="dr2lbl">Back to Draft</span></a>`/* DR2: back to the draft room (same tab) */:''}<button class="btn" data-a="sharegrade" id="rcsharegrade" hidden>Share my grade</button></div></section>`;
  /* ---- 11 footer ---- */
  /* s25-full: Export CSV / JSON are small low-key links at the very bottom of the page (mobile and desktop) */
  const EXP=`<div class="rsec rcexp" id="rc_export"><div class="exportrow" id="exportrow"><span class="mut">Save a copy:</span><button class="lnkbtn" data-a="csv" id="csvbtn">Export CSV</button><button class="lnkbtn" data-a="json" id="jsonbtn">Export JSON</button></div></div>`;
@@ -181,7 +194,7 @@ FBNLeague.load(id,{pool:T.POOL}).then(d=>{D=d;if(!d.meta){app.innerHTML='<div cl
  const XTRA=`<div class="rsec rcextra rcinline" id="rcextra">${s3+s5/* s25-full (j): How the order was set removed (the order is in Full draft order) */+s6+s7+s8}</div>`;/* s25-full: the full recap flows inline, no buttons */
  app.innerHTML=!done?(MOCK?U.practiceBanner(VS):'')+s1+s3+s5+s10+s11+EXP+U.buildTag():MOCK?U.practiceBanner(VS)+s1hero+s10+s2+XTRA+s11+EXP+U.buildTag():s1hero+s10+s2+sG+s9+XTRA+s11+EXP+U.buildTag();U.bind(ACT);
  if(done&&!st.endedEarly){/* s25-full: the cheer, once per draft on this device (shared with the room) */const rl=real||[];const lt=rl.length?rl[rl.length-1].ts:0;U.cheerOnce(id,(m.epoch||1)+(redr?'.rd':''),lt,Date.now())}
- rcNav();wireTabs();
+ rcNav();wireTabs();try{U.dr2NewTab('#rcsite[href],#mockback')}catch(e){}/* DR2 */
  /* s23: no sticky League site bar on the recap; the big buttons are at the bottom (What's next) */
  ONROWS=mt=>{
    /* the example league's hand-written file text has its own ranking: make rosters + awards follow the Power section's order */
@@ -210,6 +223,7 @@ FBNLeague.load(id,{pool:T.POOL}).then(d=>{D=d;if(!d.meta){app.innerHTML='<div cl
   if(MOCK){const hm=document.getElementById('rcrank');if(hm)hm.insertAdjacentHTML('afterend',`<div class="vsbots" id="vsbots">${esc(VS)}</div>`);GRADE.league=m.name+' (practice vs bots)';U.rememberMock({id,name:m.name,parent:m.parent||'',solo:!!m.solo,grade:mine.grade})}};
  if(done)wirePower(d,st,MG,myMid);
 }).catch(e=>{app.innerHTML='<div class="card bad">Could not load the league: '+esc(e.message||e)+'</div>'});
+if(DR2SEED)FBNLeague.load(id,{pool:T.POOL}).then(srv=>{window.__dr2confirm=dr2Sig(srv)===dr2Sig(DR2SEED)?'same':'differs';if(window.__dr2confirm==='differs')location.reload()}).catch(()=>{window.__dr2confirm='error'});/* DR2: confirm the fast render against the server */
 /* s24: recap sections act as tabs in the URL hash: #tab=<name> only (never an id, seat or secret). Refresh / shared link scrolls to that section, back / forward follow it,
    an unknown name falls back to the top; while reading, the hash follows the section on screen (replaceState, so history is not flooded). */
 const RTABS={top:'recaphead',grade:'powerrecap_s',grades:'rc_grades',awards:'rc_awards',next:'rc_site',about:'rc_foot',order:'rc_order',howorder:'rc_spin',rosters:'rc_rosters',outlook:'rc_outlook',conferences:'rc_conf',times:'rc_times'};
