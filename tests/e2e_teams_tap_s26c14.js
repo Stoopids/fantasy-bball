@@ -17,8 +17,8 @@ const gj=async k=>F.parseJ(await (await fetch(API+encodeURIComponent(k))).text()
   const sheet=()=>P.page.evaluate(()=>!!document.getElementById('confirmpick'));
   const row='#tlist .trow.go:nth-of-type(2)';const tid=await P.page.evaluate(s=>{const r=document.querySelector(s);return r&&r.dataset.t},row);
   ok(w+': rows have no row-level draft action (no data-a/role on .trow)',await P.page.evaluate(()=>[...document.querySelectorAll('.trow')].every(r=>!r.dataset.a&&!r.getAttribute('role'))));
-  ok(w+': every available row has its own Draft button',await P.page.evaluate(()=>[...document.querySelectorAll('#tlist .trow.go')].every(r=>r.querySelector('.dbtn[data-a=draftrow]'))));
-  const targets=[[row,'row centre',0],[row+' .tm','name/logo chip',0],[row+' .tm img','logo',0],[row+' .rks','STOOPID rank',0],[row+' .rko','Power rank',0],[row+' .tr','record',0],[row+' .cf','conference',0]];
+  ok(w+': every available row has its name pill as the Draft action (s27)',await P.page.evaluate(()=>[...document.querySelectorAll('#tlist .trow.go')].every(r=>r.querySelector('.tm.dbtn[data-a=draftrow]'))));
+  const targets=[[row+' .rks','STOOPID rank',0],[row+' .rko','Power rank',0],[row+' .tr','record',0]];
   for(const [sel,nm] of targets){const did=await tap(sel);if(!did){ok(w+': '+nm+' present (record hidden at 320 by design)',sel.endsWith('img')||(w<=350&&nm==='record'));continue}
    const sh=await sheet();ok(w+': tap '+nm+' opens no confirm',!sh);if(sh){await P.page.evaluate(()=>UI.closeSheet());await sleep(300)}}
   await tap(row+' .qbtn');const q1=await P.page.evaluate(s=>document.querySelector(s+' .qbtn').classList.contains('on'),row);ok(w+': Queue button queues (no confirm)',q1&&!(await sheet()));
@@ -29,13 +29,13 @@ const gj=async k=>F.parseJ(await (await fetch(API+encodeURIComponent(k))).text()
   if(SD&&(w===390||w===320)){await box(row);await P.page.screenshot({path:path.join(SD,'teams-tap-'+w+'.png')})}
   /* search list = same rows */
   await P.page.evaluate(()=>{const q=document.getElementById('tq');q.value='a';q.dispatchEvent(new Event('input',{bubbles:true}))});await sleep(700);
-  await tap('#tlist .trow.go .tm');ok(w+': search result row tap opens no confirm',!(await sheet()));
+  await tap('#tlist .trow.go .rks');ok(w+': search result row (rank) tap opens no confirm',!(await sheet()));
   await P.page.evaluate(()=>{const q=document.getElementById('tq');q.value='';q.dispatchEvent(new Event('input',{bubbles:true}))});await sleep(700);
   /* Board: no draft action */
   await P.page.evaluate(()=>document.getElementById('tab_board').click());await sleep(800);ok(w+': Board has no draft controls',await P.page.evaluate(()=>!document.querySelector('#view [data-a=draftrow]')));
   /* pick overlay rows */
   const pb=await P.page.evaluate(()=>{const b=document.getElementById('pickbtn');if(b)b.click();return !!b});await sleep(900);
-  if(pb){await tap('#pickov .trow.go .tm');ok(w+': Pick-a-team overlay row tap opens no confirm',!(await sheet()));ok(w+': overlay rows have Draft buttons',await P.page.evaluate(()=>!!document.querySelector('#pickov .trow.go .dbtn')));await P.page.evaluate(()=>{const c=document.querySelector('#pickov [data-a=closepick],#pickov .x,#pickov [data-a=pickclose]');if(c)c.click()});await sleep(400)}
+  if(pb){await tap('#pickov .trow.go .rks');ok(w+': Pick-a-team overlay row (rank) tap opens no confirm',!(await sheet()));ok(w+': overlay rows have Draft buttons',await P.page.evaluate(()=>!!document.querySelector('#pickov .trow.go .dbtn')));await P.page.evaluate(()=>{const c=document.querySelector('#pickov [data-a=closepick],#pickov .x,#pickov [data-a=pickclose]');if(c)c.click()});await sleep(400)}
   await P.page.evaluate(()=>{const x=document.getElementById('pickov');if(x)x.remove();document.getElementById('tab_teams').click()});await sleep(900);
   pk=await picks();ok(w+': still no pick',pk.length===0,pk);
   await tap('#tlist .trow.go[data-t="'+tid+'"] .dbtn');ok(w+': Draft opens the confirm',await sheet());

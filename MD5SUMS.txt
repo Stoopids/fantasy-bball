@@ -1,7 +1,7 @@
 d41d8cd98f00b204e9800998ecf8427e  .nojekyll
 aab153233971799b3f33f8771338cdb2  CHANGE-NOTES-s24.md
 fdb538b9a8247a3f56406fb69fa80031  CHANGE-NOTES-s25.md
-5b1cd6928f8ca08e16a476d0d9bff239  CHANGED-FILES.md
+3f9d9626d6d7561db2804c1a8e22f586  CHANGED-FILES.md
 fc4c2520be569d292be962f8ba4efdeb  LICENSE-third-party.txt
 262bee0799369fbf2298360c827e790f  README.md
 dc050cbfbdc4a7acac091c14b90bb9d0  UNCLEAR.md
@@ -9,7 +9,7 @@ d64b4a5bc83d7d701430bd795594d5bf  assets/cheer.mp3
 1efdefd1fb1432448a983cf69fd1f268  assets/hero-banner.jpg
 8495ef48ff34e2986385d382d6572174  assets/setup-banner.svg
 536e882a44b318e0b08ef96c80c9b6c2  assets/teams.js
-9125642b9b69a34842547bebd447cced  css/app.css
+486b1ad392417d891e4c25161f6e14e6  css/app.css
 2a39e8668e41074ff1408f2c555f6964  css/league-app.css
 422f06d20e818a28f93262854539b3da  css/power.css
 b9f73c3f451d83ad9229aafeb5ea9368  css/recap-rosters.css
@@ -47,7 +47,7 @@ e23c8f96ab3ce7de4c03ce8625002c85  js/power-gen.js
 ade6fadbb2f4be5a575390360ff3af5b  js/qr.min.js
 563093cd2e3f54dcc3fdaefd0ee78286  js/recap.js
 757c3c165a79010c4b592f2eeffcb64c  js/redraft.js
-084e2a9951dc78562a2847ededf3f0f6  js/room.js
+d7e27229f048d6564a99a1de842566cc  js/room.js
 b6c40f01a574e3c88d516c6c075879f3  js/rules.js
 dea3951c79015c462034d16d386d2548  js/scoring.js
 325fd1c31be3daa075c692517c505d03  js/setup.js
@@ -55,7 +55,7 @@ dea3951c79015c462034d16d386d2548  js/scoring.js
 a1c776ffcad4a1e1444e2a41913572c1  js/store.js
 b31b8d130f47a378f2358995614b9470  js/time.js
 5aa18165b81a3f7791885f84dd19a04d  js/ui.js
-89ed85d54cdb994df66133a83554a239  js/version.js
+fa5e7de132fee62d8a01e768bf7caa42  js/version.js
 20d047f6fc4424e7521baac3f5781940  league.html
 dde6bc94069703616dc2b911b7422ae9  manifest.webmanifest
 8651de3c384a5387ec19ec8c1dc594e4  mock.html
@@ -63,7 +63,7 @@ dde6bc94069703616dc2b911b7422ae9  manifest.webmanifest
 67894e74e4d6680fd2750e8f15cfaa0c  redraft.html
 dc5dc90e7dd8ad325b34f5fb28fe1425  room.html
 ba0bad6039db68759ec53e44ca6569dd  setup.html
-4c2bb6f84e46568b77f1f35e2e179f1d  sw.js
+42fe99bd8acabaf6f73f70b8420f4060  sw.js
 25852915b747ecd22afa1599b4d1357c  time.html
 806c1ebcb679950c59121f0d77b3528e  tools/gen_stoopids_import.js
 be1290331d89ff8782ac60ce0b8143b9  tools/kenpom_rank.py

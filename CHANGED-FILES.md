@@ -1,3 +1,15 @@
+# s26c15 (build 2026-11-01s26c15): s26c14 + Teams name pill drafts (no separate Draft box)
+Base: LIVE s26c14 = /workspace/fantasy-bball-releases/s26c14 (MD5SUMS 2f869a40). Staged only, not published. js/shared-s25.js 8bdd1fd8d7928c3c7e085de801925234 (unchanged). tests/, shots/ not in MD5SUMS.
+- Teams list (Paul 'no need for another draft box'): the yellow Draft button is removed from Teams rows. On your turn (or the commissioner picking for someone) the team name pill is the Draft action: button.tm.dbtn data-a=draftrow -> the same confirmDraft -> confirm sheet -> doPick path (pick path unchanged). Yellow outline, >=48px, aria-label 'Draft <team>'. Off turn: plain name, no action (as s26c14). Q+ Queue button kept (48px; hidden for spectators). Hint text 'tap a team name to draft it.'
+- Tests updated: e2e_teams_tap_s26c14, e2e_rowtap_s25g, e2e_espn; new tests/shot_teams_pill_s27.js (pill -> confirm -> pick lands; cancel leaves no pick; off turn nothing).
+
+| file | md5 | owner |
+|---|---|---|
+| css/app.css | 486b1ad392417d891e4c25161f6e14e6 | Draft Room |
+| js/room.js | d7e27229f048d6564a99a1de842566cc | Draft Room |
+| js/version.js | fa5e7de132fee62d8a01e768bf7caa42 | Draft Room |
+| sw.js | 42fe99bd8acabaf6f73f70b8420f4060 | Draft Room |
+
 # s26c14 (build 2026-11-01s26c14): Draft Room two ranks (STOOPID rank + Power rank/KenPom), auto-pick queue-then-KenPom, o/p blend for mock bots + grades, Rules tab, Draft-button-only picking, BUG-1/BUG-2 + League s26c14-league-full
 Base: /workspace/fantasy-bball-releases/s26c13 (MD5SUMS 6e4bd13f). Staged only, not published. js/shared-s25.js 8bdd1fd8d7928c3c7e085de801925234 (unchanged). tests/, shots/, node_modules, __pycache__ not in MD5SUMS.
 - Ranks: STOOPID rank = meta.p (label renamed from "Power rank"); Power rank = new meta.o = KenPom 2026-27 preseason ratings rank for all 365 teams (/workspace/kenpom/kenpom_o.json via tools/kenpom_rank.py: 365/365 matched, 20 explicit aliases, kenpom_unmatched.txt empty d41d8cd98f00b204e9800998ecf8427e). Credit is the single constant F.RANK_SRC='KenPom 2026-27 preseason ratings'; no Torvik/GordStats credit anywhere. Teams sort pills STOOPID rank / Power rank (tap again to reverse), row badge "S #p / P #o", '–' when missing.

@@ -734,3 +734,7 @@ body.pdmore #rulescard{padding:8px 12px}body.pdmore #rulescard h3{margin:0 0 6px
 .trow.go{cursor:default}
 @media (max-width:360px){.trow .tbtns{gap:8px}.trow .dbtn{min-width:52px;padding:0 6px;font-size:13px}.trow .tbtns .qbtn{width:52px;min-width:52px}.trow .tr small{display:none}}
 @media (max-width:350px){.tabs button,.tabs a{font-size:10px;padding-left:0;padding-right:0;letter-spacing:-.2px}.trow .tr{display:none}.trow .rkb.rk2{min-width:38px}}
+/* s26c15 (Paul): the name pill is the Draft action on your turn (no separate Draft box) */
+.trow .tm.dbtn{flex:1 1 0;min-width:0;height:auto;min-height:48px;display:flex;flex-direction:column;gap:2px;align-items:flex-start;justify-content:center;padding:4px 8px;margin:0 2px;border:2px solid var(--acc);border-radius:12px;background:rgba(255,210,63,.12);color:inherit;text-align:left;font-weight:inherit}
+.trow .tm.dbtn small{color:var(--mut)}
+@media (max-width:360px){.trow .tm.dbtn{min-width:0;padding:3px 6px;font-size:inherit}}

@@ -12,11 +12,11 @@ for(const [w,h] of [[390,844],[1280,800]]){const opt=w>700?{desktop:true,w,h}:{w
  const P=await L.phone('rt'+w,opt);await P.go('room.html?l='+id+'#as='+owner.id+'&k='+owner.k);await waitFor(()=>P.page.$('#pickbtn'),25000);await sleep(1200);
  /* Teams list */
  await P.page.evaluate(()=>document.querySelector('#tab_teams').click());await waitFor(()=>P.page.$('#tlist .trow.go .dbtn[data-a=draftrow]'),10000);
- ok(w+'px Teams list: every pickable row has its own Draft button (s26c14)',(await draftBtns(P)).length>0&&(await P.page.evaluate(()=>[...document.querySelectorAll('#tlist .trow.go')].every(r=>!r.dataset.a&&r.querySelector('.dbtn[data-a=draftrow]')))),await draftBtns(P));
+ ok(w+'px Teams list: every pickable row has its name pill as the Draft action (s27)',(await P.page.evaluate(()=>[...document.querySelectorAll('#tlist .trow.go')].every(r=>!r.dataset.a&&r.querySelector('.tm.dbtn[data-a=draftrow]')))));
  const rows=await P.page.evaluate(()=>[...document.querySelectorAll('#tlist .trow.go .dbtn')].slice(0,5).map(r=>({h:r.getBoundingClientRect().height,a:r.dataset.a,espn:!!r.querySelector('a.espn'),tl:!!r.querySelector('a.tlink')})));
  ok(w+'px Teams list: Draft buttons are the tap target (>= 44 px), no ESPN icon and no school-name link',rows.length>0&&rows.every(r=>r.a==='draftrow'&&r.h>=44&&!r.espn&&!r.tl),rows);
  const anyA=await P.page.evaluate(()=>[...document.querySelectorAll('#tlist .trow a,#tlist .trow .espn')].map(a=>a.outerHTML.slice(0,80)));ok(w+'px Teams list: no ESPN anchors or icons in any row (pickable or not)',anyA.length===0,anyA);
- await P.page.$eval('#tlist .trow.go .tm',e=>e.click());await sleep(800);ok(w+'px Teams list: tapping the team name opens NO confirm step (s26c14)',!(await P.page.$('#confirmpick')));await P.page.$eval('#tlist .trow.go .dbtn[data-a=draftrow]',e=>e.click());ok(w+'px Teams list: tapping Draft opens the confirm step',!!(await waitFor(()=>P.page.$('#confirmpick'),6000)));
+ await P.page.$eval('#tlist .trow.go .rks',e=>e.click());await sleep(800);ok(w+'px Teams list: tapping the rank area opens NO confirm step (s27: only the name pill drafts)',!(await P.page.$('#confirmpick')));await P.page.$eval('#tlist .trow.go .dbtn[data-a=draftrow]',e=>e.click());ok(w+'px Teams list: tapping Draft opens the confirm step',!!(await waitFor(()=>P.page.$('#confirmpick'),6000)));
  await P.page.evaluate(()=>{const b=document.querySelector('#sheetwrap [data-a=sheetbg].btn,[data-a=sheetbg]');if(b)b.click()});await sleep(400);
  /* Pick a team pop-up */
  await P.page.$eval('#pickbtn',e=>e.click());await waitFor(()=>P.page.$('#pickov .trow.go .dbtn'),10000);await sleep(600);
