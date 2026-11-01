@@ -587,3 +587,10 @@ Test-only (not shipped): tests/e2e_picksheet_clock_s28.js, e2e_beep_s28.js, e2e_
 - tests/e2e_undo_noclock_s26c14.js: after a No-clock Undo, now expects the s28 item 5 freeze (pick #1 not auto re-picked for 25 s) instead of a re-pick after the hold (one undo instead of two). 8/8 pass.
 - tests/e2e_autodraft_s26c8b.js: AUTO badge check expects the team name on top (Aces) instead of the real name 'Ana'. 27/27 pass.
 - tests/e2e_midswap_s28.js: header comment documenting SWAP_CMD (what it does, example, base build s27c -> s28); new tests/README.md with the same note.
+
+## s28b (2026-11-02s28b) — s28L + League s28b-chips chip fix
+- Base: s28L (live as commit 6949500; MD5SUMS 731d6146). data/ unchanged from s28L (nothing taken from League's data/).
+- From League /workspace/league-site-work/s28b-chips (copied unedited, md5 verified): js/league-bets.js, css/league-app.css, tests/e2e_bets_copy_s28.js. No other file taken.
+- js/version.js: FBN_BUILD 2026-11-02s28b. sw.js: cache fbnc-2026-11-02s28b (follows FBN_BUILD), line 3 comment updated.
+- tests/test_core.js: narrow allow-list for the exact phrase 'is our model of expected STOOPIDS points' in js/room.js only (room.js unchanged).
+- MD5SUMS.txt regenerated (excludes tests/ node_modules shots/ __pycache__ .git; keeps empty .nojekyll).

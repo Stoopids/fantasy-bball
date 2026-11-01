@@ -28,6 +28,8 @@ const tap=async(P,sel)=>{await P.page.click(sel);await sleep(250)};
     ok('reduce: a pool the writer is not in is ignored; wrong sums and other people\'s cancels are ignored; the builder can cancel',!r.bets.find(b=>b.id==='upool00002')&&b3&&b3.status==='void'&&!b3.back,r.bets);
     ok('Tally (partner tallyJS pool split): Ana got 25 of 10 (+15), Ben 5 (-5), Cy 0 (-10): each loser pays each winner in proportion',r.T.M[M[1]][M[0]]===5&&r.T.M[M[2]][M[0]]===10&&r.T.per[M[0]].net===15&&r.T.lost[M[2]]===10&&r.T.won[M[0]]===15,r.T);
     await P.close()}
+  /* s28b: chip markup, real name hidden when it equals the team name (RNm rule) */
+  {const R=require('fs').readFileSync(__dirname+'/../js/league-bets.js','utf8');ok('chip source: .tl (team) comes before .tnr (real name), guarded by bRNm',/<span class="tl">.*<\/span>\$\{bRNm\(o\)\?`<small class="tnr">/.test(R)&&/bRNm=\(o,st\)=>\{[^}]*t!==r\?r:''\}/.test(R))}
   /* ---- Write it Up: order + partner wording ---- */
   const A=await open(id,info,0);
   const w=await A.page.evaluate(()=>{const y=id=>{const e=document.getElementById(id);return e?e.getBoundingClientRect().top+scrollY:null};return{seg:y('b27SegRow'),form:y('b27Form'),lh:y('b27ListH'),intro:y('b27Intro'),txt:document.getElementById('lbody').innerText,kinds:[...document.querySelectorAll('#b27Form .b27-kind button')].map(b=>b.textContent),copy:(document.getElementById('b27CopyLink')||{}).textContent,owes:!!document.getElementById('b27Owes'),amts:[...document.querySelectorAll('[data-lb=amt]')].map(b=>b.textContent).join()}});
@@ -73,6 +75,13 @@ const tap=async(P,sel)=>{await P.page.click(sel);await sleep(250)};
   /* ---- widths ---- */
   for(const W of [320,390,1280])for(const mode of ['bet','pool','tally']){const P=await open(id,info,0,{w:W});if(mode==='pool')await tap(P,'#b27KindPool');if(mode==='tally')await tap(P,'#b27Ob_tally');
     const r=await P.page.evaluate(()=>{const small=[...document.querySelectorAll('#lbody button,#lbody select,#lbody input,#lbody textarea')].filter(e=>{const b=e.getBoundingClientRect();return b.width&&b.height&&!e.closest('.b27-rx')&&!e.closest('[hidden]')&&(b.height<44||b.width<44)}).map(e=>(e.id||e.dataset.lb||e.className)+':'+Math.round(e.getBoundingClientRect().width)+'x'+Math.round(e.getBoundingClientRect().height));return{ov:document.documentElement.scrollWidth-innerWidth,small}});
-    ok(W+'px '+mode+': no horizontal overflow, every tap target at least 44px',r.ov<=0&&!r.small.length,r);await P.close()}
+    ok(W+'px '+mode+': no horizontal overflow, every tap target at least 44px',r.ov<=0&&!r.small.length,r);
+    /* s28b regression: every opponent / person chip and Tally row shows the TEAM name on top, the real name under it (hidden when equal) */
+    const co=await P.page.evaluate(()=>{const vis=e=>{const b=e&&e.getBoundingClientRect();return b&&b.width>0&&b.height>0?b:null};const out=[];
+      document.querySelectorAll('#lbody .b27-opps .b27-chip.op').forEach(c=>{const t=[...c.querySelectorAll('.nm .tl > *')].map(vis).find(Boolean),r=vis(c.querySelector('.nm .tnr'));out.push({k:'chip',mid:c.dataset.mid,t:!!t,r:!!r,ok:!!t&&(!r||t.top<r.top),cb:c.getBoundingClientRect().bottom,rb:r?r.bottom:0})});
+      document.querySelectorAll('#b27People tr[data-mid] td:first-child').forEach(c=>{const t=vis(c.querySelector('.tnt')),r=vis(c.querySelector('.tnr'));out.push({k:'tally',t:!!t,r:!!r,ok:!!t&&(!r||t.top<r.top)})});
+      document.querySelectorAll('#lbody .b27-c .tn2').forEach(c=>{const t=vis(c.querySelector('.tnt')),r=vis(c.querySelector('.tnr'));out.push({k:'card',t:!!t,r:!!r,ok:!!t&&(!r||t.top<r.top)})});return out});
+    const exp=mode==='tally'?'tally':'chip';
+    ok(W+'px '+mode+': chip order = team name on top, real name under it (s28b)',co.filter(x=>x.k===exp).length>=(exp==='chip'?7:3)&&co.every(x=>x.ok)&&co.filter(x=>x.k===exp).every(x=>x.r)&&co.filter(x=>x.k==='chip').every(x=>x.rb<=x.cb+1),co);await P.close()}
 }catch(e){bad++;console.log('FAIL  crashed: '+(e&&e.stack||e))}
 console.log('\n'+(n-bad)+' / '+n+' checks passed');await L.close();process.exit(bad?1:0)})();

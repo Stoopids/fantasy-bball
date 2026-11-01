@@ -304,6 +304,7 @@ nav button .nl.m,nav a.tb .nl.m,nav a.nd .nl.m{display:none}
 .b27-chip.op .ck{display:none;position:absolute;top:2px;right:5px;font-weight:900;font-size:11px;line-height:1}.b27-chip.op[aria-pressed=true] .ck{display:block}
 .b27-chip.op .em{font-size:18px;line-height:1.1;white-space:nowrap}
 .b27-chip.op .nm{display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b27-chip.op .nm .tl{display:block;overflow:hidden;text-overflow:ellipsis}.b27-chip.op .nm .tnr{font-size:.8em}.b27-chip.op[aria-pressed=true] .nm .tnr{color:inherit;opacity:.75}   /* s28b: team name line first, real name under it */
 .b27-chip.op .nm .sh,.b27-chip.op .nm .xs{display:none}
 @media (max-width:899px){.b27-chip.op .nm .f{display:none}.b27-chip.op .nm .sh{display:inline}.b27-opps .b27-chip{font-size:12.5px}}
 @media (max-width:599px){.b27-chip.op .nm .sh{display:none}.b27-chip.op .nm .xs{display:inline}.b27-opps{gap:3px}.b27-opps .b27-chip{min-height:52px;padding:4px 0;border-width:1.5px;border-radius:9px;font-size:10px;letter-spacing:-.02em}.b27-chip.op .em{font-size:16px}.b27-chip.op .ck{top:1px;right:3px;font-size:9px}}   /* phones: all 7 chips stay on ONE row (equal 1/7 columns, short names, small type) */
