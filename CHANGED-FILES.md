@@ -1,3 +1,20 @@
+# s26c16c (build 2026-11-01s26c16c): hotfix on LIVE s26c16b (QA s27 BUG 2: Back to Draft bounced to the recap)
+Base: LIVE s26c16b = /workspace/fantasy-bball-releases/s26c16b (git bb00eec). Staged only, not published. Only js/room.js changed in code; core.js and every League-owned file unchanged. tests/, shots/, node_modules, __pycache__, .git not in MD5SUMS.
+- Cause: a natural finish left meta status 'live' with endedAt null. On opening room.html the board first derives 'live' (pick log still loading), then 'complete' once all 64 picks load, and onState() took that as "the draft just ended" and sent the page to recap.html 1.8 s later.
+- Fix 1 (room.js onState): the auto-open of the recap only happens when this page had already seen the draft live with the full pick log loaded (prev.logReady). A page watching the last pick still opens the recap; a finished draft opened later (Back to Draft, League 'Draft room') stays on the board. Works for old leagues whose meta is still 'live'.
+- Fix 2 (room.js markDone): the device that saves the final pick (#rounds*8 = 64; owner/commissioner pick or auto-pick) writes meta status 'complete', endedAt = server time, endedEarly false, paused off, through the same mutateMeta path as End draft (F.mEnd) but without endedEarly. No-op if meta is already complete or has endedAt. League draftComplete() already counts every-pick-made as done; it now also sees endedAt (and recap.js uses endedAt for the draft time span). endedEarly stays false, so the Redraft is not affected.
+- No betting or money wording.
+
+| file | md5 | owner | why |
+|---|---|---|---|
+| js/room.js | 0fed80ec3d63a8602552d4f0470ba5c4 | Draft Room | onState redirect needs prev.logReady; markDone() after the final pick |
+| js/version.js | c3f0a7e328b69a4df2e6e559517af9b6 | Draft Room | build 2026-11-01s26c16c |
+| sw.js | 81f8040dcc54741a7886cce2ca46fcfd | Draft Room | line 3 comment; cache -> fbnc-2026-11-01s26c16c |
+| tests/e2e_backtodraft_s26c16c.js | a86dbfede2a5b12ba9cfc292f3b62422 | Draft Room | new e2e: no bounce + final pick completes meta (fails on s26c16b, passes on s26c16c; not in bundle) |
+| tests/shot_board_done_s26c16c.js | e6a3de4efb9c2d313814dcf7d7e8ea82 | Draft Room | board shots after completion (not in bundle) |
+| CHANGED-FILES.md | (this file) | Draft Room | s26c16c section |
+| MD5SUMS.txt | - | Draft Room | regenerated |
+
 # s26c16 (build 2026-11-01s26c16): start the draft with fewer than 8 managers (placeholder seats), fixed lobby order with empty rows, Lock order
 Rebased onto LIVE s26c15 = /workspace/fantasy-bball-releases/s26c15 (MD5SUMS 09c15fb7; Teams name-pill drafting kept: css/app.css and the s26c15 room.js changes untouched). First built on s26c14 (MD5SUMS 2f869a40). Staged only, not published. No League-owned file changed; js/shared-s25.js 8bdd1fd8d7928c3c7e085de801925234 (unchanged). tests/, shots/, node_modules, __pycache__, .git not in MD5SUMS.
 - Start with fewer than 8: the lobby order always shows 8 rows (joined managers + 'Empty seat' rows e1..e8, kept in meta.order). At Start (commissioner button or auto-start at startAt) each empty row gets a placeholder seat in ITS row (slot claim w:'ph:<row id>', same seat-claim mechanism as mock fillBots, secret thrown away; NOT a bot). Name = the name the commissioner typed on the row (meta.seatNames) else 'Seat N'. meta.over[mid].ph marks it.

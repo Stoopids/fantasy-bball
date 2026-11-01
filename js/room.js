@@ -166,7 +166,7 @@ async function doPick(tid,forOwner,opt){opt=opt||{};const cs0=S&&F.onClock(S);co
       else if(v.turn){const s=F.onClock(S);toast("It's "+(s?mg(s.owner).name:'someone else')+"'s turn now (pick #"+(s?s.n:'?')+'). The board moved while you were choosing.',6000)}else toast(v.error,5000);return false}
     if(forOwner!==myMid()&&!opt.auto&&!needUnlock())return false;
     const by=opt.auto?'auto':(forOwner!==myMid()?'commish':'owner');const res=await submitPick(v.slot.n,forOwner,tid,by);
-    if(res.ok){toast(mg(forOwner).name+' drafted '+tn(tid)+' (#'+res.pick.n+')');return true}
+    if(res.ok){toast(mg(forOwner).name+' drafted '+tn(tid)+' (#'+res.pick.n+')');markDone(res.pick.n);return true}
     if(res.beaten){const w=res.by||{};toast(w.owner===forOwner?'Pick #'+v.slot.n+' was already made for '+forWho(forOwner)+': '+tn(w.tid)+'. Check the board.':'Someone beat you to it: pick #'+v.slot.n+' was just made ('+tn(w.tid)+' by '+mg(w.owner).name+'). Check the board.',6500);showConflict(v.slot.n,tid,w,forOwner);return false}
     toast(res.msg,5000);return false}finally{if(busy===mySlot)busy=false}}
 /* Commissioner: force the best available pick for the manager on the clock (same save path as every pick, so it uses the backup spot when the main one is stuck). Asks for the commissioner passcode like other host actions. */
@@ -175,6 +175,8 @@ async function actForce(){if(!commish()||!S||S.status!=='live')return;await poll
   const ok=await doPick(ch.tid,s.owner,{});if(!ok)toast('Still could not save pick #'+s.n+'. Nothing was changed. Wait a minute and tap Force again.',6000)}
 let conflictMsg='';
 function showConflict(n,tid,w,forOwner){conflictMsg=w.owner===forOwner?'<b>Already picked for '+esc(forWho(forOwner))+'.</b> Pick #'+n+' was already made — <b>'+esc(tn(w.tid))+'</b>. Your pick of '+esc(tn(tid))+' was <b>not</b> saved.':'<b>Someone beat you to it.</b> Pick #'+n+' was already made — <b>'+esc(tn(w.tid))+'</b> by '+esc(mg(w.owner).name)+'. Your pick of '+esc(tn(tid))+' was <b>not</b> saved.';renderBanner();setTimeout(()=>{conflictMsg='';renderBanner()},12000)}
+/* s26c16c: the final pick marks the meta complete (status + endedAt), like End draft but endedEarly stays false */
+function markDone(n){if(!S||!(S.total>0)||n<S.total)return;simple(m=>m.status!=='live'||m.endedAt?{noop:true}:{state:Object.assign(F.clone(m),{status:'complete',endedEarly:false,endedAt:nowSrv(),paused:false,pausedLeft:null})},null,chk=>chk.status==='complete').catch(()=>{})}
 async function simple(fn,okMsg,verify){const res=await mutateMeta(fn,verify);if(!res.ok&&!res.noop)toast(res.msg,5000);else if(okMsg)toast(okMsg);return res}
 const seedOf=m=>m.id+':'+(m.settings.startAt||0);
 async function actStart(auto){if(!auto&&!needUnlock())return;await pollOnce();
@@ -227,7 +229,7 @@ function autoTick(){if(!S||!loaded||autoBusy||busy||!S.logReady)return;{const st
   if(autoPlan.n!==s.n){autoPlan={n:s.n,at:Date.now()+(reason!=='expired'&&!isBot(s.owner)?Math.max(0,F.autoBase(M,S.picks)+F.AUTO.delayMs-nowSrv()):F.autoDelayMs(reason,isBot(s.owner)))}/* s26c8b: auto/away go 2 s after the turn began (last pick / start / resume), not after this phone noticed it */}if(Date.now()<autoPlan.at)return;
   autoBusy=true;autoPlan.at=Date.now()+5000;const n=s.n;
   (async()=>{{const s1=F.onClock(S);const rp=s1&&s1.n===n&&!isBot(s1.owner)?readPref(s1.owner).catch(()=>false):null;await pollOnce();if(rp){await rp;rebuild()}}/* s26c8b: fresh switch, so OFF cancels a pending fast pick on every phone */const s2=F.onClock(S);if(!s2||s2.n!==n||!F.autoReason(S,nowSrv(),CFG.graceMs-200))return;
-    const ch=F.autoChoice(S,s2.owner,POOL,F.mulberry(n*7919),autoRankOf);if(!ch)return;const r=await submitPick(n,s2.owner,ch.tid,'auto');if(r&&r.ok)toast('Auto-pick: '+tn(ch.tid)+' for '+mg(s2.owner).name)})().finally(()=>{autoBusy=false;setTimeout(autoTick,50)/* s25-full: the next auto-pick-on turn goes at once */})}
+    const ch=F.autoChoice(S,s2.owner,POOL,F.mulberry(n*7919),autoRankOf);if(!ch)return;const r=await submitPick(n,s2.owner,ch.tid,'auto');if(r&&r.ok){toast('Auto-pick: '+tn(ch.tid)+' for '+mg(s2.owner).name);markDone(n)}})().finally(()=>{autoBusy=false;setTimeout(autoTick,50)/* s25-full: the next auto-pick-on turn goes at once */})}
 let startTried=0;
 function autoStartTick(){/* s24: a solo mock (you + 7 bots) starts at once on the creator's page */if(M&&!busy&&M.status==='lobby'&&M.mock&&M.solo&&commish()&&full8()&&Date.now()>=startTried){startTried=Date.now()+4000;actStart(true);return}
   if(!M||busy||M.status!=='lobby'||M.settings.startMode!=='auto'||M.settings.startAt==null)return;if(nowSrv()<M.settings.startAt+500)return;if(!MG.length)return;/* s26c16: starts with fewer than 8; empty rows become placeholder seats */if(Date.now()<startTried)return;
@@ -342,7 +344,7 @@ function onState(prev,next){if(!prev){updateTitle();return}
   if(prev.status==='lobby'&&nowLive)toast('The draft is LIVE!');
   if(next.status==='complete'&&prev.status!=='complete'){toast(next.endedEarly?'The commissioner ended the draft.':'Draft complete! Opening the recap…',6000);
     /* s23 (item 9): the end of the draft goes straight to the recap page (only when it ends while this page is open; opening a finished draft later stays here) */
-    if(prev.status==='live'&&!NOREDIR)setTimeout(()=>{location.href=recapUrl()},1800)}
+    if(prev.status==='live'&&prev.logReady&&!NOREDIR)setTimeout(()=>{location.href=recapUrl()},1800)}
   const mm=myMid();
   if(mm&&!WATCH&&nowLive){const a=F.picksAway(next,mm),pa=wasLive?F.picksAway(prev,mm):null;
     if(a===0&&pa!==0){vib([250,120,250,120,500]);setAlertBar('')}
