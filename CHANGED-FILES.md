@@ -1,3 +1,30 @@
+# s26c16 (build 2026-11-01s26c16): start the draft with fewer than 8 managers (placeholder seats), fixed lobby order with empty rows, Lock order
+Rebased onto LIVE s26c15 = /workspace/fantasy-bball-releases/s26c15 (MD5SUMS 09c15fb7; Teams name-pill drafting kept: css/app.css and the s26c15 room.js changes untouched). First built on s26c14 (MD5SUMS 2f869a40). Staged only, not published. No League-owned file changed; js/shared-s25.js 8bdd1fd8d7928c3c7e085de801925234 (unchanged). tests/, shots/, node_modules, __pycache__, .git not in MD5SUMS.
+- Start with fewer than 8: the lobby order always shows 8 rows (joined managers + 'Empty seat' rows e1..e8, kept in meta.order). At Start (commissioner button or auto-start at startAt) each empty row gets a placeholder seat in ITS row (slot claim w:'ph:<row id>', same seat-claim mechanism as mock fillBots, secret thrown away; NOT a bot). Name = the name the commissioner typed on the row (meta.seatNames) else 'Seat N'. meta.over[mid].ph marks it.
+- Placeholder picks: the normal missed-pick auto-pick at clock-out (queue, then KenPom meta.o); with no pick clock it is picked at once (never stalls).
+- Re-issue link on a placeholder seat clears the ph mark; the seat keeps its mid and picks and is a normal manager.
+- Order: real leagues start in the order exactly as listed (no shuffle, no auto-spin; Paul); spin button/wheel hidden in real leagues (code kept; localhost-only test hook localStorage fbn.spin=1). Mocks: random mode shuffles placeholders in; manual/orderSet keeps rows. 8 joined: F.mStart order identical to s26c14 for the same inputs (unit test, 40 seeds); NOTE real leagues now pass fixed:true from room.js, so an 8-joined real league in orderMode random with no saved order starts in the listed order instead of a shuffle (Paul's no-spin decision).
+- Lock order (commissioner switch in the lobby, meta.orderLock): rows cannot move; a joiner takes only an unnamed empty row; if none is left join.html refuses with a plain message (the seat is filled by Re-issue link); Start uses the order exactly.
+- Lobby: Start enabled once anyone has joined; confirm says 'N empty seats will be auto-picked'. No betting or money wording.
+- core.js changes League could see: new F.isEmptyId/F.lobbyOrder/F.mSeatName/F.mOrderLock/F.canJoinLocked/F.placeholderName/F.mClaimPh; F.mStart/mMove/mSetOrder/mRandomize/autoReason/deriveState extended (st.ph). League files don't call these lobby functions; meta.order may now contain e1..e8 ids before Start only (removed at Start).
+- Placeholder queue: same per-seat pref key K.pref(mid). With tools unlocked the commissioner opens any manager's sheet (Managers card / 'Add to <name>'s queue') and adds, reorders, removes queue teams; auto-pick at clock-out uses the queue first, then KenPom. After a Re-issue claim the seat keeps its queue and picks (same mid).
+- My Team (NCAA ask): the commissioner (tools unlocked) viewing ANOTHER manager (real or placeholder) sees '<name>'s queue' with remove (x) and up/down (actQueue/actQMove with that mid) and an 'Add to <name>'s queue' button. Non-commissioner devices unchanged.
+- Fix found in rebase testing: the empty-row name Save used $('#id') (UI.$ is getElementById); now works (e2e types a name on row 7).
+
+| file | md5 | owner | why |
+|---|---|---|---|
+| js/core.js | 3436336874dec2ee064e73d6b543d739 | Draft Room | placeholders, lobby order with empty rows, Lock order, autoReason for ph |
+| js/room.js | a80e9ba307806c05cbcd5047bf010b52 | Draft Room | s26c15 room.js + placeholders at Start/auto-start, order rows/names/Lock order, confirm text, Re-issue claims ph, commissioner queue editing (sheet + My Team), wheel hidden in real leagues |
+| js/join.js | 9c90e23a62811449502ab8df25ae9cf1 | Draft Room | Lock order join refusal |
+| js/version.js | 4e9bff38d0b69019b85119928d80ef46 | Draft Room | build 2026-11-01s26c16 |
+| sw.js | 327bf68a23c8efc18fec4e99e40caee6 | Draft Room | line 3 comment; cache -> fbnc-2026-11-01s26c16 |
+| tests/e2e_absent_s26c16.js | 03ae45bab09d9d379b39ef9c52122dbb | Draft Room | new e2e (not in bundle) |
+| tests/test_absent_s26c16.js | 17f339c81a904c9e42f9a035fbf67584 | Draft Room | new unit (not in bundle) |
+| tests/e2e_draft16.js | 22c201437294640ea1460eaef93d6776 | Draft Room | 7-joined expectations now: Start enabled, confirm, auto-start with a placeholder; spin test hook (not in bundle) |
+| tests/test_core.js, tests/test_tworanks_s26c14.js, tests/e2e.js (not in bundle) | - | Draft Room | empty rows / autoReason / spin test hook |
+| CHANGED-FILES.md | (this file) | Draft Room | s26c16 section |
+| MD5SUMS.txt | - | Draft Room | regenerated |
+
 # s26c15 (build 2026-11-01s26c15): s26c14 + Teams name pill drafts (no separate Draft box)
 Base: LIVE s26c14 = /workspace/fantasy-bball-releases/s26c14 (MD5SUMS 2f869a40). Staged only, not published. js/shared-s25.js 8bdd1fd8d7928c3c7e085de801925234 (unchanged). tests/, shots/ not in MD5SUMS.
 - Teams list (Paul 'no need for another draft box'): the yellow Draft button is removed from Teams rows. On your turn (or the commissioner picking for someone) the team name pill is the Draft action: button.tm.dbtn data-a=draftrow -> the same confirmDraft -> confirm sheet -> doPick path (pick path unchanged). Yellow outline, >=48px, aria-label 'Draft <team>'. Off turn: plain name, no action (as s26c14). Q+ Queue button kept (48px; hidden for spectators). Hint text 'tap a team name to draft it.'
@@ -485,3 +512,7 @@ Fix: makeEntry takes `voided` and, when the computed id is on it, adds a determi
 | CHANGED-FILES.md | (this file) | s26c8a section |
 
 Test-only (not shipped): tests/e2e_undo_repick_s26c8a.js (Playwright; undo auto pick, double undo, undo manual pick + re-pick same team, draft keeps advancing; 390 and 1280 px; fbn.store mock, textdb.dev aborted).
+
+## s26c16b (2026-11-01 18:35 WIB)
+- js/room.js: Randomize button hidden (and its action ignored) in real leagues, same rule as the wheel; mocks unchanged.
+- js/version.js: FBN_BUILD 2026-11-01s26c16b. sw.js: line 3 comment (cache name follows FBN_BUILD).

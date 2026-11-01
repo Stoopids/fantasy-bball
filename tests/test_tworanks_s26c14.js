@@ -43,6 +43,6 @@ t('bot picks stay inside their guard windows (existing ranges) over 10 seeded dr
 t('grades: roster strength uses the 50/50 blend and is deterministic for the same picks',()=>{const r=F.blendRank(META,0.5);const t1=ids.find(i=>r[i]===1);assert.strictEqual(F.teamStrength(t1,META),99);
   const rows=[0,1,2,3].map(m=>({mid:'m'+m,picks:ids.filter((_,i)=>i%4===m).slice(0,8).map(tid=>({tid}))}));const a=F.rosterRatings(rows,META),b=F.rosterRatings(JSON.parse(JSON.stringify(rows)),JSON.parse(JSON.stringify(META)));assert.deepStrictEqual(a,b)});
 t('real auto-pick does not use the blend (room.js autoRankOf = o, then p tie-break only)',()=>{assert.ok(!/blend/i.test(arSrc))});
-t('core autoChoice/autoReason/pickNote code identical to base',()=>{for(const f of ['autoChoice','autoReason','pickNote'])assert.strictEqual(String(F[f]),String(F0[f]),f)});
+t('core autoChoice/autoReason/pickNote code identical to base',()=>{/* s26c16: autoReason changed on purpose (placeholder seats); its base part is checked as a prefix */assert.ok(String(F.autoReason).indexOf("if(st.away[s.owner])return'away';if(st.auto[s.owner])return'auto';")>0);for(const f of ['autoChoice','pickNote'])assert.strictEqual(String(F[f]),String(F0[f]),f)});
 t('Draft Rules: auto-pick note reads queue first, then KenPom rank',()=>{const r=fs.readFileSync(path.join(ROOT,'js/rules.js'),'utf8');assert.ok(/queue first, then KenPom rank\./.test(r));assert.ok(!/best team left by STOOPID rank|Auto-pick uses STOOPID rank/.test(r))});
 console.log('\n'+(n-bad)+' passed, '+bad+' failed');process.exit(bad?1:0);

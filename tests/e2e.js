@@ -19,7 +19,7 @@ const EMO=[null,null,null,null,0,3,1,2];
 let ST={};
 const only=process.env.STOP;
 (async()=>{
-const phones=[];const mk=async(name,opt)=>{const p=await L.phone(name,opt);phones.push(p);return p};
+const phones=[];const mk=async(name,opt)=>{const p=await L.phone(name,opt);await p.page.evaluateOnNewDocument(()=>{try{localStorage.setItem('fbn.spin','1')}catch(e){}});/* s26c16: the wheel is hidden in real leagues; this e2e still covers it via the localhost test hook */phones.push(p);return p};
 try{
 await fetch('http://localhost:9996/__reset');await cfg('clear=1&lat=0&post=0');
 /* ===== 0. landing ===== */

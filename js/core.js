@@ -173,10 +173,15 @@ F.effectiveOrder=function(meta,joinedMids){const j=joinedMids.slice();if(!meta.o
 F.mStart=function(m,joined,now,seedStr,poolSize,opt){opt=opt||{};if(m.status!=='lobby')return{error:'The draft already started.'};
   if(joined.length!==F.MANAGERS)return{error:joined.length<F.MANAGERS?'Waiting for '+(F.MANAGERS-joined.length)+' more manager'+(F.MANAGERS-joined.length===1?'':'s')+'. The draft needs exactly '+F.MANAGERS+' managers to start.':'The draft needs exactly '+F.MANAGERS+' managers to start.'};
   const s=m.settings;if(joined.length*s.rounds>(poolSize||1e9))return{error:'Not enough teams for that many managers and rounds.'};
-  const n=clone(m);let order=F.effectiveOrder(m,joined);
-  if(!m.orderSet&&s.orderMode==='random')order=F.shuffled(order,F.mulberry(F.hash32(seedStr||m.id)));      /* deterministic: two phones starting at once get the same order */
+  /* s26c16: placeholder seats (opt.placeholders = mids of seats the room filled for absent managers; they are in joined). With none, everything below is exactly as before. random: they join the shuffle; manual / orderSet: appended at the end */
+  /* s26c16 (Paul): opt.phMap = {emptyRowId: placeholder mid}; each placeholder takes ITS row of the lobby order (F.lobbyOrder), so an orderSet order is used exactly as shown */
+  const phMap=opt.phMap||{};const ph=[];Object.keys(phMap).forEach(e=>{const x=String(phMap[e]);if(joined.indexOf(x)>=0&&ph.indexOf(x)<0)ph.push(x)});const real=ph.length?joined.filter(x=>ph.indexOf(x)<0):joined;
+  const n=clone(m);let order;if(ph.length){order=F.lobbyOrder(m,real).map(x=>F.isEmptyId(x)?phMap[x]:x).filter((x,i,a)=>x&&ph.indexOf(x)>=0?a.indexOf(x)===i:!!x&&!F.isEmptyId(x));ph.forEach(x=>{if(order.indexOf(x)<0)order.push(x)});order=order.filter(x=>joined.indexOf(x)>=0)}else order=F.effectiveOrder(m,joined);
+  ph.forEach(x=>{n.over[x]=Object.assign({},n.over[x],{ph:true})});
+  const fixed=!!opt.fixed||!!m.orderLock;/* s26c16 (Paul): real leagues start in the order exactly as listed, no shuffle, no auto-spin */
+  if(!fixed&&!m.orderSet&&s.orderMode==='random')order=F.shuffled(order,F.mulberry(F.hash32(seedStr||m.id)));      /* deterministic: two phones starting at once get the same order */
   /* s23 (item 12): the scheduled auto-start spins the wheel by itself when nobody spun it: the result comes from the league's stored seed (id + start time), so every device that fires at 0:00 computes the SAME order and the meta write is one compare-and-set: one result, one start */
-  if(opt.autoSpin&&!m.orderSet&&!F.spinCompleted(m)){order=F.shuffled(F.effectiveOrder(m,joined),F.mulberry(F.hash32('spin:'+(seedStr||m.id))));n.spinDone=true;n.respins=(m.respins||[]).concat([{gen:m.spinGen||0,ts:now,kind:'spin',auto:true}]);if(n.spin&&!n.spin.done)n.spin=null}
+  if(!fixed&&opt.autoSpin&&!m.orderSet&&!F.spinCompleted(m)){order=F.shuffled(ph.length?order:F.effectiveOrder(m,joined),F.mulberry(F.hash32('spin:'+(seedStr||m.id))));n.spinDone=true;n.respins=(m.respins||[]).concat([{gen:m.spinGen||0,ts:now,kind:'spin',auto:true}]);if(n.spin&&!n.spin.done)n.spin=null}
   n.order=order;n.orderSet=true;n.status='live';n.paused=false;n.pausedLeft=null;n.startedAt=now;n.resumeAt=now;return{state:n}};
 F.mPause=function(m,st,pause,now){if(m.status!=='live'||st.status==='complete')return{error:'Draft is not live.'};const n=clone(m);
   if(pause){if(n.paused)return{error:'Already paused.'};n.paused=true;n.pausedLeft=st.deadline?Math.max(0,st.deadline-now):null}
@@ -196,9 +201,20 @@ F.mSettings=function(m,patch,joined,poolSize,now){if(m.status!=='lobby')return{e
   const e=Object.assign({},v.errors);if(patch.startAt==null&&'startAt' in patch)delete e.startAt;if(!('startAt' in patch)&&n.settings.startAt!=null&&n.settings.startAt<(now||Date.now()))delete e.startAt;
   if(Object.keys(e).length)return{error:e[Object.keys(e)[0]],errors:e};
   n.settings=F.normalizeSettings(s);return{state:n}};
-F.mSetOrder=function(m,joined,newOrder){if(m.status!=='lobby')return{error:'Order is locked once the draft starts.'};if(!F.permutationOf(newOrder,joined))return{error:'That order does not match the managers who joined.'};const n=clone(m);n.order=newOrder.slice();n.orderSet=true;return{state:n}};
-F.mMove=function(m,joined,mid,dir){if(m.status!=='lobby')return{error:'Order is locked once the draft starts.'};const o=F.moveItem(F.effectiveOrder(m,joined),mid,dir);if(!o)return{error:'cannot move'};return F.mSetOrder(m,joined,o)};
-F.mRandomize=function(m,joined,rng){if(m.status!=='lobby')return{error:'Order is locked once the draft starts.'};return F.mSetOrder(m,joined,F.shuffled(joined,rng))};
+/* s26c16 (Paul): the lobby order always has F.MANAGERS rows: joined managers plus empty rows (ids e1..e8) for seats nobody has joined; a new joiner takes the first empty row. With everyone joined and no empty ids saved it equals F.effectiveOrder */
+F.isEmptyId=x=>/^e[1-9][0-9]?$/.test(String(x));
+F.lobbyOrder=function(meta,joined){const N=(meta.settings&&meta.settings.managers)||F.MANAGERS;const o=[];(meta.orderSet?meta.order:[]).forEach(x=>{x=String(x);if((joined.indexOf(x)>=0||F.isEmptyId(x))&&o.indexOf(x)<0)o.push(x)});
+  const nmd=x=>!!(meta.orderLock&&meta.seatNames&&meta.seatNames[x]);/* s26c16 Lock order: a joiner never takes a NAMED empty row */
+  joined.forEach(x=>{if(o.indexOf(x)>=0)return;const k=o.findIndex(y=>F.isEmptyId(y)&&!nmd(y));if(k>=0)o[k]=x;else o.push(x)});
+  for(let t=1;o.length<N&&t<=N+8;t++){const id='e'+t;if(o.indexOf(id)<0)o.push(id)}
+  while(o.length>N){let k=-1;o.forEach((x,i)=>{if(F.isEmptyId(x))k=i});if(k<0)break;o.splice(k,1)}return o};
+/* s26c16: commissioner 'Lock order': rows cannot move until Start; joiners take only unnamed empty rows (F.canJoinLocked); Start uses the order exactly */
+F.mOrderLock=function(m,joined,on){if(m.status!=='lobby')return{error:'Order is locked once the draft starts.'};const n=clone(m);if(on){n.order=F.lobbyOrder(m,joined);n.orderSet=true;n.orderLock=true}else n.orderLock=false;return{state:n}};
+F.canJoinLocked=(meta,joined)=>!meta.orderLock||F.lobbyOrder(meta,joined).some(x=>F.isEmptyId(x)&&!(meta.seatNames&&meta.seatNames[x]));
+F.mSeatName=function(m,eid,name){if(m.status!=='lobby')return{error:'Locked: the draft has started.'};if(!F.isEmptyId(eid))return{error:'Not an empty seat.'};const n=clone(m);n.seatNames=Object.assign({},n.seatNames);const nm=clean(name).slice(0,F.LIMITS.personMax);if(nm)n.seatNames[eid]=nm;else delete n.seatNames[eid];return{state:n}};
+F.mSetOrder=function(m,joined,newOrder){if(m.status!=='lobby')return{error:'Order is locked once the draft starts.'};if(m.orderLock)return{error:'The order is locked. Unlock it to move rows.'};if(newOrder.some(F.isEmptyId)&&F.permutationOf(newOrder,F.lobbyOrder(m,joined))){const n=clone(m);n.order=newOrder.slice();n.orderSet=true;return{state:n}}if(!F.permutationOf(newOrder,joined))return{error:'That order does not match the managers who joined.'};const n=clone(m);n.order=newOrder.slice();n.orderSet=true;return{state:n}};
+F.mMove=function(m,joined,mid,dir){if(m.status!=='lobby')return{error:'Order is locked once the draft starts.'};if(m.orderLock)return{error:'The order is locked. Unlock it to move rows.'};const o=F.moveItem(F.lobbyOrder(m,joined),mid,dir);if(!o)return{error:'cannot move'};return F.mSetOrder(m,joined,o)};
+F.mRandomize=function(m,joined,rng){if(m.status!=='lobby')return{error:'Order is locked once the draft starts.'};if(m.orderLock)return{error:'The order is locked. Unlock it to move rows.'};return F.mSetOrder(m,joined,F.shuffled(joined,rng))};
 F.mAway=function(m,mid,away){const n=clone(m);n.over[mid]=Object.assign({},n.over[mid],{away:!!away});return{state:n}};
 F.mRename=function(m,mid,patch,takenNames){const n=clone(m);const o=Object.assign({},n.over[mid]);
   if(patch.name!=null){const nm=clean(patch.name).slice(0,F.LIMITS.personMax);if(!nm)return{error:'Name cannot be empty.'};o.name=F.uniqueName(nm,takenNames||[])}
@@ -290,6 +306,9 @@ F.checkPass=async function(meta,pass){if(!meta||!meta.pass)return false;try{retu
 F.newSecret=()=>F.hexId(32);
 F.mgrHash=(mid,k)=>F.sha256Hex('fbn1-mgr:'+mid+':'+k);
 /* commissioner "Re-issue link": a NEW secret for the same seat; the claim's hash is replaced, so the old private link stops working. Returns {k, claim} (the caller writes claim to the seat's key) */
+/* s26c16: placeholder seat for an absent manager: name from meta.seatNames[i] (if the league has one) else 'Seat N'; the secret is thrown away like a mock bot's, so only auto-pick acts for it until the commissioner re-issues its link */
+F.placeholderName=(meta,eid,row)=>{const nm=meta&&meta.seatNames&&meta.seatNames[eid];return nm&&clean(nm)?clean(nm).slice(0,F.LIMITS.personMax):'Seat '+row};
+F.mClaimPh=function(m,mid){const n=clone(m);if(!n.over[mid]||!n.over[mid].ph)return{noop:true};const o=Object.assign({},n.over[mid]);delete o.ph;n.over[mid]=o;return{state:n}};
 F.reissueSeat=async function(claim){const k=F.newSecret();const sh=await F.mgrHash(claim.mid,k);return{k,claim:F.makeClaim(Object.assign({},claim,{sh,ts:Date.now()}))}};
 F.checkMgrSecret=async function(claim,k){if(!claim||!k)return false;if(!claim.sh)return false;try{return claim.sh===await F.mgrHash(claim.mid,k)}catch(e){return false}};
 /* pull a secret out of a pasted link or code: ...#cm=<32 hex>, ...#as=<mid>&k=<32 hex>, or the bare 32 hex characters */
@@ -315,7 +334,7 @@ F.deadlineOf=function(meta,picks){const c=meta.settings.clockSecs;if(meta.status
 F.deriveState=function(meta,entries,prefs,pool){const r=meta.status==='lobby'?{picks:[],rejected:[]}:F.replay(meta,entries,pool);const s=meta.settings;const tot=F.totalPicks(meta.order,s.rounds);
   const st={meta,order:meta.order.slice(),picks:r.picks,rejected:r.rejected,type:s.type,rounds:s.rounds,clockSecs:s.clockSecs,warn15:s.warn15,autoPick:true/* s25-full (k, Paul): every league auto-picks at clock-out, older autoPick:false leagues too; the stored setting is ignored, never rewritten */,paused:meta.paused,pausedLeft:meta.pausedLeft,epoch:meta.epoch,total:tot,
     away:{},auto:{},queues:{}};
-  Object.keys(meta.over).forEach(k=>{if(meta.over[k].away)st.away[k]=true});
+  Object.keys(meta.over).forEach(k=>{if(meta.over[k].away)st.away[k]=true});st.ph={};Object.keys(meta.over).forEach(k=>{if(meta.over[k].ph)st.ph[k]=true});/* s26c16 placeholder seats */
   Object.keys(prefs||{}).forEach(o=>{const p=prefs[o]||{};st.auto[o]=!!p.auto;st.queues[o]=Array.isArray(p.queue)?p.queue.map(String):[]});
   st.real=r.picks.filter(p=>!p.skip);st.realTotal=F.redraftLive(meta)?Object.keys(meta.redraft.need).reduce((t,k)=>t+meta.redraft.need[k],0):tot;st.kept=F.redraftLive(meta)?Object.keys(meta.redraft.keep).map(t=>({n:0,round:0,tid:t,owner:meta.redraft.keep[t],kept:true})):[];st.roster=st.kept.concat(st.real);st.redraft=meta.redraft||null;
   st.status=meta.status==='complete'?'complete':(meta.status==='live'&&tot>0&&r.picks.length>=tot)?'complete':meta.status;st.deadline=F.deadlineOf(meta,r.picks);st.endedEarly=!!meta.endedEarly;return st};
@@ -328,7 +347,7 @@ F.validatePick=function(st,owner,tid,opt){opt=opt||{};if(st.status!=='live')retu
   const s=F.onClock(st);if(!s)return{error:'No pick is on the clock.'};if(opt.pool&&!opt.pool.has(String(tid)))return{error:'That team is not on the list of teams.'};
   const t=F.takenMap(st)[tid];if(t)return{error:'That team was already taken (pick #'+t.n+').',taken:t};if(owner!==s.owner)return{error:'It is pick #'+s.n+' for someone else.',turn:true};return{ok:true,slot:s}};
 /* why should the auto-picker act now?  'auto' (manager's own switch), 'away' (commissioner marked them away), 'expired' (clock out and the league auto-picks) */
-F.autoReason=function(st,now,graceMs){const s=F.onClock(st);if(!s||st.paused)return null;if(st.away[s.owner])return'away';if(st.auto[s.owner])return'auto';
+F.autoReason=function(st,now,graceMs){const s=F.onClock(st);if(!s||st.paused)return null;if(st.away[s.owner])return'away';if(st.auto[s.owner])return'auto';/* s26c16: a placeholder seat is picked for when its clock runs out; with no pick clock it is picked for at once so it can never stall the draft */if(st.ph&&st.ph[s.owner]&&!(st.autoPick&&st.clockSecs))return'away';
   if(st.autoPick&&st.clockSecs&&st.deadline&&now>st.deadline+(graceMs||0))return'expired';return null};
 /* queue first, then best power rank, then a seeded random pick. prank(tid)->rank>0 or 0 */
 /* s26c8b: 'Auto-draft me'. Stored in the manager's own pref doc (K.pref(mid).auto, league-scoped, survives the start). Only that manager or the commissioner may set it.

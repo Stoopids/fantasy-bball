@@ -1,7 +1,7 @@
 d41d8cd98f00b204e9800998ecf8427e  .nojekyll
 aab153233971799b3f33f8771338cdb2  CHANGE-NOTES-s24.md
 fdb538b9a8247a3f56406fb69fa80031  CHANGE-NOTES-s25.md
-3f9d9626d6d7561db2804c1a8e22f586  CHANGED-FILES.md
+1adc5f73cd26b8bb0c9b6b0c96ede60e  CHANGED-FILES.md
 fc4c2520be569d292be962f8ba4efdeb  LICENSE-third-party.txt
 262bee0799369fbf2298360c827e790f  README.md
 dc050cbfbdc4a7acac091c14b90bb9d0  UNCLEAR.md
@@ -30,10 +30,10 @@ c0a54150fbc6f123b758c2a7fccef478  import/README.md
 cb2f334310b363a0e1c6d957ba52bc4e  import/stoopids-draft-results.json
 2780e2b41986c2b7bab9e561e020b0fc  index.html
 c252cbc85e4188c51b4a09b81c4061b7  join.html
-6905f1c92dbc25af2b475997cff38764  js/core.js
+3436336874dec2ee064e73d6b543d739  js/core.js
 919176badbe78c5adc6fb7ce260cf723  js/help.js
 d5a4b4dd98032b2bdbd076984e172487  js/index.js
-c722cf40f5c9176781bba2dcdd1d0686  js/join.js
+9c90e23a62811449502ab8df25ae9cf1  js/join.js
 ad8fbcb71ffc55ac4ebe51b261dc2d08  js/league-bets.js
 e75167362ea9a9353aa44946763c9634  js/league-d.js
 93bef2c3d8fb3e2699766d943fc00b57  js/league-sched.js
@@ -47,7 +47,7 @@ e23c8f96ab3ce7de4c03ce8625002c85  js/power-gen.js
 ade6fadbb2f4be5a575390360ff3af5b  js/qr.min.js
 563093cd2e3f54dcc3fdaefd0ee78286  js/recap.js
 757c3c165a79010c4b592f2eeffcb64c  js/redraft.js
-d7e27229f048d6564a99a1de842566cc  js/room.js
+7376eb4cd10bdad58f6ad00e5cbcf50c  js/room.js
 b6c40f01a574e3c88d516c6c075879f3  js/rules.js
 dea3951c79015c462034d16d386d2548  js/scoring.js
 325fd1c31be3daa075c692517c505d03  js/setup.js
@@ -55,7 +55,7 @@ dea3951c79015c462034d16d386d2548  js/scoring.js
 a1c776ffcad4a1e1444e2a41913572c1  js/store.js
 b31b8d130f47a378f2358995614b9470  js/time.js
 5aa18165b81a3f7791885f84dd19a04d  js/ui.js
-fa5e7de132fee62d8a01e768bf7caa42  js/version.js
+952f294d7595ae2cb6ce79fc84c84fe0  js/version.js
 20d047f6fc4424e7521baac3f5781940  league.html
 dde6bc94069703616dc2b911b7422ae9  manifest.webmanifest
 8651de3c384a5387ec19ec8c1dc594e4  mock.html
@@ -63,7 +63,7 @@ dde6bc94069703616dc2b911b7422ae9  manifest.webmanifest
 67894e74e4d6680fd2750e8f15cfaa0c  redraft.html
 dc5dc90e7dd8ad325b34f5fb28fe1425  room.html
 ba0bad6039db68759ec53e44ca6569dd  setup.html
-42fe99bd8acabaf6f73f70b8420f4060  sw.js
+c1d668d8c4534051114c573b7bcc3089  sw.js
 25852915b747ecd22afa1599b4d1357c  time.html
 806c1ebcb679950c59121f0d77b3528e  tools/gen_stoopids_import.js
 be1290331d89ff8782ac60ce0b8143b9  tools/kenpom_rank.py

@@ -9,7 +9,7 @@ const waitFor=async(fn,ms)=>{const t=Date.now();while(Date.now()-t<(ms||15000)){
 const click=async(P,sel)=>{await P.page.waitForSelector(sel,{visible:true,timeout:15000});await P.page.$eval(sel,e=>e.click())};
 const txt=(P,sel)=>P.page.$eval(sel,e=>e.innerText).catch(()=>null);
 async function lobby(o){const id=await seed(API,Object.assign({managers:8},o||{}));const I=seed.info;const K=F.Keys(id);const m=await gj(K.meta);m.status='lobby';delete m.endedAt;delete m.startedAt;m.orderSet=false;m.order=[];m.spin=null;m.spinGen=0;m.spinDone=false;m.respins=[];await post(K.meta,m);return{id,I,K}}
-const open=async(name,L1,who,opt,wait)=>{const P=await L.phone(name,opt||{});await P.page.setBypassServiceWorker(true);if(opt&&opt.reduced)await P.page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
+const open=async(name,L1,who,opt,wait)=>{const P=await L.phone(name,opt||{});await P.page.evaluateOnNewDocument(()=>{try{localStorage.setItem('fbn.spin','1')}catch(e){}});/* s26c16: wheel hidden in real leagues; localhost test hook */await P.page.setBypassServiceWorker(true);if(opt&&opt.reduced)await P.page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
   if(who!=='cm'&&who!=='spec'&&opt&&opt.alsoCm)await P.page.evaluateOnNewDocument((id,cm)=>localStorage.setItem('fbn.cm.'+id,cm),L1.id,L1.I.cmSecret);
   const hash=who==='cm'?'#cm='+L1.I.cmSecret:who==='spec'?'':'#as='+L1.I.managers[who].id+'&k='+L1.I.managers[who].k;await P.page.goto(`${APP}/room.html?l=${L1.id}${who==='spec'?'&watch=1':''}${hash}`,{waitUntil:'domcontentloaded'});await P.page.waitForSelector(wait||'#lobbycard',{timeout:25000}).catch(()=>{});await sleep(1500);return P};
 const focusInfo=(P,sel)=>P.page.evaluate(s=>{const d=document.querySelector(s);const a=document.activeElement;return{role:d&&d.getAttribute('role'),modal:d&&d.getAttribute('aria-modal'),label:d&&(d.getAttribute('aria-label')||d.getAttribute('aria-labelledby')),inside:!!(d&&a&&d.contains(a)),act:a&&(a.id||a.tagName)}},sel);
@@ -19,13 +19,14 @@ console.log('\n[exactly 8 managers to start]');
 {const L1=await lobby();const claim8=await gtxt(L1.K.slot(8,0));await post(L1.K.slot(8,0),'');
  const C=await open('c7',L1,'cm');await waitFor(async()=>/7 of 8 joined/.test(await txt(C,'#joinedct')||''));
  ok('7 of 8 joined: lobby says "Waiting for 1 more manager"',/Waiting for 1 more manager/.test(await txt(C,'#waitmgrs')||''),await txt(C,'#waitmgrs'));
- ok('7 joined: the Start button is disabled and says why; no "start with fewer" text',await C.page.$eval('#startbtn',e=>e.disabled)&&/Waiting for 1 more manager/.test(await txt(C,'#startnote')||'')&&!/start with fewer|At least 2/i.test(await body(C)),await txt(C,'#startnote'));
+ /* s26c16: fewer than 8 can start; the empty seats become placeholder seats that are auto-picked */
+ ok('7 joined (s26c16): Start is enabled and says 1 empty seat will be auto-picked',!(await C.page.$eval('#startbtn',e=>e.disabled))&&/1 empty seat will be auto-picked/.test(await txt(C,'#startnote')||''),await txt(C,'#startnote'));
  ok('7 joined: the countdown line also says waiting for the missing manager',/Waiting for 1 more manager/.test(await txt(C,'#lobbycd')||''),await txt(C,'#lobbycd'));
- await C.page.evaluate(()=>document.querySelector('#startbtn').disabled=false);await C.page.$eval('#startbtn',e=>e.click());await sleep(1200);
- ok('7 joined: forcing the button open in the page does not start anything (no confirm sheet, meta still lobby)',!(await has(C,'#cfyes'))&&(await gj(L1.K.meta)).status==='lobby');
- {const m=await gj(L1.K.meta);m.settings.startMode='auto';m.settings.startAt=Date.now()-60000;await post(L1.K.meta,m)}
- await sleep(9000);ok('auto-start with 7 managers never starts the draft',(await gj(L1.K.meta)).status==='lobby');
- {const m=await gj(L1.K.meta);m.settings.startMode='manual';await post(L1.K.meta,m)}
+ await C.page.$eval('#startbtn',e=>e.click());await sleep(1200);
+ ok('7 joined (s26c16): Start asks to confirm with "1 empty seat will be auto-picked"; Cancel leaves the lobby',/1 empty seat will be auto-picked/.test(await txt(C,'#phconfirm')||''));await C.page.evaluate(()=>document.querySelector('[data-a="sheetbg"]').click());await sleep(800);ok('cancelled: meta still lobby',(await gj(L1.K.meta)).status==='lobby');
+ {const L2=await lobby();await post(L2.K.slot(8,0),'');const m=await gj(L2.K.meta);m.settings.startMode='auto';m.settings.startAt=Date.now()-60000;await post(L2.K.meta,m);const C2=await open('c7auto',L2,'cm');
+  const live=await waitFor(async()=>(await gj(L2.K.meta)).status==='live',30000);const m2=await gj(L2.K.meta);const phs=Object.keys(m2.over||{}).filter(k=>m2.over[k].ph);ok('auto-start with 7 managers (s26c16) starts with 1 placeholder seat in the order',!!live&&m2.order.length===8&&phs.length===1&&m2.order.includes(phs[0]),{st:m2.status,o:m2.order&&m2.order.length,phs});await C2.close()}
+
  await post(L1.K.slot(8,0),claim8);await waitFor(async()=>/8 of 8 joined/.test(await txt(C,'#joinedct')||''),20000);await sleep(800);
  ok('8 of 8: no waiting text and Start is enabled',!(await has(C,'#waitmgrs'))&&!(await C.page.$eval('#startbtn',e=>e.disabled)));
  await click(C,'#startbtn');await waitFor(()=>has(C,'#cfyes'));ok('start confirm no longer talks about starting with fewer managers',!/Only <b>|spots are filled/.test(await body(C))&&!/spots are filled/.test(await body(C)));

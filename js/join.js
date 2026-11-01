@@ -89,6 +89,8 @@ async function join(){if(busy)return;readForm();const ev=validate();const er=$('
   try{await loadAll();if(meta.status!=='lobby')return view();
     const K=F.Keys(id);const taken=joined().map(c=>(meta.over[c.mid]&&meta.over[c.mid].name)||c.name);
     const name=F.uniqueName(form.name,taken);const team=F.uniqueName(form.team,joined().map(c=>(meta.over[c.mid]&&meta.over[c.mid].team)||c.team));
+    /* s26c16: with the order locked, only an unnamed empty row can be joined; the named seats are handed out by the commissioner (Re-issue link) */
+    if(!F.canJoinLocked(meta,joined().map(c=>c.mid))){$('err').textContent='This league has no open seat to join. Ask the commissioner for your private link.';return}
     const mid=F.hexId(12),secret=F.newSecret(),sh=await F.mgrHash(mid,secret);
     await Store.set(K.mgr(mid),F.makeProfile({mid,name,team,emoji:form.emoji,photo:form.photo,pv:0}));
     const io={read:k=>Store.get(k),write:(k,o)=>Store.set(k,o),sleep:UI.sleep,url:(i,g)=>K.slot(i,g)};
