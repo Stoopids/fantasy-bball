@@ -20,7 +20,7 @@ const pickNo=P=>P.page.evaluate(()=>{const m=(document.getElementById('banner')|
  const e4=await waitFor(()=>gj(K.pick(1,4)).then(e=>e&&e.tid?e:null),20000);const e5=await waitFor(()=>gj(K.pick(1,5)).then(e=>e&&e.tid?e:null),8000);
  ok('auto-pick ON: the queue\'s first UNTAKEN team is picked, in queue order (skips '+taken[0]+')',!!e4&&e4.tid===qA[1]&&e4.by==='auto',e4);
  ok('auto-pick ON, empty queue: the lowest power rank left is picked',!!e5&&e5.tid===ranked.filter(t=>!taken.includes(t)&&t!==(e4&&e4.tid))[0],{e5,want:ranked.filter(t=>!taken.includes(t)&&t!==(e4&&e4.tid))[0]});
- ok('auto-pick ON picks at once when the turn starts (pick 5 within 2.5 s of pick 4: delay 0 plus the 0.6 s write check and network)',!!e4&&!!e5&&e5.ts-e4.ts<=2500,{d:e5&&e4?e5.ts-e4.ts:null});
+ ok('auto-pick ON picks at once when the turn starts (s26c8b: pick 5 within 4.5 s of pick 4: 2 s delay plus the 0.6 s write check and network)',!!e4&&!!e5&&e5.ts-e4.ts<=4500,{d:e5&&e4?e5.ts-e4.ts:null});
  const e6=await waitFor(()=>gj(K.pick(1,6)).then(e=>e&&e.tid?e:null),45000);
  ok('Auto-pick OFF, the clock runs out: the league still auto-picks (top of the queue), about 30 s after the turn started',!!e6&&e6.tid===qC[0]&&e6.by==='auto'&&e5&&e6.ts-e5.ts>=25000,{e6,d:e6&&e5?e6.ts-e5.ts:null});
  const p6=await gj(K.pref(ow(6).id));ok('a missed pick does NOT turn on that manager\'s Auto-pick switch',p6&&p6.auto===false,p6);

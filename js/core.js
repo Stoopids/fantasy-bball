@@ -331,6 +331,13 @@ F.validatePick=function(st,owner,tid,opt){opt=opt||{};if(st.status!=='live')retu
 F.autoReason=function(st,now,graceMs){const s=F.onClock(st);if(!s||st.paused)return null;if(st.away[s.owner])return'away';if(st.auto[s.owner])return'auto';
   if(st.autoPick&&st.clockSecs&&st.deadline&&now>st.deadline+(graceMs||0))return'expired';return null};
 /* queue first, then best power rank, then a seeded random pick. prank(tid)->rank>0 or 0 */
+/* s26c8b: 'Auto-draft me'. Stored in the manager's own pref doc (K.pref(mid).auto, league-scoped, survives the start). Only that manager or the commissioner may set it.
+   An auto/away turn is picked after F.AUTO.delayMs (others see the move); after an Undo of that slot it waits F.AUTO.undoHoldMs from the undo (meta.resumeAt) so the commissioner can act. */
+F.AUTO={delayMs:2000,undoHoldMs:10000};
+F.autoBase=(meta,picks)=>{const lp=(picks||[]).slice().reverse().find(p=>!p.skip);return Math.max(lp?(+lp.ts||0):0,+meta.startedAt||0,+meta.resumeAt||0)};
+F.canSetAuto=(me,cmOk,target)=>!!target&&(cmOk===true||(!!me&&me===target));
+F.autoDelayMs=(reason,bot,rnd)=>reason==='expired'?0:bot?1000+(rnd==null?Math.random():rnd)*1000:F.AUTO.delayMs;
+F.undoHoldUntil=(meta,slotEntry,bot)=>(!bot&&slotEntry&&meta&&(meta.voided||[]).indexOf(slotEntry.id)>=0)?(+meta.resumeAt||0)+F.AUTO.undoHoldMs:0;
 F.autoChoice=function(st,owner,poolArr,rng,prank){const taken=F.takenMap(st);const q=(st.queues&&st.queues[owner])||[];
   for(const t of q)if(!taken[t]&&poolArr.indexOf(String(t))>=0)return{tid:String(t),from:'queue'};
   const avail=poolArr.filter(t=>!taken[t]);if(!avail.length)return null;

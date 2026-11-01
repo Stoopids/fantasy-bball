@@ -1,3 +1,3 @@
-window.FBN_BUILD='2026-11-01s26c11';window.FBN_NAME='Fantasy BBALL NCAA Full Season and NCAA Tournament';
+window.FBN_BUILD='2026-11-01s26c8b';window.FBN_NAME='Fantasy BBALL NCAA Full Season and NCAA Tournament';
 /* s25-full: title for the League header (League s25b-league reads window.FBN_TITLE). Neutral current name; the new title text comes in s26c. */
 window.FBN_TITLE={pre:'',main:'NCAA Fantasy Basketball',sub:'Season + Tournament'};
