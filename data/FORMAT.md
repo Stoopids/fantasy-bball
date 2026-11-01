@@ -41,6 +41,7 @@ Team ids are **ESPN team ids as strings** (the same ids as `assets/teams.js`, fo
 | `games[].kind` | `reg` regular season, `conf` conference game or conference tournament game, `ncaa` NCAA tournament. |
 | `games[].round` | for `ncaa`: `First Four`, `1st Round`, `2nd Round`, `Sweet 16`, `Elite 8`, `Final Four`, `National Championship`. For conference tournaments: free text such as `Semifinals`. Empty otherwise. |
 | `conf` | optional, written by `tools/refresh_data.py` (s26-refresh-conf): `{"<espnId>": {"conf": "acc", "confRegChamp": bool, "confTournChamp": bool, "confTournStarted": bool}}` for every school in `assets/teams.js`. Out of season every flag is `false`. Read by `S.confPoints` in `js/scoring.js`. Kept by `--merge`. |
+| `conf` | optional, written by `tools/refresh_data.py` (s26-refresh-conf): `{"<espnId>": {"conf": "acc", "confRegChamp": bool, "confTournChamp": bool, "confTournStarted": bool}}` for every school in `assets/teams.js` (`conf` = ESPN conference abbreviation as ESPN sends it, lowercase, `""` if unknown). Out of season every flag is `false`. Read by `S.confPoints` in `js/scoring.js` and, for the **Conf column** of League › All teams, by `js/leaguehome.js` (`vTeams`: `SC.conf[id].conf`). Kept by `--merge`. See also the section below. |
 | `home` / `away` | `id` (required), `score` (number or `null`), `seed` (number or `null`, only for `ncaa` games), optional `short` (display name, used only when the team is not in `assets/teams.js`). |
 ### Optional `conf` (conference titles, s26c7/s26c8)
 
@@ -62,6 +63,10 @@ A top-level `conf` object, keyed by ESPN team id (string). Leave it out (or `{}`
 
 Points come from `js/scoring.js` (`S.POINTS.conf_reg`, `S.POINTS.conf_tourn`, via `S.confPoints`); the League total is `S.leagueTotals` = season wins x `S.SEASON_WIN` + NCAA tournament points + conference points.
 
+
+## `data/net.json` (per-school `conf`, s26c11-conf)
+
+`data/net.json` is a staged copy of NCAA.com NET (`format`, `source`, `label`, `through`, `fetched`, `note`, `ranks: [{rank, id, school}]`), read by `js/league-d.js`. It is maintained by hand; `tools/refresh_data.py` never creates it. When it exists in the output folder, a refresh adds (or updates) one key on each `ranks[]` row: `"conf"`, the same value as `scores.json` `conf[<id>].conf` (for example `{"rank": 1, "id": "150", "school": "Duke", "conf": "acc"}`). Rows for schools with no known conference are left as they were (an older `conf` is kept, which is how `--merge` keeps it); nothing else in the file changes. The key is optional and the League site does not need it: the Conf column reads `scores.json` `conf`.
 
 ## `data/tournament.json`
 

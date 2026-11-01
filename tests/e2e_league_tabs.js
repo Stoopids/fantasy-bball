@@ -3,8 +3,8 @@
    (Replaces the old room.html button-tab test; original kept at /workspace/league-site-work/e2e_toptabs.room-original.js.)  APP / API env (mock store). */
 const L=require('./lib.js');const {seed}=require('./seed_league.js');const {sleep}=L;
 let n=0,bad=0;function ok(t,c,x){n++;if(c)console.log('  ok  '+t);else{bad++;console.log('FAIL  '+t+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,500):''))}}
-const ALL=['standings','games','bets','rosters','teams','postseason','redraft','rules','archive'];const LAB={standings:'Standings',games:'Games',bets:'Bets',rosters:'Rosters',teams:'All teams',postseason:'Postseason',redraft:'Redraft',rules:'Rules',archive:'Archive'};
-const CLOCKS=[['2026-11-15T12:00',[]],['2027-01-10T12:00',['redraft']],['2027-03-15T12:00',['postseason']]];
+const ALL=['standings','games','bets','rosters','teams','redraft','rules','archive','recap','draft'];   /* s26c13: s26c4 no Postseason tab, s26c10 Recap + Draft last (Draft replaces #tab_room) */const LAB={standings:'Standings',games:'Games',bets:'Bets',rosters:'Rosters',teams:'All teams',postseason:'Postseason',redraft:'Redraft',rules:'Rules',archive:'Archive',recap:'Recap',draft:'Draft'};
+const CLOCKS=[['2026-11-15T12:00',[]],['2027-01-10T12:00',['redraft']],['2027-03-15T12:00',[]]];
 (async()=>{try{
   const id=await seed(null,{rounds:8});
   for(const [now,extra] of CLOCKS){const exp=ALL.filter(t=>!['postseason','redraft'].includes(t)||extra.includes(t));
@@ -16,7 +16,7 @@ const CLOCKS=[['2026-11-15T12:00',[]],['2027-01-10T12:00',['redraft']],['2027-03
           over:as.filter(a=>R(a).right>innerWidth+0.5||R(a).left<-0.5).length,nsw:nav.scrollWidth-nav.clientWidth,sw:document.documentElement.scrollWidth,iw:innerWidth}});
       const tag=now.slice(0,10)+' '+w+'px';
       ok(tag+': link tabs (<a data-v>), no button tabs',r.btn===0&&r.tags.every(t=>t==='A'),r);
-      ok(tag+': order '+exp.map(t=>LAB[t]).join(', ')+' + Draft link last',JSON.stringify(r.v)===JSON.stringify(exp)&&r.last==='tab_room'&&r.lab.every((l,i)=>l.startsWith(LAB[exp[i]])),r);
+      ok(tag+': order '+exp.map(t=>LAB[t]).join(', ')+' (Draft tab last, no separate room link)',JSON.stringify(r.v)===JSON.stringify(exp)&&r.last===''&&r.v[r.v.length-1]==='draft'&&r.lab.every((l,i)=>l.startsWith(LAB[exp[i]])),r);
       ok(tag+': exactly one tab current (Standings)',r.cur.length===1&&r.cur[0]==='standings',r.cur);
       ok(tag+': tap targets >= 44px',r.minH>=44&&r.minW>=44,{h:r.minH,w:r.minW});
       ok(tag+': no overflow (tab row and page)',r.over===0&&r.nsw<=1&&r.sw<=r.iw,r);

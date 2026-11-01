@@ -410,16 +410,17 @@ F.spinShouldPlay=function(rec,o){if(!rec||!o)return false;if(rec.n<=(o.shown||0)
 F.mSpinApply=function(m,winners,joined,now){if(m.status!=='lobby')return{error:'The draft already started.'};if(F.spinCompleted(m))return{error:'The draft order was already set with the wheel.'};if(!m.spin)return{error:'No spin to apply.'};if(winners.length!==m.spin.players.length)return{error:'The spin is not finished.'};
   if(!F.permutationOf(winners,joined))return{error:'Someone joined or left during the spin — spin again.'};const n=clone(m);n.order=winners.slice();n.orderSet=true;n.spin.done=true;n.spinDone=true;n.respins.push({gen:m.spin.gen,ts:now,kind:'spin'});return{state:n}};
 /* ============================ team list: sort / group / search / watchlist ============================ */
-F.TIERS=[{k:'elite',label:'Elite',max:12,note:'power rank 1–12'},{k:'solid',label:'Solid',max:30,note:'13–30'},{k:'sleeper',label:'Sleeper',max:Infinity,note:'31+ (ranked)'},{k:'longshot',label:'Unranked',note:'no power rank'}];
+F.TIERS=[{k:'elite',label:'Elite',max:12,note:'STOOPID rank 1–12'},{k:'solid',label:'Solid',max:30,note:'13–30'},{k:'sleeper',label:'Sleeper',max:Infinity,note:'31+ (ranked)'},{k:'longshot',label:'Unranked',note:'no STOOPID rank'}];
 F.tierOf=p=>{if(!p)return F.TIERS[3];for(const t of F.TIERS)if(t.max!=null&&p<=t.max&&t.k!=='longshot')return t;return F.TIERS[2]};
 F.seedNum=m=>{const s=m&&m.s;return(s==null||!isFinite(+s))?null:+s};
 F.recParse=r=>{const x=/^(\d+)-(\d+)$/.exec(r||'');if(!x)return null;const w=+x[1],l=+x[2];return(w+l)?{w,l,pct:w/(w+l)}:null};
 F.searchMatch=(t,m,q)=>{q=(q||'').trim().toLowerCase();if(!q)return true;return[t.name,t.short,t.abbr,t.mascot,m&&m.c].filter(Boolean).join(' ').toLowerCase().indexOf(q)>=0};
-F.TMODES=[['power','Power rank'],['alpha','A–Z'],['conf','Conference'],['seed','Proj. seed'],['record','Last season'],['tiers','Tiers']];
+/* s26c14: source wording for Power rank (meta.o), one constant; change here only. Auto-pick ranks by meta.o (room.js autoRankOf); grades and mock bots use F.blendRank (o+p); notes/tiers stay on meta.p */F.RANK_SRC='KenPom 2026-27 preseason ratings';
+F.TMODES=[['power','STOOPID rank'],['kenpom','Power rank'],['alpha','A–Z'],['conf','Conference'],['seed','Proj. seed'],['record','Last season'],['tiers','Tiers']];
 F.teamView=function(o){const TEAMS=o.teams,META=o.meta||{},pool=o.pool,taken=o.taken||{},watch=o.watch||new Set(),q=o.q||'',mode=o.mode||'power';
-  const nm=t=>TEAMS[t].name||TEAMS[t].short;/* s23 (LOW-1): A–Z follows the full name that the list shows */const alpha=(a,b)=>nm(a).localeCompare(nm(b));const P=t=>(META[t]&&META[t].p)||0;
+  const nm=t=>TEAMS[t].name||TEAMS[t].short;/* s23 (LOW-1): A–Z follows the full name that the list shows */const alpha=(a,b)=>nm(a).localeCompare(nm(b));const P=t=>(META[t]&&META[t].p)||0;/* s26c14: O = Power rank (KenPom 2026-27 preseason, meta.o), display/sort only; o.desc flips power/kenpom, unranked stays last */const O=t=>(META[t]&&META[t].o)||0;const dir=o.desc?-1:1;const rk=(f,a,b)=>{const x=f(a),y=f(b);return(!x||!y)?(x?-1:y?1:0):dir*(x-y)};
   const ids=pool.filter(t=>{if(!TEAMS[t])return false;if(o.hideDrafted&&taken[t])return false;if(o.onlyWatch&&!watch.has(t))return false;if(o.onlyQueue&&(o.queue||[]).indexOf(t)<0)return false;return F.searchMatch(TEAMS[t],META[t],q)});
-  const cmps={power:(a,b)=>(P(a)||9999)-(P(b)||9999)||alpha(a,b),alpha,
+  const cmps={power:(a,b)=>rk(P,a,b)||alpha(a,b),kenpom:(a,b)=>rk(O,a,b)||alpha(a,b),alpha,
    seed:(a,b)=>{const x=F.seedNum(META[a]),y=F.seedNum(META[b]);return(x==null?99:x)-(y==null?99:y)||(P(a)||9999)-(P(b)||9999)||alpha(a,b)},
    record:(a,b)=>{const x=F.recParse(META[a]&&META[a].r),y=F.recParse(META[b]&&META[b].r);return(y?y.pct:-1)-(x?x.pct:-1)||(y?y.w:-1)-(x?x.w:-1)||alpha(a,b)},
    conf:(a,b)=>(P(a)||9999)-(P(b)||9999)||alpha(a,b),tiers:(a,b)=>(P(a)||9999)-(P(b)||9999)||alpha(a,b)};
@@ -431,7 +432,7 @@ F.teamView=function(o){const TEAMS=o.teams,META=o.meta||{},pool=o.pool,taken=o.t
     let gs=Array.from(map.values());if(mode==='tiers'){const ord=F.TIERS.map(x=>x.k);gs.sort((a,b)=>ord.indexOf(a.key)-ord.indexOf(b.key))}else gs.sort((a,b)=>a.key<b.key?-1:a.key>b.key?1:0);gs.forEach(g=>groups.push(g))}
   else{const all=stars.concat(rest);if(all.length)groups.push({key:'all',label:'',tids:all,flat:true})}return groups};
 F.watchToggle=(arr,tid)=>{const a=(arr||[]).slice();const i=a.indexOf(String(tid));if(i>=0)a.splice(i,1);else a.push(String(tid));return a};
-F.rowValue=(mode,t,META)=>{const m=META[t]||{};if(mode==='power'||mode==='tiers')return m.p?'#'+m.p:'—';if(mode==='seed'){const s=F.seedNum(m);return s==null?'—':'S'+s}if(mode==='record')return m.r||'—';if(mode==='conf')return m.c||'—';return m.p?'#'+m.p:'—'};
+F.rowValue=(mode,t,META)=>{const m=META[t]||{};if(mode==='kenpom')return m.o?'#'+m.o:'–';if(mode==='power'||mode==='tiers')return m.p?'#'+m.p:'—';if(mode==='seed'){const s=F.seedNum(m);return s==null?'—':'S'+s}if(mode==='record')return m.r||'—';if(mode==='conf')return m.c||'—';return m.p?'#'+m.p:'—'};
 /* ============================ export + recap ============================ */
 const csvCell=v=>{v=String(v==null?'':v);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};F.csvCell=csvCell;
 F.rosters=function(st,mgrs){return st.order.map(mid=>{const m=mgrs.find(x=>x.mid===mid)||{mid,name:'Manager',team:'Team'};return{mgr:m,picks:(st.roster||st.real||st.picks).filter(p=>p.owner===mid)}})};
@@ -450,7 +451,14 @@ F.redraftCountdown=function(now,tz){tz=tz||'UTC';const d=F.REDRAFT.asOf.split('-
 F.NEXT={season:'College basketball games start in early November 2026. Standings fill in on the league site as scores come in.',
   points:'Full Season: every win by your teams counts. NCAA Tournament: points for making the field, each win, upsets by seed, the Final Four and the title.'};
 /* roster strength: each team scores 100 minus its power rank (rank 1 = 99; rank 100 or worse, or unranked = 0); the rating is the average per team. Empty roster -> null. */
-F.teamStrength=(tid,META)=>{const r=+((META&&META[tid])||{}).p;return(r>0&&r<100)?100-r:0};
+/* s26c14 (Paul 'more variety'): blended rank = wo*o (KenPom) + (1-wo)*p (STOOPID rank); a team with no p gets p = maxP + o (behind every ranked team, KenPom order among them);
+   no o -> o = 366 + p (or 999). Teams with p always sort ahead of teams without p; within each group ascending score (ties: o, then id) and returned as 1..N ranks. Used by grades (wo .5) and mock bots (per-personality wo 0.3-0.7). Auto-pick does NOT use it (KenPom only). */
+F.blendScore=(m,wo,maxP)=>{m=m||{};const o=+m.o>0?+m.o:(+m.p>0?366+(+m.p):999);const p=+m.p>0?+m.p:maxP+o;return wo*o+(1-wo)*p};
+F._blendC=new WeakMap();
+F.blendRank=function(META,wo){wo=wo==null?0.5:+wo;let c=F._blendC.get(META);if(!c){c={};F._blendC.set(META,c)}if(c[wo])return c[wo];
+  const ids=Object.keys(META||{});const maxP=ids.reduce((a,t)=>Math.max(a,+META[t].p>0?+META[t].p:0),0);const sc={};ids.forEach(t=>{sc[t]=F.blendScore(META[t],wo,maxP)});
+  const o=t=>+META[t].o>0?+META[t].o:999;const r={};ids.slice().sort((a,b)=>(+META[b].p>0)-(+META[a].p>0)||sc[a]-sc[b]||o(a)-o(b)||(a<b?-1:1)).forEach((t,i)=>{r[t]=i+1});return c[wo]=r};
+F.teamStrength=(tid,META)=>{const m=META&&META[tid];const r=m&&(+m.p>0||+m.o>0)?F.blendRank(META,0.5)[tid]:0;return(r>0&&r<100)?100-r:0};/* s26c14: 50/50 blended rank (was p) */
 F.rosterStrength=function(picks,META){if(!picks||!picks.length)return null;let t=0;picks.forEach(p=>{t+=F.teamStrength(p.tid,META)});return Math.round(t/picks.length*10)/10};
 /* rows: [{mid, picks}] -> same rows with .strength and .place (1 = strongest, equal ratings share a place) */
 F.rosterRatings=function(rows,META){const out=(rows||[]).map(r=>({mid:r.mid,strength:F.rosterStrength(r.picks,META)}));

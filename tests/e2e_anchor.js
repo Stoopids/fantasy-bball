@@ -5,7 +5,7 @@
 const L=require('./lib.js');const {seed}=require('./seed_league.js');const {sleep}=L;const API=process.env.API||'http://localhost:9996/api/data/';
 let n=0,bad=0;const fails=[];const ok=(name,c,x)=>{n++;if(c)console.log('  ok  '+name);else{bad++;fails.push(name);console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,400):''))}};
 const waitFor=async(fn,ms)=>{const t=Date.now();while(Date.now()-t<(ms||15000)){try{const v=await fn();if(v)return v}catch(e){}await sleep(250)}return false};
-const TABS=['board','teams','my','chat','more'];
+const TABS=['board','teams','my','chat','rules','more'];
 /* dispatch a synthetic click / auxclick / contextmenu and report whether the app called preventDefault */
 const synth=(P,sel,init,type)=>P.page.evaluate((sel,init,type)=>{const a=document.querySelector(sel);let prevented=null;
   const spy=e=>{prevented=e.defaultPrevented};window.addEventListener(type,spy,{once:true});
@@ -17,7 +17,7 @@ const id=await seed(API,{rounds:2});const I=seed.info;const me=I.managers[0];
 for(const w of [390,1280]){const pre=w+'px ';const P=await L.phone('a'+w,w===1280?{desktop:true,w:1280,h:900}:{});await P.page.setBypassServiceWorker(true).catch(()=>{});
   await P.go('room.html?l='+id+'#as='+me.id+'&k='+me.k);await waitFor(()=>P.page.evaluate(()=>!!document.querySelector('#tabs [data-t]')),20000);await sleep(800);
   const g=await P.page.evaluate(()=>[...document.querySelectorAll('#tabs [data-t]')].map(a=>({tag:a.tagName,href:a.getAttribute('href'),role:a.getAttribute('role'),sel:a.getAttribute('aria-selected'),h:a.getBoundingClientRect().height,w:a.getBoundingClientRect().width,t:a.dataset.t})));
-  ok(pre+'room: every tab is <a href="#tab=name"> with role=tab',g.length===5&&g.every(a=>a.tag==='A'&&a.href==='#tab='+a.t&&a.role==='tab'),g);
+  ok(pre+'room: every tab is <a href="#tab=name"> with role=tab',g.length===6&&g.every(a=>a.tag==='A'&&a.href==='#tab='+a.t&&a.role==='tab'),g);
   ok(pre+'room: tab targets >= 44px',g.every(a=>a.h>=44&&a.w>=44),g.map(a=>[a.h,a.w]));
   ok(pre+'room: exactly one aria-selected=true',g.filter(a=>a.sel==='true').length===1,g.map(a=>a.sel));
   const url0=P.page.url();

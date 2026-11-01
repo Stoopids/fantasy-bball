@@ -1,3 +1,24 @@
+/* s26c14 League view-only mode (port of the reference site (s26t) VIEW-ONLY) + open-at-top link cleanup (port of the reference site (s26w) S26W-TOP).
+   Runs at the top of js/league-d.js, which league.html loads before store.js / ui.js / any fetch, so nothing can read an identity or write before it.
+   ?view=1 (kept per browser tab in sessionStorage fbn.view=1; ?view=0 turns it off): forces guest WITHOUT touching the saved identity on this
+   device: localStorage fbn.me.<id> / fbn.cm.<id> read as empty and cannot be written or removed; every non-GET/HEAD fetch, XHR and sendBeacon
+   is refused (challenges, reactions, chat, photo, presence); leaguehome.js and the challenges module also check window.LVIEW before each write; html.viewonly hides
+   the write controls (css/league-app.css). Open at top: history.scrollRestoration='manual' (leaguehome.js scrolls each first tab render to 0,0);
+   a deep link to one card scrolls to its card only on a fresh open not seen before on this device, else it is cleaned to the tab hash. */
+(function(){if(typeof window==='undefined')return;
+  var V=false;try{var q=location.search;if(/(?:^|[?&])view=1(?:&|$)/.test(q))sessionStorage.setItem('fbn.view','1');else if(/(?:^|[?&])view=0(?:&|$)/.test(q))sessionStorage.removeItem('fbn.view');V=sessionStorage.getItem('fbn.view')==='1'}catch(e){V=/(?:^|[?&])view=1(?:&|$)/.test(location.search)}
+  window.LVIEW=V;
+  if(V){var SP=Storage.prototype,g=SP.getItem,s=SP.setItem,rm=SP.removeItem,idk=function(st,k){return st===window.localStorage&&/^fbn\.(me|cm)\./.test(String(k))};
+    SP.getItem=function(k){if(idk(this,k))return null;return g.apply(this,arguments)};
+    SP.setItem=function(k){if(idk(this,k))return;return s.apply(this,arguments)};
+    SP.removeItem=function(k){if(idk(this,k))return;return rm.apply(this,arguments)};
+    var isW=function(m){m=String(m||'GET').toUpperCase();return m!=='GET'&&m!=='HEAD'};
+    var f0=window.fetch;window.LVIEW_BLOCKED=0;window.fetch=function(i,o){var m=(o&&o.method)||(i&&typeof i==='object'&&i.method);if(isW(m)){window.LVIEW_BLOCKED++;return Promise.reject(new Error('view-only'))}return f0.apply(this,arguments)};
+    var xo=XMLHttpRequest.prototype.open,xs=XMLHttpRequest.prototype.send;XMLHttpRequest.prototype.open=function(m){this.__vw=isW(m);return xo.apply(this,arguments)};XMLHttpRequest.prototype.send=function(){if(this.__vw){window.LVIEW_BLOCKED++;throw new Error('view-only')}return xs.apply(this,arguments)};
+    if(navigator.sendBeacon)navigator.sendBeacon=function(){window.LVIEW_BLOCKED++;return false};
+    document.documentElement.classList.add('viewonly')}
+  try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(e){}
+})();
 /* s25 League URL secrets ("remember this device"): a shared or copied link never signs anyone in; League never builds a URL with k=.
    league.html loads core.js, scoring.js, then this file (league-d.js) before store.js / ui.js / any fetch, so the URL step runs first. as / k / cm in the query or the hash are taken out of the
    address bar AT ONCE (history.replaceState, other params kept, wrong values stripped too) and kept in memory only; leaguehome.js

@@ -26,10 +26,10 @@ const RE=/^https:\/\/www\.espn\.com\/mens-college-basketball\/team\/_\/id\/\d+$/
     await pg.click('#tab_teams');await sleep(900);
     /* s25-full (Paul via NCAA): no ESPN link or icon in Teams tab rows; the name / row is the Draft target */
     const tl=await pg.evaluate(()=>({rows:document.querySelectorAll('#tlist .trow').length,a:document.querySelectorAll('#tlist .trow a,#tlist .trow .espn').length}));ok(w+'px Teams tab rows: no ESPN anchors or icons ('+tl.rows+' rows)',tl.rows>=100&&tl.a===0,tl);
-    const rowCtl=await pg.evaluate(()=>{const r=document.querySelector('#tlist .trow.go');const q=r.querySelector('.qbtn');const R=e=>{const b=e.getBoundingClientRect();return[Math.round(b.width),Math.round(b.height)]};return{d:R(r),q:R(q),star:!!r.querySelector('.wstar'),hasData:r.dataset.a}});
-    ok(w+'px Teams tab: Q+ is >= 44 px, no star; the whole row is the Draft target',rowCtl.d[1]>=44&&!rowCtl.star&&rowCtl.q[0]>=44&&rowCtl.hasData==='draftrow',rowCtl);
+    const rowCtl=await pg.evaluate(()=>{const r=document.querySelector('#tlist .trow.go');const d=r.querySelector('.dbtn');const q=r.querySelector('.qbtn');const R=e=>{const b=e.getBoundingClientRect();return[Math.round(b.width),Math.round(b.height)]};return{d:R(d),q:R(q),star:!!r.querySelector('.wstar'),hasData:d.dataset.a}});
+    ok(w+'px Teams tab: Q+ is >= 44 px, no star; the Draft button is the Draft target',rowCtl.d[1]>=44&&!rowCtl.star&&rowCtl.q[0]>=44&&rowCtl.hasData==='draftrow',rowCtl);
     /* explicit Draft button still opens the confirm sheet, and the school link on the sheet does not draft */
-    await pg.$eval('#tlist .trow.go[data-a=draftrow] .tm',e=>e.click());await pg.waitForSelector('#confirmpick',{visible:true,timeout:8000});
+    await pg.$eval('#tlist .trow.go .dbtn[data-a=draftrow]',e=>e.click());await pg.waitForSelector('#confirmpick',{visible:true,timeout:8000});
     await audit('#sheetwrap a.tlink','confirm sheet',1);await tapLink('#sheetwrap a.tlink');
     ok(w+'px confirm sheet: tapping the school link keeps the sheet open and makes no pick',!!(await pg.$('#confirmpick'))&&/Pick #12/.test(await pg.$eval('#banner',e=>e.innerText)));
     await pg.click('#sheetwrap [data-a=sheetbg]:not(.sheetbg)').catch(()=>{});await pg.evaluate(()=>{const b=[...document.querySelectorAll('#sheetwrap button')].find(x=>x.innerText.trim()==='Cancel');if(b)b.click()});await sleep(300);
@@ -46,7 +46,7 @@ const RE=/^https:\/\/www\.espn\.com\/mens-college-basketball\/team\/_\/id\/\d+$/
     /* pick overlay */
     await pg.click('#tab_board');await sleep(500);/* the banner re-renders every second, so the button node can be swapped mid-click: retry on a fresh node */for(let tr=0;tr<5;tr++){try{await pg.$eval('#pickbtn',e=>e.click());if(await pg.waitForSelector('#pickov',{timeout:1500}).catch(()=>null))break}catch(e){}await sleep(300)}await pg.waitForSelector('#pickov .trow',{timeout:8000});await sleep(400);
     {const po=await pg.evaluate(()=>({rows:document.querySelectorAll('#pickov .trow').length,a:document.querySelectorAll('#pickov .trow a,#pickov .trow .espn').length}));ok(w+'px pick overlay rows: no ESPN anchors or icons',po.rows>=100&&po.a===0,po)}
-    await pg.$eval('#pickov .trow.go .tm',e=>e.click());ok(w+'px pick overlay: tapping a team name opens the confirm sheet',!!(await pg.waitForSelector('#confirmpick',{visible:true,timeout:6000}).catch(()=>null)));
+    await pg.$eval('#pickov .trow.go .tm',e=>e.click());await new Promise(r=>setTimeout(r,700));ok(w+'px pick overlay: tapping a team name does NOT open the confirm (s26c14)',!(await pg.$('#confirmpick')));await pg.$eval('#pickov .trow.go .dbtn',e=>e.click());ok(w+'px pick overlay: tapping Draft opens the confirm sheet',!!(await pg.waitForSelector('#confirmpick',{visible:true,timeout:6000}).catch(()=>null)));
     await pg.evaluate(()=>{const b=[...document.querySelectorAll('#sheetwrap button')].find(x=>x.innerText.trim()==='Cancel');if(b)b.click()});await sleep(300);
     await pg.evaluate(()=>{const b=document.querySelector('#pickov [data-a=pclose]');if(b)b.click()});await sleep(300);
     ok(w+'px room: no page errors',P.errs.length===0,P.errs);await pg.close()}

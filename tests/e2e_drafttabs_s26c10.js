@@ -30,7 +30,7 @@ const shot=async(P,f)=>{if(process.env.SHOTS)await P.page.screenshot({path:path.
     ok(w+' pre recap: no overflow, taps >= 44px',r2.sw<=r2.iw&&!r2.small.length,{small:r2.small});
     if(w===390||w===1280)await shot(P,'recap-pre-'+w);ok(w+' pre: no page errors',!P.errs.length,P.errs);await P.close();
     P=await open(w,noAt,noAtI,'#draft');await P.page.waitForSelector('#godraft',{timeout:25000}).catch(()=>{});await L.sleep(500);
-    r=await P.page.evaluate(()=>({btn:!!document.getElementById('godraft'),board:!!document.querySelector('.dround')}));ok(w+' all picks made but no completed time: big button, no board',r.btn&&!r.board,r);await P.close();
+    r=await P.page.evaluate(()=>({btn:!!document.getElementById('godraft'),board:!!document.querySelector('.dround')}));ok(w+' all picks made but no completed time: counts as complete (League s26c14 draftComplete): board, no big button',!r.btn&&r.board,r);await P.close();
     P=await open(w,post,postI,'#draft');await P.page.waitForSelector('#lapp[data-ready]',{timeout:25000});await L.sleep(800);
     r=await P.page.evaluate(()=>{const rs=[...document.querySelectorAll('.dround')];return{rounds:rs.length,per:rs.map(x=>x.querySelectorAll('.dpick').length),
       empty:[...document.querySelectorAll('.dpick')].filter(p=>!p.querySelector('.dpm').textContent.trim()||!p.querySelector('.dps').textContent.trim()).length,

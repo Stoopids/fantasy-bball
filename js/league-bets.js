@@ -131,7 +131,7 @@ async function heal(){const me=meMid();if(!me||healing||!SENT.size||(H&&H.demo))
   try{const cur=parseLog(await Store.get(KEY(me)));const have=new Set(cur.map(e=>e.u));const miss=[...SENT.values()].filter(e=>!have.has(e.u));
     if(miss.length){await append(miss);if(H&&H.active())render()}}catch(e){}finally{healing=false}}
 /* append events to MY OWN log only: read, append what is missing, write, read back to verify, retry once more if a second device of mine got in between */
-async function append(evs){const me=meMid();if(!me)throw new Error('nome');const key=KEY(me);
+async function append(evs){if(window.LVIEW)throw new Error('view-only');const me=meMid();if(!me)throw new Error('nome');const key=KEY(me);
   for(let t=0;t<3;t++){
     const cur=parseLog(await Store.get(key));const have=new Set(cur.map(e=>e.u));const miss=evs.filter(e=>!have.has(e.u));
     if(!miss.length){S.logs[me]=cur;evs.forEach(e=>SENT.set(e.u,e));return cur}

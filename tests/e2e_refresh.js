@@ -6,7 +6,7 @@
 const L=require('./lib.js');const {seed}=require('./seed_league.js');const {sleep}=L;const API=process.env.API||'http://localhost:9996/api/data/';const path=require('path');
 let n=0,bad=0;const fails=[];const ok=(name,c,x)=>{n++;if(c)console.log('  ok  '+name);else{bad++;fails.push(name);console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,400):''))}};
 const waitFor=async(fn,ms)=>{const t=Date.now();while(Date.now()-t<(ms||15000)){try{const v=await fn();if(v)return v}catch(e){}await sleep(250)}return false};
-const TABS=['board','teams','my','chat','more'];
+const TABS=['board','teams','my','chat','rules','more'];
 const SHOT=process.env.SHOTDIR||path.join(__dirname,'..','shots');
 const where=P=>P.page.evaluate(()=>({path:location.pathname.replace(/^.*\//,''),search:location.search,hash:location.hash,tab:document.body.dataset.tab||'',sw:!!(navigator.serviceWorker&&navigator.serviceWorker.controller),home:!!document.getElementById('landing')}));
 const roomReady=P=>waitFor(()=>P.page.evaluate(()=>!!document.querySelector('#tabs [data-t]')&&document.getElementById('view').innerHTML.length>50),20000);

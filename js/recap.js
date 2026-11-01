@@ -248,3 +248,10 @@ function wirePower(d,st,MG,myMid){const host=document.getElementById('powerrecap
   }).catch(()=>{})}
 U.registerSW();
 })();
+/* s26c9: every League site link in the draft room (#sitelink, #bigsite, #leaguehome2, any a[href*="league.html"]) opens in a NEW tab on desktop
+   (pointer:fine and width > 900px); on phones (coarse pointer or <= 900px) it stays in the same tab. Decided at click time (capture phase, before navigation). */
+(function(){const desk=()=>{try{return matchMedia('(pointer:fine)').matches&&window.innerWidth>900}catch(e){return false}};
+  const pick=e=>{const a=e.target&&e.target.closest&&e.target.closest('a[href*="league.html"]');if(!a)return;
+    if(desk()){a.target='_blank';a.rel='noopener noreferrer'}else{a.removeAttribute('target');a.removeAttribute('rel')}};
+  document.addEventListener('click',pick,true);document.addEventListener('auxclick',pick,true);document.addEventListener('keydown',e=>{if(e.key==='Enter')pick(e)},true);
+  window.FBN_siteNewTab=desk})();

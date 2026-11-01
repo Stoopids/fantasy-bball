@@ -16,7 +16,7 @@ async function undo(p){await p.evaluate(()=>{location.hash='#tab=more'});await s
 for(const w of [390,1280]){const pre=w+'px: ';const ctx=await B.newContext({viewport:{width:w,height:w<500?844:900},isMobile:w<500,hasTouch:w<500});
   await ctx.route(/textdb\.dev/,r=>r.abort());await ctx.addInitScript(()=>{localStorage.setItem('fbn.store','/api/data/')});
   const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
-  await p.goto(APP+'/mock.html');await p.waitForSelector('#m_seat');await p.selectOption('#m_seat','8');await p.selectOption('#m_clock','30');await p.selectOption('#m_bots','best');
+  await p.goto(APP+'/mock.html');await p.waitForSelector('#m_seat');await p.selectOption('#m_seat','8');await p.selectOption('#m_clock','30');
   await p.click('#startmock');await p.waitForURL(/room\.html\?l=/,{timeout:30000});const id=new URL(p.url()).searchParams.get('l');
   let c=await waitN(id,2,30000);ok(pre+'bots made picks #1-#2',c.picks.length>=2,c.picks.length);
   /* 1: undo an auto pick */
@@ -27,8 +27,8 @@ for(const w of [390,1280]){const pre=w+'px: ';const ctx=await B.newContext({view
   c=await waitN(id,b2+1,60000);ok(pre+'after a double undo the draft advances',c.picks.length>=b2+1,c.picks.length);
   /* 3: manual pick at #8 (my seat), undo it, pick the SAME team again */
   c=await waitN(id,7,90000);ok(pre+'reached my pick #8',c.picks.length===7,c.picks.length);
-  const tid=await p.evaluate(()=>{location.hash='#tab=teams';const r=document.querySelector('.trow.go');return r&&r.dataset.t});await sleep(400);
-  const mine=async()=>{await p.evaluate(()=>{location.hash='#tab=teams'});await sleep(400);await p.locator('.trow.go[data-t="'+tid+'"]').first().click({position:{x:4,y:4}});
+  const tid=await p.evaluate(()=>{location.hash='#tab=teams';const r=document.querySelector('.trow.go .dbtn');return r&&r.dataset.t});await sleep(400);
+  const mine=async()=>{await p.evaluate(()=>{location.hash='#tab=teams'});await sleep(400);await p.locator('.trow.go[data-t="'+tid+'"] .dbtn').first().click({position:{x:4,y:4}});
     await p.locator('[data-a="confirm"]').first().click({timeout:10000});};
   await mine();c=await waitN(id,8,15000);ok(pre+'manual pick #8 landed',c.picks.length>=8&&c.picks[7].by!=='auto',c.picks[7]);
   if(c.picks.length===8){await undo(p);c=await count(id);ok(pre+'manual pick undone',c.picks.length===7,c.picks.length);

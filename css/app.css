@@ -329,6 +329,10 @@ body[data-tab=chat] .chatbox{margin-top:auto;position:sticky;bottom:0;padding-bo
 .trow{box-sizing:border-box;min-height:44px;margin:0;padding:0 4px 0 0;gap:2px;border:0;box-shadow:inset 0 0 0 1px var(--line);border-radius:12px;overflow:hidden}
 .trow .wstar{flex:none;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;font-size:24px;color:#8b95ad;display:inline-flex;align-items:center;justify-content:center}.trow .wstar.on{color:var(--acc)}
 .trow .rkb{flex:none;min-width:30px;text-align:center;font-size:15px;font-weight:900;color:var(--acc);font-variant-numeric:tabular-nums}
+/* s26c14: two ranks per row, stacked: S = STOOPID rank, P = Power rank (KenPom) */
+.trow .rkb.rk2{display:flex;flex-direction:column;align-items:stretch;gap:1px;min-width:44px;font-size:12px;line-height:1.15;text-align:right}
+.trow .rk2 b{display:block;white-space:nowrap}.trow .rk2 small{font-size:9px;font-weight:700;opacity:.7;margin-right:2px}
+.trow .rk2 .rko{color:var(--mut,#9aa4b2);font-weight:800}
 .trow .tm{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:1px;align-items:flex-start;justify-content:center;padding:0 2px}
 .trow .tm .chip{font-size:16px;font-weight:800;padding:0 8px 0 2px;max-width:100%;min-width:0;overflow:hidden;line-height:1.15}
 .trow .tm .chip img,.trow .tm .chip .nologo{width:24px;height:24px}
@@ -630,3 +634,103 @@ html:has(body.room),body.room{overflow-anchor:none}.tspacer{pointer-events:none}
 /* s26mo3: queue drag grip (touch-action:none so a finger drag reorders instead of scrolling) + Show picked chip */
 .qpanel .qgrip{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:32px;min-height:44px;font-size:18px;color:var(--mut,#888);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
 .qpanel .qrow.qdrag{position:relative;z-index:6;background:var(--card2,#222);box-shadow:0 4px 12px rgba(0,0,0,.5)}
+
+/* s26c9 (Paul): compact post-draft More tab. Everything is scoped to body.pdmore (More tab + draft complete), so pre-draft and in-draft are untouched. Tap targets stay >=44px. */
+body.pdmore #view>.card{margin:8px 0}
+body.pdmore .banner.finalbn{padding:8px 12px}body.pdmore .banner.finalbn .nm{font-size:18px;line-height:1.2}
+body.pdmore .endbtns3{margin-top:6px;gap:6px}body.pdmore .endbtns3 .btn{min-height:44px;font-size:14px}
+body.pdmore #youcard.pd{padding:8px 12px}body.pdmore #youcard.pd .pbtns{margin-top:6px!important;gap:6px}body.pdmore #youcard.pd .pbtns>.btn{min-height:44px}
+body.pdmore #youcard.pd>.small{margin-top:4px!important;font-size:11.5px;line-height:1.3}
+body.pdmore #linkscard.pd{padding:8px 12px}
+body.pdmore #linkscard.pd .pdhead{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;margin-bottom:4px}body.pdmore #linkscard.pd .pdhead h3{margin:0}body.pdmore #linkscard.pd .pdhead .code{font-size:14px}
+body.pdmore #linkscard.pd .pdrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center;margin:0 0 4px;border-top:1px solid var(--line,rgba(255,255,255,.06));padding-top:4px}
+body.pdmore #linkscard.pd .pdrow:first-of-type{border-top:0;padding-top:0}
+body.pdmore #linkscard.pd .pdlbl{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+body.pdmore #linkscard.pd .pdrow .btn{min-height:44px;min-width:64px;padding:0 10px;margin:0}
+body.pdmore #linkscard.pd .lextra{margin-top:4px}
+@media(max-width:359px){body.pdmore #linkscard.pd .pdrow .btn{min-width:56px;padding:0 6px}body.pdmore #linkscard.pd .pdlbl{font-size:13px}}
+
+/* s26c9 (Paul): compact post-draft Board. One merged FINAL card (#finalbanner #donecard) with a single wrapping row of smaller buttons (>=44px). */
+#finalbanner .dcx,#finalbanner .dccheer{display:none}
+body[data-tab=board] #finalbanner .dccheer{display:block;float:right;margin:0 0 4px 8px}
+body[data-tab=board] #finalbanner .dccheer .btn,body[data-tab=board] #finalbanner .dccheer button{min-height:44px}
+body[data-tab=board] .banner.finalbn{padding:8px 12px}body[data-tab=board] .banner.finalbn .nm{font-size:18px;line-height:1.2}
+body[data-tab=board] #finalbanner .endbtns3{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+body[data-tab=board] #finalbanner .endbtns3>.btn{flex:1 1 120px;min-width:0;min-height:44px;font-size:13.5px;padding:4px 8px;margin:0}
+body[data-tab=board] #finalbanner .endbtns3>.dcx{display:flex;font-weight:700;font-size:13px}
+body[data-tab=board] #finalbanner #redraftroomlink{flex-basis:170px}
+@media(max-width:419px){body[data-tab=board] #finalbanner .endbtns3>.btn{flex:1 1 calc(33.33% - 6px);font-size:13px;padding:4px 4px}body[data-tab=board] #finalbanner .endbtns3>.dcx{flex-basis:calc(50% - 6px)}body[data-tab=board] #finalbanner #redraftroomlink{flex-basis:100%}}
+@media(max-width:359px){body[data-tab=board] #finalbanner .endbtns3>.btn{font-size:12px}}
+.pdbx>.card{padding:8px 12px;margin:8px 0}
+.pdbx #nextcard h3,.pdbx #watchcard h3{margin:0 0 2px!important;font-size:15px}
+.pdbx .nextlist{margin:0;padding-left:18px;line-height:1.3}.pdbx .nextlist li{margin:1px 0}
+.pdbx #watchcard .small{line-height:1.3}.pdbx #watchcard .row{margin-top:6px!important;gap:6px}.pdbx #watchcard .btn{min-height:44px;padding:0 10px}
+.pdbx #hometip{line-height:1.3;font-size:12.5px}
+/* s26c9: '<League name> League site →': the name truncates with an ellipsis, the ' League site →' suffix always stays visible */
+.sitebtn{display:inline-flex;align-items:center;max-width:100%;min-width:0;overflow:hidden;white-space:nowrap;vertical-align:middle}
+.sitebtn .snm{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sitebtn .sfx{flex:0 0 auto;white-space:nowrap}
+.btn.sitebtn{display:flex;justify-content:center}
+#sitelink.sitebtn{max-width:min(260px,50vw)}
+@media(max-width:419px){#finalbanner .endbtns3>.sitebtn{flex-direction:column;line-height:1.15}#finalbanner .endbtns3>.sitebtn .snm{max-width:100%}}
+.sitebtn .snm+.sfx{margin-left:.3em}
+@media(max-width:419px){#finalbanner .endbtns3>.sitebtn .snm+.sfx{margin-left:0}#finalbanner .endbtns3>.sitebtn .sfx{font-size:12px}}
+@media(max-width:359px){#finalbanner .endbtns3>.sitebtn .sfx{font-size:11px;letter-spacing:-.2px}}
+#leaguehome2.sitebtn{display:inline-flex;max-width:100%;box-sizing:border-box;min-height:44px}
+body[data-tab=board] #finalbanner .bm{overflow:hidden}
+#finalbanner #donecard{position:static}#finalbanner #donecard .cheermute{position:static}@media(max-width:419px){#finalbanner #donecard .cheermute{padding:0 8px;font-size:12px}}
+body[data-tab=board] #finalbanner{position:relative}body[data-tab=board] #finalbanner .dccheer{float:none;position:absolute;top:6px;right:8px;margin:0}
+body[data-tab=board] #finalbanner .bm{overflow:visible;padding-right:118px;min-height:44px}
+@media(max-width:419px){body[data-tab=board] #finalbanner .bm{padding-right:100px}}
+/* s26c9 lobby: 📋 Draft Rules + 📖 League Rules (lobby card + header), compact Invite managers row (Mock Draft primary) */
+#lobbycard .lrbtns{position:absolute;top:8px;right:8px;display:flex;gap:6px}#lobbycard .lrbtns .rulesbtn{position:static;margin:0}#lobbycard h2{padding-right:0}
+#lobbycard .lrbtns+.small{padding-right:250px}
+@media(max-width:599px){#lobbycard .lrbtns{position:static;justify-content:flex-end;flex-wrap:wrap;margin:-4px -4px 4px 0}#lobbycard .lrbtns+.small{padding-right:0}}
+.toprow .rulesbtn.lrules{margin-left:6px;display:inline-flex;align-items:center;text-decoration:none}
+a.rulesbtn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;box-sizing:border-box}
+@media(max-width:419px){.toprow .rulesbtn{padding:0 8px;font-size:12.5px}}
+.invc{padding:8px 12px}.invc .invr1{gap:6px 8px}.invc .invlbl{flex:1 0 auto;font-size:15px}
+.invc .invbtns{flex:1 1 auto;justify-content:flex-end;flex-wrap:wrap;gap:6px}
+.invc .invr1 .btn{padding:0 12px}.invc .invmockb{font-weight:900;font-size:15px;padding:0 18px!important;box-shadow:0 0 0 2px rgba(255,204,51,.25)}
+.invc .invr2{margin-top:4px}
+@media(max-width:419px){.invc .invbtns{width:100%;flex:1 1 100%;flex-wrap:nowrap}.invc .invbtns .btn{flex:1 1 auto;padding:0 8px!important;font-size:13px;white-space:nowrap}.invc .invmockb{font-size:14px}.invc .invr1{row-gap:4px}}
+@media(max-width:359px){.invc .invbtns{flex-wrap:wrap}.invc .invmockb{flex:1 1 100%!important;order:-1}}
+/* s26c9 lobby countdown hero */
+#lobbycd .cdlbl{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-top:4px}
+#lobbycd .cdhero{display:flex;align-items:flex-start;justify-content:center;gap:clamp(2px,1vw,10px);margin:4px 0 2px;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--acc);max-width:100%;overflow:hidden}
+#lobbycd .cdg{display:flex;flex-direction:column;align-items:center;min-width:0}
+#lobbycd .cdg b{font-size:clamp(38px,12vw,76px);line-height:1;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+#lobbycd .cdg small{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--mut);margin-top:4px}
+#lobbycd .cdsep{font-size:clamp(30px,9vw,64px);line-height:1;font-weight:900;opacity:.7}
+#lobbycd .cdhero:has(.cdg:nth-child(7)) .cdg b{font-size:clamp(30px,9.5vw,72px)}#lobbycd .cdhero:has(.cdg:nth-child(7)) .cdsep{font-size:clamp(24px,7vw,58px)}
+#lobbycd .cdwhen{text-align:center;font-weight:600}
+@media(min-width:900px){#lobbycd .cdg b{font-size:72px}}
+/* s26c9 viewer highlight (display only; no highlight for spectators) */
+.youtag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:6px;background:var(--acc);color:#111;font-size:10px;font-weight:900;letter-spacing:.08em;line-height:1.4;vertical-align:middle}
+#who.you{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 0 10px rgba(255,204,51,.35)}#who.you .whonm{font-weight:900;font-size:1.08em}
+.pc.you{border:2px solid var(--acc);box-shadow:0 0 8px rgba(255,204,51,.35);font-weight:900;font-size:1.05em}
+.opills button.you{border:2px solid var(--acc);box-shadow:0 0 8px rgba(255,204,51,.35);font-weight:900;font-size:1.05em}
+.mrow.you{background:rgba(255,204,51,.07);box-shadow:inset 3px 0 0 var(--acc);border-radius:8px;padding-left:6px}.mrow.you .nm{font-size:1.1em;font-weight:900}
+.myhead{padding:16px}.myhead .mhteam{font-size:22px;line-height:1.2;overflow-wrap:anywhere}.myhead .mhname{font-size:15px;font-weight:700}
+.myhead.you{border:2px solid var(--acc);box-shadow:0 0 14px rgba(255,204,51,.25)}.myhead.you .mhname{color:var(--tx)}
+@media(max-width:359px){.myhead .mhteam{font-size:19px}}
+body.inlobby #rulesbtn_hdr,body.inlobby #leaguerules_hdr{display:none}/* s26c9: in the lobby both Rules buttons sit on the lobby card */
+#lobbycard:has(.cdhero) #startsline{display:none}/* the start time moves under the countdown */
+.opills button.on .youtag,.btn.pri .youtag{background:#111;color:var(--acc)}
+#lobbycd .cdlbl{text-align:center}
+.r2miss{margin:4px 0 0;padding-left:22px}.r2miss li{margin:2px 0}
+body.drdone #rulesbtn_hdr,body.drdone #leaguerules_hdr{display:none}/* s26c9 (Paul b): post-draft header has no Rules buttons (they are in More) */
+#rulescard .rlrow{display:flex;gap:6px;flex-wrap:wrap}#rulescard .rlrow .btn{flex:1 1 140px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+body.pdmore #rulescard{padding:8px 12px}body.pdmore #rulescard h3{margin:0 0 6px}
+/* s26c14: Rules tab */
+.rulestab .r2head [data-dr2=close]{display:none}.rulestab .rltab{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:8px 0}.rulestab .r2page{max-width:760px;margin:0 auto}
+.rulestab .r2page .r2head{position:static}
+/* s26c14 (Paul): Draft button + bigger Queue button, separate (>=8px gap), 48px tall; the row itself is not a tap target */
+.trow .tbtns{flex:none;display:flex;align-items:center;gap:10px;margin-left:4px}
+.trow .dbtn{flex:none;box-sizing:border-box;min-width:58px;height:48px;padding:0 10px;border:0;border-radius:12px;background:var(--acc);color:#111;font:inherit;font-size:14px;font-weight:900;cursor:pointer}
+.trow .dbtn:active{transform:scale(.97)}.trow .dbtn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.trow .tbtns .qbtn{width:58px;min-width:58px;height:48px;min-height:48px;border:0;border-radius:12px;padding:0;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05;background:var(--card2);box-shadow:inset 0 0 0 1.5px #5b6680;color:#e6ebf5}
+.trow .tbtns .qbtn b{font-size:16px;font-weight:900}.trow .tbtns .qbtn small{font-size:10px;font-weight:800;opacity:.85}
+.trow .tbtns .qbtn.on{background:var(--acc);color:#111;box-shadow:none}
+.trow.go{cursor:default}
+@media (max-width:360px){.trow .tbtns{gap:8px}.trow .dbtn{min-width:52px;padding:0 6px;font-size:13px}.trow .tbtns .qbtn{width:52px;min-width:52px}.trow .tr small{display:none}}
+@media (max-width:350px){.tabs button,.tabs a{font-size:10px;padding-left:0;padding-right:0;letter-spacing:-.2px}.trow .tr{display:none}.trow .rkb.rk2{min-width:38px}}

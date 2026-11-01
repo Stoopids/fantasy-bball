@@ -9,11 +9,11 @@ for(const [w,h] of [[390,844],[1280,800]]){const opt=w>700?{desktop:true,w,h}:{w
  const id=await seed(API,{managers:8,rounds:6,live:true,clockSecs:null,picksMade:3});const I=seed.info;const meta=F.parseJ(await raw(F.Keys(id).meta));
  const slot=F.slotAt(meta.order,4,meta.settings.type,meta.settings.rounds);const owner=I.managers.find(m=>m.id===slot.owner);
  const P=await L.phone('cf'+w,opt);await P.go('room.html?l='+id+'#as='+owner.id+'&k='+owner.k);await waitFor(()=>P.page.$('#pickbtn'),25000);await sleep(1200);
- await P.page.evaluate(()=>document.querySelector('#tab_teams').click());await waitFor(()=>P.page.$('#tlist .trow.go'),10000);await P.page.$eval('#tlist .trow.go .tm',e=>e.click());await waitFor(()=>P.page.$('#confirmpick'),6000);await sleep(500);
+ await P.page.evaluate(()=>document.querySelector('#tab_teams').click());await waitFor(()=>P.page.$('#tlist .trow.go .dbtn'),10000);await P.page.$eval('#tlist .trow.go .tm',e=>e.click());await waitFor(()=>P.page.$('#confirmpick'),6000);await sleep(500);
  await P.page.screenshot({path:`${OUT}/${TAG}_real_${w}.png`});res['real_'+w]=await measure(P);await P.close();
  const M=await L.phone('cfm'+w,opt);await M.go('mock.html');await sleep(2500);await M.page.evaluate(()=>{const b=document.querySelector('#solo,[data-a=solo],#startsolo,button.pri');if(b)b.click()});
  await waitFor(()=>/room\.html/.test(M.page.url()),20000);await waitFor(()=>M.page.$('#tab_teams'),20000);await sleep(1000);await M.page.evaluate(()=>{const b=document.querySelector('#startmock,[data-a=startmock],[data-a=mockstart]');if(b)b.click()});
- const go=await waitFor(async()=>{await M.page.evaluate(()=>{const t=document.querySelector('#tab_teams');if(t&&!t.classList.contains('on'))t.click()});return M.page.$('#tlist .trow.go')},90000);
+ const go=await waitFor(async()=>{await M.page.evaluate(()=>{const t=document.querySelector('#tab_teams');if(t&&!t.classList.contains('on'))t.click()});return M.page.$('#tlist .trow.go .dbtn')},90000);
  if(go){await M.page.$eval('#tlist .trow.go .tm',e=>e.click());await waitFor(()=>M.page.$('#confirmpick'),6000);await sleep(500)}
  await M.page.screenshot({path:`${OUT}/${TAG}_mock_${w}.png`});res['mock_'+w]=go?await measure(M):{err:'never on the clock',url:M.page.url()};await M.close()}
 console.log(JSON.stringify(res));process.exit(0)})().catch(e=>{console.log(e.stack);process.exit(1)});

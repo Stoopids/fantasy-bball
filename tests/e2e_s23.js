@@ -1,4 +1,4 @@
-/* s23 batch: QA s20 B1 (ONE strength / rank on the recap: Power rankings = Rosters side by side = Chalk Boss, and the footer describes the real formula), B2 (dash, never a blank, for "Avg power rank" with no ranked school),
+/* s23 batch: QA s20 B1 (ONE strength / rank on the recap: Power rankings = Rosters side by side = Chalk Boss, and the footer describes the real formula), B2 (dash, never a blank, for "Avg STOOPID rank" with no ranked school),
    B6 (Redraft drop-list team links >= 44 px), B7 (error-state links >= 44 px at 390 and 1280).
    needs: node tools/mock_textdb.js 9995 "$PWD" 9996        node tests/e2e_s23.js   (APP / API env) */
 const L=require('./lib.js');const F=require('../js/core.js');const {seed}=require('./seed_league.js');const {seedRecap}=require('./recap_seed.js');const {sleep,APP}=L;const API=process.env.API||'http://localhost:9996/api/data/';
@@ -43,7 +43,7 @@ for(const [label,power] of [['real-style league (generated)',false],['example le
  if(unranked.length>=32){const id=await seed(API,{managers:8,rounds:4,rosters});
   const P=await open('b2',`recap.html?l=${id}`,{});await waitFor(()=>P.page.evaluate(()=>!!document.querySelector('#powerrank ol.prl>li, #powerrank .pmeta')),20000);await sleep(1000);
   const t=await P.page.evaluate(()=>[...document.querySelectorAll('#powerrank .pmeta')].map(e=>e.innerText.replace(/\s+/g,' ').trim()));
-  ok('B2: 8 rosters with no ranked school: every "Avg power rank" shows a dash, not a blank ("0 of 4 ranked" stays)',t.length===8&&t.every(x=>/Avg power rank –|Avg power rank -/.test(x)),t);await P.close()}
+  ok('B2: 8 rosters with no ranked school: every "Avg STOOPID rank" shows a dash, not a blank ("0 of 4 ranked" stays)',t.length===8&&t.every(x=>/Avg STOOPID rank –|Avg STOOPID rank -/.test(x)),t);await P.close()}
  else ok('B2: enough unranked schools to build the test league',false,unranked.length)}
 /* ---------- B7: error states ---------- */
 const NOPE='ZZZZZZZZZZZZZZZZ';

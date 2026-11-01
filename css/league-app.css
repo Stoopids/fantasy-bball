@@ -688,7 +688,24 @@ nav#ltabs.pre{grid-template-columns:minmax(0,120px)}
 .dps{min-width:0;overflow:hidden}.dps>*{max-width:100%}
 .wkh{margin-top:18px}
 #recapgrades #powerrank{margin:0}
-nav#ltabs.pre{grid-template-columns:repeat(2,minmax(0,120px))}
+nav#ltabs.pre{grid-template-columns:repeat(3,minmax(0,120px))}   /* s26c13: Rules, Recap, Draft before the draft */
 .rcroom{margin:14px 2px 6px;text-align:right}
 .rcrl{display:inline-flex;align-items:center;min-height:44px;min-width:44px;padding:0 6px;font-size:13px;color:var(--mut);text-decoration:none}
 .rcrl:hover,.rcrl:focus-visible{color:var(--acc);text-decoration:underline}
+
+/*<S26C14> Rosters school detail: STOOPID rank + Power rank pills */
+.rkp{display:flex;flex-wrap:wrap;gap:4px 6px;margin:0 0 6px}.rkp .rks{flex-basis:100%;font-size:11.5px;margin:0}
+/*<S26C14-VIEW> ?view=1 view-only (top of js/league-d.js): write controls hidden; the code blocks the writes too */
+html.viewonly #chatform,html.viewonly .b27-act,html.viewonly .qbw,html.viewonly .qb-btn,html.viewonly .qb-pick,html.viewonly #heroctl{display:none!important}
+/*<S26C14-HDR> header = title centred + tagline right under it; Refresh Live Games row on the Games tab top; 'Standings last updated' line in the footer */
+#lhead.titlebar{text-align:center}#lhead .tag{margin:4px auto 0}
+#lbody>.lv{margin:0 0 6px;opacity:.85}
+.ffresh{padding:10px 0 2px;font-size:12px;color:var(--mut)}.ffresh[hidden]{display:none}
+/*<S26C14-PARITY> STOOPIDS s26w look (CSS only): tab labels 12px on phones (STOOPIDS 12px), desktop tab buttons are pills with the icon beside the label
+  (STOOPIDS nav a.nt, 12.5px; League keeps its 48px tap height), school chips are pills (STOOPIDS 99px radius), footer side padding 14px */
+@media (max-width:759px){nav#ltabs a.tb .nl,nav#ltabs a.tb{font-size:12px;letter-spacing:0}nav#ltabs a.tb{border-radius:10px}}
+@media (max-width:339px){nav#ltabs a.tb .nl,nav#ltabs a.tb{font-size:11px}}
+@media (min-width:760px){nav#ltabs a.tb{flex-direction:row;justify-content:center;align-items:center;gap:6px;border-radius:99px;font-size:12.5px;padding:4px 8px}nav#ltabs a.tb .nl{font-size:12.5px;white-space:nowrap}}
+.chip.school-chip,.card.oc .chip.school-chip{border-radius:99px}
+footer#foot{padding-left:14px;padding-right:14px}
+@media (min-width:600px){footer#foot{padding-left:0;padding-right:0}}

@@ -5,7 +5,7 @@ let n=0,bad=0;const ok=(t,c,x)=>{n++;if(c)console.log('  ok  '+t);else{bad++;con
 async function run(w,q,set,o){const P=await L.phone('p'+Math.random(),w===1280?{desktop:true,w,h:900}:{w,h:844});await P.page.setBypassServiceWorker(true).catch(()=>{});
   await P.go('index.html');await P.page.evaluate(()=>localStorage.setItem('fbn.leagues',JSON.stringify([{id:'ABCDEFGHJKMNPQRS',name:'Some real league',role:'manager',ts:1}])));await P.go('mock.html'+q);await P.page.waitForSelector('#m_seat');
   for(const [id,v] of Object.entries(set||{}))await P.page.select('#'+id,String(v));
-  const taps=await P.page.evaluate(()=>[...document.querySelectorAll('.msel')].map(e=>Math.round(e.getBoundingClientRect().height)));
+  const hadBots=await P.page.evaluate(()=>!!document.getElementById('m_bots'));const taps=await P.page.evaluate(()=>[...document.querySelectorAll('.msel')].map(e=>Math.round(e.getBoundingClientRect().height)));
   if(o.shot)await P.page.screenshot({path:SHOT+'/s26mo_390_mock_setup.png',fullPage:true});
   await P.page.click('#startmock');await P.page.waitForFunction(()=>/room\.html\?l=/.test(location.href),{timeout:20000});
   const id=await P.page.evaluate(()=>new URLSearchParams(location.search).get('l'));const me=await P.page.evaluate(id=>JSON.parse(localStorage.getItem('fbn.me.'+id)).mid,id);
@@ -20,25 +20,25 @@ async function run(w,q,set,o){const P=await L.phone('p'+Math.random(),w===1280?{
     await P.go('recap.html?l='+id);await P.page.waitForSelector('#mockback',{timeout:20000}).catch(()=>{});rback=await P.page.evaluate(()=>{const a=document.getElementById('mockback');return a?a.innerText.trim():''})}
   const meta=JSON.parse(await raw(F.Keys(id).meta));const picks=[];const tot=meta.order.length*meta.settings.rounds;
   for(let i=1;i<=tot;i++){const e=F.parseJ(await raw(F.Keys(id).pick(meta.epoch,i)));if(e)picks.push(e)}
-  await P.ctx.close().catch(()=>{});return{meta0,meta,me,picks,taps,tot,seat:meta.order.indexOf(me)+1,back,rback,resume,botTids:picks.filter(e=>e.owner!==me).map(e=>e.tid).join()}}
+  await P.ctx.close().catch(()=>{});return{hadBots,meta0,meta,me,picks,taps,tot,seat:meta.order.indexOf(me)+1,back,rback,resume,botTids:picks.filter(e=>e.owner!==me).map(e=>e.tid).join()}}
 (async()=>{try{
  const mine=(m,me)=>{const r=[];const O=m.order,N=O.length;for(let i=0;i<N*m.settings.rounds;i++){const rd=Math.floor(i/N),k=i%N;const o=m.settings.type==='snake'&&rd%2?O[N-1-k]:O[k];if(o===me)r.push(i+1)}return r};
  const randTids=[];
  for(const w of [390,1280]){const p=w+'px: ';
-  let r=await run(w,'',{m_seat:5,m_order:'snake',m_clock:90,m_bots:'best'},{full:true,shot:w===390});
-  ok(p+'selects >=44px',r.taps.every(h=>h>=44),r.taps);
+  let r=await run(w,'',{m_seat:5,m_order:'snake',m_clock:90},{full:true,shot:w===390});
+  ok(p+'s26mo4: no Bot draft style select',!r.hadBots,r.hadBots);ok(p+'s26mo4: 7 personalities dealt (all 6 kinds)',r.meta.mockOpts&&Object.keys(r.meta.mockOpts.dealt||{}).length===7&&new Set(Object.values(r.meta.mockOpts.dealt)).size===6,r.meta.mockOpts);ok(p+'selects >=44px',r.taps.every(h=>h>=44),r.taps);
   ok(p+'seat 5 honoured',r.seat===5,r.seat);ok(p+'solo fixed seat: no wheel spin record (order fixed at create, never re-spun)',!r.meta.spin&&!(r.meta.spinGen>0),[r.meta.spin,r.meta.spinGen]);ok(p+'clock 90 applied',r.meta.settings.clockSecs===90);ok(p+'snake',r.meta.settings.type==='snake');
   const got=r.picks.filter(e=>e.owner===r.me).map(e=>e.n).sort((a,b)=>a-b);
   ok(p+'snake seat 5 picks 5,12,21,28,...',got.slice(0,4).join()==='5,12,21,28'&&got.join()===mine(r.meta,r.me).join(),got);
   ok(p+'no parent league: end screen says Back to home, not Back to my league (room + recap)',r.back==='Back to home'&&r.rback==='Back to home',[r.back,r.rback]);
-  ok(p+'best-style bots ran to end',r.meta.status==='complete'||r.picks.length===r.tot,[r.meta.status,r.picks.length,r.tot]);
-  r=await run(w,'?seat=5&order=straight&clock=30&bots=random',{},{full:true,resume:true});randTids.push(r.botTids);
-  ok(p+'random style: same mock gives the same choice after a reload (resume)',r.resume&&r.resume.a1.join()===r.resume.a2.join(),r.resume);
+  ok(p+'personality bots ran to end',r.meta.status==='complete'||r.picks.length===r.tot,[r.meta.status,r.picks.length,r.tot]);
+  r=await run(w,'?seat=5&order=straight&clock=30',{},{full:true,resume:true});randTids.push(r.botTids);
+  ok(p+'personality bots: same mock gives the same choice after a reload (resume)',r.resume&&r.resume.a1.join()===r.resume.a2.join(),r.resume);
   const g2=r.picks.filter(e=>e.owner===r.me).map(e=>e.n).sort((a,b)=>a-b);
   ok(p+'query preset: seat 5, straight, clock 30',r.seat===5&&r.meta.settings.type==='linear'&&r.meta.settings.clockSecs===30,[r.seat,r.meta.settings]);
   ok(p+'straight picks 5,13,21,29,...',g2.slice(0,4).join()==='5,13,21,29',g2);
-  ok(p+'random-style bots ran to end',r.meta.status==='complete'||r.picks.length===r.tot,[r.meta.status,r.picks.length]);
-  if(w===1280){ok('random style: two different mocks make different bot picks',randTids[0]!==randTids[1],randTids.map(x=>x.slice(0,60)))}
+  ok(p+'personality bots ran to end',r.meta.status==='complete'||r.picks.length===r.tot,[r.meta.status,r.picks.length]);
+  if(w===1280){ok('personality bots: two different mocks make different bot picks',randTids[0]!==randTids[1],randTids.map(x=>x.slice(0,60)))}
   if(w===390){const seats=[];for(let i=0;i<5;i++){const a=await run(w,'',{},{});seats.push(a.seat);ok('Any: default is Any and seat in 1-8',a.meta0.mockOpts.seat===0&&a.seat>=1&&a.seat<=8,a.seat)}
    ok('Any gives varying seats '+seats,new Set(seats).size>1,seats)}
  }

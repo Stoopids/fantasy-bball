@@ -10,6 +10,7 @@ const WORDS=/\b(lotter\w*|jackpot|cash|money|prize|payout|gambl\w*|wager\w*|pot|
 const ICONS_OK=/[💵💰]/gu;
 const hits=[];
 for(const f of files){let s=fs.readFileSync(path.join(root,f),'utf8').replace(/https?:\/\/[^\s"')]+/g,'');
+  if(f==='assets/teams.js')s=s.replace(/"(USD|IDR)"(?=,"[0-9a-fA-F]{0,6}",)/g,'""');   /* s26c13: team abbreviation fields (San Diego = "USD", 365-team pool) are school codes, not currency */
   /* a $ followed by a digit: in js/css/json the regex-replacement tokens '$1' are not amounts; anywhere else (html, md, txt, svg, json text) every one counts */
   const dol=/\.js$/.test(f)?/(?<=[\s"'(])\$\d+(?=[\s.,;!?)"]|$)/:/\$\s?\d/;
   s.split("\n").forEach((l,i)=>{l=l.replace(ICONS_OK,"");let m=WORDS.exec(l)||dol.exec(l);if(m)hits.push(f+':'+(i+1)+' "'+m[0]+'" '+l.trim().slice(0,90))})}

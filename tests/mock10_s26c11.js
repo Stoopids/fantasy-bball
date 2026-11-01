@@ -9,7 +9,7 @@ const N=+(process.env.NMOCK||10);for(let i=1;i<=N;i++){const P=await L.phone('m'
   await P.page.click('#startmock');await P.page.waitForFunction(()=>/room\.html\?l=/.test(location.href),{timeout:20000}).catch(()=>{});
   const mid=new URL(P.page.url()).searchParams.get('l');
   const t0=Date.now();while(Date.now()-t0<600000){if(await P.page.evaluate(()=>!!document.querySelector('#finalbanner')).catch(()=>false))break;
-    if(await P.page.evaluate(()=>!!document.getElementById('pickbtn')).catch(()=>false)){await P.page.click('#pickbtn').catch(()=>{});await sleep(500);await P.page.evaluate(()=>{const r=document.querySelector('#pickov .trow.go');if(r)r.click()}).catch(()=>{});await sleep(400);await P.page.evaluate(()=>{const c=document.querySelector('[data-a=confirm]');if(c)c.click()}).catch(()=>{})}
+    if(await P.page.evaluate(()=>!!document.getElementById('pickbtn')).catch(()=>false)){await P.page.click('#pickbtn').catch(()=>{});await sleep(500);await P.page.evaluate(()=>{const r=document.querySelector('#pickov .trow.go .dbtn');if(r)r.click()}).catch(()=>{});await sleep(400);await P.page.evaluate(()=>{const c=document.querySelector('[data-a=confirm]');if(c)c.click()}).catch(()=>{})}
     await sleep(600)}
   const done=await P.page.evaluate(()=>!!document.querySelector('#finalbanner')).catch(()=>false);
   ok('mock '+i+' ('+mid+') completes in '+Math.round((Date.now()-t0)/1000)+'s, errors='+P.errs.length,done&&P.errs.length===0,P.errs);

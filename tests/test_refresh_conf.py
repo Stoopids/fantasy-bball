@@ -90,5 +90,53 @@ class T(unittest.TestCase):
             _, s2 = self.run_main(d, "2027-03-20", "2027-03-20", fail_standings=True)
             self.assertFalse(s2["conf"]["258"]["confTournChamp"])
 
+    # s26c11-conf: League's Conf column reads scores.json conf[<espnId>].conf (js/leaguehome.js vTeams, cf());
+    # the same key/value is copied onto data/net.json "ranks" rows.
+    NET = {"format": 1, "label": "NET", "through": "2027-03-01", "ranks": [{"rank": 1, "id": "150", "school": "Duke"},
+           {"rank": 2, "id": "12", "school": "Arizona"}, {"rank": 3, "id": "9999", "school": "Elsewhere"}]}
+
+    def league_conf(self, scores, tid):  # mirrors js/leaguehome.js: const cf=tid=>{const c=CF[String(tid)];return c&&c.conf?String(c.conf):''}
+        c = (scores.get("conf") or {}).get(str(tid)); return str(c["conf"]) if c and c.get("conf") else ""
+
+    def write_net(self, d):
+        json.dump(self.NET, open(os.path.join(d, "net.json"), "w"))
+
+    def test_league_conf_field_every_school(self):
+        with tempfile.TemporaryDirectory() as d:
+            _, s = self.run_main(d, "2027-03-13", "2027-03-14")
+            self.assertEqual({t: self.league_conf(s, t) for t in POOL},
+                             {"150": "acc", "153": "acc", "258": "acc", "12": "big12", "2305": "big12", "66": "big12", "2378": "aeast", "2066": "aeast"})
+
+    def test_net_rows_get_conf(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.write_net(d)
+            self.run_main(d, "2027-03-13", "2027-03-14")
+            n = json.load(open(os.path.join(d, "net.json")))
+            self.assertEqual([r.get("conf") for r in n["ranks"]], ["acc", "big12", None])
+            self.assertEqual({k: v for k, v in n.items() if k != "ranks"}, {k: v for k, v in self.NET.items() if k != "ranks"})
+            self.assertEqual([{k: v for k, v in r.items() if k != "conf"} for r in n["ranks"]], self.NET["ranks"])
+
+    def test_no_net_file_not_created(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.run_main(d, "2027-03-13", "2027-03-14")
+            self.assertFalse(os.path.exists(os.path.join(d, "net.json")))
+
+    def test_merge_keeps_conf_in_both_files(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.write_net(d)
+            self.run_main(d, "2027-03-13", "2027-03-14")
+            _, s = self.run_main(d, "2027-03-20", "2027-03-20", merge=True, fail_standings=True)
+            self.assertEqual(self.league_conf(s, "12"), "big12")
+            self.assertEqual(json.load(open(os.path.join(d, "net.json")))["ranks"][1]["conf"], "big12")
+
+    def test_net_odd_shapes(self):
+        for bad in (None, {}, {"ranks": None}, {"ranks": "x"}, {"ranks": [None, 3, {"id": None}]}, []):
+            self.assertEqual(R.annotate_net(bad, {"150": {"conf": "acc"}}), 0)
+        with tempfile.TemporaryDirectory() as d:
+            open(os.path.join(d, "net.json"), "w").write("not json")
+            rc, s = self.run_main(d, "2027-03-13", "2027-03-14")
+            self.assertEqual(open(os.path.join(d, "net.json")).read(), "not json")
+            self.assertEqual(self.league_conf(s, "150"), "acc")
+
 if __name__ == "__main__":
     unittest.main()

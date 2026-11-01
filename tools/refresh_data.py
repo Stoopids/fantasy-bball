@@ -263,6 +263,22 @@ def build(games, year, season, as_of, src, extra_field=None, conf=None):
     return scores, tourney
 
 
+def annotate_net(net, conf):
+    """s26c11-conf: copy each school's conference (scores.json conf[id].conf, same key and value) onto data/net.json
+    "ranks" rows as "conf". Only adds/updates that one key; rows whose school has no known conference keep any old value.
+    Returns the number of rows changed. Never raises on odd shapes."""
+    n = 0
+    rows = net.get("ranks") if isinstance(net, dict) else None
+    for r in rows if isinstance(rows, list) else []:
+        if not isinstance(r, dict):
+            continue
+        c = ((conf or {}).get(str(r.get("id") or "")) or {}).get("conf") or ""
+        if c and r.get("conf") != c:
+            r["conf"] = c
+            n += 1
+    return n
+
+
 def self_test():
     e = {"id": "1", "date": "2027-03-19T18:40Z", "season": {"type": 3}, "status": {"type": {"name": "STATUS_FINAL"}},
          "competitions": [{"neutralSite": True, "notes": [{"headline": "NCAA Men's Basketball Championship - East Region - 1st Round"}],
@@ -336,6 +352,14 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     json.dump(scores, open(os.path.join(a.out, "scores.json"), "w"), separators=(",", ":"))
     json.dump(tourney, open(os.path.join(a.out, "tournament.json"), "w"), separators=(",", ":"))
+    p_net = os.path.join(a.out, "net.json")
+    if os.path.exists(p_net):  # s26c11-conf: League-owned file, staged by hand; only the per-row "conf" key is touched
+        try:
+            net = json.load(open(p_net))
+            if annotate_net(net, scores["conf"]):
+                json.dump(net, open(p_net, "w"), separators=(",", ":"), ensure_ascii=False)
+        except Exception as ex_:
+            log("net.json conf not updated:", ex_)
     log("conf: %d teams, %d reg champs, %d tourney champs" % (len(scores["conf"]), sum(c["confRegChamp"] for c in scores["conf"].values()), sum(c["confTournChamp"] for c in scores["conf"].values())))
     log("wrote %d games, %d teams in the tournament field; days from %s; failed days: %s" % (len(uniq), len(tourney["field"]), srcs, failed or "none"))
     if failed:

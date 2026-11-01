@@ -1,12 +1,13 @@
 /* DR2 QA for s26-mock-options: mock leagues only, against the local mock textdb (fbn.store hook, localhost only). */
-const puppeteer=require('puppeteer-core');const APP='http://localhost:18731';const SH='/tmp/s26c8-run/shots/opts/';
+const puppeteer=require('puppeteer-core');/* s26c13: APP/SHOTS from env (no hard-coded port); #m_bots removed in s26mo4 (bot personalities), selected only if present */
+const APP=process.env.APP||'http://localhost:9995';const SH=(process.env.SHOTDIR||'/tmp/s26c13-shots-opts')+'/opts/';require('fs').mkdirSync(SH,{recursive:true});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));const dump=async k=>{const r=await fetch(APP+'/__dump/'+k);return r.text()};
 const J=s=>{try{return JSON.parse(s)}catch(e){return null}};
 let B;async function page(w){const ctx=await B.createBrowserContext();const p=await ctx.newPage();
   await p.setViewport({width:w,height:w<500?844:900,isMobile:w<500,hasTouch:w<500});
   await p.evaluateOnNewDocument(()=>{localStorage.setItem('fbn.store','/api/data/')});p.errs=[];p.on('pageerror',e=>p.errs.push(e.message));return p}
 async function create(p,{seat,order,clock,bots}){await p.goto(APP+'/mock.html',{waitUntil:'networkidle2'});await p.waitForSelector('#m_seat');
-  await p.select('#m_seat',String(seat));await p.select('#m_order',order);await p.select('#m_clock',String(clock));await p.select('#m_bots',bots);
+  await p.select('#m_seat',String(seat));await p.select('#m_order',order);await p.select('#m_clock',String(clock));if(await p.$('#m_bots'))await p.select('#m_bots',bots);
   return async(shot)=>{if(shot)await p.screenshot({path:SH+shot,fullPage:true});await p.click('#startmock');await p.waitForFunction(()=>/room\.html\?l=/.test(location.href),{timeout:30000});
     return new URL(p.url()).searchParams.get('l')}}
 async function meta(id){return J(await dump('fbn1-'+id.toLowerCase()+'-meta'))}
@@ -33,4 +34,5 @@ async function anyRuns(n){const seats=[];for(let i=0;i<n;i++){const p=await page
   const snake=[5,12,21,28,37,44,53,60],straight=[5,13,21,29,37,45,53,61];
   const [a,b,c,d]=await Promise.all([fullRun('snake_best',390,{seat:5,order:'snake',clock:30,bots:'best'},snake),fullRun('straight_random',1280,{seat:5,order:'linear',clock:30,bots:'random'},straight),
     fullRun('snake_random',1280,{seat:5,order:'snake',clock:30,bots:'random'},snake),fullRun('straight_best',390,{seat:5,order:'linear',clock:30,bots:'best'},straight)]);
-  const any=await anyRuns(6);console.log(JSON.stringify({runs:[a,b,c,d].map(r=>Object.assign({},r,{clockSeen:[...new Set(r.clockSeen)].slice(0,12)})),any},null,1));await B.close()})().catch(e=>{console.error(e);process.exit(1)});
+  const any=await anyRuns(6);console.log(JSON.stringify({runs:[a,b,c,d].map(r=>Object.assign({},r,{clockSeen:[...new Set(r.clockSeen)].slice(0,12)})),any},null,1));await B.close();
+  const bad=[a,b,c,d].filter(r=>!r.complete||!r.picksOK||r.errs.length||new Set(r.tids.filter(Boolean)).size!==r.tids.filter(Boolean).length);console.log(bad.length?'FAIL '+bad.map(r=>r.tag+'_'+r.w).join(','):'ALL OK (4 runs complete, my picks at the expected slots, no dups, 0 page errors)');process.exit(bad.length?1:0)})().catch(e=>{console.error(e);process.exit(1)});

@@ -6,6 +6,7 @@ let n=0,bad=0;const fails=[];const ok=(m,c,x)=>{n++;if(c)console.log('  ok  '+m)
 const post=(k,v)=>fetch(API+encodeURIComponent(k),{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(v)});const gj=async k=>F.parseJ(await (await fetch(API+encodeURIComponent(k))).text());
 const waitFor=async(fn,ms)=>{const t=Date.now();while(Date.now()-t<(ms||15000)){try{const v=await fn();if(v)return v}catch(e){}await sleep(200)}return false};
 const tsrc=fs.readFileSync(path.join(__dirname,'../assets/teams.js'),'utf8');const TD=JSON.parse(tsrc.slice(tsrc.indexOf('{'),tsrc.lastIndexOf('}')+1));
+const byO=Object.keys(TD.meta).filter(t=>+TD.meta[t].o>0).sort((a,b)=>TD.meta[a].o-TD.meta[b].o);/* s26c14: auto-pick = queue, then KenPom (o) */
 const ranked=Object.keys(TD.meta).filter(t=>+TD.meta[t].p>0).sort((a,b)=>TD.meta[a].p-TD.meta[b].p);
 const pickNo=P=>P.page.evaluate(()=>{const m=(document.getElementById('banner')||{innerText:''}).innerText.match(/Pick #(\d+)/);return m?+m[1]:0});
 (async()=>{try{
@@ -19,7 +20,7 @@ const pickNo=P=>P.page.evaluate(()=>{const m=(document.getElementById('banner')|
  const P=await L.phone('api',{w:390,h:844});await P.go('room.html?l='+id+'#as='+viewer.id+'&k='+viewer.k);
  const e4=await waitFor(()=>gj(K.pick(1,4)).then(e=>e&&e.tid?e:null),20000);const e5=await waitFor(()=>gj(K.pick(1,5)).then(e=>e&&e.tid?e:null),8000);
  ok('auto-pick ON: the queue\'s first UNTAKEN team is picked, in queue order (skips '+taken[0]+')',!!e4&&e4.tid===qA[1]&&e4.by==='auto',e4);
- ok('auto-pick ON, empty queue: the lowest power rank left is picked',!!e5&&e5.tid===ranked.filter(t=>!taken.includes(t)&&t!==(e4&&e4.tid))[0],{e5,want:ranked.filter(t=>!taken.includes(t)&&t!==(e4&&e4.tid))[0]});
+ ok('auto-pick ON, empty queue: the best KenPom rank left is picked',!!e5&&e5.tid===byO.filter(t=>!taken.includes(t)&&t!==(e4&&e4.tid))[0],{e5,want:byO.filter(t=>!taken.includes(t)&&t!==(e4&&e4.tid))[0]});
  ok('auto-pick ON picks at once when the turn starts (s26c8b: pick 5 within 4.5 s of pick 4: 2 s delay plus the 0.6 s write check and network)',!!e4&&!!e5&&e5.ts-e4.ts<=4500,{d:e5&&e4?e5.ts-e4.ts:null});
  const e6=await waitFor(()=>gj(K.pick(1,6)).then(e=>e&&e.tid?e:null),45000);
  ok('Auto-pick OFF, the clock runs out: the league still auto-picks (top of the queue), about 30 s after the turn started',!!e6&&e6.tid===qC[0]&&e6.by==='auto'&&e5&&e6.ts-e5.ts>=25000,{e6,d:e6&&e5?e6.ts-e5.ts:null});

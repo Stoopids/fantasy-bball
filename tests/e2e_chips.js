@@ -38,7 +38,7 @@ for(const [w,h,d] of [[320,700,0],[390,844,0],[1280,900,1]]){
   const before=await P.page.evaluate(()=>document.querySelectorAll('.trow').length);
   await P.page.evaluate(()=>{const b=[...document.querySelectorAll('#tconf button')].find(x=>x.textContent.trim()==='SEC');b.click()});await sleep(600);
   const sec=await P.page.evaluate(()=>({rows:document.querySelectorAll('.trow').length,btn:document.getElementById('tconfbtn').textContent.trim(),on:document.getElementById('tconfbtn').classList.contains('on'),hidden:document.getElementById('tconf').hidden,txt:[...document.querySelectorAll('.trow .cf')].every(e=>/SEC/.test(e.textContent))}));
-  ok(pre+'picking SEC filters the list (12 teams), closes the panel and the button reads "SEC ▾"',sec.rows===12&&sec.btn==='SEC ▾'&&sec.on&&sec.hidden&&sec.txt,{before,sec});
+  ok(pre+'picking SEC filters the list (16 teams, 365 pool), closes the panel and the button reads "SEC ▾"',sec.rows===16&&sec.btn==='SEC ▾'&&sec.on&&sec.hidden&&sec.txt,{before,sec});
   await P.page.evaluate(()=>document.getElementById('tconfbtn').click());await sleep(300);await P.page.keyboard.press('Escape');await sleep(300);
   ok(pre+'Escape closes the open panel',await P.page.evaluate(()=>document.getElementById('tconf').hidden));
   await P.page.evaluate(()=>{document.getElementById('tconfbtn').click()});await sleep(200);await P.page.evaluate(()=>{[...document.querySelectorAll('#tconf button')].find(x=>/All conf/.test(x.textContent)).click()});await sleep(400);

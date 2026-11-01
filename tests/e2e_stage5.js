@@ -9,14 +9,14 @@ const body=P=>P.page.$eval('body',e=>e.innerText).catch(()=>'');
 console.log('\n[8 managers fixed + legacy counts]');
 {const post=(k,v)=>fetch(API+encodeURIComponent(k),{method:'POST',headers:{'Content-Type':'text/plain'},body:typeof v==='string'?v:JSON.stringify(v)});const gj=async k=>F.parseJ(await (await fetch(API+encodeURIComponent(k))).text());
  const lobbyOf=async o=>{const id=await seed(API,o);const I=seed.info;const K=F.Keys(id);const mt=await gj(K.meta);mt.status='lobby';delete mt.endedAt;await post(K.meta,mt);return {id,I,K}};
- for(const [cnt,maxR] of [[8,15],[6,15],[12,13],[4,15]]){
+ for(const [cnt,maxR] of [[8,15],[6,15],[12,15],[4,15]]  /* s26c13: 365-team pool, cap 15 for every count (was 13 at 12 managers with 162) */){
   const {id,I,K}=await lobbyOf(cnt===8?{}:{managers:cnt});const P=await L.phone('c'+cnt,{});await P.page.goto(`${APP}/room.html?l=${id}#cm=${I.cmSecret}`,{waitUntil:'domcontentloaded'});
   await P.page.waitForSelector('#editsettings',{timeout:20000}).catch(()=>{});await sleep(600);const lob=await body(P);
   ok((cnt===8?'new':'legacy')+' league with '+cnt+' managers: the lobby opens and says "'+cnt+' of '+cnt+' joined" (no crash)',new RegExp(cnt+' of '+cnt+' joined').test(lob)&&P.errs.length===0,{errs:P.errs,lob:lob.slice(0,120)});
   await P.page.evaluate(()=>document.getElementById('editsettings').click());await P.page.waitForSelector('#savesettings',{timeout:8000}).catch(()=>{});
   const st=await P.page.evaluate(()=>({sel:!!document.getElementById('s_mgrs'),fixed:(document.getElementById('s_mgrs_fixed')||{}).innerText,opts:[...document.querySelectorAll('#s_rounds option')].map(o=>+o.value)}));
   ok('settings sheet ('+cnt+'): no managers select, the count is fixed text "'+cnt+' (fixed)"',!st.sel&&st.fixed===cnt+' (fixed)',st);
-  ok('settings sheet ('+cnt+'): "Teams each" goes up to '+maxR+' (what '+cnt+' managers allow from 162 teams)',Math.max(...st.opts)===maxR&&Math.min(...st.opts)===1,st.opts);
+  ok('settings sheet ('+cnt+'): "Teams each" goes up to '+maxR+' (what '+cnt+' managers allow from the 365-team pool, cap 15)',Math.max(...st.opts)===maxR&&Math.min(...st.opts)===1,st.opts);
   await P.page.select('#s_rounds','5');await P.page.evaluate(()=>document.getElementById('savesettings').click());await sleep(1500);const mt=await gj(K.meta);
   ok('settings saved ('+cnt+'): rounds 5, manager count unchanged at '+cnt,mt.settings.rounds===5&&mt.settings.managers===cnt,mt.settings);
   ok('no page errors ('+cnt+')',P.errs.length===0,P.errs);await P.shot('lobby8_'+cnt);await P.close();

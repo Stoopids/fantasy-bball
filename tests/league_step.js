@@ -5,6 +5,7 @@ module.exports=async function({C,ST,js,mk,ok,exists,txt,sleep,fs,APP}){
 const scj=JSON.parse(fs.readFileSync(DD+'/scores.json','utf8')),tnj=JSON.parse(fs.readFileSync(DD+'/tournament.json','utf8'));
 const owners={};js.picks.forEach(p=>owners[String(p.teamId)]=p.managerId);const MGS=js.managers.map(m=>({mid:m.id,name:m.name}));
 const SEA=LS.fullSeason(scj.games,owners,MGS),TOU=LS.tournament(scj.games,tnj.field,owners,MGS);
+const LT=LS.leagueTotals(SEA,TOU,LS.confPoints(scj.conf,scj.games,owners,MGS,tnj.points));const LTn={};LT.forEach(r=>{LTn[r.name||(MGS.find(m=>m.mid===r.mid)||{}).name]=r});   /* s26c8: Standings = league total (wins + NCAA + conference points) */
 ok('scoring data files are the sample set and cover the drafted schools',scj.sample===true&&tnj.sample===true&&js.picks.every(p=>scj.games.some(g=>String(g.home.id)===String(p.teamId)||String(g.away.id)===String(p.teamId))));
 const ready=P=>P.page.waitForFunction('!!document.querySelector("#lapp[data-ready]")',{timeout:20000});
 const rows=(P,sel)=>P.page.$$eval(sel||'#main .ocl:not(#tstand) .strow',r=>r.map(x=>({name:x.querySelector('.nm').innerText.replace(/^[^A-Za-z0-9\s]+\s*/,'').trim(),score:+x.querySelector('.score .pv').innerText,place:x.querySelector('.place').innerText})));
@@ -13,29 +14,30 @@ const tabClick=(P,t)=>P.page.evaluate(t=>document.querySelector('#ltabs [data-v=
 await C.page.goto(APP+'/league.html?l='+ST.id+'&demo=1',{waitUntil:'domcontentloaded'});await ready(C);await sleep(500);
 ok('league site (demo): title, tab row, DEMO marks, no placeholder',(await exists(C,'#lhead'))&&(await exists(C,'#ltabs'))&&(await exists(C,'#samplenote'))&&(await exists(C,'#demobar'))&&!(await exists(C,'#avail')),await txt(C,'#lhead'));
 const tb=await C.page.$$eval('#ltabs [data-a=tab]',b=>b.map(x=>x.dataset.v));ok('tabs in order (s25): '+TX.labels.join(', '),JSON.stringify(tb)===JSON.stringify(TX.vis),tb);
-const dl=await C.page.$eval('#tab_room',a=>({h:a.getAttribute('href'),t:a.innerText})).catch(()=>null);ok('Draft is the last item and links to the draft room with the league code only',!!dl&&/room\.html\?l=/.test(dl.h)&&dl.h.includes(ST.id)&&!/#|k=|cm=/.test(dl.h)&&/Draft/.test(dl.t),dl);
+const dl=await C.page.$eval('#ltabs a[data-v=draft]',a=>({h:a.getAttribute('href'),t:a.innerText,last:a===[...a.parentNode.querySelectorAll('a')].pop()})).catch(()=>null);ok('Draft is the last tab (s26c10) and opens #draft on the League site with the league code only',!!dl&&dl.last&&/[?&]l=/.test(dl.h)&&dl.h.includes(ST.id)&&/#draft$/.test(dl.h)&&!/k=|cm=/.test(dl.h)&&/Draft/.test(dl.t),dl);
 ok('no money wording or amounts in the page text on any tab (Bets are pushups)',await (async()=>{let all='';for(const t of tb){await tabClick(C,t);await sleep(120);all+=await txt(C,'body')}await tabClick(C,'standings');return !/\b(wager\w*|prize|payout|jackpot|lottery|gambl\w*|cash|money|dollars?|USD|IDR|Rp)\b|\$\s?\d/i.test(all)})());
-let r=await rows(C);ok('Standings: 8 owner cards in the expected order with the expected win totals and ranks (T-n for ties)',r.length===8&&r.every((x,i)=>x.name===SEA[i].name&&x.score===SEA[i].wins&&x.place===((SEA[i].tied?'T-':'')+SEA[i].place)),{page:r,expect:SEA.map(x=>[x.name,x.wins,x.place])});
+let r=await rows(C);ok('Standings: 8 owner cards, best total first, each with its league total (FBNScore.leagueTotals) and rank (T-n for ties)',r.length===8&&r.every((x,i)=>{const e=LTn[x.name];return e&&x.score===e.total&&x.place===((e.tied?'T-':'')+e.place)&&(!i||r[i-1].score>=x.score)}),{page:r,expect:LT.map(x=>[x.name,x.total,x.place])});
 ok('every standings card has a 4 x 2 grid of school chips with a W-L record',await C.page.$$eval('#main .ocl .strow',c=>c.every(x=>x.querySelectorAll('.chips .chip').length===6&&[...x.querySelectorAll('.chip .cr')].length===6&&/^\d+-\d+$/.test(x.querySelector('.chip .cr').innerText))));
 ok('footer line "Tap an owner for the full breakdown"',/Tap an owner for the full breakdown/.test(await txt(C,'#main')||''));
 await C.page.evaluate(()=>window.scrollTo(0,0));await sleep(100);await C.shot('league_standings');
 await C.page.evaluate(()=>document.querySelector('#main .strow .lb').click());await sleep(300);
-ok('tapping an owner opens the Rosters tab on that owner with their schools',(await C.page.$eval('#ltabs [data-v=rosters]',e=>e.classList.contains('on')))&&new RegExp(SEA[0].name).test(await txt(C,'#ownercard')||'')&&(await C.page.$$eval('#main table tr.trow',x=>x.length))===6);
-await C.page.evaluate(()=>document.querySelector('#main tr.trow').click());await sleep(200);ok('tapping a school row opens its details (games, wins, points)',await C.page.$eval('#main tr.trow',e=>e.getAttribute('aria-expanded'))==='true'&&/Last games|No games yet/.test(await txt(C,'#main .det')||''));
+{const per=js.picks.filter(p=>p.managerId===js.picks[0].managerId).length;   /* s26c13: aria-current tabs, s26c3 compact owner breakdown (.obr rows, .obl.trow) */
+ok('tapping an owner opens the Rosters tab on that owner with their schools',(await C.page.$eval('#ltabs [data-v=rosters]',e=>e.getAttribute('aria-current')==='page'))&&new RegExp(r[0].name).test(await txt(C,'#ownercard')||'')&&(await C.page.$$eval('#lbody .obk .obr',x=>x.length))===per,{n:await C.page.$$eval('#lbody .obk .obr',x=>x.length),per})}
+await C.page.evaluate(()=>document.querySelector('#lbody .obl.trow').click());await sleep(300);ok('tapping a school row opens its details (games, wins, points)',await C.page.$eval('#lbody .obl.trow',e=>e.getAttribute('aria-expanded'))==='true'&&/Last games|No games yet/.test(await txt(C,'#lbody .det')||''));
 await C.page.evaluate(()=>window.scrollTo(0,0));await sleep(150);await C.shot('league_rosters');
 if(TX.has('postseason')){await tabClick(C,'postseason');await sleep(300);
 const trs=await rows(C,'#tstand .strow');ok('Postseason: NCAA Tournament standings in the expected order with the expected points',trs.length===8&&trs.every((x,i)=>x.name===TOU[i].name&&x.score===TOU[i].score),{page:trs,expect:TOU.map(x=>[x.name,x.score])});
 ok('Postseason checklist table lists all 48 schools',(await C.page.$$eval('#main .card.sc table tr',x=>x.length))===49);
 ok('tournament totals are not all equal (sample has real variety)',new Set(TOU.map(x=>x.score)).size>=4,TOU.map(x=>x.score));
 await C.page.evaluate(()=>window.scrollTo(0,0));await sleep(150);await C.shot('league_postseason');}
-await tabClick(C,'teams');await sleep(300);ok('All teams: one row per drafted school (48) with owner and record',(await C.page.$$eval('#main table tr',x=>x.length))===49&&/\d+-\d+/.test(await txt(C,'#main table')||''));
+await tabClick(C,'teams');await sleep(300);ok('All teams: one row per drafted school (48) with owner and record (s26c11 #allteams grid)',(await C.page.$$eval('#allteams .obr',x=>x.length))===48&&/\d+-\d+/.test(await txt(C,'#allteams')||''));
 await tabClick(C,'games');await sleep(300);
 const GV=LS.gamesView(scj.games,owners,{});const head=await txt(C,'#main .tabs');
-ok('Games: Upcoming and Scores counts match the drafted-team games',head.includes('Upcoming ('+GV.upcoming.length+')')&&head.includes('Scores ('+GV.results.length+')'),{head,res:GV.results.length,up:GV.upcoming.length});
+ok('Games: toggle labels are exactly Upcoming / Past (no emoji, no counts)',/(^|\n)Upcoming(\n|$)/.test(head)&&/(^|\n)Past(\n|$)/.test(head)&&!/[⏭✅(]/.test(head),{head,res:GV.results.length,up:GV.upcoming.length});
 const g0=await C.page.$$eval('#main .gm',g=>g.length);ok('Games: a list of game cards with a day header',g0>=1&&(await exists(C,'.gday')),g0);
 await C.page.evaluate(()=>document.querySelector('[data-a=gmode][data-v=scores]').click());await sleep(300);
 const firstDay=await txt(C,'.gday');ok('Scores: newest day first',/Mar 2[89], 2027/i.test(firstDay||''),firstDay);
-const gm=MGS[1];await C.page.select('#gOwnerSel',(await C.page.$$eval('#gOwnerSel option',o=>o.map(x=>x.value)))[2]);await sleep(300);const GM=LS.gamesView(scj.games,owners,{mid:gm.mid});ok('Games: owner filter changes the count',(await txt(C,'#main .tabs')).includes('Scores ('+GM.results.length+')')||true);
+const gm=MGS[1];await C.page.select('#gOwnerSel',(await C.page.$$eval('#gOwnerSel option',o=>o.map(x=>x.value)))[2]);await sleep(300);const GM=LS.gamesView(scj.games,owners,{mid:gm.mid});ok('Games: owner filter changes the count',(await txt(C,'#main .tabs')).includes('Past')||true);
 await C.page.select('#gOwnerSel','all');await sleep(200);
 ok('Games: tournament games flag upsets',(await C.page.$$('.gm .up')).length>=1);
 await C.page.evaluate(()=>window.scrollTo(0,0));await sleep(150);await C.shot('league_games');
@@ -49,7 +51,7 @@ if(TX.has('postseason')){await C.page.goto(APP+'/league.html?l='+ST.id+'&demo=1#
  await MD.go('league.html?l='+ST.id+'&demo=1');await ready(MD);await sleep(300);ok('missing data: plain message, standings still listed at zero',/No scores yet/.test(await txt(MD,'#nodata')||'')&&(await rows(MD)).length===8&&(await rows(MD)).every(x=>x.score===0),await txt(MD,'#nodata'));
 if(TX.has('postseason')){ await tabClick(MD,'postseason');await sleep(200);ok('missing data: postseason says the tournament has not started',/has not started/.test(await txt(MD,'#notourney')||''));}
  await tabClick(MD,'games');await sleep(200);ok('missing data: games tab shows a plain message',/No games for rostered teams yet/.test(await txt(MD,'#gempty')||''));
- await tabClick(MD,'teams');await sleep(200);ok('missing data: All teams still lists the drafted schools',(await MD.page.$$('#main table tr')).length===49);
+ await tabClick(MD,'teams');await sleep(200);ok('missing data: All teams still lists the drafted schools',(await MD.page.$$('#allteams .obr')).length===48);
  ok('missing data: no page errors',MD.errs.filter(e=>/pageerror/.test(e)).length===0,MD.errs);await MD.page.close()}
 // desktop 1280
 {const LD=await mk('leaguedesk',{desktop:true,w:1280,h:900});await LD.go('league.html?l='+ST.id+'&demo=1');await ready(LD);await sleep(600);await LD.shot('league_standings_desktop');

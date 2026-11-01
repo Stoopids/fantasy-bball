@@ -65,8 +65,8 @@ const ready=async P=>{try{await P.page.waitForFunction('!!document.querySelector
   {const U0=await L.phone('pu',{});await U0.go('recap.html?l='+idM);await U0.page.waitForSelector('#recaphead');await sleep(1800);
    const o=await U0.page.evaluate(()=>({host:!!document.getElementById('powerrecap'),cards:document.querySelectorAll('#powerrecap #powerrank .card.pr').length,any:!!document.getElementById('powerrank')}));
    ok('the UNPATCHED real recap page (Draft Room wiring) uses the module for a spectator of a matching league: 8 cards inside #powerrecap, no page errors',o.host?(o.cards===8&&U0.errs.length===0):(!o.any&&U0.errs.length===0),{o,errs:U0.errs});await U0.page.close()}
-  /* League site: no Power tab, #power falls back to Standings */
+  /* League site: no Power tab, #power opens Recap (s26c10) */
   const Lp=await L.phone('pl2',{desktop:true,w:1280,h:900});await Lp.go('league.html?l='+idM+'#power');await Lp.page.waitForSelector('#lapp[data-ready]');await sleep(500);
-  const lt=await Lp.page.evaluate(()=>({tabs:[...document.querySelectorAll('#ltabs [data-a=tab]')].map(b=>b.dataset.v),on:(document.querySelector('#ltabs .on')||{}).dataset&&document.querySelector('#ltabs .on').dataset.v,pr:!!document.querySelector('.card.pr')}));
-  ok('League site: no Power rankings tab; #power falls back to Standings',!lt.tabs.includes('power')&&lt.on==='standings'&&!lt.pr,lt);await Lp.page.close();
+  const lt=await Lp.page.evaluate(()=>({tabs:[...document.querySelectorAll('#ltabs a[data-v]')].map(b=>b.dataset.v),on:(document.querySelector('#ltabs [aria-current=page]')||{dataset:{}}).dataset.v,pr:!!document.querySelector('#recapgrades')}));
+  ok('League site: no Power rankings tab; #power opens the Recap tab (s26c10) with the grade cards',!lt.tabs.includes('power')&&lt.tabs.includes('recap')&&lt.on==='recap'&&lt.pr,lt);await Lp.page.close();
 }catch(e){bad++;fails.push('exception: '+e.message);console.log(e.stack)}finally{await L.close();console.log('\n'+(n-bad)+' / '+n+' checks passed'+(bad?' — FAILED: '+fails.join('; '):''));process.exit(bad?1:0)}})();

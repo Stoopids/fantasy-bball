@@ -65,7 +65,7 @@ for(const [w,h,desk] of [[390,844,false],[1280,900,true]]){const pre=w+'px: ';
   if(w===390)await shot(P,'s24_390_mock_in_progress');
   /* make my own picks fast (the clock would auto-pick after 30 s): Pick a team -> first team -> Draft */
   const t0=Date.now();while(Date.now()-t0<150000){if(await has(P,'#finalbanner'))break;
-    if(await has(P,'#pickbtn')){await P.page.click('#pickbtn').catch(()=>{});await sleep(600);await P.page.evaluate(()=>{const r=document.querySelector('#pickov .trow.go');if(r)r.click()}).catch(()=>{});await sleep(500);
+    if(await has(P,'#pickbtn')){await P.page.click('#pickbtn').catch(()=>{});await sleep(600);await P.page.evaluate(()=>{const r=document.querySelector('#pickov .trow.go .dbtn');if(r)r.click()}).catch(()=>{});await sleep(500);
       await P.page.evaluate(()=>{const c=document.querySelector('[data-a=confirm]');if(c)c.click()}).catch(()=>{})}
     await sleep(700)}
   ok(pre+'solo: the mock finishes (16 picks)',await has(P,'#finalbanner'),Math.round((Date.now()-t0)/1000)+' s');
@@ -105,7 +105,7 @@ for(const [w,h,desk] of [[390,844,false],[1280,900,true]]){const pre=w+'px: ';
 /* ---------- with others: link + fill empty seats with bots ---------- */
 {const A=await open('ga');await A.go('mock.html');await A.page.waitForSelector('#mode_group');
   ok('home path: no league needed, standard settings (8 teams)',/Standard settings/.test(await txt(A,'#mocksrc'))&&/8 teams/.test(await txt(A,'#mocksrc')));
-  await A.page.click('#mode_group');await A.page.type('#m_name','Zed');await A.page.click('#startmock');await A.page.waitForFunction(()=>/room\.html\?l=/.test(location.href),{timeout:20000});
+  await A.page.click('#mode_group');if(await A.page.$('#mockcust'))await A.page.click('#mockcust');await A.page.type('#m_name','Zed');await A.page.click('#startmock');await A.page.waitForFunction(()=>/room\.html\?l=/.test(location.href),{timeout:20000});
   const gid=new URL(A.page.url()).searchParams.get('l');const gm=F.parseJ(await raw(F.Keys(gid).meta));ok('with others: mock flag, not solo, no parent, lobby',gm.mock===true&&gm.solo===false&&gm.parent===null&&gm.status==='lobby');
   await A.page.waitForSelector('#fillbots',{timeout:15000}).catch(()=>{});ok('with others: lobby has Fill empty seats with bots + invite',(await has(A,'#fillbots'))&&(await has(A,'#invcopy')));
   ok('with others: no "Practice while you wait" inside a mock',!(await has(A,'#invmock')));

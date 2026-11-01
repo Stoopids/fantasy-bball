@@ -4,7 +4,7 @@
 const L=require('./lib.js');const F=require('../js/core.js');const {seed}=require('./seed_league.js');const {sleep}=L;const API=process.env.API||'http://localhost:9996/api/data/';
 let n=0,bad=0;const fails=[];const ok=(name,c,x)=>{n++;if(c)console.log('  ok  '+name);else{bad++;fails.push(name);console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,400):''))}};
 const waitFor=async(fn,ms)=>{const t=Date.now();while(Date.now()-t<(ms||15000)){try{const v=await fn();if(v)return v}catch(e){}await sleep(250)}return false};
-const TABS=['board','teams','my','chat','more'],RT=['top','grade','grades','order','howorder','rosters','outlook','conferences','times','awards','next','about','picks','details'];
+const TABS=['board','teams','my','chat','rules','more'],RT=['top','grade','grades','order','howorder','rosters','outlook','conferences','times','awards','next','about','picks','details'];
 const open=async(name,w)=>{const P=await L.phone(name,w===1280?{desktop:true,w:1280,h:900}:{});await P.page.setBypassServiceWorker(true).catch(()=>{});return P};
 const loc=P=>P.page.evaluate(()=>({hash:location.hash,search:location.search,tab:document.body.dataset.tab||''}));
 const roomReady=P=>waitFor(()=>P.page.evaluate(()=>!!document.querySelector('#tabs [data-t]')&&document.getElementById('view').innerHTML.length>50),20000);
@@ -17,7 +17,7 @@ async function roomRun(P,lid,pre,mock){
     const a=await loc(P);allHashes.push(a.hash);ok(pre+'tap '+t+': hash is exactly #tab='+t+', query kept',a.hash==='#tab='+t&&/l=/.test(a.search)&&/stay=1/.test(a.search),a);
     await P.page.reload({waitUntil:'domcontentloaded'});await roomReady(P);await sleep(500);const b=await loc(P);allHashes.push(b.hash);
     ok(pre+'refresh on '+t+': same tab, same hash',b.tab===t&&b.hash==='#tab='+t,b)}
-  await P.page.goBack();await sleep(700);let c=await loc(P);ok(pre+'Back: previous tab (chat)',c.tab==='chat'&&c.hash==='#tab=chat',c);
+  await P.page.goBack();await sleep(700);let c=await loc(P);ok(pre+'Back: previous tab (rules)',c.tab==='rules'&&c.hash==='#tab=rules',c);
   await P.page.goForward();await sleep(700);c=await loc(P);ok(pre+'Forward: next tab (more)',c.tab==='more'&&c.hash==='#tab=more',c);
   await P.go('room.html?l='+lid+'&stay=1#tab=zzz');await roomReady(P);await sleep(500);c=await loc(P);ok(pre+'unknown #tab=zzz falls back to Board and the hash is corrected',c.tab==='board'&&c.hash==='#tab=board',c);
   await P.go('room.html?l='+lid+'&stay=1#k=abc');await roomReady(P);await sleep(500);c=await loc(P);ok(pre+'a hash that is not a tab is replaced by #tab=board',c.hash==='#tab=board'&&c.tab==='board',c);
@@ -47,7 +47,7 @@ for(const w of [390,1280]){const pre=w+'px room: ';
 for(const w of [390,1280]){const P=await open('lk'+w,w);await P.page.evaluateOnNewDocument((o)=>{localStorage.setItem('fbn.me.'+o.id,JSON.stringify({mid:o.m.id,k:o.m.k}))},{id,m:me});
   await P.go('room.html?l='+id+'&stay=1');await roomReady(P);await sleep(800);
   const els=await P.page.evaluate(()=>[...document.querySelectorAll('#tabs [data-t]')].map(a=>{const r=a.getBoundingClientRect();return{tag:a.tagName,href:a.getAttribute('href'),role:a.getAttribute('role'),sel:a.getAttribute('aria-selected'),t:a.dataset.t,h:Math.round(r.height),w:Math.round(r.width)}}));
-  ok(w+'px room: every tab is <a role="tab" href="#tab=<name>"> with aria-selected and a 44 px target',els.length===5&&els.every(e=>e.tag==='A'&&e.href==='#tab='+e.t&&e.role==='tab'&&(e.sel==='true'||e.sel==='false')&&e.h>=44&&e.w>=44),els);
+  ok(w+'px room: every tab is <a role="tab" href="#tab=<name>"> with aria-selected and a 44 px target',els.length===6&&els.every(e=>e.tag==='A'&&e.href==='#tab='+e.t&&e.role==='tab'&&(e.sel==='true'||e.sel==='false')&&e.h>=44&&e.w>=44),els);
   for(const t of TABS){await P.page.evaluate(()=>{window.__same=1});await P.page.click('#tabs [data-t="'+t+'"]');await sleep(400);
     const r=await P.page.evaluate(t=>({same:window.__same===1,tab:document.body.dataset.tab,hash:location.hash,sel:document.querySelector('#tabs [data-t="'+t+'"]').getAttribute('aria-selected')}),t);allHashes.push(r.hash);
     ok(w+'px room: plain click on '+t+' switches in place (no reload), aria-selected true',r.same&&r.tab===t&&r.hash==='#tab='+t&&r.sel==='true',r);
