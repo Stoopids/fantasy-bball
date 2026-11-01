@@ -1,6 +1,6 @@
 aab153233971799b3f33f8771338cdb2  CHANGE-NOTES-s24.md
 fdb538b9a8247a3f56406fb69fa80031  CHANGE-NOTES-s25.md
-26c5228c53fa078af62bfd74657cbbce  CHANGED-FILES.md
+fa0344d22711d426e1a8612370c5e8d7  CHANGED-FILES.md
 fc4c2520be569d292be962f8ba4efdeb  LICENSE-third-party.txt
 262bee0799369fbf2298360c827e790f  README.md
 dc050cbfbdc4a7acac091c14b90bb9d0  UNCLEAR.md
@@ -29,7 +29,7 @@ c0a54150fbc6f123b758c2a7fccef478  import/README.md
 cb2f334310b363a0e1c6d957ba52bc4e  import/stoopids-draft-results.json
 2780e2b41986c2b7bab9e561e020b0fc  index.html
 c252cbc85e4188c51b4a09b81c4061b7  join.html
-bdd69382fb06819e7a0c2fd39c63caae  js/core.js
+dca9873aae77266fe95f8a1918cad4a1  js/core.js
 919176badbe78c5adc6fb7ce260cf723  js/help.js
 d5a4b4dd98032b2bdbd076984e172487  js/index.js
 c722cf40f5c9176781bba2dcdd1d0686  js/join.js
@@ -45,7 +45,7 @@ f41ca47bcf06390f70dd76b03c8df980  js/power-render.js
 ade6fadbb2f4be5a575390360ff3af5b  js/qr.min.js
 6e54a3d4ca444814432b7c39d6d11517  js/recap.js
 757c3c165a79010c4b592f2eeffcb64c  js/redraft.js
-2d95ea5c280da7a18d45b119e20aaf5c  js/room.js
+571425ffc9e122426ef7bb06305a0790  js/room.js
 a132aa8407a9547d9a0b393c2f975d90  js/rules.js
 dea3951c79015c462034d16d386d2548  js/scoring.js
 325fd1c31be3daa075c692517c505d03  js/setup.js
@@ -53,7 +53,7 @@ dea3951c79015c462034d16d386d2548  js/scoring.js
 a1c776ffcad4a1e1444e2a41913572c1  js/store.js
 b31b8d130f47a378f2358995614b9470  js/time.js
 5aa18165b81a3f7791885f84dd19a04d  js/ui.js
-906d061a5374db9ac6b6e9297ebe7bb3  js/version.js
+d6f164d5b9136473bbcc756bb8ba578a  js/version.js
 d3b6f53ee707b59cd40376a4074ae674  league.html
 dde6bc94069703616dc2b911b7422ae9  manifest.webmanifest
 6332a6756cea5487f30b2cc3471b753a  mock.html
@@ -61,7 +61,7 @@ dde6bc94069703616dc2b911b7422ae9  manifest.webmanifest
 67894e74e4d6680fd2750e8f15cfaa0c  redraft.html
 134e6e7647318ff230f715f573896a66  room.html
 ba0bad6039db68759ec53e44ca6569dd  setup.html
-0cfb732202e2d92e9bf8c6ad14bcbd84  sw.js
+fb40644887afdf2250b23ce4b7f85d7f  sw.js
 25852915b747ecd22afa1599b4d1357c  time.html
 806c1ebcb679950c59121f0d77b3528e  tools/gen_stoopids_import.js
 1760e479a35e108232d3af8f0bb4ce33  tools/make_bundle.sh

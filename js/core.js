@@ -296,7 +296,10 @@ F.checkMgrSecret=async function(claim,k){if(!claim||!k)return false;if(!claim.sh
 F.extractSecret=function(text,key){text=String(text||'').trim();let m;if(key==='cm'){m=/[#&?]cm=([0-9a-f]{32})\b/i.exec(text)}else if(key==='k'){m=/[#&?]k=([0-9a-f]{32})\b/i.exec(text)}if(m)return m[1].toLowerCase();return /^[0-9a-f]{32}$/i.test(text)?text.toLowerCase():''};
 F.extractMgr=function(text){text=String(text||'');const a=/[#&?]as=([0-9a-f]{8,32})\b/i.exec(text);const k=F.extractSecret(text,'k');return a&&k?{mid:a[1].toLowerCase(),k}:null};
 /* ============================ picks: entries, replay, derived state ============================ */
-F.makeEntry=function(n,owner,tid,o){o=o||{};const by=o.by||'owner';return{id:o.id||((by==='auto')?('a'+o.epoch+'-'+n+'-'+tid+(o.prev?'-'+String(o.prev).replace(/[^A-Za-z0-9]/g,'').slice(-6):'')):(Math.random().toString(36).slice(2,10)+n)),n,owner,tid:String(tid),ts:o.now,by,w:o.writer||'?',e:o.epoch,prev:o.prev==null?undefined:String(o.prev)}};
+F.makeEntry=function(n,owner,tid,o){o=o||{};const by=o.by||'owner';let id=o.id||((by==='auto')?('a'+o.epoch+'-'+n+'-'+tid+(o.prev?'-'+String(o.prev).replace(/[^A-Za-z0-9]/g,'').slice(-6):'')):(Math.random().toString(36).slice(2,10)+n));
+  /* s26c8a: a void applies only to the original pick instance. A re-pick after an Undo that would reuse a voided id gets a deterministic 'u<k>' suffix (still the same on every phone). */
+  if(!o.id&&Array.isArray(o.voided)){const b=id;for(let k=1;o.voided.indexOf(id)>=0&&k<1000;k++)id=b+'u'+k}
+  return{id,n,owner,tid:String(tid),ts:o.now,by,w:o.writer||'?',e:o.epoch,prev:o.prev==null?undefined:String(o.prev)}};
 F.parseEntry=function(txt){const d=F.parseJ(txt);if(d&&typeof d==='object'&&typeof d.id==='string'&&+d.n>0&&typeof d.owner==='string'&&d.tid!=null){d.tid=String(d.tid);d.n=+d.n;return d}return null};
 F.entryProblem=function(meta,e,n,taken,pool,prevId){if(!e)return'empty';if(meta.voided.indexOf(e.id)>=0)return'voided';if(e.n!==n)return'wrong-slot';if(e.e!=null&&+e.e!==meta.epoch)return'old-epoch';
   const sl=F.slotAt(meta.order,n,meta.settings.type,meta.settings.rounds);if(!sl)return'beyond';if(e.owner!==sl.owner)return'wrong-owner';if(prevId!=null&&e.prev!=null&&e.prev!==prevId)return'stale-chain';if(pool&&!pool.has(e.tid))return'not-in-pool';if(taken[e.tid])return'duplicate-team';return null};

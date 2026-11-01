@@ -141,7 +141,7 @@ async function mutatePref0(mid,fn,verify){for(let attempt=0;attempt<2;attempt++)
     const ns=fn(cur);ns.v=(cur.v||0)+1;try{await postJ(url,ns)}catch(e){return{ok:false,msg:'Save failed — try again.'}}
     PREF[mid]=ns;PREFraw[mid]=JSON.stringify(ns);rebuild(true);await sleep(500);try{const d=F.parseJ(await readRaw(url));if(d&&verify(d))return{ok:true}}catch(e){return{ok:true}}}
   return{ok:false,msg:'Could not save that setting — try again.'}}
-async function submitPick(n,owner,tid,by,o){o=o||{};const prevId=n>1&&S.picks.length===n-1?S.picks[n-2].id:(n>1?null:'');const entry=F.makeEntry(n,owner,tid,{by,now:nowSrv(),writer:WRITER,epoch:M.epoch,prev:prevId});
+async function submitPick(n,owner,tid,by,o){o=o||{};const prevId=n>1&&S.picks.length===n-1?S.picks[n-2].id:(n>1?null:'');const entry=F.makeEntry(n,owner,tid,{by,now:nowSrv(),writer:WRITER,epoch:M.epoch,prev:prevId,voided:M.voided});
   const io={read:u=>Store.get(u,undefined,{write:1}).then(r=>{storeOk();return r}),write:postJ,sleep,adopt:(k,e)=>{ENT[k]=e||null;ENTraw[k]=e?JSON.stringify(e):'';rebuild()},later:fn=>{fn()},alert:k=>toast('Pick #'+k+' was replaced by a simultaneous write — check the board.',6000)};
   return F.submitSlot(io,{meta:M,url:K.pick(M.epoch,n),n,entry,taken:F.takenMap({picks:S.picks.filter(p=>p.n<n),kept:S.kept}),pool:POOLSET,prevId:prevId==null?undefined:prevId,fast:o.fast})}
 /* s23 (BUG-2): the chat is one key (read-modify-write), so two people sending at the same moment can overwrite each other. Every message this device sent is remembered for 3 minutes; if a later read of the chat does not have it, it is shown again at once and written back (merged), until it sticks. */
@@ -206,7 +206,8 @@ function autoTick(){if(!S||!loaded||autoBusy||busy||!S.logReady)return;{const st
   const s=F.onClock(S);if(!s){autoPlan={n:0,at:0};return}
   const reason=F.autoReason(S,nowSrv(),CFG.graceMs);if(!reason){autoPlan={n:0,at:0};return}
   /* s23: right after an Undo the slot is the manager's again: an away / auto-pick-on manager is not re-picked for at once (only when the pick clock runs out) */
-  {const ue=ENT[s.n];if(reason!=='expired'&&ue&&M.voided.indexOf(ue.id)>=0){autoPlan={n:0,at:0};return}}
+  /* s26c8a: autoReason reports 'auto'/'away' before 'expired', so check the clock here too (else the hold never ends: 0:00 AUTO-PICKING forever); bots are not held */
+  {const ue=ENT[s.n];const ran=S.autoPick&&S.clockSecs&&S.deadline&&nowSrv()>S.deadline+CFG.graceMs;if(reason!=='expired'&&!ran&&!isBot(s.owner)&&ue&&M.voided.indexOf(ue.id)>=0){autoPlan={n:0,at:0};return}}
   /* s25-full (Paul via NCAA): an auto-pick-on or away manager is picked for at once when the turn starts (delay 0); bots keep 1-2 s; a run-out clock is 0 as before */
   if(autoPlan.n!==s.n){autoPlan={n:s.n,at:Date.now()+(reason!=='expired'&&isBot(s.owner)?1000+Math.random()*1000:0)}}if(Date.now()<autoPlan.at)return;
   autoBusy=true;autoPlan.at=Date.now()+5000;const n=s.n;
