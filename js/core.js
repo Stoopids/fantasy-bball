@@ -119,9 +119,9 @@ F.avatarSpec=function(m){m=m||{};const nm=clean(m.name||m.team||'?');const c=AV_
 F.uniqueName=function(name,taken){name=clean(name);const set=new Set((taken||[]).map(x=>clean(x).toLowerCase()));if(!set.has(name.toLowerCase()))return name;
   for(let i=2;i<100;i++){const c=name.slice(0,F.LIMITS.personMax-4)+' ('+i+')';if(!set.has(c.toLowerCase()))return c}return name+' '+F.hexId(3)};
 F.parseJ=function(txt){if(!txt||!String(txt).trim())return null;try{let d=JSON.parse(txt);if(typeof d==='string')d=JSON.parse(d);return d}catch(e){return null}};
-F.makeProfile=function(o){return{mid:o.mid,name:clean(o.name).slice(0,F.LIMITS.personMax),team:clean(o.team).slice(0,F.LIMITS.personMax),emoji:o.emoji||'',photo:o.photo&&F.photoOk(o.photo)?o.photo:'',pv:(o.pv||0)+1,ts:o.ts||Date.now()}};
+F.makeProfile=function(o){return{mid:o.mid,name:clean(o.name).slice(0,F.LIMITS.personMax),team:clean(o.team).slice(0,F.LIMITS.personMax),emoji:o.emoji||'',photo:o.photo&&F.photoOk(o.photo)?o.photo:'',pv:(o.pv||0)+1,ts:o.ts||Date.now(),tt:+o.tt||0}};/* s28: tt = when the manager last saved the team name in My settings (0 = never) */
 F.parseProfile=function(txt){const d=F.parseJ(txt);if(!d||typeof d!=='object'||typeof d.mid!=='string')return null;
-  return{mid:d.mid,name:clean(d.name).slice(0,F.LIMITS.personMax),team:clean(d.team).slice(0,F.LIMITS.personMax),emoji:typeof d.emoji==='string'?d.emoji.slice(0,8):'',photo:d.photo&&F.photoOk(d.photo)?d.photo:'',pv:+d.pv||0,ts:+d.ts||0}};
+  return{mid:d.mid,name:clean(d.name).slice(0,F.LIMITS.personMax),team:clean(d.team).slice(0,F.LIMITS.personMax),emoji:typeof d.emoji==='string'?d.emoji.slice(0,8):'',photo:d.photo&&F.photoOk(d.photo)?d.photo:'',pv:+d.pv||0,ts:+d.ts||0,tt:+d.tt||0}};
 F.makeClaim=function(o){return{mid:o.mid,i:o.i,gen:o.gen||0,name:clean(o.name).slice(0,F.LIMITS.personMax),team:clean(o.team).slice(0,F.LIMITS.personMax),sh:o.sh||'',ts:o.ts||Date.now(),w:o.w||''}};
 F.parseClaim=function(txt){const d=F.parseJ(txt);if(!d||typeof d!=='object'||typeof d.mid!=='string'||!/^[0-9a-f]{8,32}$/.test(d.mid)||!(+d.i>0))return null;
   return{mid:d.mid,i:+d.i,gen:+d.gen||0,name:clean(d.name),team:clean(d.team),sh:typeof d.sh==='string'?d.sh:'',ts:+d.ts||0,w:d.w||''}};
@@ -130,8 +130,13 @@ F.joinedList=function(meta,claims){const N=meta.settings.managers;const seen=new
   for(let i=1;i<=N;i++){const c=claims[i];if(!c||c.i!==i||c.gen!==(meta.slotGen[i]||0))continue;if(seen.has(c.mid))continue;seen.add(c.mid);out.push(c)}return out};
 F.freeSlots=function(meta,claims){const N=meta.settings.managers;const used=new Set(F.joinedList(meta,claims).map(c=>c.i));const o=[];for(let i=1;i<=N;i++)if(!used.has(i))o.push(i);return o};
 /* the manager objects the UI uses: claim + profile + commissioner overrides */
+/* s28 latest-wins team name: a commissioner rename (ov.team, stamped ov.teamTs) shows unless the manager saved the team in My settings later (p.tt).
+   An older rename with no teamTs counts as 0, so it gives way to a later My settings save but still beats every profile without tt (as before). */
+F.teamPick=function(ov,p,c){ov=ov||{};p=p||{};c=c||{};if(ov.team&&!(p.tt&&p.team&&p.tt>(+ov.teamTs||0)))return ov.team;return p.team||c.team||'Team'};
+/* s28: duplicate team names, trimmed and case-insensitive. others = the other managers' team names */
+F.teamTaken=function(team,others){const t=clean(team).toLowerCase();return !!t&&(others||[]).some(x=>clean(x).toLowerCase()===t)};
 F.managersView=function(meta,claims,profiles){return F.joinedList(meta,claims).map(c=>{const p=profiles[c.mid]||{};const ov=meta.over[c.mid]||{};
-  return{mid:c.mid,i:c.i,name:ov.name||p.name||c.name||'Manager',team:ov.team||p.team||c.team||'Team',emoji:p.emoji||'',photo:p.photo||'',away:!!ov.away,left:!!ov.left,cm:meta.cm===c.mid}})};
+  return{mid:c.mid,i:c.i,name:ov.name||p.name||c.name||'Manager',team:F.teamPick(ov,p,c),emoji:p.emoji||'',photo:p.photo||'',away:!!ov.away,left:!!ov.left,cm:meta.cm===c.mid}})};
 /* generic first-write-wins claim of ONE key; io:{read,write,sleep}. valid(existing)->true when the slot is really held by someone else */
 F.claimKey=async function(io,o){const NOCONN="Can't reach the server. Check your connection and try again.";
   for(let attempt=0;attempt<3;attempt++){let ex;try{ex=o.parse(await io.read(o.url))}catch(e){return{ok:false,msg:NOCONN}}
@@ -218,7 +223,7 @@ F.mRandomize=function(m,joined,rng){if(m.status!=='lobby')return{error:'Order is
 F.mAway=function(m,mid,away){const n=clone(m);n.over[mid]=Object.assign({},n.over[mid],{away:!!away});return{state:n}};
 F.mRename=function(m,mid,patch,takenNames){const n=clone(m);const o=Object.assign({},n.over[mid]);
   if(patch.name!=null){const nm=clean(patch.name).slice(0,F.LIMITS.personMax);if(!nm)return{error:'Name cannot be empty.'};o.name=F.uniqueName(nm,takenNames||[])}
-  if(patch.team!=null){const t=clean(patch.team).slice(0,F.LIMITS.personMax);if(!t)return{error:'Team name cannot be empty.'};o.team=t}n.over[mid]=o;return{state:n}};
+  if(patch.team!=null){const t=clean(patch.team).slice(0,F.LIMITS.personMax);if(!t)return{error:'Team name cannot be empty.'};o.team=t;o.teamTs=+patch.ts||Date.now()}n.over[mid]=o;return{state:n}};
 /* remove: before the draft the slot is freed (generation bump) and the order forgets them; during the draft they stay in the order but are marked left+away (their picks are made by auto-pick) */
 F.mRemove=function(m,mid,slotIndex){if(m.status==='complete')return{error:'The draft is complete and locked.'};const n=clone(m);
   if(m.status==='lobby'){if(slotIndex==null)return{error:'Unknown manager.'};n.slotGen[slotIndex]=(n.slotGen[slotIndex]||0)+1;n.order=n.order.filter(x=>x!==mid);delete n.over[mid];return{state:n,freed:true}}

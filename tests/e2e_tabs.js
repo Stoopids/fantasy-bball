@@ -26,7 +26,7 @@ for(const w of [390,1280]){const pre=w+'px room: ';
   /* the private manager link: secrets in the fragment are read, then replaced by #tab=… only */
   const P=await open('r'+w,w);await P.go('room.html?l='+id+'&stay=1#as='+me.id+'&k='+me.k);await roomReady(P);await sleep(1500);
   let a=await loc(P);allHashes.push(a.hash);ok(pre+'manager link: the fragment secret is gone, the hash holds only #tab=board',a.hash==='#tab=board',a);
-  ok(pre+'manager link still signed me in',await waitFor(()=>P.page.evaluate(n=>(document.getElementById('who')||{}).innerText.indexOf(n)>=0,me.name),10000));
+  ok(pre+'manager link still signed me in (s28: at 390 the pill shows only the team name, so the name is checked in the DOM text)',await waitFor(()=>P.page.evaluate(n=>((document.getElementById('who')||{}).textContent||'').indexOf(n)>=0,me.name),10000));
   await roomRun(P,id,pre,false);
   /* shared link on a tab, on another device */
   const Q=await open('s'+w,w);await Q.go('room.html?l='+id+'&watch=1#tab=chat');await roomReady(Q);await sleep(500);a=await loc(Q);ok(pre+'shared link #tab=chat opens on Chat, query kept',a.tab==='chat'&&a.hash==='#tab=chat'&&/watch=1/.test(a.search),a);

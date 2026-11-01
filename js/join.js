@@ -1,7 +1,8 @@
 /* Join flow: invite link -> team profile (name, team, photo) -> claims a manager slot. No accounts. */
 (function(){
 const {esc,$}=UI;const F=FBN;const TZ=UI.tz();
-const P=UI.qs();let id=F.parseCode(P.get('l')||P.get('c')||'');const editMode=P.get('edit')==='1';
+const P=UI.qs();let id=F.parseCode(P.get('l')||P.get('c')||'');const editMode=P.get('edit')==='1';/* s28: profile edits live in the room's My settings sheet (real name read-only there) */
+if(editMode&&id){location.replace(UI.pageUrl('room.html',{l:id,settings:1}));return}
 let meta=null,claims={},profs={},me=null,busy=false;
 const form={name:'',team:'',emoji:'',photo:'',photoInfo:'',pv:0};
 const crop={img:null,zoom:1,px:0,py:0,drag:null};
@@ -79,7 +80,8 @@ const ACT={
    id=c;await start()},
  emoji(el){readForm();form.emoji=form.emoji===el.dataset.e?'':el.dataset.e;if(!crop.img&&!form.photo){}document.querySelectorAll('.emojis button').forEach(b=>b.classList.toggle('on',b.dataset.e===form.emoji));drawCrop()},
  rmphoto(){readForm();crop.img=null;form.photo='';form.photoInfo='';formView(me&&joined().find(c=>c.mid===me.mid))},
- editme(){const c=joined().find(c=>c.mid===me.mid);const p=profs[c.mid]||{};form.name=(meta.over[c.mid]&&meta.over[c.mid].name)||p.name||c.name;form.team=(meta.over[c.mid]&&meta.over[c.mid].team)||p.team||c.team;form.emoji=p.emoji||'';form.photo=p.photo||'';form.pv=p.pv||0;formView(c)},
+ editme(){location.href=UI.pageUrl('room.html',{l:id,settings:1})},
+ editmeOld(){const c=joined().find(c=>c.mid===me.mid);const p=profs[c.mid]||{};form.name=(meta.over[c.mid]&&meta.over[c.mid].name)||p.name||c.name;form.team=(meta.over[c.mid]&&meta.over[c.mid].team)||p.team||c.team;form.emoji=p.emoji||'';form.photo=p.photo||'';form.pv=p.pv||0;formView(c)},
  copy(el){UI.copy(el.dataset.u,'Copied')},share(el){UI.share({title:meta.name,text:'My private link for '+meta.name,url:el.dataset.u})},
  join,saveme
 };
@@ -88,6 +90,8 @@ async function join(){if(busy)return;readForm();const ev=validate();const er=$('
   busy=true;$('joinbtn').disabled=true;$('joinbtn').textContent='Joining…';
   try{await loadAll();if(meta.status!=='lobby')return view();
     const K=F.Keys(id);const taken=joined().map(c=>(meta.over[c.mid]&&meta.over[c.mid].name)||c.name);
+    {const ps=await Promise.all(joined().map(c=>Store.get(K.mgr(c.mid)).then(F.parseProfile).catch(()=>null)));const pm={};ps.forEach(x=>{if(x)pm[x.mid]=x});
+     if(F.teamTaken(form.team,F.managersView(meta,claims,pm).map(m=>m.team))){$('err').textContent='Another manager already uses “'+F.clean(form.team)+'”. Pick a different team name.';return}}/* s28: duplicate team names are blocked, not renamed */
     const name=F.uniqueName(form.name,taken);const team=F.uniqueName(form.team,joined().map(c=>(meta.over[c.mid]&&meta.over[c.mid].team)||c.team));
     /* s26c16: with the order locked, only an unnamed empty row can be joined; the named seats are handed out by the commissioner (Re-issue link) */
     if(!F.canJoinLocked(meta,joined().map(c=>c.mid))){$('err').textContent='This league has no open seat to join. Ask the commissioner for your private link.';return}

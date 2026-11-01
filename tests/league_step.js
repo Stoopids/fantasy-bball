@@ -5,10 +5,10 @@ module.exports=async function({C,ST,js,mk,ok,exists,txt,sleep,fs,APP}){
 const scj=JSON.parse(fs.readFileSync(DD+'/scores.json','utf8')),tnj=JSON.parse(fs.readFileSync(DD+'/tournament.json','utf8'));
 const owners={};js.picks.forEach(p=>owners[String(p.teamId)]=p.managerId);const MGS=js.managers.map(m=>({mid:m.id,name:m.name}));
 const SEA=LS.fullSeason(scj.games,owners,MGS),TOU=LS.tournament(scj.games,tnj.field,owners,MGS);
-const LT=LS.leagueTotals(SEA,TOU,LS.confPoints(scj.conf,scj.games,owners,MGS,tnj.points));const LTn={};LT.forEach(r=>{LTn[r.name||(MGS.find(m=>m.mid===r.mid)||{}).name]=r});   /* s26c8: Standings = league total (wins + NCAA + conference points) */
+const LT=LS.leagueTotals(SEA,TOU,LS.confPoints(scj.conf,scj.games,owners,MGS,tnj.points));const LTn={};LT.forEach(r=>{LTn[r.name||(MGS.find(m=>m.mid===r.mid)||{}).name]=r;if(r.mid)LTn['mid:'+r.mid]=r});   /* s28: card shows the TEAM name on top, so rows are matched by data-mid */   /* s26c8: Standings = league total (wins + NCAA + conference points) */
 ok('scoring data files are the sample set and cover the drafted schools',scj.sample===true&&tnj.sample===true&&js.picks.every(p=>scj.games.some(g=>String(g.home.id)===String(p.teamId)||String(g.away.id)===String(p.teamId))));
 const ready=P=>P.page.waitForFunction('!!document.querySelector("#lapp[data-ready]")',{timeout:20000});
-const rows=(P,sel)=>P.page.$$eval(sel||'#main .ocl:not(#tstand) .strow',r=>r.map(x=>({name:x.querySelector('.nm').innerText.replace(/^[^A-Za-z0-9\s]+\s*/,'').trim(),score:+x.querySelector('.score .pv').innerText,place:x.querySelector('.place').innerText})));
+const rows=(P,sel)=>P.page.$$eval(sel||'#main .ocl:not(#tstand) .strow',r=>r.map(x=>({mid:x.getAttribute('data-mid'),name:x.querySelector('.nm').innerText.replace(/^[^A-Za-z0-9\s]+\s*/,'').trim(),score:+x.querySelector('.score .pv').innerText,place:x.querySelector('.place').innerText})));
 const TX=require('./tabs_exp.js');   /* s25: tabs visible at the test clock (LNOW) */
 const tabClick=(P,t)=>P.page.evaluate(t=>document.querySelector('#ltabs [data-v='+t+']').click(),t);
 await C.page.goto(APP+'/league.html?l='+ST.id+'&demo=1',{waitUntil:'domcontentloaded'});await ready(C);await sleep(500);
@@ -16,7 +16,7 @@ ok('league site (demo): title, tab row, DEMO marks, no placeholder',(await exist
 const tb=await C.page.$$eval('#ltabs [data-a=tab]',b=>b.map(x=>x.dataset.v));const VIS27=TX.vis.filter(v=>v!=='draft');ok('tabs in order (s27: Draft folded into Recap): '+TX.labels.filter(l=>l!=='Draft').join(', '),JSON.stringify(tb)===JSON.stringify(VIS27),tb);
 const dl=await C.page.$$eval('#ltabs [data-v=draft]',a=>a.length);ok('s27: no Draft tab (the pick board lives in Recap)',dl===0,dl);
 ok('no money wording or amounts in the page text on any tab (Bets are pushups)',await (async()=>{let all='';for(const t of tb){await tabClick(C,t);await sleep(120);all+=await txt(C,'body')}await tabClick(C,'standings');return !/\b(wager\w*|prize|payout|jackpot|lottery|gambl\w*|cash|money|dollars?|USD|IDR|Rp)\b|\$\s?\d/i.test(all)})());
-let r=await rows(C);ok('Standings: 8 owner cards, best total first, each with its league total (FBNScore.leagueTotals) and rank (T-n for ties)',r.length===8&&r.every((x,i)=>{const e=LTn[x.name];return e&&x.score===e.total&&x.place===((e.tied?'T-':'')+e.place)&&(!i||r[i-1].score>=x.score)}),{page:r,expect:LT.map(x=>[x.name,x.total,x.place])});
+let r=await rows(C);ok('Standings: 8 owner cards, best total first, each with its league total (FBNScore.leagueTotals) and rank (T-n for ties)',r.length===8&&r.every((x,i)=>{const e=LTn['mid:'+x.mid]||LTn[x.name];return e&&x.score===e.total&&x.place===((e.tied?'T-':'')+e.place)&&(!i||r[i-1].score>=x.score)}),{page:r,expect:LT.map(x=>[x.name,x.total,x.place])});
 ok('every standings card has a 4 x 2 grid of school chips with a W-L record',await C.page.$$eval('#main .ocl .strow',c=>c.every(x=>x.querySelectorAll('.chips .chip').length===6&&[...x.querySelectorAll('.chip .cr')].length===6&&/^\d+-\d+$/.test(x.querySelector('.chip .cr').innerText))));
 ok('footer line "Tap an owner for the full breakdown"',/Tap an owner for the full breakdown/.test(await txt(C,'#main')||''));
 await C.page.evaluate(()=>window.scrollTo(0,0));await sleep(100);await C.shot('league_standings');
@@ -43,7 +43,7 @@ ok('Games: tournament games flag upsets',(await C.page.$$('.gm .up')).length>=1)
 await C.page.evaluate(()=>window.scrollTo(0,0));await sleep(150);await C.shot('league_games');
 await tabClick(C,'rules');await sleep(200);ok('Rules: plain league rules, scoring table and the upset list',/League rules/i.test(await txt(C,'#main')||'')&&/Scoring/i.test(await txt(C,'#main')||'')&&/upset rule/i.test(await txt(C,'#main')||''));
 if(TX.has('redraft')){await tabClick(C,'redraft');await sleep(200);ok('January 20, 2027 Redraft tab: rules and a Redraft link/preview',/January 20, 2027/.test(await txt(C,'#main')||'')&&(await exists(C,'#redraftcard')));}
-await tabClick(C,'archive');await sleep(200);ok('Archive: friendly empty state (no past seasons)',/No past seasons yet/.test(await txt(C,'#archempty')||''));
+if(TX.has('archive')){await tabClick(C,'archive');await sleep(200);ok('Archive: friendly empty state (no past seasons)',/No past seasons yet/.test(await txt(C,'#archempty')||''));}else{ok('s28: no Archive tab in the tab row',!(await exists(C,'#ltabs [data-v=archive]')));}
 ok('league site had no page errors on the phone',C.errs.filter(e=>/pageerror/.test(e)).length===0,C.errs.slice(-3));
 if(TX.has('postseason')){await C.page.goto(APP+'/league.html?l='+ST.id+'&demo=1#postseason',{waitUntil:'domcontentloaded'});await ready(C);ok('deep link #postseason opens the Postseason tab (old #standings/tournament works too)',await C.page.$eval('#ltabs [data-v=postseason]',e=>e.classList.contains('on')));}
 // missing data: plain messages

@@ -1,4 +1,4 @@
-/* s26c16d: seat sound cues. AudioContext stubbed (counts oscillator starts = beeps). 3 on the clock, 2 at 30 s, 1 at 10 s; other seats silent; mute; no repeat after reload. Mock store only. APP/API env. */
+/* s26c16d: seat sound cues (s28: 10 s cue is now 1 beep a second; see e2e_beep_s28.js). AudioContext stubbed (counts oscillator starts = beeps). 3 on the clock, 2 at 30 s, 1 at 10 s; other seats silent; mute; no repeat after reload. Mock store only. APP/API env. */
 const L=require('./lib.js');const {seed}=require('./seed_league.js');const {sleep}=L;
 let n=0,bad=0;const ok=(name,c,x)=>{n++;if(c)console.log('  ok  '+name);else{bad++;console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,300):''))}};
 const STUB=()=>{window.__osc=0;class A{constructor(){this.state='running';this.currentTime=0;this.destination={}}resume(){return Promise.resolve()}createGain(){return{gain:{value:0},connect(){}}}createOscillator(){return{type:'',frequency:{value:0},connect(){},start(){window.__osc++},stop(){}}}}window.AudioContext=A;window.webkitAudioContext=A};
@@ -19,10 +19,10 @@ const until=async(P,f,ms)=>{for(let t=0;t<ms;t+=250){const r=await rem(P);if(r!=
   ok('reload with the same pick on the clock: no repeat',await cnt(A)===0,await cnt(A));
   const r30=await until(A,r=>r<=28,40000);await sleep(800);ok('30 s left: 2 beeps (once)',await cnt(A)===2,{c:await cnt(A),r30});
   await sleep(3000);ok('still 2 after 3 s more (no repeat at 30 s)',await cnt(A)===2,await cnt(A));
-  const r10=await until(A,r=>r<=8,30000);await sleep(800);ok('10 s left: 1 beep (total 3 since reload)',await cnt(A)===3,{c:await cnt(A),r10});
+  const r10=await until(A,r=>r<=8,30000);await sleep(800);ok('s28: 10 s left: 1 beep a second (total 5-6 since reload at ~7 s)',(await cnt(A))>=5&&(await cnt(A))<=6,{c:await cnt(A),r10});
   ok('other seat still silent at 10 s',await cnt(B)===0,await cnt(B));ok('muted still silent',await cnt(C)===0,await cnt(C));
   // fresh page late in the pick: passed thresholds skipped, no burst
-  const D=await open(id,ms[0],{name:'late'});await sleep(3000);ok('fresh device late in the pick: 3 (start only), no 30/10 burst',await cnt(D)===3,await cnt(D));
+  const D=await open(id,ms[0],{name:'late'});await sleep(3000);ok('s28: fresh device late in the pick: 3 (start) + at most 1 a second after, no 30/10 burst',(await cnt(D))>=3&&(await cnt(D))<=6,await cnt(D));
   // toggle UI + shots
   for(const [w,desk] of [[390,false],[1280,true]]){const S=await open(id,ms[2],{name:'shot'+w,desk,hash:'#tab=more'});await sleep(4000);
     const has=await S.page.evaluate(()=>{const e=document.getElementById('beepon');if(!e)return null;e.scrollIntoView({block:'center'});return{checked:e.checked,label:e.closest('label').innerText}});

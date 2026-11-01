@@ -563,3 +563,27 @@ Test-only (not shipped): tests/e2e_undo_repick_s26c8a.js (Playwright; undo auto 
 ## s26c16b (2026-11-01 18:35 WIB)
 - js/room.js: Randomize button hidden (and its action ignored) in real leagues, same rule as the wheel; mocks unchanged.
 - js/version.js: FBN_BUILD 2026-11-01s26c16b. sw.js: line 3 comment (cache name follows FBN_BUILD).
+
+## s28 = s27c + after-draft draft-room items + reliability 1-2 + My settings (2026-11-02s28)
+Base: `/workspace/fantasy-bball-releases/s27` (MD5SUMS f3869ed5952785e9b4f6a212cf713356, 2026-11-01s27c). Build tag 2026-11-02s28; sw.js cache fbnc-2026-11-02s28 (name follows FBN_BUILD; only the line 3 comment changed). No League-owned file touched (league.html, leaguehome.js, league-*.js, power-*.js, css/power.css, css/league-app.css, data/, help.html, shared-s25.js unchanged).
+1. Pick sheet clock: live countdown next to Close in the 'Pick a team' header ('Paused' when paused, hidden with No clock); the header is sticky; the filter bar sticks under it.
+2. Seat beeps: 3 at turn start, 2 at 30 s, then 1 beep per second 10..3 s and 4 fast beeps per second in the last 2 s. Mute, own seat only, never paused / after picking / No clock; each second once (localStorage), past seconds skipped (reload, fresh page, background tab). Checked 5x a second in the last 11 s; clock text updates before the beep. Helper text under Turn sound updated.
+3. Display clamp: remaining() never exceeds clockSecs; the re-pick hold shows at most 10 s; nothing is counted down until the server-time offset is known (max 2 s; hold shows 'Auto re-pick soon').
+4. 60 s 'Draft starts in' countdown on a commissioner Start (real leagues; not mocks, not the scheduled auto-start): meta startedAt = resumeAt = now+60 s, startCd = 60000. Pick #1's clock runs from startedAt (F.deadlineOf unchanged). No picks / auto-picks / beeps / Pause before it; commissioner 'Start now' moves startedAt to now. Old s27c clients: see risks.
+5. No-clock undo freeze: with No clock, after a commissioner Undo of a slot, auto-pick is frozen for that slot (away / auto-draft / placeholder seats; mock bots unaffected) until someone picks by hand; the On the clock card shows 'Auto-pick frozen after Undo (No clock) · pick by hand'. With a clock the 10 s re-pick hold is unchanged.
+6. Queue saves: taps apply on screen at once and are coalesced (300 ms debounce, max 1.2 s) into one read-merge-write per manager; add/remove decided at tap time (idempotent); background read-back re-applies ops lost to a simultaneous write (up to 4 rounds); stale reads older than our write are ignored.
+R1. Stall guard: every page times its own store requests (Store.fetchT); while stalled (request > 8 s in flight, last 2 > 8 s or failed, 3 failures in 20 s, no success for 12 s while visible, or offline) it does not auto-pick; healthy again after 20 s with 4+ fast successes. localhost test hook fbn.healthOff=1.
+R2. A stuck on-clock slot is never auto-picked for clock-out (the 15 s go-ahead is gone for 'expired'); away / auto-draft / placeholder seats keep the 15 s hold then the backup spot.
+S. My settings merged from s28-settings (core.js, join.js taken as is; room.js 3-way merge, TEAM_NAME_ON_TOP=true, ALLOW_PHOTO=true).
+A. With TEAM_NAME_ON_TOP: Online chips, on-the-clock banner (team on top, real name under; team no longer repeated in the sub line), pick cards (pick sheet header, confirm 'on behalf of', Teams 'taken by' label, commissioner note) show the team name. B. At <=520 px the top-bar pill shows only the team name.
+
+Test-only (not shipped): tests/e2e_picksheet_clock_s28.js, e2e_beep_s28.js, e2e_clamp_s28.js, e2e_startcd_s28.js, e2e_undo_noclock_s28.js, e2e_queue_coalesce_s28.js, e2e_slowstore_s28.js, e2e_teamtop_s28.js, e2e_settings_s28.js, shots_s28_settings.js; updated e2e_beep_s26c16d.js (new 10 s pattern), e2e_security.js, e2e_profile_btns_s25g.js (from s28-settings).
+
+## s28L (2026-11-02s28L) — s28 + League s28-bets-full
+- Base: s28 (room.js, core.js, join.js, app.css etc. unchanged).
+- From League /workspace/league-site-work/s28-bets-full (copied unedited): js/league-bets.js, js/leaguehome.js, css/league-app.css, tests/test_core.js (+ League tests e2e_bets_copy_s28.js, e2e_parity_s28.js). No other League-owned file differed.
+- js/version.js: FBN_BUILD 2026-11-02s28L. sw.js: cache fbnc-2026-11-02s28L (follows FBN_BUILD), line 3 comment updated, precache adds data/demo/scores.json and data/demo/tournament.json.
+- MD5SUMS.txt regenerated (excludes tests/ node_modules shots/ __pycache__ .git).
+- tests/e2e_undo_noclock_s26c14.js: after a No-clock Undo, now expects the s28 item 5 freeze (pick #1 not auto re-picked for 25 s) instead of a re-pick after the hold (one undo instead of two). 8/8 pass.
+- tests/e2e_autodraft_s26c8b.js: AUTO badge check expects the team name on top (Aces) instead of the real name 'Ana'. 27/27 pass.
+- tests/e2e_midswap_s28.js: header comment documenting SWAP_CMD (what it does, example, base build s27c -> s28); new tests/README.md with the same note.

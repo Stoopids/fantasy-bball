@@ -1,4 +1,4 @@
-/* s25-full (Paul via NCAA): the More > profile card buttons (Edit profile & photo / Switch who I am / Copy my private link) are the same size:
+/* s25-full (Paul via NCAA): the More > profile card buttons (My settings / Switch who I am / Copy my private link) are the same size:
    one row of equal columns, or stacked full-width under 420 px; every label on one line. 320 / 390 / 1280. OUT/TAG shots, SHOTS_ONLY=1 skips checks. */
 const L=require('./lib.js');const F=require('../js/core.js');const {seed}=require('./seed_league.js');const {sleep}=L;const API=process.env.API;const OUT=process.env.OUT,TAG=process.env.TAG||'shot',CHECK=!process.env.SHOTS_ONLY;
 let n=0,bad=0;const fails=[];const ok=(m,c,x)=>{n++;if(c)console.log('  ok  '+m);else{bad++;fails.push(m);console.log('FAIL  '+m+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,300):''))}};

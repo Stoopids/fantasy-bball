@@ -3,7 +3,7 @@
 const L=require('./lib.js');const {seed}=require('./seed_league.js');const {sleep}=L;const F=require('../js/core.js');
 const SH=process.env.SHOTS||'/workspace/league-site-work/compare-s24';
 let n=0,bad=0;const fails=[];function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;fails.push(name);console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,500):''))}}
-const base=process.env.API||'http://localhost:9996/api/data/';const MONEY=/\b(wager\w*|payout|prize|cash|money|dollars?|lottery|jackpot|gambl\w*|USD|IDR|Rp)\b|\$\s?\d/i;
+const base=process.env.API||'http://localhost:9996/api/data/';const MONEY={re:/\b(wager\w*|payout|prize|cash|money|dollars?|lottery|jackpot|gambl\w*|USD|IDR|Rp)\b|\$\s?\d/i,ok:/Bets here are just for fun and are settled in pushups, not money\. Betting is Stoopid, and we don't endorse or facilitate gambling for money\./g,test(x){return this.re.test(String(x).replace(this.ok,''))},[Symbol.match](x){return String(x).replace(this.ok,'').match(this.re)}};   /* s28: the Bets page disclaimer (partner wording) is the one allowed money sentence */
 const get=async k=>(await fetch(base+encodeURIComponent(k))).text();const post=(k,v)=>fetch(base+encodeURIComponent(k),{method:'POST',headers:{'Content-Type':'text/plain'},body:typeof v==='string'?v:JSON.stringify(v)});
 async function open(id,info,i,o){o=o||{};const P=await L.phone('s'+Math.random().toString(36).slice(2,6),o.w?{desktop:o.w>=1000,w:o.w,h:900}:{});
   if(i!=null)await P.page.evaluateOnNewDocument((id,me)=>{localStorage.setItem('fbn.me.'+id,JSON.stringify(me))},id,{mid:info.managers[i].id,k:info.managers[i].k});
@@ -12,7 +12,7 @@ const txt=P=>P.page.$eval('#lbody',e=>e.innerText);
 const tap=async(P,sel)=>{await P.page.waitForSelector(sel,{timeout:8000});await P.page.evaluate(s=>{const e=document.querySelector(s);e.scrollIntoView({block:'center'});e.click()},sel);await sleep(200)};
 const msg=(P,re)=>P.page.waitForFunction('new RegExp('+JSON.stringify(re)+').test((document.getElementById("b27Msg")||{}).innerText||"")',{timeout:15000});
 const refresh=async P=>{await P.page.evaluate(()=>LBETS.poll(true));await sleep(700)};
-const board=P=>P.page.evaluate(()=>((document.getElementById('b27Board')||{}).innerText||''));
+const board=async P=>{await P.page.click('#b27Ob_tally');await sleep(300);const t=await P.page.evaluate(()=>((document.getElementById('b27People')||{}).innerText||''));await P.page.click('#b27Ob_form');await sleep(300);return t};
 const audit=P=>P.page.evaluate(()=>{const A=[...document.querySelectorAll('#lbody button, #lbody a, #lbody input')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&!e.closest('[hidden]')&&!e.closest('.sc')});
   return{small:A.filter(e=>{const r=e.getBoundingClientRect();return r.height<43.5||r.width<43.5}).map(e=>(e.dataset.lb||e.id||e.tagName)+':'+Math.round(e.getBoundingClientRect().width)+'x'+Math.round(e.getBoundingClientRect().height)).slice(0,8),over:document.documentElement.scrollWidth>innerWidth+1}});
 const shot=async(P,sel,f)=>{await P.page.evaluate(s=>{const e=document.querySelector(s);if(e)e.scrollIntoView({block:'start'})},sel);await sleep(200);await P.page.screenshot({path:SH+'/'+f})};
@@ -32,7 +32,7 @@ const shot=async(P,sel,f)=>{await P.page.evaluate(s=>{const e=document.querySele
   await tap(A,'[data-lb=betedit]');await msg(A,'Withdrawn for editing');
   const lg=JSON.parse(await get(key(0))).ev;ok('Edit writes the normal withdraw event (w) for the old bet into Ana\'s own log only',lg.length===2&&lg[1].k==='w'&&lg[1].id===old.id&&(await get(key(1)))==='',lg);
   const f=await A.page.evaluate(()=>({t:document.getElementById('b27Text').value,ao:(document.getElementById('b27Ao')||{}).value,aw:!document.getElementById('b27Aw').hidden,opp:[...document.querySelectorAll('[data-lb=opp][aria-pressed=true]')].map(b=>b.dataset.mid),od:[...document.querySelectorAll('[data-lb=odds][aria-pressed=true]')].map(b=>b.dataset.v),hint:(document.getElementById('b27EdHint')||{}).innerText||'',live:document.getElementById('b27Live').innerText}));
-  ok('after Edit the New bet form is prefilled: opponent Ben, text, custom 30 pushups, odds 3-1',f.t==='Kansas beats Duke'&&f.aw&&f.ao==='30'&&f.opp.length===1&&f.opp[0]===M[1]&&f.od[0]==='3-1'&&/Bet #1/.test(f.hint)&&/90 pushups/.test(f.live),f);
+  ok('after Edit the New bet form is prefilled: opponent Ben, text, custom 30 pushups, odds 3-1',f.t==='Kansas beats Duke'&&f.aw&&f.ao==='30'&&f.opp.length===1&&f.opp[0]===M[1]&&f.od[0]==='3-1'&&/Bet #1/.test(f.hint)&&/owes Ana 90\./.test(f.live),f);
   ok('old bet now shows Withdrawn',/Withdrawn/.test(await A.page.$eval('[data-bet]',e=>e.innerText)));
   await shot(A,'#b27Form','s24_2_prefilled_after_edit_390.png');
   const ae=await audit(A);ok('390px: tap targets >= 44px and no overflow with the prefilled form',ae.small.length===0&&!ae.over,ae);
@@ -40,9 +40,9 @@ const shot=async(P,sel,f)=>{await P.page.evaluate(s=>{const e=document.querySele
   ok('placing the edited bet creates Bet #2 and clears the edit hint',/Bet #2/.test(await txt(A))&&!(await A.page.$('#b27EdHint')));
   /* ---- settle Bet #2: Ana won (Ben owes 90) ---- */
   const B=await open(id,info,1);await tap(B,'[data-lb=accept]');await msg(B,'Accepted');
-  await refresh(A);await tap(A,'[data-lb=settle][data-r=b]');await tap(A,'[data-lb=settle][data-r=b]');await msg(A,'Settled');
+  await refresh(A);await tap(A,'[data-lb=settle][data-r=b]');await tap(A,'[data-lb=settle][data-r=b]');await msg(A,'Saved');
   await refresh(B);await B.page.waitForFunction('/Settled/.test(document.getElementById("lbody").innerText)',{timeout:12000});
-  ok('settled: Ana won (Ben owes 90 pushups), board +90 / -90',/Ana won \(Ben owes 90 pushups\)/.test(await txt(B))&&/\+90/.test(await board(B)),await board(B));
+  ok('settled: Ana won (Ben owes 90), board +90 / -90',/Ana won \(Ben owes 90\)/.test(await txt(B))&&/\+90/.test(await board(B)),await board(B));
   /* ---- 2. Fix result: Ben asks, Ana confirms ---- */
   ok('settled bet shows a Fix result button for both sides',!!(await B.page.$('[data-lb=fixopen]')));
   await tap(B,'[data-lb=fixopen]');const opts=await B.page.$$eval('[data-lb=fixreq]',bs=>bs.map(b=>b.innerText));ok('Fix result offers the other two results only',opts.length===2&&opts.some(t=>/Ben won/.test(t))&&opts.some(t=>/Wash/.test(t)),opts);
@@ -61,12 +61,12 @@ const shot=async(P,sel,f)=>{await P.page.evaluate(s=>{const e=document.querySele
   const af=await audit(A);ok('390px: tap targets >= 44px, no overflow with a pending fix request',af.small.length===0&&!af.over,af);
   await tap(A,'[data-lb=fixok]');await tap(A,'[data-lb=fixok]');await msg(A,'Confirmed');
   t=await txt(A);const bd=await board(A);
-  ok('after Ana confirms: result is Ben won (Ana owes 30 pushups), marked Corrected',/Result:\s*Ben won \(Ana owes 30 pushups\)/.test(t)&&/Corrected/.test(t),t.slice(0,900));
+  ok('after Ana confirms: result is Ben won (Ana owes 30), marked Corrected',/Result:\s*Ben won \(Ana owes 30\)/.test(t)&&/Corrected/.test(t),t.slice(0,900));
   ok('totals use the latest confirmed result: Ben +30, Ana -30',/\+30/.test(bd)&&/[-−]30/.test(bd)&&!/90/.test(bd),bd);
   const h=await A.page.$eval('[data-fixhist]',e=>e.innerText);ok('history on the card: who asked, original vs corrected result, who confirmed, times',/Ben asked to change Ana won → Ben won/.test(h)&&/confirmed by Ana/.test(h)&&/\d{1,2}:\d{2}/.test(h),h);
-  ok('#b27Board is closed: no bet card or open-bets note sits inside the totals box',await A.page.evaluate(()=>{const b=document.getElementById('b27Board');return !!b&&!b.querySelector('[data-bet], #b27OpenNote')&&document.querySelectorAll('[data-bet]').length>0&&[...document.querySelectorAll('[data-bet]')].every(c=>!b.contains(c))}));
+  ok('s28: no totals box on Write it Up (totals live on Tally, like STOOPIDS); bet cards render',await A.page.evaluate(()=>!document.getElementById('b27Board')&&!document.getElementById('b27OpenNote')&&document.querySelectorAll('[data-bet]').length>0));
   ok('confirm (fc) is in Ana\'s own log',JSON.parse(await get(key(0))).ev.some(e=>e.k==='fc'&&e.fx===fxid));
-  await shot(A,'[data-fixhist]','s24_4a_fix_confirmed_history_390.png');await shot(A,'#b27Board','s24_4b_fix_confirmed_totals_390.png');
+  await shot(A,'[data-fixhist]','s24_4a_fix_confirmed_history_390.png');
   await refresh(B);ok('Ben sees the same corrected result and totals',/Ben won \(Ana owes 30/.test(await txt(B))&&/\+30/.test(await board(B)));
   /* decline + withdraw through the UI */
   await tap(A,'[data-lb=fixopen]');await tap(A,'[data-lb=fixreq][data-r=p]');await tap(A,'[data-lb=fixreq][data-r=p]');await msg(A,'Asked');await tap(A,'[data-lb=fixwd]');await msg(A,'withdrawn');

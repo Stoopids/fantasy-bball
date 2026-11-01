@@ -35,8 +35,8 @@ const SH=process.env.SHOTS||'s26c8b';
  await C.page.evaluate(()=>{const b=document.querySelector('.opills [data-a="vo"]');});await tab(C,'board');await tab(C,'my');
  await C.page.evaluate(mid=>{const b=document.querySelector('[data-a="vo"][data-m="'+mid+'"]');if(b)b.click()},Cy.id);await sleep(500);await click(C,'#autodraft');
  await waitFor(async()=>{const p=await gj(K.pref(Cy.id));return p&&p.auto},8000);
- await tab(C,'board');const badge=await waitFor(async()=>{const t=await C.page.evaluate(()=>[...document.querySelectorAll('#orderlist .mrow')].map(r=>r.innerText).join('\n'));return /Ana[^\n]*AUTO/.test(t.replace(/\n(?!\d)/g,' '))&&t.includes('AUTO')?t:null},22000,500);
- ok('Cy sees the 🤖 AUTO badge in the lobby order list',!!badge);await C.shot(SH+'_lobby_auto_390');
+ await tab(C,'board');const badge=await waitFor(async()=>{const t=await C.page.evaluate(()=>[...document.querySelectorAll('#orderlist .mrow')].map(r=>r.innerText).join('\n'));return new RegExp((Ana.teamName||Ana.team||'Aces')+'[^\\n]*AUTO').test(t.replace(/\n(?!\d)/g,' '))&&t.includes('AUTO')?t:null},22000,500);
+ ok('Cy sees the 🤖 AUTO badge in the lobby order list (team name on top, s28)',!!badge);await C.shot(SH+'_lobby_auto_390');
  await B.page.setViewport({width:1280,height:900});await tab(B,'board');await sleep(1500);await B.shot(SH+'_lobby_auto_1280');await B.page.setViewport({width:390,height:844,isMobile:true,hasTouch:true});
  /* Ana's device goes offline */
  await A.close();

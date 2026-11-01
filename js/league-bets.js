@@ -19,23 +19,44 @@
    Text is cleaned (control chars, e-mails and phone numbers hidden), capped (140 chars, 400 events / 60 KB per manager), escaped on output.
    A failed read keeps the last good bets on screen with a small "offline" note; reads and writes retry with back-off. No server. */
 (function(){
-const C={amounts:[5,10,25,50,100],min:5,max:1000,odds:[[1,1],[2,1],[3,1],[4,1],[5,1]],maxOdds:100,maxText:140,maxEv:400,maxBytes:60000,pollMs:60000,pollOpenMs:15000,autoMs:48*3600e3,confirmMs:700,undo:true};
+const C={amounts:[5,10,20,50,100],min:5,max:1000,odds:[[1,1],[2,1],[3,1],[4,1],[5,1]],maxOdds:100,maxText:140,maxEv:400,maxBytes:60000,pollMs:60000,pollOpenMs:15000,autoMs:48*3600e3,confirmMs:700,undo:true};
 const pu=n=>n+' pushup'+(n===1?'':'s');
+/* s28: the Bets page is a copy of the partner Bets page: plain whole numbers (no unit word) on the page; the unit is named once, in the disclaimer. */
+const DISCLAIMER="Bets here are just for fun and are settled in pushups, not money. Betting is Stoopid, and we don't endorse or facilitate gambling for money.";
+/* s28 POOL (partner <POOL> + <S26F-POOL>): one group entry; every participant puts in the same buy-in; payouts (by place, or name:amount) must add up to the pot; each person's net = got back - buy-in.
+   All Pool wording lives here (the partner's POOL_TXT; only the examples are League numbers, since the League reads whole numbers only, no 250K / 1.2mil). {x} = filled in by PT(). */
+const POOL_MAX=1e6;
+const POOL_TXT={toggle:'Pool / buy-in',toggleBet:'One side vs another',youIn:'(you are in automatically)',
+  fPay:'Payouts when done (total received), e.g. ana:80, ben:20',s1:'What’s the pool?',s2:'Who’s in?',s3:'Buy-in per person',s4:'Payouts by place',termsPh:'e.g. season-long tournament pool',buyPh:'e.g. 50',
+  potLine:'Pot: {n} × {buy} = {pot}',potWait:'Pot: pick who’s in and a buy-in',addPlace:'+ Add place',payOpt:'Optional: leave blank to fill in when it’s over.',sumLine:'Adds up to {sum} of {pot}',
+  ePlaceSum:'Payouts add up to {sum} but the pot is {pot} ({diff} {way}).',short:'short',over:'over',ePlaceNum:'Use whole numbers for the payouts (like 400).',pickWho:'Who finished where?',pickOne:'Pick…',ePickAll:'Pick someone for every place.',payLine:'Payouts: {x}',
+  helpPl:'Amounts only; you pick who finished where when you settle it. They must add up to the pot.',build:'Build',
+  eTerms:'Write the terms of the pool first.',ePeople:'a pool needs 2+ participants',eBuy:'pool needs a buy-in like 50',eBuyMin:'buy-in must be a whole number of at least {min} (like 50)',eBadPay:"can't read one of the payouts (try 80, 20)",eFmt:'Write each payout as name:amount, like ana:80.',
+  eSum:'payouts add up to {sum} but the pot is {total}',eUnknown:'Unknown name "{x}". Use these short names for payouts: {keys}',eNotIn:'"{x}" is not in this pool.',eDup:'"{x}" is listed twice.',eEmptyPay:'Fill in the payouts first.',
+  confirmTitle:'Check it, then confirm',sum:'Pool of {names} · buy-in {buy} each · total {tot}',open:'Payouts left open: it stays open until someone fills them in below.',
+  row:'{name}: gets {got}, net {net}',settleUp:'{from} owes {to} {n}',go:'✅ Yes, build it',change:'← Change',
+  placed:'Built! Pool #{n} is open until the payouts are entered. You can undo it for 30 seconds.',
+  word:'Pool',stOpen:'Open',stDone:'Settled',stVoid:'Cancelled',who:'{n} managers',with:'With: {names}',line:'Buy-in each {buy} · total {tot}',noPay:'Payouts not entered yet.',
+  save:'Save payouts',again:'Tap again to confirm',cancel:'Cancel this pool',undo:'↩ Undo this pool (30 s)',result:'Result',saved:'Saved.',
+  only:'Only the person who placed this bet can settle it.',cantSave:'Couldn’t save. Check your connection and tap Build again (it won’t double-post).'};
+const PT=(k,v)=>String(POOL_TXT[k]).replace(/\{(\w+)\}/g,(_,n)=>v&&n in v?v[n]:'');
+const PLACES=['Winner','2nd','3rd','4th','5th','6th','7th','8th','9th','10th'];const placeName=i=>PLACES[i]||((i+1)+'th');
+const poolNum=x=>{x=String(x==null?'':x).trim();if(!/^\d{1,7}$/.test(x))return null;const v=parseInt(x,10);return v<=POOL_MAX?v:null};
 const num=n=>Math.round(n).toLocaleString('en-US');
 const signed=n=>(n>0?'+':'')+num(n);
 const idOk=v=>typeof v==='string'&&/^[a-z0-9]{6,24}$/.test(v);
 const midOk=v=>typeof v==='string'&&/^[0-9a-f]{8,32}$/.test(v);
 let H=null;const SENT=new Map();   /* events this device wrote, kept so a lost update (two devices of mine writing at the same instant) is healed on the next look */
 const S={more:{},rxWho:null,prop:{},autoFix:{},logs:{},got:{},state:'init',fails:0,timer:null,busy:false,msg:'',bad:false,started:false,sig:'',ask:null,me:null,stale:0,
-  f:{opps:[],open:false,text:'',amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false},fid:null,qb:'',q:{g:null,amt:5,vs:null,msg:''},undoT:null};
+  f:{opps:[],open:false,text:'',amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false},fid:null,kind:'bet',p:{text:'',pp:[],entry:'',places:['',''],showErr:{},confirm:false},pid:null,poolTxt:{},poolErr:{},placeWho:{},qb:'',q:{g:null,amt:5,vs:null,msg:''},undoT:null};
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const KEY=mid=>FBN.Keys(H.id).base+'-bets-'+mid;
 /* ---------- pure helpers ---------- */
 function clean(t,max){t=String(t==null?'':t).replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/g,' ').replace(/\s+/g,' ').trim();
   t=t.replace(/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/gi,'[hidden]');t=t.replace(/\+?\(?\d[\d\s().\-]{6,}\d/g,m=>m.replace(/\D/g,'').length>=8?'[hidden]':m);
   const a=Array.from(t);return(a.length>(max||C.maxText)?a.slice(0,max||C.maxText).join(''):t).trim()}
-function parseAmt(t){const s=String(t==null?'':t).trim();if(!s)return{ok:false,err:'Type a number of pushups ('+C.min+' to '+C.max+').'};if(/^-/.test(s))return{ok:false,err:'Minimum is '+C.min+' pushups.'};
-  if(!/^\d{1,6}$/.test(s))return{ok:false,err:'Whole numbers only, like 25.'};const n=parseInt(s,10);if(n<C.min)return{ok:false,err:'Minimum is '+C.min+' pushups.'};if(n>C.max)return{ok:false,err:'Maximum is '+C.max+' pushups.'};return{ok:true,n}}
+function parseAmt(t){const s=String(t==null?'':t).trim();if(!s)return{ok:false,err:'Type an amount (whole number, '+C.min+' to '+C.max+').'};if(/^-/.test(s))return{ok:false,err:'Minimum amount is '+C.min+'.'};
+  if(!/^\d{1,6}$/.test(s))return{ok:false,err:'Whole numbers only, like 25.'};const n=parseInt(s,10);if(n<C.min)return{ok:false,err:'Minimum amount is '+C.min+'.'};if(n>C.max)return{ok:false,err:'Maximum amount is '+C.max+'.'};return{ok:true,n}}
 function parseOdds(t){const s=String(t==null?'':t).trim().replace(/\s+/g,'');if(!s)return{ok:false,err:'Type odds like 7-2 or 10-1.'};const m=s.match(/^(\d{1,4})[-\/:](\d{1,4})$/);
   if(!m)return{ok:false,err:'Use two whole numbers like 7-2, 7/2 or 7:2.'};const a=parseInt(m[1],10),b=parseInt(m[2],10);if(a<1||b<1)return{ok:false,err:'Both numbers must be at least 1.'};
   if(a>C.maxOdds||b>C.maxOdds)return{ok:false,err:'Both numbers must be '+C.maxOdds+' or less.'};return{ok:true,a,b}}
@@ -50,7 +71,13 @@ function vEv(e){if(!e||typeof e!=='object')return null;const ts=Number(e.ts);if(
   if(e.k==='s'&&(e.r==='b'||e.r==='o'||e.r==='p'))return{k:'s',u:e.u,ts,id:e.id,r:e.r,src:vSrc(e.src),v:vV(e)};
   if(e.k==='fr'&&idOk(e.fx)&&(e.r==='b'||e.r==='o'||e.r==='p'))return{k:'fr',u:e.u,ts,id:e.id,fx:e.fx,r:e.r};
   if(e.k==='rx'&&RX.includes(e.e)&&typeof e.on==='boolean')return{k:'rx',u:e.u,ts,id:e.id,e:e.e,on:e.on};
-  if((e.k==='fc'||e.k==='fd')&&idOk(e.fx))return{k:e.k,u:e.u,ts,id:e.id,fx:e.fx};return null}
+  if((e.k==='fc'||e.k==='fd')&&idOk(e.fx))return{k:e.k,u:e.u,ts,id:e.id,fx:e.fx};
+  /* s28 pool: pl = build a pool {id,parts:[mids, builder included],amt:buy-in each,text,places?:[amount by place]}  pb = payouts {id,back:{mid:amount}} (builder only, counted in reduce) */
+  if(e.k==='pl'){const amt=Number(e.amt);if(!Array.isArray(e.parts)||e.parts.length<2||e.parts.length>8||!e.parts.every(midOk)||new Set(e.parts).size!==e.parts.length||!Number.isInteger(amt)||amt<C.min||amt>POOL_MAX||typeof e.text!=='string')return null;
+    const text=clean(e.text);if(!text)return null;const pl=Array.isArray(e.places)&&e.places.length&&e.places.length<=10&&e.places.every(v=>Number.isInteger(v)&&v>=0&&v<=POOL_MAX)&&e.places.reduce((a,v)=>a+v,0)===amt*e.parts.length?e.places.slice():undefined;
+    return{k:'pl',u:e.u,ts,id:e.id,parts:e.parts.slice(),amt,text,places:pl,v:vV(e)}}
+  if(e.k==='pb'&&e.back&&typeof e.back==='object'&&!Array.isArray(e.back)){const bk={};for(const k of Object.keys(e.back)){const v=e.back[k];if(!midOk(k)||!Number.isInteger(v)||v<0||v>POOL_MAX)return null;bk[k]=v}return{k:'pb',u:e.u,ts,id:e.id,back:bk,v:vV(e)}}
+  return null}
 /* s25: a settle confirmed from the final score carries {g: ESPN event id, sc: 'Kansas 78, Duke 71'} */
 const SV=25;   /* s25 version marker on new events */
 const vV=e=>e.v===SV?SV:undefined;
@@ -61,15 +88,22 @@ function reduce(logs,mids,now){const set=new Set(mids),all=[];
   /* legacy = written before s25. Decided by the v:25 marker and by log order (never by the clock): once a manager's own log holds a marked event,
      any later unmarked settle in that log cannot be from before s25, so it is not legacy (it is ignored). */
   mids.forEach(mid=>{let m=false;(logs[mid]||[]).forEach((e,i)=>{if(e.v===SV)m=true;all.push({e,mid,i,late:m&&e.v!==SV})})});
-  const pt={};all.forEach(x=>{if(x.e.k==='p'&&!(x.e.id in pt))pt[x.e.id]=x.e.ts});
-  all.forEach(x=>{x.t=x.e.k==='p'?x.e.ts:Math.max(x.e.ts,(pt[x.e.id]||0)+1)});   /* a slow clock on one phone must not put an answer before the question */
+  const pt={};all.forEach(x=>{if((x.e.k==='p'||x.e.k==='pl')&&!(x.e.id in pt))pt[x.e.id]=x.e.ts});
+  all.forEach(x=>{x.t=(x.e.k==='p'||x.e.k==='pl')?x.e.ts:Math.max(x.e.ts,(pt[x.e.id]||0)+1)});   /* a slow clock on one phone must not put an answer before the question */
   all.sort((x,y)=>x.t-y.t||(x.mid<y.mid?-1:x.mid>y.mid?1:0)||x.i-y.i);
   const bets=new Map(),seen=new Set();let n=0;
   for(const{e,mid,late}of all){if(seen.has(mid+'|'+e.u))continue;seen.add(mid+'|'+e.u);
     if(e.k==='p'){if(bets.has(e.id)||(e.to!=='*'&&(!set.has(e.to)||e.to===mid)))continue;
       bets.set(e.id,{v25:e.v===SV,id:e.id,n:++n,by:mid,to:e.to,amt:e.amt,a:e.a,b:e.b,text:e.text,g:e.g,c:e.c,rx:{},ts:e.ts,status:'pending',acc:null,reps:{},res:null,auto:false,fixes:[],fix:null});continue}
+    if(e.k==='pl'){if(bets.has(e.id)||!e.parts.includes(mid)||!e.parts.every(p=>set.has(p)))continue;   /* s28 pool: the builder is always in it; numbered with the bets */
+      bets.set(e.id,{kind:'pool',v25:true,id:e.id,n:++n,by:mid,parts:e.parts,amt:e.amt,places:e.places,text:e.text,rx:{},ts:e.ts,status:'open',back:null,reps:{},fixes:[],fix:null});continue}
     const b=bets.get(e.id);if(!b)continue;
     if(e.k==='rx'){const m=b.rx[e.e]||(b.rx[e.e]={});m[mid]=e.on;continue}   /* s25 reactions: latest per manager + bet + emoji wins */
+    if(b.kind==='pool'){   /* s28 pool: only the builder enters the payouts (once, they must add up to the pot) or cancels it (any time before the payouts; within 30 s = undo, also after) */
+      if(e.k==='pb'){if(mid!==b.by||b.status!=='open'||b.back||!Object.keys(e.back).every(k=>b.parts.includes(k)))continue;const bk={};b.parts.forEach(p=>{bk[p]=e.back[p]||0});
+        if(b.parts.reduce((a,p)=>a+bk[p],0)!==b.amt*b.parts.length)continue;b.back=bk;b.settledTs=e.ts}
+      else if(e.k==='w'){if(mid!==b.by||b.status!=='open'||(b.back&&e.ts-b.ts>=UNDO_MS))continue;b.status='void'}
+      continue}
     if(e.k==='fr'||e.k==='fc'||e.k==='fd'){autoS(b,e.ts);if(b.status!=='settled'||(mid!==b.by&&mid!==b.acc))continue;const F=b.fix;
       if(e.k==='fr'){if(F&&F.by===mid){F.st='replaced';F.endTs=e.ts;b.fix=null}
         else if(F){if(F.to===e.r){F.st='confirmed';F.cby=mid;F.endTs=e.ts;b.res=F.to;b.fix=null;b.auto=false;continue}F.st='countered';F.endTs=e.ts;F.cby=mid;b.fix=null}
@@ -93,18 +127,32 @@ function reduce(logs,mids,now){const set=new Set(mids),all=[];
 const LIVE=b=>b.status==='open'||b.status==='reported'||b.status==='disputed';
 function autoS(b,t){if(b.status==='reported'){const x=Object.keys(b.reps)[0];if(t-b.reps[x].ts>=C.autoMs){b.status='settled';b.res=b.reps[x].r;b.auto=true;b.settledTs=b.reps[x].ts+C.autoMs}}}
 const payFor=b=>({right:win(b.amt,b.a,b.b),wrong:b.amt});
-function tally(bets){const pair={},per={};let openN=0,openC=0,waitN=0;const P=m=>per[m]||(per[m]={net:0,bets:0});
-  for(const b of bets){if(b.status==='pending'){waitN++;continue}
+/* s28 Tally = the partner's tallyJS: M[from][to] gross (both directions kept), lost / won = gross sums, net = won - lost; settle lines net each pair.
+   A pool with payouts counts like the partner's buildEntries pool: each loser (got back less than the buy-in) pays each winner in proportion. */
+const round2=x=>Math.round(x*100)/100;
+const poolNets=b=>b.parts.map(p=>[p,((b.back&&b.back[p])||0)-b.amt]);
+function poolEntries(b){if(!b.back)return[];const nets=poolNets(b),debt=nets.filter(x=>x[1]<0).map(x=>[x[0],-x[1]]),cred=nets.filter(x=>x[1]>0),tot=cred.reduce((a,c)=>a+c[1],0)||1,out=[];
+  debt.forEach(([d,dv])=>cred.forEach(([c,cv])=>out.push({from:d,to:c,amount:round2(dv*cv/tot)})));return out}
+/* settle-up lines on a pool card (partner b27Greedy): the biggest loser owes the biggest winner, repeat */
+function greedy(nets){const d=nets.filter(x=>x[1]<0).map(x=>[x[0],-x[1]]),c=nets.filter(x=>x[1]>0).map(x=>[x[0],x[1]]),out=[];const srt=a=>a.sort((p,q)=>q[1]-p[1]||String(p[0]).localeCompare(String(q[0])));
+  while(d.length&&c.length){srt(d);srt(c);const m=Math.min(d[0][1],c[0][1]);out.push({from:d[0][0],to:c[0][0],num:m});d[0][1]-=m;c[0][1]-=m;if(!d[0][1])d.shift();if(!c[0][1])c.shift()}return out}
+function tally(bets){const pair={},per={},M={},lost={},won={};let openN=0,openC=0,waitN=0;const P=m=>per[m]||(per[m]={net:0,bets:0});
+  const ent=(f,t,c)=>{if(!c||f===t)return;M[f]=M[f]||{};M[f][t]=round2((M[f][t]||0)+c);lost[f]=round2((lost[f]||0)+c);won[t]=round2((won[t]||0)+c);P(f).net=round2(P(f).net-c);P(t).net=round2(P(t).net+c);
+    const k=[f,t].sort().join('|');pair[k]=pair[k]||{x:k.split('|')[0],y:k.split('|')[1],net:0};pair[k].net=round2(pair[k].net+(t===pair[k].x?c:-c))};
+  for(const b of bets){
+    if(b.kind==='pool'){if(b.status!=='open')continue;if(!b.back){openN++;openC+=b.amt*b.parts.length;continue}b.parts.forEach(p=>P(p).bets++);poolEntries(b).forEach(x=>ent(x.from,x.to,x.amount));continue}
+    if(b.status==='pending'){waitN++;continue}
     if(b.status==='open'||b.status==='reported'||b.status==='disputed'){openN++;openC+=b.amt;continue}
     if(b.status!=='settled')continue;P(b.by).bets++;P(b.acc).bets++;if(b.res==='p')continue;
-    const p=payFor(b),w=b.res==='b'?b.by:b.acc,l=b.res==='b'?b.acc:b.by,c=b.res==='b'?p.right:p.wrong;P(w).net+=c;P(l).net-=c;
-    const k=[w,l].sort().join('|');pair[k]=pair[k]||{x:k.split('|')[0],y:k.split('|')[1],net:0};pair[k].net+=(w===pair[k].x?c:-c)}
+    const p=payFor(b),w=b.res==='b'?b.by:b.acc,l=b.res==='b'?b.acc:b.by,c=b.res==='b'?p.right:p.wrong;ent(l,w,c)}
   const owes=[];Object.values(pair).forEach(p=>{if(p.net>0)owes.push({from:p.y,to:p.x,num:p.net});else if(p.net<0)owes.push({from:p.x,to:p.y,num:-p.net})});
-  return{owes,per,openN,openC,waitN}}
+  return{owes,per,openN,openC,waitN,M,lost,won}}
 /* ---------- host ---------- */
 const owners=()=>(H&&H.owners())||[];
 const own=mid=>owners().find(o=>o.mid===mid)||{mid,name:'Manager',emoji:''};
 const nm=mid=>own(mid).name;
+/* s28 (Paul): team name on top / first, the manager's real name under it (cards, tally); sentences keep the real name */
+const tmH=mid=>{const o=own(mid);return o.team_name&&o.team_name!==o.name?`<span class="tn2 tnin"><b class="tnt">${esc(o.team_name)}</b><small class="tnr">${esc(o.name)}</small></span>`:`<b>${esc(o.name)}</b>`};
 const mids=()=>owners().map(o=>o.mid);
 const meMid=()=>H&&H.me&&H.me();
 const compute=()=>reduce(S.logs,mids(),Date.now());
@@ -156,17 +204,18 @@ async function act(evs,okMsg){if(S.busy)return;if(!meMid()){S.msg='Open this pag
 /* ---------- form ---------- */
 const others=()=>owners().filter(o=>o.mid!==meMid());
 function formOK(){const me=meMid(),f=S.f;if(!me)return'Open this page from your own manager link to bet.';
-  if(!f.open){const ids=others().map(o=>o.mid);if(!f.opps.length||!f.opps.every(m=>ids.includes(m)))return'Choose who you are betting against (or tap Anyone).'}
+  if(!f.open){const ids=others().map(o=>o.mid);if(!f.opps.length||!f.opps.every(m=>ids.includes(m)))return'Choose who you are betting against.'}
   if(!clean(f.text))return'Say what the bet is about.';
-  if(!Number.isInteger(f.amt)||f.amt<C.min||f.amt>C.max)return f.amtCustom?(parseAmt(f.amtTxt).err||'Pick a number of pushups.'):'Tap a number of pushups or type your own (minimum '+C.min+').';
+  if(!Number.isInteger(f.amt)||f.amt<C.min||f.amt>C.max)return f.amtCustom?(parseAmt(f.amtTxt).err||'Pick an amount.'):'Tap an amount or type your own (minimum '+C.min+').';
   if(!(f.odds&&f.odds[0]>=1&&f.odds[1]>=1))return'Pick the odds.';return''}
 function lines(by,to,amt,a,b){const p={right:win(amt,a,b),wrong:amt};const tn=to==='*'?'whoever takes it':nm(to);
-  return{top:nm(by)+' backs it: '+pu(amt)+' '+oddsShort(a,b)+'.',win:'If '+nm(by)+' is right, '+tn+' owes '+nm(by)+' '+pu(p.right)+'.',lose:'If '+tn+' is right, '+nm(by)+' owes '+(to==='*'?'them':nm(to))+' '+pu(p.wrong)+'.',rounded:rounded(amt,a,b)}}
-function liveHtml(){const f=S.f,me=meMid();if(!me||(!f.open&&!f.opps.length)||!f.amt||!f.odds)return'<span class="mut">Pick who, a number of pushups and the odds to see who owes what.</span>';
+  return{top:nm(by)+' backs it: '+num(amt)+' '+oddsShort(a,b)+'.',win:'If '+nm(by)+' is right, '+tn+' owes '+nm(by)+' '+num(p.right)+'.',lose:'If '+tn+' is right, '+nm(by)+' owes '+(to==='*'?'them':nm(to))+' '+num(p.wrong)+'.',rounded:rounded(amt,a,b)}}
+function liveHtml(){const f=S.f,me=meMid();if(!me||(!f.open&&!f.opps.length)||!f.amt||!f.odds)return'<span class="mut">Pick one or more opponents, an amount and the odds to see who owes what.</span>';
   const L=lines(me,f.open?'*':f.opps[0],f.amt,f.odds[0],f.odds[1]);
-  return'<b>'+esc(L.top)+'</b>'+(!f.open&&f.opps.length>1?'<div class="mut b27-r">'+f.opps.length+' managers: each gets its own bet, answered by each of them.</div>':'')+'<div class="b27-w">'+esc(L.win)+'</div><div class="b27-l">'+esc(L.lose)+'</div>'+(L.rounded?'<div class="mut b27-r">Rounded to a whole number.</div>':'')}
+  return'<b>'+esc(L.top)+'</b>'+(!f.open&&f.opps.length>1?'<div class="mut b27-r">'+f.opps.length+' managers: one bet each, answered by each of them.</div>':'')+'<div class="b27-w">'+esc(L.win)+'</div><div class="b27-l">'+esc(L.lose)+'</div>'+(L.rounded?'<div class="mut b27-r">Rounded to a whole number.</div>':'')}
 function summary(){const f=S.f,me=meMid();const o=f.open?'anyone':f.opps.length?f.opps.map(nm).join(', '):'…';const od=f.odds?oddsShort(f.odds[0],f.odds[1]).replace(/^at /,''):'?';const t=clean(f.text);
-  return(me?nm(me):'You')+' vs '+o+' · '+(f.amt?pu(f.amt):'?')+' · '+od+(t?' · '+t:'')}
+  const a=f.amt?num(f.amt):'?',cnt=f.open?a:f.opps.length>1?a+' each':f.opps.length===1?'1 bet of '+a:a;   /* partner b27CountTxt */
+  return(me?nm(me):'You')+' vs '+o+' · '+cnt+' · '+od+(t?' · '+t:'')}
 function shortName(n){n=String(n);const w=n.split(/\s+/).filter(Boolean),l=w[w.length-1];if(w.length>1&&l.length>=4&&l.length<=9)return l;if(n.length<=9)return n;if(w.length>1&&w[0].length<=9)return w[0];return n.slice(0,8)+'…'}
 const tinyName=n=>{const t=shortName(n);return t.length<=7?t:t.slice(0,4)};
 function syncDom(){const m=document.getElementById('main');if(!m||!document.getElementById('b27Form'))return;const f=S.f,oth=others();
@@ -187,7 +236,7 @@ const sync=()=>{try{syncDom()}catch(e){}};
 const STX={pending:['Waiting','open'],open:['Open','open'],reported:['Result reported','open'],disputed:['Disagreement','unparsed'],settled:['Settled','settled'],declined:['Declined','unparsed'],withdrawn:['Withdrawn','unparsed']};
 function resultLine(b){if(b.status!=='settled')return'';const p=payFor(b);const d=(b.auto?' (settled automatically: no reply for 2 days)':'')+(b.src&&!(b.fixes||[]).some(x=>x.st==='confirmed')?' · from the final score: '+b.src.sc:'');
   if(b.res==='p')return'Wash: nobody owes anything'+d;
-  return b.res==='b'?nm(b.by)+' won ('+nm(b.acc)+' owes '+pu(p.right)+')'+d:nm(b.acc)+' won ('+nm(b.by)+' owes '+pu(p.wrong)+')'+d}
+  return b.res==='b'?nm(b.by)+' won ('+nm(b.acc)+' owes '+num(p.right)+')'+d:nm(b.acc)+' won ('+nm(b.by)+' owes '+num(p.wrong)+')'+d}
 const rLab=(b,r)=>r==='p'?'Wash':nm(r==='b'?b.by:b.acc)+' won';
 const tm=ms=>LTIME.stamp(ms);   /* Nov 3, 7:00 PM WIB: viewer's zone, labelled */
 const FXST={pending:'waiting for the other side',confirmed:'confirmed',declined:'declined',withdrawn:'withdrawn',replaced:'replaced by a newer request',countered:'answered with a different result'};
@@ -198,10 +247,11 @@ function fixHtml(b,me,btn,ask){let h='';const party=me&&(b.by===me||b.acc===me),
   if(F)return h+`<div class="note" style="margin-top:4px">${esc(nm(F.by))} asks to change the result from <b>${esc(rLab(b,F.from))}</b> to <b>${esc(rLab(b,F.to))}</b>.</div><div class="b27-act">${btn('fixok','✅ Confirm: '+rLab(b,F.to),'pri','',F.fx)}${btn('fixno','✖ Keep '+rLab(b,F.from),'sec','',F.fx)}</div>`;
   if(S.fixOpen===b.id)return h+`<div class="b27-act" data-fixpick="${esc(b.id)}"><span class="note">Correct result? The other side must confirm.</span>${['b','o','p'].filter(r=>r!==b.res).map(r=>btn('fixreq',rLab(b,r),'sec',r)).join('')}${btn('fixcancel','Cancel')}</div>`;
   return h+`<div class="b27-act">${btn('fixopen','✏️ Fix result')}</div>`}
-function card(b,me){const L=lines(b.by,b.acc||b.to,b.amt,b.a,b.b);const st=STX[b.status];const party=me&&(b.by===me||b.acc===me);
+const linkBtn=(b,w)=>`<button type="button" class="s24lk i b27-cpl" data-a="cplink" data-h="bets/${esc(b.id)}" aria-label="Copy link to this ${w}" title="Copy link to this ${w}">🔗</button>`;
+function card(b,me){const L=lines(b.by,b.acc||b.to,b.amt,b.a,b.b);const st=b.status==='settled'&&b.res==='p'?['Wash','wash']:STX[b.status];const party=me&&(b.by===me||b.acc===me);
   const other=b.acc||b.to;const vs=b.to==='*'&&!b.acc?'anyone who takes it':nm(other);
-  let h=`<div class="card b27-c" data-bet="${esc(b.id)}"><div><button type="button" class="cpl b27-cpl" data-a="cplink" data-h="bets/${esc(b.id)}" aria-label="Copy link to Bet #${esc(b.n)}" title="Copy link to this bet">🔗</button><b>Bet #${b.n}</b><button type="button" class="s27-copy" data-lb="copytext" data-id="${esc(b.id)}" aria-label="Copy the text of Bet #${esc(b.n)}">Copy</button> <span class="st ${st[1]}">${esc(st[0])}</span>${b.g&&CUR.filter(x=>x.g===b.g).length>1?` <span class="mut" style="font-size:12px">· 1 of ${CUR.filter(x=>x.g===b.g).length} placed together</span>`:''}</div>
-   <div class="b27-t${esc(S.more[b.id]?' open':'')}" id="b27T-${esc(b.id)}">${esc(b.text)}</div><button type="button" class="b27-more" data-lb="more" data-id="${esc(b.id)}" aria-controls="b27T-${esc(b.id)}" aria-expanded="${esc(String(!!S.more[b.id]))}"${S.more[b.id]?'':' hidden'}>${S.more[b.id]?'less':'more'}</button><div class="b27-m"><b>${esc(nm(b.by))}</b> vs <b>${esc(vs)}</b> · <b>${esc(pu(b.amt))}</b> · ${esc(oddsLabel(b.a,b.b))}</div>
+  let h=`<div class="card b27-c" data-bet="${esc(b.id)}"><div class="s24hd"><b>Bet #${b.n}</b> <span class="st ${st[1]}">${esc(st[0])}</span> <span class="mut" style="font-size:12px">${esc(day(b.ts))}</span>${b.g&&CUR.filter(x=>x.g===b.g).length>1?` <span class="mut" style="font-size:12px">· 1 of ${CUR.filter(x=>x.g===b.g).length} placed together</span>`:''}${linkBtn(b,'bet')}</div>
+   <div class="b27-t${esc(S.more[b.id]?' open':'')}" id="b27T-${esc(b.id)}">${esc(b.text)}</div><button type="button" class="b27-more" data-lb="more" data-id="${esc(b.id)}" aria-controls="b27T-${esc(b.id)}" aria-expanded="${esc(String(!!S.more[b.id]))}"${S.more[b.id]?'':' hidden'}>${S.more[b.id]?'less':'more'}</button><div class="b27-m">${tmH(b.by)} vs ${b.to==='*'&&!b.acc?`<b>${esc(vs)}</b>`:tmH(other)} · <b>${esc(num(b.amt))}</b> · ${esc(oddsLabel(b.a,b.b))}</div>
    <div class="b27-w">${esc(L.win)}</div><div class="b27-l">${esc(L.lose)}</div>${L.rounded?'<div class="mut b27-r">Rounded to a whole number.</div>':''}`;
   if(!clampQ){clampQ=true;requestAnimationFrame(clampFix)}
   const rl=resultLine(b);if(rl)h+=`<div class="note" style="margin-top:4px"><b>Result:</b> ${esc(rl)}${b.fixes&&b.fixes.some(x=>x.st==='confirmed')?' <span class="st settled">Corrected</span>':''}</div>`;
@@ -215,7 +265,7 @@ function card(b,me){const L=lines(b.by,b.acc||b.to,b.amt,b.a,b.b);const st=STX[b
     else h+=`<div class="note" style="margin-top:4px">Waiting for ${b.to==='*'?'someone to take it':esc(nm(b.to))+' to answer'}.</div>`}
   if(b.status==='reported'||b.status==='disputed'){const lb={b:nm(b.by)+' won',o:nm(b.acc)+' won',p:'Wash'};const said=Object.entries(b.reps).map(([m,x])=>esc(nm(m))+' said <b>'+esc(lb[x.r])+'</b>').join(', ');
     h+=`<div class="note b27-legacy" style="margin-top:4px">Earlier answer${Object.keys(b.reps).length>1?'s':''} (before the new rule): ${said}.${b.status==='reported'?' Without a result from '+esc(nm(b.by))+' it settles by itself 2 days after that answer.':''}</div>`}
-  if(LIVE(b)&&party&&me!==b.by)h+=`<div class="note b27-onlyc" style="margin-top:4px">Only ${esc(nm(b.by))} (who placed it) can settle this bet.</div>`;
+  if(LIVE(b)&&party&&me!==b.by)h+=`<div class="note b27-onlyc" style="margin-top:6px">Only ${esc(nm(b.by))} (who placed it) can enter the result.</div>`;
   h+=autoHtml(b,me,btn,ask);
   const PR=S.prop[b.id];if(LIVE(b)&&me&&me===b.by&&!(PR&&PR.st==='final'&&!S.autoFix[b.id])){
     const labels={b:nm(b.by)+' won',o:nm(b.acc)+' won',p:'Wash'};
@@ -242,114 +292,163 @@ function fSave(){try{if(S.fp==='all'&&S.fs==='all'&&!S.fq)localStorage.removeIte
 function fSet(p,s,quiet,q){if(!fOk(p,s))return false;S.fl=1;S.fp=p;S.fs=s;if(q!==undefined)S.fq=qClean(q);fSave();if(!quiet&&H&&H.onFilter)H.onFilter();return true}
 const fPm=me=>S.fp==='me'?me:S.fp==='all'?null:((owners()[+S.fp-1]||{}).mid||null);
 const fEff=me=>({p:(S.fp==='me'&&!me)?'all':S.fp,s:(S.fs==='waiting'&&!me)?'all':S.fs});   /* a watcher has no "me": those choices fall back */
-function waitsOn(b,me){if(!me)return false;const party=b.by===me||b.acc===me;
+function waitsOn(b,me){if(!me)return false;if(b.kind==='pool')return b.status==='open'&&!b.back&&b.by!==me&&b.parts.includes(me);const party=b.by===me||b.acc===me;
   if(b.status==='pending')return b.by!==me&&(b.to===me||b.to==='*');
   if(b.status==='reported')return party&&!b.reps[me];
   if(b.status==='disputed')return party;
   if(b.status==='settled')return party&&!!b.fix&&b.fix.by!==me;return false}
 function fMatch(b,me){fLoad();const e=fEff(me);
-  if(e.p!=='all'){const pm=e.p==='me'?me:fPm(me);if(!pm||!(b.by===pm||b.acc===pm||(b.status==='pending'&&b.to===pm)))return false}
-  if(S.fq){const q=S.fq.toLowerCase(),hay=[b.text,nm(b.by),b.acc?nm(b.acc):'',b.to&&b.to!=='*'?nm(b.to):''].join(' ').toLowerCase();if(!q.split(/\s+/).every(w=>hay.includes(w)))return false}
+  if(e.p!=='all'){const pm=e.p==='me'?me:fPm(me);if(!pm||!(b.by===pm||b.acc===pm||(b.status==='pending'&&b.to===pm)||(b.kind==='pool'&&b.parts.includes(pm))))return false}
+  if(S.fq){const q=S.fq.toLowerCase(),hay=[b.text,nm(b.by),b.acc?nm(b.acc):'',b.to&&b.to!=='*'?nm(b.to):'',...(b.parts||[]).map(nm)].join(' ').toLowerCase();if(!q.split(/\s+/).every(w=>hay.includes(w)))return false}
+  if(b.kind==='pool'){if(e.s==='waiting')return waitsOn(b,me);if(e.s==='open')return b.status==='open'&&!b.back;if(e.s==='settled')return b.status==='open'&&!!b.back;return e.s!=='wash'}
   if(e.s==='waiting')return waitsOn(b,me);if(e.s==='open')return['pending','open','reported','disputed'].includes(b.status);
   if(e.s==='settled')return b.status==='settled';if(e.s==='wash')return b.status==='settled'&&b.res==='p';return true}
 const fActive=me=>{fLoad();const e=fEff(me);return e.p!=='all'||e.s!=='all'||!!S.fq};
-function fEmpty(me){const e=fEff(me);const who=e.p==='me'?'you are in':e.p==='all'?'':esc(nm(fPm(me)))+' is in';
-  const st={all:'No bets',waiting:'Nothing is waiting on you',open:'No open bets',settled:'No settled bets',wash:'No washes (bets settled with nobody owing)'}[e.s];
-  return st+(who&&e.s!=='waiting'?' that '+who:'')+(e.s==='waiting'&&e.p!=='all'&&e.p!=='me'?' with '+esc(nm(fPm(me))):'')+(S.fq?' matching “'+esc(S.fq)+'”':'')+'.'}
-function fBar(me,cnt){fLoad();const e=fEff(me),oth=owners();
+function fEmpty(me){return 'No bets match this filter.'}
+function fBar(me,bets){fLoad();const e=fEff(me),oth=owners(),wn=me?bets.filter(b=>waitsOn(b,me)).length:0;
   const po=`<option value="all"${e.p==='all'?' selected':''}>Everyone</option>`+(me?`<option value="me"${S.fp==='me'?' selected':''}>Me</option>`:'')+oth.map((o,i)=>`<option value="${i+1}"${S.fp===String(i+1)?' selected':''}>${esc(o.name)}</option>`).join('');
-  const so=Object.keys(FS).filter(k=>k!=='waiting'||me).map(k=>`<option value="${k}"${e.s===k?' selected':''}>${esc(FS[k])}</option>`).join('');
+  const so=Object.keys(FS).filter(k=>k!=='waiting'||me).map(k=>`<option value="${k}"${e.s===k?' selected':''}>${esc(FS[k])}${k==='waiting'&&wn?' ('+wn+')':''}</option>`).join('');
   const lost=!me&&(S.fp==='me'||S.fs==='waiting')?'<div class="note" id="b27FltNote">“Me” and “Waiting on me” need your own manager link, so this shows everyone.</div>':'';
-  return`<div class="card b27-flt" id="b27Flt" role="search" aria-label="Filter bets"><div class="b27-fr"><select id="b27FP" aria-label="Person">${po}</select><select id="b27FS" aria-label="Status">${so}</select><input id="b27FQ" type="search" class="b27-fq" placeholder="search terms..." aria-label="Search bets" autocomplete="off" maxlength="60" enterkeyhint="search" value="${esc(S.fq)}"></div>${lost}<div class="note b27-cnt" id="b27FCnt" aria-live="polite">Showing ${cnt} bets</div></div>`}
+  return`<div class="card s24fb b27-flt" id="b27Flt" role="search" aria-label="Filter bets"><div class="b27-fr"><select id="b27FP" aria-label="Person">${po}</select><select id="b27FS" aria-label="Status">${so}</select><input id="b27FQ" type="search" class="b27-fq" placeholder="search terms…" aria-label="Search bets" autocomplete="off" maxlength="60" enterkeyhint="search" value="${esc(S.fq)}"></div>${lost}</div>`}
 function fHashOut(){fLoad();return S.fp==='all'&&S.fs==='all'&&!S.fq?'':'f='+S.fp+'-'+S.fs+(S.fq?'/q='+encodeURIComponent(S.fq):'')}
 function fFromHash(f,q){const m=/^(all|me|[1-8])-(all|waiting|open|settled|wash)$/.exec(String(f||''));if(m)fSet(m[1],m[2],true,q==null?'':q)}
 function reveal(id){const me=meMid(),b=compute().find(x=>x.id===id);if(!b||!fActive(me)||fMatch(b,me))return false;fSet('all','all',true,'');return true}
 let CUR=[];const UNDO_MS=30000;
-const undoable=(b,me)=>!!me&&b.status==='pending'&&b.by===me&&Date.now()-b.ts<UNDO_MS;
+const undoable=(b,me)=>!!me&&(b.kind==='pool'?b.status==='open':b.status==='pending')&&b.by===me&&Date.now()-b.ts<UNDO_MS;
 const grpUndo=(g,me)=>g?CUR.filter(x=>x.g===g&&undoable(x,me)):[];
-const nmHtml=mid=>{const o=own(mid),sh=shortName(o.name);return`<span class="oqn${sh!==o.name?' hs':''}" data-em="${esc(o.emoji||'')}" data-e1="${esc(first(o.emoji))}"><span class="f">${esc(o.name)}</span>${sh!==o.name?`<span class="s">${esc(sh)}</span>`:''}</span>`};
+const nmHtml=mid=>{const o0=own(mid),o=Object.assign({},o0,{name:o0.team_name||o0.name}),sh=shortName(o.name);return`<span class="oqn${sh!==o.name?' hs':''}" data-em="${esc(o.emoji||'')}" data-e1="${esc(first(o.emoji))}"><span class="f">${esc(o.name)}</span>${sh!==o.name?`<span class="s">${esc(sh)}</span>`:''}</span>`};
 const first=e=>{e=String(e||'');try{return new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(e)[Symbol.iterator]().next().value.segment}catch(_){return Array.from(e)[0]||''}};
 /* s25k: the owes grid and the net list show each manager's TEAM NICKNAME in caps (display only; from the league data, "Test " stripped; full name in the tooltip) */
 const nick=o=>{o=o||{};const t=String(o.team_name||o.team||'').replace(/^\s*Test\s+/i,'').trim();return (t||String(o.name||'Manager').replace(/^\s*Test\s+/i,'').trim()).toUpperCase()};
-function owesHtml(T,opt){opt=opt||{};const ppl=Object.entries(T.per).sort((a,b)=>b[1].net-a[1].net||nm(a[0]).localeCompare(nm(b[0])));
-  let h='<h2 id="b27Owes">Who Owes Who <span class="note">(settled bets only)</span></h2>';
-  /* s25k: the grid always shows (all zeros until a bet settles), with a note over it; same as the partner's OWES-RESTORE, League wording (pushups) */
-  const none=!ppl.length,oN=T.openN||0;if(none)h+=`<div class="note oqe" id="b27NoOwe" role="status">💪 Nothing settled yet${oN?` (${oN} bet${oN===1?'':'s'} still open)`:''}. The table fills in, in pushups, as bets are settled.</div>`;
-  const ow=owners(),cell={},rt={},ct={};ow.forEach(o=>{cell[o.mid]={};rt[o.mid]=0;ct[o.mid]=0});
-  T.owes.forEach(o=>{if(cell[o.from]&&o.to in cell){cell[o.from][o.to]=o.num;rt[o.from]+=o.num;ct[o.to]+=o.num}});
-  const em=o=>o.emoji?esc(o.emoji)+' ':'';const NK=o=>esc(nick(o));
-  h+=`<div class="swipe oqw">↔ Swipe sideways to see every column</div><div class="card sc"><table class="mx oqm" id="b27Matrix" aria-label="Who owes who, in pushups"><thead><tr><th>owes ↓ / to →</th>${ow.map(o=>`<th class="nk" data-n="${esc(o.name)}" title="${esc(o.name)}">${NK(o)}</th>`).join('')}<th class="t">Total owes</th></tr></thead><tbody>${ow.map(r=>`<tr><td class="rn nk" title="${esc(r.name)}"><b>${em(r)}${NK(r)}</b></td>${ow.map(c=>c.mid===r.mid?'<td class="z dg">·</td>':cell[r.mid][c.mid]?`<td class="c">${num(cell[r.mid][c.mid])}</td>`:'<td class="z c">0</td>').join('')}<td class="t">${num(rt[r.mid])}</td></tr>`).join('')}</tbody><tfoot><tr><td class="rn">Total won</td>${ow.map(c=>`<td>${num(ct[c.mid])}</td>`).join('')}<td class="t"></td></tr></tfoot></table></div>`;
-  /* s25l (partner S25J): Tally only: plain settle lines under the grid, one per pair, netted (A owes B minus B owes A); none when everything is zero */
-  if(opt.settle){const M=(a,b)=>(cell[a]&&cell[a][b])||0,L_=[];ow.forEach((a,x)=>ow.slice(x+1).forEach(b=>{const d=M(a.mid,b.mid)-M(b.mid,a.mid);if(d>0)L_.push([a,b,d]);else if(d<0)L_.push([b,a,-d])}));
-    if(L_.length)h+=`<div class="card" id="b27Settle" data-tally-settle aria-label="Who owes who, settle lines">${L_.map(([a,b,d])=>`<div class="tset">${esc(nick(a))} owes ${esc(nick(b))} ${esc(pu(d))}</div>`).join('')}</div>`}
-  if(none)return h;   /* no net-per-manager board until something settles */
-  h+=`<div class="card" id="b27Board">`;
-  const mx=Math.max(1,...ppl.map(([m,p])=>Math.abs(p.net)));
-  h+=`<div class="b27-q">Net pushups per manager <span class="note">(+ is owed to them, − is what they owe)</span></div><div class="oqc" role="list" aria-label="Net pushups per manager">${ppl.map(([m,p])=>{const w=p.net?Math.max(.03,Math.abs(p.net)/mx):0;return`<div class="cr" role="listitem"><span class="cn nk" title="${esc(nm(m))}">${esc(own(m).emoji?own(m).emoji+' ':'')}${esc(nick(own(m)))}</span><span class="ct"><i class="cb ${p.net>0?'pos':'neg'}" style="--w:${w.toFixed(3)}"></i></span><b class="cv ${p.net>0?'good':p.net<0?'bad':''}">${signed(p.net)}</b></div>`}).join('')}</div></div>`;   /* s24: close #b27Board (it used to stay open and wrap the bet cards) */
-  return h}
+/* ---------- s28: the partner's Bets page (vB27 / b27PoolForm / b27PoolCard / vTally), on the League bet store ---------- */
+const chip=(o,k,on)=>`<button type="button" class="b27-chip op" data-lb="${k}" data-mid="${esc(o.mid)}" aria-label="${esc(o.team_name?o.team_name+' ('+o.name+')':o.name)}" aria-pressed="${on}"><span class="ck" aria-hidden="true">✓</span><span class="em" aria-hidden="true">${esc(o.emoji||'')}</span><span class="nm" aria-hidden="true"><span class="f">${esc(o.team_name||o.name)}</span><span class="sh">${esc(shortName(o.team_name||o.name))}</span>${o.team_name?`<small class="tnr">${esc(o.name)}</small>`:''}<span class="xs">${esc(tinyName(o.team_name||o.name))}</span></span></button>`;
+const kindTabs=()=>`<div class="tabs b27-kind" role="group" aria-label="Bet type" style="margin:8px 0"><button type="button" class="${S.kind!=='pool'?'on':''}" aria-pressed="${S.kind!=='pool'}" data-lb="kind" data-v="bet" id="b27KindBet">${esc(POOL_TXT.toggleBet)}</button><button type="button" class="${S.kind==='pool'?'on':''}" aria-pressed="${S.kind==='pool'}" data-lb="kind" data-v="pool" id="b27KindPool">${esc(POOL_TXT.toggle)}</button></div>`;
 function formHtml(me){const f=S.f,oth=others();const err=formOK();
-  return`<div class="card b27-form" id="b27Form"><b>New bet</b> <span class="note">· you are <b>${esc(nm(me))}</b></span>${qbHint()}${S.edited?`<div class="note b27-edhint" role="status" id="b27EdHint">✏️ Filled in from Bet #${esc(S.edited)} (withdrawn). Change it, then place it again.</div>`:''}
-   <button type="button" class="s27-howl" data-lb="howto" id="b27HowL">📘 How to bet →</button><div class="b27-q">${tipK('who','1. Who are you betting against?')}</div>
-   <div class="b27-opps" role="group" aria-label="Opponents" style="--n:${oth.length}">${oth.map(o=>`<button type="button" class="b27-chip op" data-lb="opp" data-mid="${esc(o.mid)}" aria-label="${esc(o.name)}" aria-pressed="${!f.open&&f.opps.includes(o.mid)}"><span class="ck" aria-hidden="true">✓</span><span class="em" aria-hidden="true">${esc(o.emoji||'')}</span><span class="nm" aria-hidden="true"><span class="f">${esc(o.name)}</span><span class="sh">${esc(shortName(o.name))}</span><span class="xs">${esc(tinyName(o.name))}</span></span></button>`).join('')}</div>
+  return`<div class="card b27-form" id="b27Form"><b>New bet</b> <span class="note">· you are <b>${esc(nm(me))}</b></span>${qbHint()}${S.edited?`<div class="note b27-edhint" role="status" id="b27EdHint">✏️ Filled in from Bet #${esc(S.edited)} (withdrawn). Change it, then place it again.</div>`:kindTabs()}
+   <div class="b27-q">1. Who are you betting against? <span class="note">Tap one or more. Several = one bet each.</span></div><div class="b27-opps" role="group" aria-label="Opponents" style="--n:${oth.length}">${oth.map(o=>chip(o,'opp',!f.open&&f.opps.includes(o.mid))).join('')}</div>
    <div class="b27-selbar"><button type="button" class="b27-sm" data-lb="anyone" aria-pressed="${f.open}">🌍 Anyone</button><button type="button" class="b27-sm" data-lb="oppall">Select all</button><button type="button" class="b27-sm" data-lb="oppclear">Clear</button><span class="cnt" id="b27SelCnt" aria-live="polite">${f.open?'Open to anyone':f.opps.length?f.opps.length+' selected':'None selected'}</span></div>
-   <div class="b27-q">${tipK('text','2. What’s the bet?')}<label for="b27Text" class="sr">What’s the bet? I say…</label></div><input id="b27Text" class="sb-in b27-in" maxlength="${C.maxText}" autocomplete="off" enterkeyhint="go" placeholder="e.g. Kansas beats Duke" value="${esc(f.text)}">
-   <div class="b27-q">${tipK('amt','3. How many pushups?')}</div><div class="b27-amts" role="group" aria-label="Pushups">${C.amounts.map(a=>`<button type="button" class="b27-amt" data-lb="amt" data-v="${a}" aria-pressed="${!f.amtCustom&&a===f.amt}">${a}</button>`).join('')}<button type="button" class="b27-amt cu" data-lb="amtcustom" aria-pressed="${f.amtCustom}">Custom</button></div>
-   <div id="b27Aw" class="b27-cw"${f.amtCustom?'':' hidden'}><label for="b27Ao" class="sr">Custom number of pushups</label><input id="b27Ao" class="sb-in b27-in" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6" placeholder="Whole number, ${C.min} to ${C.max}" value="${esc(f.amtTxt)}"><div id="b27Ae" class="b27-bad-t" role="alert">${esc(f.amtErr)}</div></div>
-   <div class="b27-q">${tipK('odds','4. Odds')}</div><div class="b27-chips" role="group" aria-label="Odds">${C.odds.map(([a,b])=>`<button type="button" class="b27-chip" data-lb="odds" data-v="${a}-${b}" aria-pressed="${!f.custom&&!!f.odds&&f.odds[0]===a&&f.odds[1]===b}">${a===1&&b===1?'Even':a+'-'+b}</button>`).join('')}<button type="button" class="b27-chip" data-lb="oddscustom" aria-pressed="${f.custom}">Custom…</button></div>
+   <div class="b27-q"><label for="b27Text">2. What’s the bet? <span class="note">I say…</span></label></div><input id="b27Text" class="sb-in b27-in" maxlength="${C.maxText}" autocomplete="off" enterkeyhint="go" placeholder="e.g. Kansas beats Duke" value="${esc(f.text)}">
+   <div class="b27-q">3. Amount <span class="note">(minimum ${C.min})</span></div><div class="b27-amts" role="group" aria-label="Amount">${C.amounts.map(a=>`<button type="button" class="b27-amt" data-lb="amt" data-v="${a}" aria-pressed="${!f.amtCustom&&a===f.amt}">${a}</button>`).join('')}<button type="button" class="b27-amt cu" data-lb="amtcustom" aria-pressed="${f.amtCustom}">Custom</button></div>
+   <div id="b27Aw" class="b27-cw"${f.amtCustom?'':' hidden'}><label for="b27Ao" class="sr">Custom amount</label><input id="b27Ao" class="sb-in b27-in" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6" placeholder="Whole number, ${C.min} to ${C.max}" value="${esc(f.amtTxt)}"><div id="b27Ae" class="b27-bad-t" role="alert">${esc(f.amtErr)}</div></div>
+   <div class="b27-q">4. Odds <span class="note">(if you’re right, they owe amount × first ÷ second)</span></div><div class="b27-chips" role="group" aria-label="Odds">${C.odds.map(([a,b])=>`<button type="button" class="b27-chip" data-lb="odds" data-v="${a}-${b}" aria-pressed="${!f.custom&&!!f.odds&&f.odds[0]===a&&f.odds[1]===b}">${a===1&&b===1?'Even':a+'-'+b}</button>`).join('')}<button type="button" class="b27-chip" data-lb="oddscustom" aria-pressed="${f.custom}">Custom…</button></div>
    <div id="b27Cw" class="b27-cw"${f.custom?'':' hidden'}><label for="b27Co" class="sr">Custom odds</label><input id="b27Co" class="sb-in b27-in" inputmode="text" autocomplete="off" maxlength="9" placeholder="e.g. 7-2 or 10-1" value="${esc(f.customTxt)}"><div id="b27Ce" class="b27-bad-t" role="alert">${esc(f.oddsErr)}</div></div>
    <div class="b27-livebox" id="b27Live" aria-live="polite">${liveHtml()}</div><div class="b27-sum" id="b27Sum">${esc(summary())}</div><div class="b27-bad-t" id="b27Hint"></div>
    <button type="button" id="b27Place" class="btn b27-big" data-lb="place"${err?' disabled aria-disabled="true"':''}>Place bet</button></div>`}
-const OB_LABELS={form:'\u270F\uFE0F Write it Up',tally:'\u{1F4B0} Tally'};   /* the two approved icons (with U+1F4B5 on the nav tab); everything else stays pushups */
+/* ----- pool form: 1 terms, 2 who's in, 3 buy-in (live pot line), 4 payouts by place (amounts only; optional) ----- */
+const poolParts=()=>{const me=meMid();return owners().map(o=>o.mid).filter(m=>m===me||S.p.pp.includes(m))};
+function poolCheck(){const e={},parts=poolParts(),p=S.p;
+  if(!clean(p.text))e.terms=PT('eTerms');if(parts.length<2)e.people=PT('ePeople');
+  let amt=null;const bt=String(p.entry==null?'':p.entry).trim();
+  if(!bt)e.buy=PT('eBuy');else{amt=poolNum(bt);if(amt===null||amt<C.min){e.buy=amt===null?PT('eBuy'):PT('eBuyMin',{min:C.min});amt=null}}
+  const pot=amt!==null&&parts.length>=2?amt*parts.length:null;
+  const vals=p.places.map(x=>String(x==null?'':x).trim());let places=null,sum=0,bad=false;
+  vals.forEach(v=>{if(!v)return;const n=poolNum(v);if(n===null)bad=true;else sum+=n});
+  if(bad)e.pay=PT('ePlaceNum');else if(vals.some(Boolean)){places=vals.map(v=>v?poolNum(v):0);while(places.length&&!places[places.length-1])places.pop();
+    if(pot!==null&&sum!==pot)e.pay=PT('ePlaceSum',{sum:num(sum),pot:num(pot),diff:num(Math.abs(pot-sum)),way:sum<pot?PT('short'):PT('over')})}
+  return{e,parts,amt,pot,sum,places:places&&places.length?places:null}}
+const firstErr=c=>c.e.terms||c.e.people||c.e.buy||c.e.pay||'';
+const potLine=c=>c.pot!==null?PT('potLine',{n:c.parts.length,buy:num(c.amt),pot:num(c.pot)}):PT('potWait');
+const sumLine=c=>(c.pot===null||!S.p.places.some(x=>String(x).trim()))?PT('payOpt'):PT('sumLine',{sum:num(c.sum),pot:num(c.pot)})+(c.sum===c.pot?' ✓':'');
+function poolPaint(){const c=poolCheck(),sh=S.p.showErr||{},set=(id,t)=>{const el=document.getElementById(id);if(el&&el.textContent!==t)el.textContent=t};
+  set('s26eTerms',sh.terms&&c.e.terms?c.e.terms:'');set('s26ePeople',sh.people&&c.e.people?c.e.people:'');set('s26eBuy',(sh.buy||String(S.p.entry).trim())&&c.e.buy?c.e.buy:'');
+  set('s26ePay',c.e.pay||'');set('s26Pot',potLine(c));set('s26Sum',sumLine(c));
+  const se=document.getElementById('s26Sum');if(se)se.classList.toggle('ok',c.pot!==null&&c.sum===c.pot&&S.p.places.some(x=>String(x).trim()));
+  [['b27Text','terms'],['b27En','buy']].forEach(([id,k])=>{const el=document.getElementById(id);if(el&&S.kind==='pool'){const on=!!(c.e[k]&&(sh[k]||(k==='buy'&&String(S.p.entry).trim())));el.classList.toggle('b27-errbox',on);el.setAttribute('aria-invalid',String(on))}});
+  document.querySelectorAll('.s26pi').forEach(el=>el.classList.toggle('b27-errbox',!!c.e.pay));
+  document.querySelectorAll('[data-lb=pp]').forEach(b=>b.setAttribute('aria-pressed',String(S.p.pp.includes(b.dataset.mid))));
+  const sc=document.getElementById('b27SelCnt');if(sc&&S.kind==='pool')sc.textContent=S.p.pp.length?S.p.pp.length+' selected':'None selected';return c}
+const placeRows=()=>S.p.places.map((v,i)=>`<div class="s26pr"><label for="s26p${i}" class="s26pl">${esc(placeName(i))}</label><input id="s26p${i}" class="sb-in s26pi" data-place="${i}" inputmode="decimal" autocomplete="off" placeholder="0" value="${esc(v)}">${i>=2?`<button type="button" class="s26px" data-lb="delplace" data-i="${i}" aria-label="Remove ${esc(placeName(i))}">×</button>`:'<span class="s26px0"></span>'}</div>`).join('');
+function poolFormHtml(me){const oth=others(),p=S.p;setTimeout(()=>{try{poolPaint()}catch(e){}},0);
+  return`<div class="card b27-form" id="b27Form" data-kind="pool"><b>New bet</b> <span class="note">· you are <b>${esc(nm(me))}</b></span>${kindTabs()}
+   <div class="s26st"><label for="b27Text" class="b27-lb"><span class="s26n">1</span>${esc(PT('s1'))}</label><textarea id="b27Text" class="sb-in b27-in" rows="2" maxlength="${C.maxText}" placeholder="${esc(PT('termsPh'))}" aria-describedby="s26eTerms">${esc(p.text)}</textarea><div id="s26eTerms" class="s26err" role="alert"></div></div>
+   <div class="s26st"><div class="b27-lb" id="s26lPeople" tabindex="-1"><span class="s26n">2</span>${esc(PT('s2'))} <span class="note">${esc(POOL_TXT.youIn)}</span></div><div class="b27-opps" role="group" aria-labelledby="s26lPeople" style="--n:${oth.length}">${oth.map(o=>chip(o,'pp',p.pp.includes(o.mid))).join('')}</div>
+   <div class="b27-selbar"><button type="button" class="b27-sm" data-lb="ppall">Select all</button><button type="button" class="b27-sm" data-lb="ppclear">Clear</button><span class="cnt" id="b27SelCnt" aria-live="polite">${p.pp.length?p.pp.length+' selected':'None selected'}</span></div>
+   <div id="s26ePeople" class="s26err" role="alert"></div></div>
+   <div class="s26st"><label for="b27En" class="b27-lb"><span class="s26n">3</span>${esc(PT('s3'))}</label><input id="b27En" class="sb-in b27-in s26buy" inputmode="decimal" autocomplete="off" placeholder="${esc(PT('buyPh'))}" value="${esc(p.entry)}" aria-describedby="s26Pot s26eBuy"><div id="s26Pot" class="s26pot" aria-live="polite">${esc(potLine(poolCheck()))}</div><div id="s26eBuy" class="s26err" role="alert"></div></div>
+   <div class="s26st"><div class="b27-lb"><span class="s26n">4</span>${esc(PT('s4'))}</div><div class="note">${esc(PT('helpPl'))}</div>${placeRows()}<button type="button" class="b27-sm s26add" data-lb="addplace"${p.places.length>=10?' disabled':''}>${esc(PT('addPlace'))}</button><div id="s26Sum" class="s26sum" aria-live="polite">${esc(sumLine(poolCheck()))}</div><div id="s26ePay" class="s26err" role="alert"></div></div>
+   <button type="button" id="b27Place" class="btn b27-big" data-lb="poolplace">${esc(POOL_TXT.build)}</button></div>`}
+function poolResultLines(parts,amt,back){if(!back)return[PT('open')];const nets=parts.map(p=>[p,back[p]-amt]);
+  return nets.map(([p,v])=>PT('row',{name:nm(p),got:num(back[p]),net:signed(v)})).concat(greedy(nets).map(x=>PT('settleUp',{from:nm(x.from),to:nm(x.to),n:num(x.num)})))}
+function poolConfirmHtml(){const c=poolCheck();if(firstErr(c)||!meMid())return'';
+  return`<div class="card b27-confirm" id="b27Confirm" data-kind="pool"><b>${esc(POOL_TXT.confirmTitle)}</b><div class="s26terms">${esc(clean(S.p.text))}</div><div class="b27-sum">${esc(PT('sum',{names:c.parts.map(nm).join(', '),buy:num(c.amt),tot:num(c.amt*c.parts.length)}))}</div>${c.places?`<div class="b27-m">${esc(PT('payLine',{x:c.places.map((a,i)=>placeName(i)+' '+num(a)).join(' · ')}))}</div>`:''}<div id="b27Live">${poolResultLines(c.parts,c.amt,null).map(l=>`<div class="b27-w">${esc(l)}</div>`).join('')}</div>
+   <div class="b27-act"><button type="button" class="btn b27-big" data-lb="poolconfirm"${S.busy?' disabled':''}>${S.busy?'Saving…':esc(POOL_TXT.go)}</button><button type="button" class="btn sec b27-big" data-lb="pooledit"${S.busy?' disabled':''}>${esc(POOL_TXT.change)}</button></div></div>`}
+/* partner s26kModal: the confirm step sits in a dialog over the page; tap outside or Esc = ← Change */
+const modal=c=>c?`<div class="s26k-bd" data-lb="modalbd"><div class="s26k-m" role="dialog" aria-modal="true" aria-label="Check it, then confirm">${c}</div></div>`:'';
+/* ----- pool card + settle (builder only): by place (pick who finished where) or, with no places, name:amount ----- */
+const pkey=n=>String(n).toLowerCase().replace(/[^a-z0-9]+/g,'');
+function poolKeys(){const ow=owners(),m={};ow.forEach(o=>{const w=String(o.name).split(/\s+/).filter(Boolean);m[o.mid]=pkey(w[w.length-1]||o.name)});const c={};Object.values(m).forEach(k=>c[k]=(c[k]||0)+1);ow.forEach(o=>{if(c[m[o.mid]]>1)m[o.mid]=pkey(o.name)});return m}
+function poolParse(b,txt){const sz=b.amt*b.parts.length;if(!String(txt||'').trim())return{ok:true,back:null};const keys=poolKeys(),ow=owners(),back={};
+  for(const raw of String(txt).split(/[,;\n]+/)){const x=raw.trim();if(!x)continue;const i=x.search(/[:=]/);if(i<1)return{ok:false,err:PT('eFmt')};
+    const k=pkey(x.slice(0,i)),vv=x.slice(i+1).trim(),hit=ow.filter(o=>keys[o.mid]===k||pkey(o.name)===k||pkey(String(o.name).split(/\s+/)[0])===k);
+    if(hit.length!==1)return{ok:false,err:PT('eUnknown',{x:x.slice(0,i).trim(),keys:ow.map(o=>keys[o.mid]).join(', ')})};
+    const who=hit[0].mid;if(!b.parts.includes(who))return{ok:false,err:PT('eNotIn',{x:nm(who)})};if(Object.prototype.hasOwnProperty.call(back,who))return{ok:false,err:PT('eDup',{x:nm(who)})};
+    const v=poolNum(vv);if(v===null)return{ok:false,err:PT('eBadPay')};back[who]=v}
+  b.parts.forEach(p=>{if(!(p in back))back[p]=0});const tot=b.parts.reduce((a,p)=>a+back[p],0);if(tot!==sz)return{ok:false,err:PT('eSum',{sum:num(tot),total:num(sz)})};return{ok:true,back}}
+const poolCanSettle=(b,me)=>b.status==='open'&&!b.back&&!!me&&me===b.by;
+function poolCard(b,me){const st=b.status,done=st==='open'&&!!b.back,stTxt=st==='void'?POOL_TXT.stVoid:b.back?POOL_TXT.stDone:POOL_TXT.stOpen,ask=S.ask&&S.ask.id===b.id&&S.ask.w==='pool';
+  let h=`<div class="card b27-c b27-pool" data-bet="${esc(b.id)}" data-kind="pool"><div class="s24hd"><b>${esc(POOL_TXT.word)} #${b.n}</b> <span class="st ${st==='void'?'unparsed':done?'settled':'open'}">${esc(stTxt)}</span> <span class="mut" style="font-size:12px">${esc(day(b.ts))}</span> <span class="mut" style="font-size:12px">· ${esc(PT('who',{n:b.parts.length}))}</span>${linkBtn(b,'pool')}</div>
+   <div class="b27-t">${esc(b.text)}</div><div class="b27-m">${esc(PT('line',{buy:num(b.amt),tot:num(b.amt*b.parts.length)}))}</div><div class="b27-m">${esc(PT('with',{names:b.parts.map(nm).join(', ')}))}</div>`;
+  if(b.places)h+=`<div class="b27-m">${esc(PT('payLine',{x:b.places.map((a,i)=>placeName(i)+' '+num(a)).join(' · ')}))}</div>`;
+  if(st==='open'&&!b.back)h+=`<div class="note" style="margin-top:6px">${esc(POOL_TXT.noPay)}</div>`;
+  if(done)h+=`<div class="note" style="margin-top:6px"><b>${esc(POOL_TXT.result)}:</b></div>`+poolResultLines(b.parts,b.amt,b.back).map((l,i)=>`<div class="${i>=b.parts.length?'b27-l':'b27-w'}" style="margin-top:2px">${esc(l)}</div>`).join('');
+  h+='<div class="b27-sp" aria-hidden="true"></div>'+stampHtml(b);
+  if(poolCanSettle(b,me)&&b.places){const sel=S.placeWho[b.id]||(S.placeWho[b.id]=[]);
+    h+=`<div class="s26set"><div class="b27-lb">${esc(PT('pickWho'))}</div>${b.places.map((a,i)=>`<div class="s26pr"><label for="s26w_${esc(b.id)}_${i}" class="s26pl">${esc(placeName(i))} <span class="mut">${esc(num(a))}</span></label><select id="s26w_${esc(b.id)}_${i}" class="sb-in s26ps" data-pw="${esc(b.id)}" data-i="${i}"><option value="">${esc(PT('pickOne'))}</option>${b.parts.map(p=>`<option value="${esc(p)}"${sel[i]===p?' selected':''}>${esc(nm(p))}</option>`).join('')}</select></div>`).join('')}
+     ${S.poolErr[b.id]?`<div class="b27-bad-t" role="alert">${esc(S.poolErr[b.id])}</div>`:''}<div class="b27-act"><button type="button" class="btn sec b27-b" data-lb="placego" data-id="${esc(b.id)}"${S.busy?' disabled':''}>${esc(ask?POOL_TXT.again:POOL_TXT.save)}</button></div></div>`}
+  else if(poolCanSettle(b,me))h+=`<div class="b27-cw"><label for="pb_${esc(b.id)}" class="sr">${esc(POOL_TXT.fPay)}</label><textarea id="pb_${esc(b.id)}" class="sb-in b27-in" data-pt="${esc(b.id)}" rows="2" autocomplete="off" placeholder="${esc(POOL_TXT.fPay)}">${esc(S.poolTxt[b.id]||'')}</textarea></div>${S.poolErr[b.id]?`<div class="b27-bad-t" role="alert">${esc(S.poolErr[b.id])}</div>`:''}
+     <div class="b27-act"><button type="button" class="btn sec b27-b" data-lb="poolgo" data-id="${esc(b.id)}"${S.busy?' disabled':''}>${esc(ask?POOL_TXT.again:POOL_TXT.save)}</button></div>`;
+  if(st==='open'&&me&&me===b.by){if(undoable(b,me))h+=`<div class="b27-act"><button type="button" class="btn sec b27-b" data-lb="poolvoid" data-id="${esc(b.id)}"${S.busy?' disabled':''}>${esc(POOL_TXT.undo)}</button></div>`;
+    else if(!done)h+=`<div class="b27-act"><button type="button" class="btn sec b27-b" data-lb="poolvoid" data-id="${esc(b.id)}"${S.busy?' disabled':''}>${esc(POOL_TXT.cancel)}</button></div>`}
+  return h+rxHtml(b,me)+'</div>'}
+async function poolConfirm(){if(S.busy)return;const c=poolCheck(),e=firstErr(c);if(e){S.msg=e;S.bad=true;S.p.confirm=false;render(true);return}
+  const sig='pool|'+c.parts.join('|')+'|'+c.amt+'|'+JSON.stringify(c.places)+'|'+clean(S.p.text);
+  if(!S.pid||S.pid.sig!==sig)S.pid={sig,id:rid(),u:rid()};   /* same ids for the same pool, so a retry after a failed save never double-posts */
+  const ev=Object.assign({k:'pl',u:S.pid.u,ts:Date.now(),v:SV,id:S.pid.id,parts:c.parts,amt:c.amt,text:clean(S.p.text)},c.places?{places:c.places}:{});
+  const ok=await act([ev],'');
+  if(ok){const b=compute().find(x=>x.id===ev.id);S.msg=PT('placed',{n:b?b.n:''});S.bad=false;S.p={text:'',pp:[],entry:'',places:['',''],showErr:{},confirm:false};S.pid=null;render(true);placedFx([ev.id])}
+  else{if(S.bad&&!/full/.test(S.msg))S.msg=PT('cantSave');S.p.confirm=true;render(true)}}
+function poolSettle(b,back){const me=meMid();if(!me||b.by!==me){S.msg=POOL_TXT.only;S.bad=true;render(true);return}
+  if(!(S.ask&&S.ask.id===b.id&&S.ask.w==='pool')){S.poolErr[b.id]='';S.ask={id:b.id,w:'pool'};render(true);return}
+  act([mkEv('pb',{id:b.id,back})],PT('saved')).then(ok=>{if(ok){S.poolTxt[b.id]='';S.placeWho[b.id]=[]}})}
+/* ----- Tally (partner vTally): person table (only people with bets or amounts), then Who Owes Who (all 8, gross, rows owe columns), then netted settle lines ----- */
+const OB_LABELS={form:'\u270F\uFE0F Write it Up',tally:'\u{1F4B0} Tally'};
 function obSeg(){const v=S.ob==='tally'?'tally':'form',sg=k=>`<button type="button" class="${v===k?'on':''}" aria-pressed="${v===k}" data-lb="obview" data-v="${k}" id="b27Ob_${k}">${OB_LABELS[k]}</button>`;
   return `<div class="tabs ob-seg" role="group" aria-label="Bets" id="b27Seg">${sg('form')}${sg('tally')}</div>`}
-/* Tally: the partner's person table (Person, Lost, Won, Net +/-, Bets; no fines / paid in the League), then the same Who Owes Who as Write it Up. Settled bets only, in pushups. */
-function tallyHtml(T){const ow=owners(),lost={},won={};ow.forEach(o=>{lost[o.mid]=0;won[o.mid]=0});T.owes.forEach(o=>{if(o.from in lost)lost[o.from]+=o.num;if(o.to in won)won[o.to]+=o.num});
-  const per=m=>T.per[m]||{net:0,bets:0},rows=ow.slice().sort((a,b)=>per(b.mid).net-per(a.mid).net||nick(a).localeCompare(nick(b)));
-  let h=`<div class="card" id="b27Tally"><b>🧮 Tally</b><div class="note">Settled bets only, in pushups. Rows owe columns.</div></div>`;
-  h+=`<div class="card sc"><table class="mx oqm" id="b27People" aria-label="Tally per person, in pushups"><thead><tr><th>Person</th><th class="n">Lost</th><th class="n">Won</th><th class="n">Net +/-</th><th class="n">Bets</th></tr></thead><tbody>${rows.map(o=>{const p=per(o.mid);return `<tr data-mid="${esc(o.mid)}"><td class="rn nk" title="${esc(o.name)}"><b>${o.emoji?esc(o.emoji)+' ':''}${esc(nick(o))}</b></td><td class="n">${num(lost[o.mid])}</td><td class="n">${num(won[o.mid])}</td><td class="n"><b class="${p.net>0?'good':p.net<0?'bad':''}">${signed(p.net)}</b></td><td class="n">${num(p.bets)}</td></tr>`}).join('')}</tbody></table></div>`;
-  return h+owesHtml(T,{settle:true})}
-/* ---------- s27 (partner s27): label tips (.s27-tipk -> .s27-pop with a How to bet link), How to bet card, Copy = the bet text only ---------- */
-const TIPS={who:'Tap one or more managers, or Anyone. Each one answers on their own.',text:'Write it as you say it: “Kansas beats Duke”. You say it; they take the other side.',amt:()=>'Minimum '+C.min+' pushups. Tap a preset or Custom for a whole number from '+C.min+' to '+C.max+'.',odds:'If you’re right, they owe pushups × first ÷ second. Even = 1-1.'};
-const tipK=(k,l)=>`<button type="button" class="s27-tipk" data-lb="tip" data-tip="${k}" aria-expanded="false"><span>${esc(l)}</span></button>`;
-function tipClose(){document.querySelectorAll('.s27-pop').forEach(e=>e.remove());document.querySelectorAll('.s27-tipk[aria-expanded=true]').forEach(e=>e.setAttribute('aria-expanded','false'))}
-document.addEventListener('click',e=>{if(!e.target.closest||e.target.closest('.s27-tipk,.s27-pop'))return;tipClose()},true);document.addEventListener('keydown',e=>{if(e.key==='Escape')tipClose()});
-function howHtml(){return `<div class="s27-how" id="b27How"><button type="button" class="s27-howl" data-lb="howto">← Back to the form</button><h2>📘 How to bet</h2>
-  <div class="card"><b>1. Who you’re betting against</b><p>Tap one or more managers, or <b>Anyone</b>. Each manager you pick gets their own copy of the bet and answers on their own. <b>Select all</b> picks everyone, <b>Clear</b> starts over.</p></div>
-  <div class="card"><b>2. What’s the bet</b><p>Write what you say will happen, in plain words: “Kansas beats Duke”, “Duke -5.5 vs UNC”, “Over 150.5 Kansas vs Duke”. You’re the one saying it; they take the other side.</p></div>
-  <div class="card"><b>3. Pushups</b><p>Minimum ${esc(C.min)}. Tap a preset or <b>Custom</b> for a whole number from ${esc(C.min)} to ${esc(C.max)}.</p></div>
-  <div class="card"><b>4. Odds</b><p>Even = 1-1. With odds like 3-1, if you’re right they owe pushups × 3 ÷ 1; if you’re wrong you owe the pushups. Tap <b>Custom…</b> for odds like 7-2.</p></div>
-  <div class="card"><b>Accept and settle</b><p>The other manager has to accept a bet. The manager who placed it settles it. Totals are on <b>Tally</b>.</p></div>
-  <div class="card"><b>Copy</b><p>Each bet’s <b>Copy</b> button copies just that bet’s text; 🔗 copies a link to it.</p></div></div>`}
+function tallyHtml(T){const ow=owners(),per=m=>T.per[m]||{net:0,bets:0},Lo=m=>T.lost[m]||0,Wo=m=>T.won[m]||0,M=(a,b)=>(T.M[a]&&T.M[a][b])||0;
+  const ids=ow.filter(o=>per(o.mid).bets>0||Lo(o.mid)||Wo(o.mid));
+  let h=`<div class="card" id="b27Tally"><b>🧮 Tally · 2026-27</b><div class="note">From the 2026-27 shared ledger only. Rows owe columns.</div></div>`;
+  if(!ids.length)h+='<div class="card note" id="b27TallyEmpty" data-tally-empty>No 2026-27 bets with amounts yet.</div>';
+  else h+=`<div class="card sc"><table id="b27People" data-tally="people" aria-label="Tally per person"><tr><th>Person</th><th class="n">Lost</th><th class="n">Won</th><th class="n">Net +/-</th><th class="n">Bets</th><th class="n">Fines</th></tr>${ids.slice().sort((a,b)=>per(b.mid).net-per(a.mid).net).map(o=>{const n=per(o.mid).net;return`<tr data-mid="${esc(o.mid)}"><td title="${esc(o.name)}"><b class="tnt">${esc(nick(o))}</b>${o.team_name&&o.name?`<small class="tnr">${esc(String(o.name).replace(/^\s*Test\s+/i,''))}</small>`:''}</td><td class="n">${num(Lo(o.mid))}</td><td class="n">${num(Wo(o.mid))}</td><td class="n"><b class="${n>0?'good':n<0?'bad':''}">${n>0?'+':n<0?'-':''}${num(Math.abs(n))}</b></td><td class="n">${per(o.mid).bets}</td><td class="n"><span class="mut">0</span></td></tr>`}).join('')}</table></div>`;
+  h+=`<h2 id="b27Owes">Who Owes Who</h2><div class="swipe">↔ Swipe sideways to see every column</div><div class="card sc"><table class="mx" id="b27Matrix" data-tally="owes" aria-label="Who owes who"><tr><th>owes ↓ / to →</th>${ow.map(o=>`<th title="${esc(o.name)}">${esc(nick(o))}</th>`).join('')}</tr>${ow.map(r=>`<tr data-mid="${esc(r.mid)}"><td title="${esc(r.name)}"><b>${esc(nick(r))}</b></td>${ow.map(c=>{const v=M(r.mid,c.mid);return r.mid===c.mid?'<td class="z">·</td>':v?`<td>${num(v)}</td>`:'<td class="z">0</td>'}).join('')}</tr>`).join('')}</table></div>`;
+  const Ls=[];ow.forEach((a,x)=>ow.slice(x+1).forEach(b=>{const d=round2(M(a.mid,b.mid)-M(b.mid,a.mid));if(d>0)Ls.push([a,b,d]);else if(d<0)Ls.push([b,a,-d])}));
+  if(Ls.length)h+=`<div class="card" id="b27Settle" data-tally-settle>${Ls.map(([a,b,d])=>`<div class="tset">${esc(nick(a))} owes ${esc(nick(b))} ${num(d)}</div>`).join('')}</div>`;
+  return h}
 function copyText(t,ok){const fall=()=>{try{const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();const r=document.execCommand&&document.execCommand('copy');ta.remove();if(r){ok();return}}catch(e){}};
   try{if(navigator.clipboard&&navigator.clipboard.writeText&&window.isSecureContext){navigator.clipboard.writeText(t).then(ok,fall);return}}catch(e){}fall()}
-function view(){if(S.how&&H&&!H.demo)return howHtml();
-  if(!H)return'';
-  if(H.demo)return'<div class="card" id="b27Demo"><b>💪 Bets</b><div class="note">Bets are switched off in the demo, so nothing here can touch a real league.</div></div>';
+/* ----- the page (partner vB27 order): Write it Up / Tally + Copy link, message, New bet (or the watcher card), Bets (n) + mute, filter row, cards, the intro card with the live line last ----- */
+function view(){if(!H)return'';
+  if(H.demo)return'<div class="card" id="b27Demo"><b>💵 Bets</b><div class="note">Bets are switched off in the demo, so nothing here can touch a real league.</div></div>';
   const me=meMid(),bets=compute().sort((a,b)=>b.n-a.n),T=tally(bets);CUR=bets;markSeen();clearTimeout(S.undoT);{const left=bets.filter(b=>undoable(b,me)).map(b=>UNDO_MS-(Date.now()-b.ts));if(left.length)S.undoT=setTimeout(()=>{if(H&&H.active()){const a=document.activeElement;if(!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))render(true)}},Math.max(300,Math.min(...left)+250))}
   const top=S.state==='ok'?(S.stale?`<span class="bad" id="b27Off">● offline: showing the last saved bets. Retrying…</span>`:'<span class="good">● live</span> · everyone in this league sees the same bets')
-    :S.state==='error'?`<span class="bad" id="b27Off">● can’t reach the bets right now. Retrying… <button type="button" class="btn sec b27-b" data-lb="retry" id="b27Retry">Try now</button></span>`:'Connecting…';
-  /* s24 layout: message, form or watcher card, totals + Still open, filter row with count, waiting section (ours only), bet cards, intro card with the live line last. */
-  const intro=`<div class="card b27-intro" id="b27Intro"><div class="note b27-note" id="b27Note">Bets here are just for fun, a challenge between friends, and are always paid in <b>pushups</b>.</div><div class="note" style="margin-top:6px">This page just <b>records</b> who bet what and who owes whom. The other manager has to accept a bet, and the manager who placed it settles it.</div><div class="b27-sndrow">${sndBtn()}</div></div>`;
-  /* s25k Bets sub-tabs, mirroring the partner's BETS-TALLY (OB_LABELS / obToggle / vTally): Write it Up = the form + bets (as before), Tally = person table + Who Owes Who */
-  const seg=obSeg();if(S.ob==='tally'&&S.state!=='init')return seg+tallyHtml(T);
+    :S.state==='error'?`<span class="bad" id="b27Off">● can’t reach the bets right now. Retrying… <button type="button" class="btn sec b27-b" data-lb="retry" id="b27Retry">Try now</button></span>`:'';
+  const intro=`<div class="card b27-intro" id="b27Intro"><div class="note b27-note" id="b27Note">${esc(DISCLAIMER)}</div><div class="note" style="margin-top:6px">This page just <b>records</b> who bet what and who owes whom.</div><div class="note b27-top" id="b27Head" style="margin-top:6px"><span id="b27Top">${top}</span></div></div>`;
+  const seg=`<div class="s26w-row" id="b27SegRow">${obSeg()}<div class="s24lb"><button type="button" class="s24lk" data-a="cptab" id="b27CopyLink">🔗 Copy link</button></div></div>`;
+  if(S.ob==='tally'&&S.state!=='init')return seg+tallyHtml(T);
   let h=seg;
   if(S.msg)h+=`<div class="card ${S.bad?'b27-bad':'b27-ok'}" role="status" id="b27Msg">${esc(S.msg)}${(()=>{const gu=me&&S.undoG?grpUndo(S.undoG,me):[];return gu.length>1?`<div class="b27-act"><button type="button" class="btn sec b27-b" data-lb="undogroup" data-g="${esc(S.undoG)}"${S.busy?' disabled':''}>↩ Undo all ${gu.length} bets (30 s)</button></div>`:''})()}</div>`;
-  const mine=me?bets.filter(b=>b.status==='pending'&&b.by!==me&&(b.to==='*'||b.to===me)):[];
   if(!me)h+=`<div class="card" id="b27Watch"><b>👀 Watching only</b><div class="note">You can read every bet here. To place or answer a bet, open this page from your own manager link (the League site button in the draft room).</div><p style="margin:8px 0 0"><a class="btn b27-b" id="b27Room" href="${esc(H.roomHref())}">Open the draft room</a></p></div>`;
-  if(me){if(S.f.confirm){const e=formOK();h+=`<div class="card b27-confirm" id="b27Confirm"><b>Check it, then confirm</b><div class="b27-sum">${esc(summary())}</div>${readAsHtml()}<div id="b27Live">${liveHtml()}</div><div class="b27-act"><button type="button" class="btn b27-big" data-lb="confirm"${S.busy||e?' disabled':''}>${S.busy?'Saving…':'✅ Yes, place it'}</button><button type="button" class="btn sec b27-big" data-lb="edit"${S.busy?' disabled':''}>← Change</button></div></div>`}else h+=formHtml(me)}
-  /* still loading the bets: the shared loader instead of an empty totals table / list */
-  if(S.state==='init'&&window.LLOADER)return h+LLOADER()+intro.replace(/<\/div>$/,`<div class="note b27-top" id="b27Head" style="margin-top:6px"><span id="b27Top">${top}</span></div></div>`);
-  /* totals + Still open sit right under the form, above the filtered list */
-  h+=owesHtml(T);
-  h+=`<div class="note" style="margin-top:6px" id="b27OpenNote">Still open: ${T.openN} bet${T.openN===1?'':'s'}, ${pu(T.openC)} in total.${T.waitN?` Waiting for an answer: ${T.waitN}.`:''}</div>`;
-  const fa=fActive(me),rest=fa?bets.filter(b=>fMatch(b,me)):bets.filter(b=>!mine.includes(b));
-  const cnt=`<span id="b27FCount">${fa?num(rest.length)+' of '+num(bets.length):num(bets.length)}</span>`;
-  if(bets.length)h+=fBar(me,cnt);
-  if(!fa&&mine.length)h+=`<h2 id="b27ForYou">Waiting for your answer (${mine.length})</h2><div class="b27-grid">`+mine.map(b=>card(b,me)).join('')+'</div>'+(rest.length?'<h2 id="b27Rest">Other bets</h2>':'');
-  h+=(rest.length?'<div class="b27-grid" id="b27Grid">'+rest.slice(0,60).map(b=>card(b,me)).join('')+'</div>':(bets.length?(fa?`<div class="card note" id="b27FEmpty">${fEmpty(me)} <button type="button" class="btn sec b27-b" data-lb="fltreset" id="b27FReset">Show all bets</button></div>`:''):`<div class="card note" id="b27Empty"><b>No bets yet.</b> ${me?'Be the first: <button type="button" class="btn sec b27-b" data-lb="startform" id="b27Start">Start a bet</button>':'Managers can place bets from their own manager link.'}</div>`));
-  if(rest.length>60)h+='<p class="note">Showing the latest 60.</p>';
-  /* live line: last line of the intro card */
-  return h+intro.replace(/<\/div>$/,`<div class="note b27-top" id="b27Head" style="margin-top:6px"><span id="b27Top">${top}</span></div></div>`)}
+  else if(S.kind==='pool'&&!S.edited){const cf=S.p.confirm?poolConfirmHtml():'';if(S.p.confirm&&!cf)S.p.confirm=false;h+=cf?modal(cf):poolFormHtml(me)}
+  else if(S.f.confirm){const e=formOK(),t=clean(S.f.text);h+=modal(`<div class="card b27-confirm" id="b27Confirm"><b>Check it, then confirm</b>${t?`<div class="s26terms">${esc(t)}</div>`:''}<div class="b27-sum">${esc(summary())}</div>${readAsHtml()}<div id="b27Live">${liveHtml()}</div><div class="b27-act"><button type="button" class="btn b27-big" data-lb="confirm"${S.busy||e?' disabled':''}>${S.busy?'Saving…':'✅ Yes, place it'}</button><button type="button" class="btn sec b27-big" data-lb="edit"${S.busy?' disabled':''}>← Change</button></div></div>`)}
+  else h+=formHtml(me);
+  /* still loading the bets: the shared loader instead of an empty list */
+  if(S.state==='init'&&window.LLOADER)return h+LLOADER()+intro;
+  const fa=fActive(me),FL=fa?bets.filter(b=>fMatch(b,me)):bets;
+  h+=`<h2 id="b27ListH">Bets (<span id="b27FCount">${fa?num(FL.length)+' of '+num(bets.length):num(bets.length)}</span>)${sndBtn()}</h2>`;
+  if(bets.length)h+=fBar(me,bets);
+  h+=FL.length?'<div class="b27-grid" id="b27Grid">'+FL.slice(0,60).map(b=>b.kind==='pool'?poolCard(b,me):card(b,me)).join('')+'</div>'
+    :bets.length?`<div class="card note s24fe" id="b27FEmpty">${fEmpty(me)}</div>`:`<div class="card note" id="b27Empty">No bets yet. Be the first.</div>`;
+  if(FL.length>60)h+='<p class="note">Showing the latest 60.</p>';
+  return h+intro}
 /* ---------- s25: read the bet text + proposed result from the final score (spec: /workspace/league-site-work/s25-autosettle-spec.md) ----------
    readBet(text) -> claim {t:'win'|'margin'|'total', a, b (ESPN team ids, a = the team the claim is about), l (number), op:'gt'|'ge'|'line', s:'o'|'u'} or null (unclear: stays manual).
    The claim is saved in the bet's own place event (field c). After the final, the creator sees the score and a proposed result: Confirm (writes the normal settle event,
@@ -427,7 +526,7 @@ function settleSound(kind){try{if(sndMuted())return'muted';if(window.matchMedia&
     sndCtx=sndCtx||new AC();if(sndCtx.state==='suspended')sndCtx.resume().catch(()=>{});X.synth(sndCtx,kind);return'played'}
   if(typeof src==='function'){src();return'played'}const a=new Audio(src);a.play().catch(()=>{});return'played'}catch(e){return'err'}}
 function soundFor(b,me){if(!me||b.status!=='settled'||(me!==b.by&&me!==b.acc))return null;if(b.res==='p')return'wash';return(b.res==='b')===(me===b.by)?'win':'loss'}
-const sndBtn=()=>{const m=sndMuted();return`<button type="button" class="btn sec b27-b b27-snd" data-lb="sndtoggle" id="b27Snd" aria-pressed="${esc(m?'false':'true')}">${m?'🔕 Settle sounds: off':'🔔 Settle sounds: on'}</button>`};
+const sndBtn=()=>{const m=sndMuted();return` <button type="button" class="s25mute" data-lb="sndtoggle" id="b27Snd" aria-pressed="${m}" aria-label="Settle sounds ${m?'off':'on'}" title="Settle sounds ${m?'off':'on'}">${m?'🔇':'🔊'}</button>`};
 /* ---------- s25: settle pop-up (win / loss / wash), ~2 s, with the sound; tap or Esc closes ----------
    The memes are the shared SVGs + captions in js/shared-s25.js (S25.MEMES / S25.MEME_MS), shown as an <img> data URL (never as markup).
    A window.FBN_SETTLE_MEMES override wins if present; if the shared file did not load, a plain text card shows. */
@@ -467,9 +566,21 @@ function clampFix(){clampQ=false;document.querySelectorAll('.b27-c .b27-t').forE
 let clampRT=0;window.addEventListener('resize',()=>{clearTimeout(clampRT);clampRT=setTimeout(clampFix,150)});
 /* ---------- events ---------- */
 const ACT={
-  tip:el=>{const open=el.getAttribute('aria-expanded')==='true';tipClose();if(open)return;let t=TIPS[el.dataset.tip]||'';if(typeof t==='function')t=t();const p=document.createElement('div');p.className='s27-pop';p.setAttribute('role','tooltip');p.innerHTML=`<span>${esc(t)}</span> <button type="button" data-lb="howto">How to bet →</button>`;el.setAttribute('aria-expanded','true');el.insertAdjacentElement('afterend',p)},
-  howto:()=>{tipClose();S.how=!S.how;render(true);window.scrollTo(0,0)},
-  copytext:el=>{const b=(CUR||[]).find(x=>x.id===el.dataset.id);if(!b)return;copyText(String(b.text||''),()=>{el.textContent='Copied';el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>{el.textContent='Copy';el.classList.remove('on')},1600)})},
+  kind:el=>{const k=el.dataset.v==='pool'?'pool':'bet';if(S.kind===k)return;S.kind=k;S.msg='';S.f.confirm=false;S.p.confirm=false;render(true)},
+  pp:el=>{const m=el.dataset.mid,k=S.p.pp.indexOf(m);if(k>=0)S.p.pp.splice(k,1);else S.p.pp.push(m);poolPaint()},
+  ppall:()=>{S.p.pp=others().map(o=>o.mid);poolPaint()},
+  ppclear:()=>{S.p.pp=[];poolPaint()},
+  addplace:()=>{if(S.p.places.length<10)S.p.places.push('');render(true);const x=document.getElementById('s26p'+(S.p.places.length-1));if(x)try{x.focus({preventScroll:false})}catch(e){}},
+  delplace:el=>{S.p.places.splice(+el.dataset.i,1);render(true)},
+  poolplace:()=>{if(!meMid())return;const c=poolCheck();if(firstErr(c)){S.msg='';S.p.showErr={terms:1,people:1,buy:1,pay:1};render(true);poolPaint();const x=document.getElementById(c.e.terms?'b27Text':c.e.people?'s26lPeople':c.e.buy?'b27En':'s26p0');if(x){try{x.scrollIntoView({block:'center'})}catch(_){}try{x.focus({preventScroll:true})}catch(_){}}return}S.msg='';S.p.confirm=true;render(true)},
+  pooledit:()=>{S.p.confirm=false;render(true)},
+  poolconfirm:()=>poolConfirm(),
+  modalbd:(el,e)=>{if(e.target!==el||S.busy)return;S.f.confirm=false;S.p.confirm=false;render(true)},
+  placego:el=>{const id=el.dataset.id,b=compute().find(x=>x.id===id);if(!b||!b.places)return;const sel=S.placeWho[id]||[];
+    if(b.places.some((a,i)=>!sel[i])){S.poolErr[id]=PT('ePickAll');S.ask=null;render(true);return}
+    const back={};b.places.forEach((a,i)=>{back[sel[i]]=(back[sel[i]]||0)+a});b.parts.forEach(p=>{if(!(p in back))back[p]=0});poolSettle(b,back)},
+  poolgo:el=>{const id=el.dataset.id,b=compute().find(x=>x.id===id);if(!b)return;const r=poolParse(b,S.poolTxt[id]||'');if(!r.ok||!r.back){S.poolErr[id]=r.ok?PT('eEmptyPay'):r.err;S.ask=null;render(true);return}poolSettle(b,r.back)},
+  poolvoid:el=>{const b=compute().find(x=>x.id===el.dataset.id),me=meMid();if(!b||!me||b.by!==me||b.status!=='open')return;act([mkEv('w',{id:b.id})],'Saved.')},
   obview:el=>{const v=el.dataset.v==='tally'?'tally':'form';if(S.ob===v)return;S.ob=v;render(true);window.scrollTo(0,0)},   /* partner obView(): a sub-tab tap opens it at the top */
   opp:el=>{const f=S.f,m=el.dataset.mid;f.open=false;const k=f.opps.indexOf(m);if(k>=0)f.opps.splice(k,1);else{f.opps.push(m);const o=others().map(x=>x.mid);f.opps.sort((x,y)=>o.indexOf(x)-o.indexOf(y))}sync()},
   anyone:()=>{S.f.open=!S.f.open;if(S.f.open)S.f.opps=[];sync()},
@@ -487,7 +598,7 @@ const ACT={
   sndtoggle:()=>{try{if(sndMuted())localStorage.removeItem(SND_KEY);else localStorage.setItem(SND_KEY,'1')}catch(e){}render(true)},
   autook:el=>{const id=el.dataset.id,b=compute().find(x=>x.id===id),me=meMid(),P=S.prop[id];
     if(!b||!me||b.by!==me||!LIVE(b)||!P||P.st!=='final'||P.r!==el.dataset.r){S.ask=null;S.msg=b&&b.by!==me?'Only the manager who placed this bet can confirm its result.':'That result can’t be confirmed any more.';S.bad=true;render(true);return}
-    const w='autook'+P.r;if(S.ask&&S.ask.id===id&&S.ask.w===w){act([mkEv('s',{id,r:P.r,src:{g:P.g,sc:scoreText(b,P)}})],'Settled from the final score. The result and pushups are updated.')}else{S.ask={id,w};render(true)}},
+    const w='autook'+P.r;if(S.ask&&S.ask.id===id&&S.ask.w===w){act([mkEv('s',{id,r:P.r,src:{g:P.g,sc:scoreText(b,P)}})],'Settled from the final score. Saved.')}else{S.ask={id,w};render(true)}},
   autofix:el=>{const id=el.dataset.id,b=compute().find(x=>x.id===id);if(!b||b.by!==meMid())return;S.autoFix[id]=1;S.ask=null;render(true)},
   accept:el=>doBet(el,'a','Accepted. The bet is on.'),
   decline:el=>doBet(el,'d','Declined.'),
@@ -495,7 +606,7 @@ const ACT={
   settle:el=>{const id=el.dataset.id,r=el.dataset.r,w='settle'+r;const b=compute().find(x=>x.id===id),me=meMid();
     /* s25: creator only (the button is not even drawn for anyone else; reduce() ignores a result from anyone else too) */
     if(!b||!me||b.by!==me||!LIVE(b)){S.ask=null;S.msg=b&&!LIVE(b)?'This bet is already settled.':'Only the manager who placed this bet can settle it.';S.bad=true;render(true);return}
-    if(S.ask&&S.ask.id===id&&S.ask.w===w){doBet(el,'s','Settled. The result and pushups are updated.',{r})}else{S.ask={id,w};render(true)}},
+    if(S.ask&&S.ask.id===id&&S.ask.w===w){doBet(el,'s','Saved.',{r})}else{S.ask={id,w};render(true)}},
   qbtoggle:el=>{const g=el.dataset.g||null;S.q.g=(!g||S.q.g===g)?null:g;S.q.msg='';redraw();if(S.q.g)setTimeout(()=>{try{const b=document.querySelector('.qb-pick [data-lb=qbpick]');if(b)b.focus({preventScroll:true})}catch(_){}},20)},
   qbamt:el=>{S.q.amt=+el.dataset.v===10?10:5;redraw()},
   qbvs:el=>{S.q.vs=el.dataset.mid;S.q.msg='';redraw()},
@@ -507,7 +618,7 @@ const ACT={
   fixopen:el=>{S.fixOpen=el.dataset.id;S.ask=null;render(true)},
   fixcancel:()=>{S.fixOpen=null;S.ask=null;render(true)},
   fixreq:el=>{const id=el.dataset.id,r=el.dataset.r,w='fixreq'+r;if(S.ask&&S.ask.id===id&&S.ask.w===w){S.fixOpen=null;doBet(el,'fr','Asked. The result changes only when the other side confirms.',{r,fx:rid()})}else{S.ask={id,w};render(true)}},
-  fixok:el=>{const id=el.dataset.id;if(S.ask&&S.ask.id===id&&S.ask.w==='fixok'){doBet(el,'fc','Confirmed. The result and pushups are updated.',{fx:el.dataset.fx})}else{S.ask={id,w:'fixok'};render(true)}},
+  fixok:el=>{const id=el.dataset.id;if(S.ask&&S.ask.id===id&&S.ask.w==='fixok'){doBet(el,'fc','Confirmed. The result is updated.',{fx:el.dataset.fx})}else{S.ask={id,w:'fixok'};render(true)}},
   fixno:el=>doBet(el,'fd','Declined. The result stays as it was.',{fx:el.dataset.fx}),
   fixwd:el=>doBet(el,'fd','Request withdrawn.',{fx:el.dataset.fx}),
   startform:()=>{const i=document.getElementById('b27Text');if(i){i.scrollIntoView({block:'center'});i.focus({preventScroll:true})}}};
@@ -539,7 +650,8 @@ async function confirmPlace(){if(S.busy)return;const e=formOK();if(e){S.msg=e;S.
   if(!S.fid||S.fid.sig!==sig)S.fid={sig,g:targets.length>1?rid():undefined,evs:targets.map(t=>({id:rid(),u:rid(),to:t}))};
   const ts=Date.now();
   const evs=S.fid.evs.map((x,i)=>Object.assign({k:'p',u:x.u,ts:ts+i,v:SV,id:x.id,to:x.to,amt:f.amt,a:f.odds[0],b:f.odds[1],text:clean(f.text)},S.fid.g?{g:S.fid.g}:{},(()=>{const c=readBet(clean(f.text));return c?{c}:{}})()));
-  const ok=await act(evs,'Placed! '+(f.open?'Anyone can take it now.':(targets.length>1?targets.length+' bets sent.':nm(targets[0])+' can accept it now.'))+' You can withdraw it until it is answered.');
+  const ok=await act(evs,'');
+  if(ok){const ns=S.fid.evs.map(x=>(compute().find(b=>b.id===x.id)||{}).n).filter(Boolean);S.msg='Placed! Bet #'+ns.join(', #')+(f.open?' is open to anyone.':targets.length>1?' ('+targets.length+' managers, '+num(f.amt)+' each) '+(targets.length>1?'are':'is')+' waiting for an answer.':' is waiting for '+nm(targets[0])+' to accept.')+' You can undo it for 30 seconds.';S.bad=false}
   if(ok){const pids=S.fid.evs.map(x=>x.id);S.edited=null;S.undoG=S.fid.g||null;S.f={opps:[],open:false,text:'',amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false};S.fid=null;render(true);placedFx(pids)}else{S.f.confirm=true;render(true)}}
 /* "new" mark on the Bets tab: the highest bet number this device has looked at is kept in localStorage (fbn.x.<league>.betseen); a higher number now = something new */
 const seenKey=()=>'fbn.x.'+(H&&H.id)+'.betseen';
@@ -586,12 +698,17 @@ function qbPickGo(el){const g=gameById(el.dataset.g);if(!g||!qbOk(g))return;cons
 function bind(){
   document.addEventListener('contextmenu',e=>{const el=e.target.closest&&e.target.closest('[data-lb=rx]');if(el&&document.getElementById('main')&&document.getElementById('main').contains(el)){e.preventDefault();rxTap(el,true)}});
 document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('[data-lb]');if(!el||!H||!document.getElementById('main')||!document.getElementById('main').contains(el))return;const f=ACT[el.dataset.lb];if(f){e.preventDefault();f(el,e)}});
-  document.addEventListener('change',e=>{const t=e.target;if(!t||!H)return;if(t.id==='b27FP'||t.id==='b27FS'){fLoad();const p=t.id==='b27FP'?t.value:S.fp,s=t.id==='b27FS'?t.value:S.fs;if(fSet(p,s)){render(true);setTimeout(()=>{const x=document.getElementById(t.id);if(x)x.focus({preventScroll:true})},0)}}});
-  document.addEventListener('input',e=>{const t=e.target;if(t&&t.id==='b27FQ'&&H){fLoad();const v=t.value,c=t.selectionStart;if(fSet(S.fp,S.fs,false,v)){render(true);const x=document.getElementById('b27FQ');if(x){x.value=v;x.focus({preventScroll:true});try{x.setSelectionRange(c,c)}catch(_){}}}return}if(!t||!t.id||!H)return;if(t.id==='b27Text'){S.f.text=t.value;sync()}else if(t.id==='b27Ao'){applyAmt(t.value);sync()}else if(t.id==='b27Co'){applyOdds(t.value);sync()}});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.q.g&&H&&document.getElementById('main')&&!(e.target&&/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))){const g=S.q.g;S.q.g=null;redraw();setTimeout(()=>{try{const b=document.querySelector('.qb-btn[data-g="'+g+'"]');if(b)b.focus({preventScroll:true})}catch(_){}},20);return}if(e.key==='Enter'&&e.target&&/^b27(Text|Ao|Co)$/.test(e.target.id)){e.preventDefault();ACT.place()}});
+  document.addEventListener('change',e=>{const t=e.target;if(!t||!H)return;if(t.dataset&&t.dataset.pw){(S.placeWho[t.dataset.pw]=S.placeWho[t.dataset.pw]||[])[+t.dataset.i]=t.value;S.poolErr[t.dataset.pw]='';S.ask=null;return}if(t.id==='b27FP'||t.id==='b27FS'){fLoad();const p=t.id==='b27FP'?t.value:S.fp,s=t.id==='b27FS'?t.value:S.fs;if(fSet(p,s)){render(true);setTimeout(()=>{const x=document.getElementById(t.id);if(x)x.focus({preventScroll:true})},0)}}});
+  document.addEventListener('input',e=>{const t=e.target;if(t&&t.id==='b27FQ'&&H){fLoad();const v=t.value,c=t.selectionStart;if(fSet(S.fp,S.fs,false,v)){render(true);const x=document.getElementById('b27FQ');if(x){x.value=v;x.focus({preventScroll:true});try{x.setSelectionRange(c,c)}catch(_){}}}return}if(!t||!H)return;if(t.dataset&&t.dataset.place!=null){S.p.places[+t.dataset.place]=t.value;poolPaint();return}if(t.dataset&&t.dataset.pt){S.poolTxt[t.dataset.pt]=t.value;S.poolErr[t.dataset.pt]='';S.ask=null;return}if(!t.id)return;
+    if(S.kind==='pool'&&!S.edited&&t.id==='b27Text'){S.p.text=t.value;poolPaint();return}if(t.id==='b27En'){S.p.entry=t.value;poolPaint();return}
+    if(t.id==='b27Text'){S.f.text=t.value;sync()}else if(t.id==='b27Ao'){applyAmt(t.value);sync()}else if(t.id==='b27Co'){applyOdds(t.value);sync()}});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.q.g&&H&&document.getElementById('main')&&!(e.target&&/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))){const g=S.q.g;S.q.g=null;redraw();setTimeout(()=>{try{const b=document.querySelector('.qb-btn[data-g="'+g+'"]');if(b)b.focus({preventScroll:true})}catch(_){}},20);return}if(e.key==='Escape'&&H&&document.querySelector('.s26k-m')&&!S.busy){e.preventDefault();S.f.confirm=false;S.p.confirm=false;render(true);return}
+    if(e.key==='Enter'&&e.target&&/^b27(Text|Ao|Co)$/.test(e.target.id)&&!(S.kind==='pool'&&!S.edited)){e.preventDefault();ACT.place()}});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.started)poll(false)});
   window.addEventListener('online',()=>{if(S.started)poll(true)})}
 function init(h){H=h;if(!S.started){S.started=true;bind()}}
 function start(){if(!H||H.demo)return;poll(false)}
-window.LBETS={after:()=>{try{mountRx()}catch(e){}},_t:{propose,S,stampText,placedFx,mountRx,clampFix,RX,settlePop,readBet,claimText,judge,settleSound,soundFor,sndMuted},init,start,view,badge,poll,reduce,tally,parseLog,win,filterHash:()=>{try{return fHashOut()}catch(e){return''}},setFilterHash:(f,q)=>{try{fFromHash(f,q)}catch(e){}},reveal:id=>{try{return reveal(id)}catch(e){return false}},quickHtml:(g,ctx)=>{QCTX=ctx||null;try{return quickHtml(g,ctx)}catch(e){return''}},_state:S};
+let modalWas=false;
+function afterRender(){try{mountRx()}catch(e){}try{const m=document.querySelector('.s26k-m');document.body.classList.toggle('s26k-lock',!!m);if(m&&!modalWas){const b=m.querySelector('.b27-act .btn');if(b)b.focus({preventScroll:true})}modalWas=!!m}catch(e){}}
+window.LBETS={after:afterRender,_t:{propose,S,stampText,poolEntries,poolCheck,poolParse,greedy,POOL_TXT,DISCLAIMER,placedFx,mountRx,clampFix,RX,settlePop,readBet,claimText,judge,settleSound,soundFor,sndMuted},init,start,view,badge,poll,reduce,tally,parseLog,win,filterHash:()=>{try{return fHashOut()}catch(e){return''}},setFilterHash:(f,q)=>{try{fFromHash(f,q)}catch(e){}},reveal:id=>{try{return reveal(id)}catch(e){return false}},quickHtml:(g,ctx)=>{QCTX=ctx||null;try{return quickHtml(g,ctx)}catch(e){return''}},_state:S};
 })();

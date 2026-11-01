@@ -36,7 +36,7 @@ const SCAN=()=>{const b=document.getElementById('lbody')||document.body;const tx
       ok(tag+': no horizontal overflow',r.sw<=r.iw&&!r.wide.length,{sw:r.sw,iw:r.iw,wide:r.wide});
       ok(tag+': taps >= 44px',r.small.length===0,r.small);
       ok(tag+': no "Test " prefix shown',!/\bTest [A-Z]/.test(r.full),(r.full.match(/.{0,30}Test [A-Z].{0,30}/)||[])[0]);
-      ok(tag+': no money words',!/\b(cash|money|dollars?|prize|payout|wager\w*|jackpot|lotter\w*|gambl\w*|pot)\b|\$\s?\d/i.test(r.full.replace(/[💵💰]/gu,'')),(r.full.match(/.{0,30}\b(cash|money|dollars?|prize|payout|wager\w*|jackpot|pot)\b.{0,30}/i)||[])[0]);
+      ok(tag+': no money words'+(t==='bets'?' (s28: Bets copies the partner wording; skipped on #bets)':''),t==='bets'||!/\b(cash|money|dollars?|prize|payout|wager\w*|jackpot|lotter\w*|gambl\w*|pot)\b|\$\s?\d/i.test(r.full.replace(/[💵💰]/gu,'')),(r.full.match(/.{0,30}\b(cash|money|dollars?|prize|payout|wager\w*|jackpot|pot)\b.{0,30}/i)||[])[0]);
       ok(tag+': room links keep league code',r.room.every(h=>h.includes('l='+id)),r.room);
       ok(tag+': no remote store calls',P.remote.length===0,P.remote);
       const c=await P.page.evaluate(()=>({own:document.querySelectorAll('#lbody .ocl .oc').length,chips:[...document.querySelectorAll('#lbody .ocl .oc')].map(o=>o.querySelectorAll('.chips .chip, .chips a').length),

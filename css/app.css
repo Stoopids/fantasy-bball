@@ -771,3 +771,12 @@ body.pdmore #rulescard{padding:8px 12px}body.pdmore #rulescard h3{margin:0 0 6px
 .trow .tm.dbtn{flex:1 1 0;min-width:0;height:auto;min-height:48px;display:flex;flex-direction:column;gap:2px;align-items:flex-start;justify-content:center;padding:4px 8px;margin:0 2px;border:2px solid var(--acc);border-radius:12px;background:rgba(255,210,63,.12);color:inherit;text-align:left;font-weight:inherit}
 .trow .tm.dbtn small{color:var(--mut)}
 @media (max-width:360px){.trow .tm.dbtn{min-width:0;padding:3px 6px;font-size:inherit}}
+
+/* s28 item 1: Pick a team header pinned at the top of the sheet, with the live pick clock next to Close */
+#pickov .phead{position:sticky;top:0;z-index:5;background:#10131a;margin:0 -12px;padding:8px 14px;box-shadow:0 1px 0 rgba(255,255,255,.08)}#pickov .phead>div{flex:1;min-width:0}
+#pickov .pcd{font:700 20px/1 ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums;padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.07);white-space:nowrap}#pickov .pcd.low{color:#ff6b6b;background:rgba(255,80,80,.15)}#pickov .pcd.paused{font-size:14px;color:var(--mut)}#pickov .pcd[hidden]{display:none}
+/* s28 item 4: 'Draft starts in' countdown card */
+.banner.prestart{border:2px solid var(--acc)}.banner.prestart .nm{font-size:22px}.banner.prestart #precd{font-variant-numeric:tabular-nums;color:var(--acc)}.banner.prestart .bm{flex:1;min-width:0}.banner.prestart .btn{min-height:44px;white-space:nowrap}
+#pickov .ctl{top:var(--pheadh,60px)}#pickov .tqwrap .qpanel{top:calc(var(--pheadh,60px) + 8px)}
+/* s28 (b): at 390 the top-bar pill shows only the team name */
+@media(max-width:520px){#who .whosub{display:none}}

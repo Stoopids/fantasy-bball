@@ -1,7 +1,7 @@
 d41d8cd98f00b204e9800998ecf8427e  .nojekyll
 aab153233971799b3f33f8771338cdb2  CHANGE-NOTES-s24.md
 fdb538b9a8247a3f56406fb69fa80031  CHANGE-NOTES-s25.md
-3a3d8c20109ff4853013cf9b65b8cc2c  CHANGED-FILES.md
+ae64904595b161798738e9295f7a6bf6  CHANGED-FILES.md
 fc4c2520be569d292be962f8ba4efdeb  LICENSE-third-party.txt
 262bee0799369fbf2298360c827e790f  README.md
 dc050cbfbdc4a7acac091c14b90bb9d0  UNCLEAR.md
@@ -9,8 +9,8 @@ d64b4a5bc83d7d701430bd795594d5bf  assets/cheer.mp3
 1efdefd1fb1432448a983cf69fd1f268  assets/hero-banner.jpg
 8495ef48ff34e2986385d382d6572174  assets/setup-banner.svg
 536e882a44b318e0b08ef96c80c9b6c2  assets/teams.js
-06173ddc96291285e81e7231e2bbc266  css/app.css
-aa0f43fa15ad4362f5cf658da698e2b4  css/league-app.css
+add36025077f446e35dc1ca0c8aeee8d  css/app.css
+0bd6dd15516e678bec6d1fab79cbb4d1  css/league-app.css
 422f06d20e818a28f93262854539b3da  css/power.css
 b9f73c3f451d83ad9229aafeb5ea9368  css/recap-rosters.css
 23ec9ff1f0f2d44fee14f4436484d8da  css/rules-lobby.css
@@ -30,15 +30,15 @@ c0a54150fbc6f123b758c2a7fccef478  import/README.md
 cb2f334310b363a0e1c6d957ba52bc4e  import/stoopids-draft-results.json
 2780e2b41986c2b7bab9e561e020b0fc  index.html
 c252cbc85e4188c51b4a09b81c4061b7  join.html
-9fd6efaf2558358fd9a24c36a1a281f7  js/core.js
+f53b3b35a4b9e09d44121c5b178c3b88  js/core.js
 919176badbe78c5adc6fb7ce260cf723  js/help.js
 d5a4b4dd98032b2bdbd076984e172487  js/index.js
-9c90e23a62811449502ab8df25ae9cf1  js/join.js
-c992bca5d1cb1017ba11bae7dc1dd0bd  js/league-bets.js
+f0f6c0bb1eeee96cb5d20105b231a9a7  js/join.js
+065c2a04b4996c87d6f2760dcd8cbed3  js/league-bets.js
 e75167362ea9a9353aa44946763c9634  js/league-d.js
 93bef2c3d8fb3e2699766d943fc00b57  js/league-sched.js
 0fae7fed36bd70a9dec21701cd95d04a  js/league.js
-4d9521fc44c34a9bffb26358d6908b66  js/leaguehome.js
+62da532599e55f1aed58fda17418d2ae  js/leaguehome.js
 500c5794a8653c2d5efba42f02d9a996  js/links-card.js
 63f305f860ee24bab5ff8aa6c493fd5f  js/mock-bots.js
 fb663c6c70b508ed2bdaf96f4ea60b9c  js/mock.js
@@ -47,7 +47,7 @@ fb663c6c70b508ed2bdaf96f4ea60b9c  js/mock.js
 ade6fadbb2f4be5a575390360ff3af5b  js/qr.min.js
 8556ceb880ef04e600d61f614acaecf2  js/recap.js
 757c3c165a79010c4b592f2eeffcb64c  js/redraft.js
-9052c149f4bc7c5dcad3e8c02e6c6a06  js/room.js
+bec311cac30dabdccfb4e42191a56be1  js/room.js
 b6c40f01a574e3c88d516c6c075879f3  js/rules.js
 dea3951c79015c462034d16d386d2548  js/scoring.js
 325fd1c31be3daa075c692517c505d03  js/setup.js
@@ -55,7 +55,7 @@ dea3951c79015c462034d16d386d2548  js/scoring.js
 a1c776ffcad4a1e1444e2a41913572c1  js/store.js
 b31b8d130f47a378f2358995614b9470  js/time.js
 bb8778c083481e0a5bcc3666867e4b32  js/ui.js
-98c2142eb7fa148655054618fbff3544  js/version.js
+0294f338c02b6893840971a8a011b4e7  js/version.js
 20d047f6fc4424e7521baac3f5781940  league.html
 dde6bc94069703616dc2b911b7422ae9  manifest.webmanifest
 8651de3c384a5387ec19ec8c1dc594e4  mock.html
@@ -63,7 +63,7 @@ dde6bc94069703616dc2b911b7422ae9  manifest.webmanifest
 67894e74e4d6680fd2750e8f15cfaa0c  redraft.html
 dc5dc90e7dd8ad325b34f5fb28fe1425  room.html
 ba0bad6039db68759ec53e44ca6569dd  setup.html
-73e081b8e27c533de68cdc8fd5dd0336  sw.js
+318c76ab587a1db0190dce8434b50566  sw.js
 25852915b747ecd22afa1599b4d1357c  time.html
 806c1ebcb679950c59121f0d77b3528e  tools/gen_stoopids_import.js
 be1290331d89ff8782ac60ce0b8143b9  tools/kenpom_rank.py

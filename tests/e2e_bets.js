@@ -4,7 +4,7 @@
 const L=require('./lib.js');const fs=require('fs'),path=require('path');const {seed}=require('./seed_league.js');const {sleep,API}=L;
 const F=require('../js/core.js');
 let n=0,bad=0;const fails=[];function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;fails.push(name);console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,400):''))}}
-const base=process.env.API||'http://localhost:9996/api/data/';const MONEY=/\b(wager\w*|payout|prize|cash|money|dollars?|lottery|jackpot|gambl\w*|USD|IDR|Rp)\b|\$\s?\d/i;
+const base=process.env.API||'http://localhost:9996/api/data/';const MONEY={re:/\b(wager\w*|payout|prize|cash|money|dollars?|lottery|jackpot|gambl\w*|USD|IDR|Rp)\b|\$\s?\d/i,ok:/Bets here are just for fun and are settled in pushups, not money\. Betting is Stoopid, and we don't endorse or facilitate gambling for money\./g,test(x){return this.re.test(String(x).replace(this.ok,''))},[Symbol.match](x){return String(x).replace(this.ok,'').match(this.re)}};   /* s28: the Bets page disclaimer (partner wording) is the one allowed money sentence */
 const get=async k=>(await fetch(base+encodeURIComponent(k))).text();const post=(k,v)=>fetch(base+encodeURIComponent(k),{method:'POST',headers:{'Content-Type':'text/plain'},body:typeof v==='string'?v:JSON.stringify(v)});
 async function open(id,info,i,o){o=o||{};const P=await L.phone('b'+Math.random().toString(36).slice(2,6),o.desk?{desktop:true,w:1280,h:900}:{});
   if(i!=null)await P.page.evaluateOnNewDocument((id,me)=>{localStorage.setItem('fbn.me.'+id,JSON.stringify(me))},id,{mid:info.managers[i].id,k:o.badk?'x'.repeat(40):info.managers[i].k});
@@ -18,41 +18,41 @@ const audit=P=>P.page.evaluate(()=>{const A=[...document.querySelectorAll('#lbod
   const id=await seed();const info=seed.info;const names=['Ana','Ben','Cy','Dee','Eli','Fay','Gus','Hal'];
   /* ---- empty state, form, spectator ---- */
   let A=await open(id,info,0);let t=await txt(A);
-  ok('empty state: "No bets yet" with a clear way to start one (Start a bet), form shown, framed as pushups',/No bets yet/.test(t)&&!!(await A.page.$('#b27Start'))&&!!(await A.page.$('#b27Form'))&&/paid in pushups/i.test(await A.page.$eval('#b27Note',e=>e.innerText)),t.slice(0,200));
-  ok('empty state: Who owes who says nothing is settled yet, in pushups',/Nothing settled yet/.test(t)&&/pushups/.test(t));
+  ok('empty state (s28 partner wording): "No bets yet. Be the first.", form shown, disclaimer names pushups',/No bets yet\. Be the first\./.test(t)&&!!(await A.page.$('#b27Form'))&&/settled in pushups/i.test(await A.page.$eval('#b27Note',e=>e.innerText)),t.slice(0,200));
+  ok('empty state (s28): no Who owes who grid on Write it Up (it lives on Tally, like STOOPIDS)',!(await A.page.$('#b27Owes')));
   const a1=await audit(A);ok('390px: tap targets on the empty Bets tab (form, chips, buttons) are all >= 44px, no overflow',a1.small.length===0&&!a1.over,a1);
   await tap(A,'[data-lb=amtcustom]');const a1b=await audit(A);ok('390px: with the custom amount field open, tap targets still >= 44px',a1b.small.length===0&&!a1b.over,a1b);
   await A.page.type('#b27Ao','abc');ok('custom amount: letters are refused with a plain message',/Whole numbers only/.test(await A.page.$eval('#b27Ae',e=>e.innerText)));
-  await A.page.$eval('#b27Ao',e=>{e.value='';});await A.page.type('#b27Ao','3');ok('custom amount: below the minimum is refused',/Minimum is 5/.test(await A.page.$eval('#b27Ae',e=>e.innerText)));
+  await A.page.$eval('#b27Ao',e=>{e.value='';});await A.page.type('#b27Ao','3');ok('custom amount: below the minimum is refused',/Minimum amount is 5\./.test(await A.page.$eval('#b27Ae',e=>e.innerText)));
   await A.page.close();
   const SP=await open(id,info,null);t=await txt(SP);ok('spectator (no manager identity): can read, sees "Watching only", no form and no way to propose',/Watching only/.test(t)&&!(await SP.page.$('#b27Form'))&&!(await SP.page.$('[data-lb=place]'))&&/No bets yet/.test(t)&&!(await SP.page.$('#b27Start')),t.slice(0,160));await SP.page.close();
   const WK=await open(id,info,0,{badk:true});ok('a manager link with the wrong secret is only a spectator (read only)',!!(await WK.page.$('#b27Watch'))&&!(await WK.page.$('#b27Form')));await WK.page.close();
   /* ---- propose (Ana -> Ben), accept, settle ---- */
-  A=await open(id,info,0);await place(A,1,'Kansas beats Duke',25);
-  t=await txt(A);ok('propose: Ana places a bet on Ben: card shows Bet #1, Waiting, 25 pushups, who owes whom, and a Withdraw button',/Bet #1/.test(t)&&/Waiting/.test(t)&&/25 pushups/.test(t)&&/Kansas beats Duke/.test(t)&&/If Ana is right, Ben owes Ana 25 pushups/.test(t)&&!!(await A.page.$('[data-lb=withdraw]')),t.slice(0,500));
+  A=await open(id,info,0);await place(A,1,'Kansas beats Duke',20);
+  t=await txt(A);ok('propose: Ana places a bet on Ben: card shows Bet #1, Waiting, 20 pushups, who owes whom, and a Withdraw button',/Bet #1/.test(t)&&/Waiting/.test(t)&&/20/.test(t)&&/Kansas beats Duke/.test(t)&&/If Ana is right, Ben owes Ana 20/.test(t)&&!!(await A.page.$('[data-lb=withdraw]')),t.slice(0,500));
   const keyA=F.Keys(id).base+'-bets-'+info.managers[0].id;const logA=JSON.parse(await get(keyA));
   ok('data: the bet is stored only in Ana\'s own key fbn1-<id>-bets-<mid> as one propose event',logA.ev.length===1&&logA.ev[0].k==='p'&&logA.ev[0].to===info.managers[1].id&&keyA.startsWith('fbn1-'),logA);
   await A.page.screenshot({path:'/tmp/s18/bets_a1.png'});
   const Cs=await open(id,info,2);ok('other managers (Cy) see the bet but have no Accept button for it',/Bet #1/.test(await txt(Cs))&&!(await Cs.page.$('[data-lb=accept]')));await Cs.page.close();
-  const B=await open(id,info,1);t=await txt(B);ok('accept: Ben sees "Waiting for your answer (1)" with Accept and Decline',/Waiting for your answer \(1\)/.test(t)&&!!(await B.page.$('[data-lb=accept]'))&&!!(await B.page.$('[data-lb=decline]')),t.slice(0,200));
+  const B=await open(id,info,1);t=await txt(B);ok('accept: Ben sees "Waiting for your answer (1)" with Accept and Decline',/Waiting on me \(1\)/.test(t)&&!!(await B.page.$('[data-lb=accept]'))&&!!(await B.page.$('[data-lb=decline]')),t.slice(0,200));
   await tap(B,'[data-lb=accept]');await B.page.waitForFunction('/Accepted/.test((document.getElementById("b27Msg")||{}).innerText||"")',{timeout:12000});
   ok('accept: the bet is now Open and lists Ben as the other side; Ben\'s own key holds the accept event',/Open/.test(await txt(B))&&JSON.parse(await get(F.Keys(id).base+'-bets-'+info.managers[1].id)).ev[0].k==='a');
   /* settle (s25): only the creator (Ana) settles, in one step (tap + tap again to confirm); Ben, the opponent, gets no settle buttons */
-  await B.page.evaluate(()=>LBETS.poll(true));await sleep(800);ok('settle: the opponent (Ben) sees no settle buttons, only a note that Ana settles it',!(await B.page.$('[data-lb=settle]'))&&/Only Ana \(who placed it\) can settle this bet/.test(await txt(B)));
+  await B.page.evaluate(()=>LBETS.poll(true));await sleep(800);ok('settle: the opponent (Ben) sees no settle buttons, only a note that Ana settles it',!(await B.page.$('[data-lb=settle]'))&&/Only Ana \(who placed it\) can enter the result/.test(await txt(B)));
   await A.page.evaluate(()=>LBETS.poll(true));await sleep(800);await tap(A,'[data-lb=settle][data-r=b]');ok('settle: first tap asks "Tap again to confirm"',/Tap again to confirm/.test(await txt(A)));
   await tap(A,'[data-lb=settle][data-r=b]');await A.page.waitForFunction('/Settled/.test(document.getElementById("lbody").innerText)',{timeout:12000});
   await B.page.evaluate(()=>LBETS.poll(true));await sleep(800);
-  t=await txt(B);ok('settle: the creator\'s result counts at once -> Settled, "Ana won (Ben owes 25 pushups)"',/Result:\s*Ana won \(Ben owes 25 pushups\)/.test(t),t.slice(0,600));
-  const lb=await B.page.evaluate(()=>({m:document.getElementById('b27Matrix')?document.getElementById('b27Matrix').innerText:'',board:document.getElementById('b27Board')?document.getElementById('b27Board').innerText:'',open:document.getElementById('b27OpenNote').innerText}));
-  ok('leaderboard: matrix shows Ben owes Ana 25, net pushups per manager +25 Ana / -25 Ben, in pushups',/25/.test(lb.m)&&/Net pushups/.test(lb.board)&&/\+25/.test(lb.board)&&/-25|−25/.test(lb.board)&&/pushups in total/.test(lb.open),lb);
-  const bB=await audit(B);ok('390px: tap targets with a settled bet and the leaderboard are >= 44px, no overflow',bB.small.length===0&&!bB.over,bB);await B.page.screenshot({path:'/tmp/s18/bets_b1.png',fullPage:true});
+  t=await txt(B);ok('settle: the creator\'s result counts at once -> Settled, "Ana won (Ben owes 20)"',/Result:\s*Ana won \(Ben owes 20\)/.test(t),t.slice(0,600));
+  await tap(B,'#b27Ob_tally');const lb=await B.page.evaluate(()=>({m:document.getElementById('b27Matrix')?document.getElementById('b27Matrix').innerText:'',board:document.getElementById('b27People')?document.getElementById('b27People').innerText:''}));
+  ok('Tally (s28): Who Owes Who shows Ben owes Ana 20; person table +20 / -20',/20/.test(lb.m)&&/\+20/.test(lb.board)&&/-20|−20/.test(lb.board),lb);
+  const bB=await audit(B);await tap(B,'#b27Ob_form');ok('390px: tap targets with a settled bet and the leaderboard are >= 44px, no overflow',bB.small.length===0&&!bB.over,bB);await B.page.screenshot({path:'/tmp/s18/bets_b1.png',fullPage:true});
   /* ---- decline + withdraw ---- */
   await A.page.evaluate(()=>LBETS.poll(true));await sleep(500);await place(A,2,'Cy has a 3-point day',10);
   const C=await open(id,info,2);await tap(C,'[data-lb=decline]');await C.page.waitForFunction('/Declined/.test((document.getElementById("b27Msg")||{}).innerText||"")',{timeout:12000});ok('decline: Cy declines Bet #2 -> status Declined, no result buttons',/Declined/.test(await txt(C))&&!(await C.page.$('[data-lb=settle]')));
   await place(A,3,'Dee scores 20',5);await A.page.evaluate(()=>LBETS.poll(true));await sleep(500);await tap(A,'[data-lb=withdraw]');await A.page.waitForFunction('/Withdrawn/.test(document.getElementById("lbody").innerText)',{timeout:12000});
   ok('withdraw: Ana withdraws an unanswered bet -> Withdrawn',/Withdrawn/.test(await txt(A)));
   /* ---- open challenge (anyone) ---- */
-  await tap(A,'[data-lb=anyone]');await A.page.type('#b27Text','First to a buzzer beater');await tap(A,'[data-lb=amt][data-v="25"]');await tap(A,'#b27Place');ok('open challenge: the confirm step says "whoever takes it" and who owes what',/whoever takes it owes Ana 25 pushups/.test(await txt(A)));await tap(A,'[data-lb=confirm]');await A.page.waitForFunction('/Anyone can take it/.test((document.getElementById("b27Msg")||{}).innerText||"")',{timeout:12000});
+  await tap(A,'[data-lb=anyone]');await A.page.type('#b27Text','First to a buzzer beater');await tap(A,'[data-lb=amt][data-v="20"]');await tap(A,'#b27Place');ok('open challenge: the confirm step says "whoever takes it" and who owes what',/whoever takes it owes Ana 20\./.test(await txt(A)));await tap(A,'[data-lb=confirm]');await A.page.waitForFunction('/open to anyone/.test((document.getElementById("b27Msg")||{}).innerText||"")',{timeout:12000});
   const E=await open(id,info,4);ok('open challenge: another manager (Eli) can accept it, the proposer cannot accept their own',!!(await E.page.$('[data-lb=accept]'))&&!(await A.page.$('[data-lb=accept]')));await E.page.close();
   /* ---- two managers writing at the same time + one manager on two devices ---- */
   const D1=await open(id,info,3),E1=await open(id,info,4),A2=await open(id,info,0);
@@ -94,7 +94,7 @@ const audit=P=>P.page.evaluate(()=>{const A=[...document.querySelectorAll('#lbod
   global.__down=false;await tap(O3,'#b27Retry');await O3.page.waitForFunction('!document.getElementById("b27Retry")&&/live/.test(document.getElementById("lbody").innerText)',{timeout:15000});ok('recovery from the start: Try now loads the bets and shows them live',/Bet #1/.test(await txt(O3)));await O3.page.close();
   /* ---- 1280, no money text, no errors ---- */
   const W=await open(id,info,0,{desk:true});t=await txt(W);const wa=await audit(W);
-  ok('1280px: Bets tab has no horizontal overflow and renders the matrix, board and cards',!wa.over&&!!(await W.page.$('#b27Matrix'))&&!!(await W.page.$('#b27Board')),wa);
+  ok('1280px: Bets tab has no horizontal overflow and renders the cards; Tally renders the matrix and the person table',!wa.over&&!!(await W.page.$('[data-bet]'))&&await (async()=>{await tap(W,'#b27Ob_tally');const r=!!(await W.page.$('#b27Matrix'))&&!!(await W.page.$('#b27People'));await tap(W,'#b27Ob_form');return r})(),wa);
   ok('no money text on the Bets tab at any point: no $, cash, prize, payout, currency codes or amounts; "pushups" is present',!MONEY.test(t)&&/pushups/.test(t),t.match(MONEY));
   await W.page.screenshot({path:'/tmp/s18/bets_w1.png',fullPage:true});
   ok('no page errors',W.errs.length===0&&A.errs.length===0&&B.errs.length===0,[W.errs,A.errs,B.errs]);await W.page.close();await A.page.close();

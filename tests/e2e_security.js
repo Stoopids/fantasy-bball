@@ -87,11 +87,11 @@ await P.close();
 P=await attempt('noqueue','#as='+OW.id+'&k='+rnd());await tab(P,'my');ok('wrong secret: no queue or auto-pick controls',!(await has(P,'#autotog')));
 ok('wrong secret: cannot chat or react (no chat box)',await (async()=>{await tab(P,'chat');return !(await has(P,'#cin'))})());
 await P.close();
-/* 5 edit profile */
-P=await mk('edit_wrong',{});await P.page.evaluateOnNewDocument((id,me)=>{localStorage.setItem('fbn.me.'+id,JSON.stringify(me))},idC,{mid:OW.id,k:rnd()});await P.page.goto(`${APP}/join.html?l=${idC}&edit=1`,{waitUntil:'domcontentloaded'});await waitFor(()=>has(P,'#jform')||has(P,'#joined'),15000).catch(()=>{});
-ok('edit-profile page with a wrong secret does not open the edit form for that manager',!(/Edit your profile/.test(await body(P)))&&!(await has(P,'[data-a=saveme]')),(await body(P)).slice(0,120));await P.close();
-P=await mk('edit_right',{});await P.page.evaluateOnNewDocument((id,me)=>{localStorage.setItem('fbn.me.'+id,JSON.stringify(me))},idC,{mid:OW.id,k:OW.k});await P.page.goto(`${APP}/join.html?l=${idC}&edit=1`,{waitUntil:'domcontentloaded'});await waitFor(()=>has(P,'[data-a=saveme]'),15000).catch(()=>{});
-ok('edit-profile page with the right secret opens the edit form',await has(P,'[data-a=saveme]'));await P.close();
+/* 5 edit profile (s28: join.html?edit=1 routes to the room's My settings sheet; the real name is read-only there) */
+P=await mk('edit_wrong',{});await P.page.evaluateOnNewDocument((id,me)=>{localStorage.setItem('fbn.me.'+id,JSON.stringify(me))},idC,{mid:OW.id,k:rnd()});await P.page.goto(`${APP}/join.html?l=${idC}&edit=1`,{waitUntil:'domcontentloaded'});await sleep(6000);
+ok('edit link with a wrong secret goes to the room and does not open My settings for that manager',/room\.html/.test(P.page.url())&&!(await has(P,'#mysheet'))&&!(await has(P,'[data-a=saveme]')),P.page.url());await P.close();
+P=await mk('edit_right',{});await P.page.evaluateOnNewDocument((id,me)=>{localStorage.setItem('fbn.me.'+id,JSON.stringify(me))},idC,{mid:OW.id,k:OW.k});await P.page.goto(`${APP}/join.html?l=${idC}&edit=1`,{waitUntil:'domcontentloaded'});await waitFor(()=>has(P,'#mysheet'),15000).catch(()=>{});
+ok('edit link with the right secret opens My settings, real name read-only',await has(P,'#mysheet')&&await P.page.evaluate(()=>{const n=document.getElementById('ms_name');return !!n&&n.readOnly}));await P.close();
 /* 6 commissioner */
 P=await attempt('cm_hash','',{fn:(id,h)=>localStorage.setItem('cm.'+id,h),arg:[idC,metaC.pass.hash]});await tab(P,'more');
 ok('a copied commissioner hash in storage unlocks nothing',(await has(P,'#lockcard'))&&!(await has(P,'#unlockedcard')));await P.close();

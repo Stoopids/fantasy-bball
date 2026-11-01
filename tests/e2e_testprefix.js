@@ -2,6 +2,7 @@
    e.g. a manager called "Test Kitchen". Section 2 of this file checks that.
    "Test " prefix in manager / team names: stripped in DISPLAY only (Standings, Rosters, Games, Power rankings), the stored data is untouched,
    and a name that is only "Test" or "Test Test" is never turned into an empty name (it shows as written).
+   s28: TEAM name on top, real name under it (hidden when identical): rows are read back as {n:owner,t:team}.
    node tests/e2e_testprefix.js  (APP / API env, mock store) */
 const L=require('./lib.js');const fs=require('fs'),path=require('path');const F=require('../js/core.js');const {seed}=require('./seed_league.js');const {sleep,APP}=L;
 let n=0,bad=0;const fails=[];function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;fails.push(name);console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,400):''))}}
@@ -14,14 +15,14 @@ const tab=async(P,t)=>{await P.page.evaluate(t=>document.querySelector('#ltabs [
   const id=await seed(null,{names,name:'Test'});const I=seed.info;const K=F.Keys(id);
   for(const [w,h,desk] of [[390,844,false],[1280,900,true]]){
     const P=await L.phone('tp'+w,desk?{desktop:true,w,h}:{});await P.go('league.html?l='+id+'&demo=1');await ready(P);await sleep(500);
-    const st=await P.page.$$eval('#main .ocl .strow',c=>c.map(x=>({n:x.querySelector('.nm').innerText.replace(/^[^A-Za-z0-9\s]+\s*/,'').trim(),t:x.querySelector('small').innerText.trim()})));
+    const st=await P.page.$$eval('#main .ocl .strow',c=>c.map(x=>{const t=x.querySelector('.nm').innerText.replace(/^[^A-Za-z0-9\s]+\s*/,'').trim(),sm=x.querySelector('small').innerText.trim();return {n:(!sm||/^\d/.test(sm))?t:sm.split(' · ')[0],t}}));
     const exp=names.map((_,i)=>i);const have=st.map(x=>x.n);
     ok(w+'px Standings: "Test " prefix gone from owner and team names; every other name shown as written; none empty',shown.every(x=>have.includes(x))&&st.every(x=>x.n.length>0&&x.t.length>0)&&!st.some(x=>/^Test (Ana|Ben|Cy|Hal)/.test(x.n)||/^Test (Aces|Blazers|Dunkers)/.test(x.t)),st);
     ok(w+'px Standings: "Test", "Test Test" and "Test  " fall back to the original',have.filter(x=>x==='Test').length===2&&have.includes('Test Test')&&st.some(x=>x.t==='Test Test'),st);
-    await tab(P,'rosters');const rs=await P.page.$$eval('#main .tabs[aria-label=Owner] button',b=>b.map(x=>x.innerText.replace(/^[^A-Za-z0-9\s]+\s*/,'').trim()));
+    await tab(P,'rosters');const rs=await P.page.$$eval('#main .tabs[aria-label=Owner] button',b=>b.map(x=>{const v=x.innerText.replace(/^[^A-Za-z0-9\s]+\s*/,'').trim().split(' · ');return v[v.length-1]}));
     ok(w+'px Rosters: owner buttons use the stripped names',rs.length===8&&rs.includes('Ana')&&rs.includes('Hal')&&!rs.some(x=>/^Test (Ana|Ben|Cy|Hal)/.test(x)),rs);
     await P.page.evaluate(()=>{const b=[...document.querySelectorAll('#main .tabs[aria-label=Owner] button')].find(x=>/Ana/.test(x.innerText));b.click()});await sleep(300);const oh=await P.page.$eval('#ownercard',e=>e.innerText);ok(w+'px Rosters: owner card heading uses the stripped name',/Ana\b/.test(oh)&&!/Test Ana/.test(oh),oh.slice(0,60));
-    await tab(P,'games');const gs=await P.page.evaluate(()=>({opts:[...document.querySelectorAll('#gOwnerSel option')].map(o=>o.textContent.trim().replace(/^[^A-Za-z0-9\s]+\s*/,'')),txt:document.getElementById('main').innerText}));
+    await tab(P,'games');const gs=await P.page.evaluate(()=>({opts:[...document.querySelectorAll('#gOwnerSel option')].map(o=>(v=>v[v.length-1])(o.textContent.trim().replace(/^[^A-Za-z0-9\s]+\s*/,'').split(' · '))),txt:document.getElementById('main').innerText}));
     ok(w+'px Games: owner filter and game cards use stripped names',gs.opts.includes('Ana')&&gs.opts.includes('Hal')&&!gs.opts.some(x=>/^Test (Ana|Ben|Cy|Hal)/.test(x))&&!/Test (Ana|Ben|Cy|Hal)\b/.test(gs.txt),gs.opts);
     await tab(P,'teams');ok(w+'px All teams: owner column uses stripped names',!/Test (Ana|Ben|Cy|Hal)\b/.test(await P.page.$eval('#main',e=>e.innerText)));
     if(require('./tabs_exp.js').has('postseason')){await tab(P,'postseason');ok(w+'px Postseason: stripped names',!/Test (Ana|Ben|Cy|Hal)\b/.test(await P.page.$eval('#main',e=>e.innerText)));}
@@ -38,9 +39,9 @@ const tab=async(P,t)=>{await P.page.evaluate(t=>document.querySelector('#ltabs [
    ok('A.disp(name) without the test flag returns the name exactly as written; with the flag it strips',FD.disp('Test Kitchen')==='Test Kitchen'&&FD.disp('Test Kitchen',true)==='Kitchen'&&FD.disp('Test',true)==='Test');
    for(const [w,h,desk] of [[390,844,false],[1280,900,true]]){
     const P=await L.phone('tr'+w,desk?{desktop:true,w,h}:{});await P.go('league.html?l='+rid+'&demo=1');await ready(P);await sleep(500);
-    const st=await P.page.$$eval('#main .ocl .strow',c=>c.map(x=>({n:x.querySelector('.nm').innerText.replace(/^[^A-Za-z0-9\s]+\s*/,'').trim(),t:x.querySelector('small').innerText.trim()})));
+    const st=await P.page.$$eval('#main .ocl .strow',c=>c.map(x=>{const t=x.querySelector('.nm').innerText.replace(/^[^A-Za-z0-9\s]+\s*/,'').trim(),sm=x.querySelector('small').innerText.trim();return {n:(!sm||/^\d/.test(sm))?t:sm.split(' · ')[0],t}}));
     ok(w+'px real league Standings: "Test Kitchen", "Test Ben", "Test Kitchen Crew" and "Test Comets" are shown exactly as written; "Test" and "Test Test" too',['Test Kitchen','Test Ben','Test','Test Test'].every(x=>st.some(r=>r.n===x))&&['Test Kitchen Crew','Test Comets','Test Test'].every(x=>st.some(r=>r.t===x)),st);
-    await tab(P,'rosters');const rs=await P.page.$$eval('#main .tabs[aria-label=Owner] button',b=>b.map(x=>x.innerText.replace(/^[^A-Za-z0-9\s]+\s*/,'').trim()));ok(w+'px real league Rosters: owner buttons keep "Test Kitchen" and "Test Ben"',rs.includes('Test Kitchen')&&rs.includes('Test Ben'),rs);
-    await tab(P,'games');const gs=await P.page.evaluate(()=>[...document.querySelectorAll('#gOwnerSel option')].map(o=>o.textContent.trim().replace(/^[^A-Za-z0-9\s]+\s*/,'')));ok(w+'px real league Games: owner filter keeps "Test Kitchen"',gs.includes('Test Kitchen')&&gs.includes('Test Ben'),gs);
+    await tab(P,'rosters');const rs=await P.page.$$eval('#main .tabs[aria-label=Owner] button',b=>b.map(x=>{const v=x.innerText.replace(/^[^A-Za-z0-9\s]+\s*/,'').trim().split(' · ');return v[v.length-1]}));ok(w+'px real league Rosters: owner buttons keep "Test Kitchen" and "Test Ben"',rs.includes('Test Kitchen')&&rs.includes('Test Ben'),rs);
+    await tab(P,'games');const gs=await P.page.evaluate(()=>[...document.querySelectorAll('#gOwnerSel option')].map(o=>(v=>v[v.length-1])(o.textContent.trim().replace(/^[^A-Za-z0-9\s]+\s*/,'').split(' · '))));ok(w+'px real league Games: owner filter keeps "Test Kitchen"',gs.includes('Test Kitchen')&&gs.includes('Test Ben'),gs);
     ok(w+'px real league: no page errors',P.errs.filter(e=>/pageerror/.test(e)).length===0,P.errs);await P.page.close()}}
 }catch(e){bad++;fails.push('exception: '+e.message);console.log(e.stack)}finally{await L.close();console.log('\n'+(n-bad)+' / '+n+' checks passed'+(bad?' — FAILED: '+fails.join('; '):''));process.exit(bad?1:0)}})();

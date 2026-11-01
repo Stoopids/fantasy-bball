@@ -10,9 +10,10 @@ const post=(k,v)=>fetch(API+encodeURIComponent(k),{method:'POST',headers:{'Conte
  const live1=async()=>{const mm=await gj(K.meta);const vo=new Set(mm.voided||[]);const e=await gj(K.pick(mm.epoch,1));return e&&e.tid&&!vo.has(e.id)?e:null};
  const waitP=async ms=>{const t=Date.now();while(Date.now()-t<ms){const e=await live1();if(e)return e;await sleep(500)}return null};
  let e=await waitP(20000);ok(w+': away manager auto-pick #1 lands (no clock)',!!e);
- for(const k of [1,2]){await P.page.evaluate(()=>{location.hash='#tab=more'});await sleep(800);await P.page.evaluate(()=>document.getElementById('undobtn').click());await sleep(500);await P.page.evaluate(()=>document.getElementById('cfyes').click());
-  const t0=Date.now();await sleep(2500);ok(w+': undo '+k+' removed pick #1',!(await live1()));
-  e=await waitP(30000);const dt=(Date.now()-t0)/1000;ok(w+': undo '+k+': pick #1 re-picked after the fixed hold ('+dt.toFixed(1)+'s, expected ~10-14s), not frozen',!!e&&dt>=8&&dt<=25,{dt})}
+ /* s28 item 5: with No clock, after Undo the slot is frozen (no auto re-pick) until someone picks by hand */
+ {await P.page.evaluate(()=>{location.hash='#tab=more'});await sleep(800);await P.page.evaluate(()=>document.getElementById('undobtn').click());await sleep(500);await P.page.evaluate(()=>document.getElementById('cfyes').click());
+  await sleep(2500);ok(w+': undo removed pick #1',!(await live1()));
+  e=await waitP(25000);ok(w+': after undo pick #1 stays frozen (no auto re-pick for 25 s, s28 item 5)',!e,e&&e.id)}
  ok(w+': 0 JS errors',!P.errs.length,P.errs);await P.close()}
 }catch(e){bad++;console.log('FAIL  crashed: '+(e&&e.stack||e))}
  await L.close();console.log('\n'+(n-bad)+' / '+n+' checks passed');process.exit(bad?1:0)})();

@@ -2,7 +2,7 @@
 const L=require('./lib.js');const {seed}=require('./seed_league.js');const {sleep}=L;const F=require('../js/core.js');
 const SH=process.env.SHOTS||'/workspace/league-site-work/compare-s25';require('fs').mkdirSync(SH,{recursive:true});
 let n=0,bad=0;const fails=[];function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;fails.push(name);console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,500):''))}}
-const base=process.env.API||'http://localhost:9996/api/data/';const MONEY=/\b(wager\w*|payout|prize|cash|money|dollars?|lottery|jackpot|gambl\w*|USD|IDR|Rp)\b|\$\s?\d/i;
+const base=process.env.API||'http://localhost:9996/api/data/';const MONEY={re:/\b(wager\w*|payout|prize|cash|money|dollars?|lottery|jackpot|gambl\w*|USD|IDR|Rp)\b|\$\s?\d/i,ok:/Bets here are just for fun and are settled in pushups, not money\. Betting is Stoopid, and we don't endorse or facilitate gambling for money\./g,test(x){return this.re.test(String(x).replace(this.ok,''))},[Symbol.match](x){return String(x).replace(this.ok,'').match(this.re)}};   /* s28: the Bets page disclaimer (partner wording) is the one allowed money sentence */
 const get=async k=>(await fetch(base+encodeURIComponent(k))).text();const post=(k,v)=>fetch(base+encodeURIComponent(k),{method:'POST',headers:{'Content-Type':'text/plain'},body:typeof v==='string'?v:JSON.stringify(v)});
 const FEED={mode:'final',ev:[]};   // the mocked ESPN scoreboard
 async function open(id,info,i,o){o=o||{};const P=await L.phone('t'+Math.random().toString(36).slice(2,6),o.w?{desktop:o.w>=1000,w:o.w,h:900}:{});
@@ -45,7 +45,7 @@ const over=(P,w)=>P.page.evaluate(w=>({sw:document.documentElement.scrollWidth,i
   await post(key(1),{v:1,ev:(await evs(1)).concat([{k:'s',u:'nw000002',ts:T0+3600e3,id:'lbet000003',r:'o'}])});await refresh(A);
   ok('an unmarked settle added after a marked event in that log (back-dated clock) is not treated as legacy: still open, not even "reported"',!/Result:|Earlier answer/.test(await card(A,'lbet000003'))&&!!(await A.page.$('[data-lb=settle][data-id="lbet000003"]')),await card(A,'lbet000003'));
   /* new creator settle works and carries the marker */
-  await tap(A,'[data-lb=settle][data-id="lbet000004"][data-r="b"]');await tap(A,'[data-lb=settle][data-id="lbet000004"][data-r="b"]');await msg(A,'Settled');
+  await tap(A,'[data-lb=settle][data-id="lbet000004"][data-r="b"]');await tap(A,'[data-lb=settle][data-id="lbet000004"][data-r="b"]');await msg(A,'Saved|Settled');   /* s28: partner wording, settle confirms with 'Saved.' */
   const s4=(await evs(0)).find(e=>e.k==='s'&&e.id==='lbet000004');
   ok('new creator settle works (Ana won) and is written with v:25',/Ana won/.test(await card(A,'lbet000004'))&&s4&&s4.v===25,s4);
   await refresh(B);ok('the opponent\'s page shows it settled too',/Ana won/.test(await card(B,'lbet000004')));
