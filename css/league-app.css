@@ -626,4 +626,69 @@ nav#ltabs .nl{max-width:100%;overflow:visible;white-space:normal;overflow-wrap:n
 .obk.atk .ato{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
 @media (max-width:480px){.obk.atk{grid-template-columns:minmax(0,1fr) repeat(3,max-content);column-gap:8px}.obk.atk .obh span:nth-child(2){display:none}.obk.atk .obh span:first-child::after{content:' / owner'}.obk.atk .obl{grid-template-rows:auto auto}.obk.atk .obl>.obt{grid-column:1;grid-row:1}.obk.atk .obl>.ato{grid-column:1;grid-row:2;font-size:12px;color:var(--mut);padding:0 0 2px 4px}.obk.atk .obl>.n{grid-row:1/span 2}}
 /*</S26C4>*/
+/* s26c11: All teams like STOOPIDS (s26o2), compact: columns sized to content, card centered (<= 720px), owner narrow (ellipsis), Conf, Rec/AP/NET/Pts side by side,
+   numbers ~1.1x bold tabular; owner filter chips (44px). Phones: owner + conf on a second line under the team. */
+.obk.atk{width:fit-content;max-width:min(720px,100%);box-sizing:border-box;margin-left:auto;margin-right:auto;grid-template-columns:minmax(0,max-content) minmax(0,8ch) repeat(2,max-content) minmax(0,7ch) repeat(2,max-content);column-gap:12px}
+.obk.atk .ato{max-width:8ch}
+.obk.atk .atc{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:var(--mut)}
+.obk.atk .obl>.n{font-size:15.5px;font-weight:800;font-variant-numeric:tabular-nums;min-width:2.2em}
+.obk.atk .obl>.atp{color:var(--acc)}
+p.note.atn{max-width:720px;margin-left:auto;margin-right:auto}
+.atfw{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;max-width:720px;margin:0 auto 8px}
+.atfl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);font-weight:800;margin-right:2px}
+.atf{min-height:44px;min-width:44px;padding:0 12px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--tx);font:inherit;font-size:13px;font-weight:700;cursor:pointer;max-width:12em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.atf.on{background:var(--acc);border-color:var(--acc);color:#10131a}
+.atf:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+@media (max-width:480px){.obk.atk{width:auto;grid-template-columns:minmax(0,1fr) repeat(4,max-content);column-gap:9px}.obk.atk .obh span:nth-child(5){display:none}.obk.atk .obh span:first-child::after{content:' / owner · conf'}
+  .obk.atk .obl>.n{grid-row:1;font-size:14.5px;min-width:0}.obk.atk .obl>.ato{max-width:none}.obk.atk .obl>.atc{grid-column:2/-1;grid-row:2;text-align:right;font-size:11.5px;padding-bottom:2px}.atf{padding:0 10px;font-size:12.5px}}
+@media (max-width:339px){.obk.atk{column-gap:6px}.obk.atk .obl>.n{font-size:14px}.obk.atk .obh span:first-child::after{content:' / owner'}}
+/* s26c11: Standings > Breakdown, one row per school (STOOPIDS s26q): same-width pills, one narrow column per category, total last */
+.obk.pk.pq{display:block}
+.pq .ptab tr.obr,.pq .ptab tr.obh{display:table-row;grid-column:auto;border:0;padding:0;min-height:0;text-transform:none;letter-spacing:normal}
+.pq .ptab td.obp{display:table-cell;background:none;border:0;border-radius:0;padding:2px 1px;font-size:inherit;line-height:inherit;opacity:1}
+.pq .ptw{max-width:100%;overflow-x:auto;margin-top:4px}
+.pq .ptab{width:100%;border-collapse:collapse;table-layout:fixed;font-variant-numeric:tabular-nums;font-size:12.5px;line-height:1.2}
+.pq .ptab th,.pq .ptab td{padding:2px 1px;text-align:center;white-space:nowrap;overflow:hidden}
+.pq .ptab th{font-size:10px;font-weight:800;letter-spacing:.02em;color:var(--mut);padding-bottom:4px;border-bottom:1px solid var(--line)}
+.pq .ptab tr.obr td{border-top:1px solid var(--line);height:44px}
+.pq .ptab .ptn{width:150px;text-align:left;padding-left:0;overflow:visible}
+.pq .ptab .ptn .obt{display:block}
+.pq .ptab .ptn .chip.school-chip{width:146px;max-width:146px;box-sizing:border-box;overflow:hidden}
+.pq .ptab .ptn .chip.school-chip>:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.pq .ptab td.obp b{color:var(--good);font-weight:700}.pq .ptab td.obp.neg b{color:var(--bad)}.pq .ptab td.obp.z b{color:var(--mut);font-weight:400}
+.pq .ptab .ptt{width:34px;text-align:right}.pq .ptab .obtot{color:var(--acc);font-size:14px}
+@media (min-width:760px){.obk.pk.pq{max-width:720px;margin-left:auto;margin-right:auto}}
+@media (max-width:480px){.pq .ptab{font-size:11.5px}.pq .ptab th{font-size:9px}.pq .ptab .ptn{width:112px}.pq .ptab .ptn .chip.school-chip{width:108px;max-width:108px;font-size:11.5px}.pq .ptab .ptt{width:28px}}
+@media (max-width:339px){.pq .ptab{font-size:10.5px}.pq .ptab th{font-size:8.5px;letter-spacing:-.03em}.pq .ptab .ptn{width:92px}.pq .ptab .ptn .chip.school-chip{width:89px;max-width:89px;font-size:10.5px;padding-right:4px}.pq .ptab .ptt{width:24px}.pq .ptab .obtot{font-size:12.5px}}
+/* s26c11: Games cards: both sides line up (pill row + one-line owner row, – when none), names on one line with ellipsis, equal-width pills, cards stretch per row */
+.ggrid:not(.gfins){align-items:stretch}
+.gm .gl1{gap:4px}
+.gm .gl1 .gside .nm{flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:3px}
+.gm .gl1 .gside .gtr{display:flex;align-items:center;gap:4px;min-width:0}
+.gm .gl1 .gside.gh2 .gtr{flex-direction:row-reverse}
+.gm .gl1 .gside .chip.school-chip{width:100%;max-width:none;flex:1 1 0;padding-left:3px;padding-right:6px;column-gap:4px}
+.gm .gl1 .gside .gow{height:22px;line-height:22px;display:flex;gap:4px;min-width:0;overflow:hidden;white-space:nowrap}
+.gm .gl1 .gside.gh2 .gow{justify-content:flex-end}
+.gm .gl1 .gside .gow .opill{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:20px;flex:0 1 auto}
+.gm .gl1 .gside .gno{color:var(--mut);font-weight:700;padding:0 7px}
+.gm .gl1 .gside.nosc .sc2{display:none}
+@media (max-width:379px){.gm .gl1 .gat{font-size:11px}.gm .gl1 .gside .chip.school-chip img,.gm .gl1 .gside .chip.school-chip .nologo{width:20px;height:20px}}
 /* s26c5: header buttons sit on the banner (wrapper .herow), not over the site title */.herow{position:relative}
+/* s26c10: Draft tab (room link before the draft, pick board after) and Recap tab */
+nav#ltabs.pre{grid-template-columns:minmax(0,120px)}
+.gdw{margin:10px 2px}
+#godraft{display:flex;align-items:center;justify-content:center;width:100%;box-sizing:border-box;min-height:56px;font-size:19px;margin:8px 0 0;background:var(--acc);color:#10131a}
+.dbhead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}.dbhead .note{flex:1 1 auto}
+.dround .drt{display:block;color:var(--acc);margin-bottom:6px}
+.dpicks{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr;gap:4px}
+@media (min-width:760px){.dpicks{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dpick{display:grid;grid-template-columns:2.2em minmax(0,1fr) minmax(0,1.3fr);align-items:center;gap:8px;min-height:44px;min-width:0;border-top:1px solid rgba(255,255,255,.06);padding:2px 0}
+.dpn{color:var(--mut);font-variant-numeric:tabular-nums;text-align:right}
+.dpm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.dps{min-width:0;overflow:hidden}.dps>*{max-width:100%}
+.wkh{margin-top:18px}
+#recapgrades #powerrank{margin:0}
+nav#ltabs.pre{grid-template-columns:repeat(2,minmax(0,120px))}
+.rcroom{margin:14px 2px 6px;text-align:right}
+.rcrl{display:inline-flex;align-items:center;min-height:44px;min-width:44px;padding:0 6px;font-size:13px;color:var(--mut);text-decoration:none}
+.rcrl:hover,.rcrl:focus-visible{color:var(--acc);text-decoration:underline}

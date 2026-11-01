@@ -106,12 +106,12 @@ if(typeof module!=='undefined'&&module.exports)module.exports=A;else root.FBNLea
   const AP_URL='https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/rankings',CK='fbn.rank.ap.v1',TTL=6*3600e3;
   const R={ap:{},apList:[],apDate:'',net:{},netList:[],netLabel:'',netThrough:'',ready:false,
     badge(tid){const r=R.ap[String(tid)];return Number.isInteger(r)&&r>=1&&r<=25?'<span class="rkb" title="AP Top 25">#'+r+'</span>':''},
-    apOf:tid=>R.ap[String(tid)]||null,netOf:tid=>R.net[String(tid)]||null};
+    apOf:tid=>R.ap[String(tid)]||null,netOf:tid=>R.net[String(tid)]||null,netConf:{},netConfOf:tid=>R.netConf[String(tid)]||null};   /* s26c11: net.json ranks[].conf (refresh_data.py annotate_net) */
   const setAP=j=>{try{const p=(j&&j.rankings||[]).find(x=>x&&x.type==='ap');if(!p||!Array.isArray(p.ranks))return false;const m={},l=[];
       p.ranks.forEach(x=>{const r=Number(x.current),id=x&&x.team&&String(x.team.id);if(Number.isInteger(r)&&r>=1&&r<=25&&/^\d{1,8}$/.test(id||'')&&!(id in m)){m[id]=r;l.push({rank:r,id,school:String(x.team.location||x.team.nickname||'').slice(0,40)})}});
       if(!l.length)return false;R.ap=m;R.apList=l.sort((a,b)=>a.rank-b.rank);R.apDate=/^\d{4}-\d{2}-\d{2}/.test(p.date||'')?p.date.slice(0,10):'';return true}catch(e){return false}};
-  const setNET=j=>{try{if(!j||!Array.isArray(j.ranks))return;const m={},l=[];j.ranks.forEach(x=>{const r=Number(x.rank),id=String(x.id||'');if(Number.isInteger(r)&&r>=1&&r<=400&&/^\d{1,8}$/.test(id)&&!(id in m)){m[id]=r;l.push({rank:r,id,school:String(x.school||'').slice(0,40)})}});
-      R.net=m;R.netList=l.sort((a,b)=>a.rank-b.rank);R.netLabel=String(j.label||'NET').slice(0,80);R.netThrough=/^\d{4}-\d{2}-\d{2}$/.test(j.through||'')?j.through:''}catch(e){}};
+  const setNET=j=>{try{if(!j||!Array.isArray(j.ranks))return;const m={},l=[],cf={};j.ranks.forEach(x=>{const r=Number(x.rank),id=String(x.id||'');if(/^\d{1,8}$/.test(id)&&typeof x.conf==='string'&&x.conf&&!(id in cf))cf[id]=x.conf.slice(0,40);if(Number.isInteger(r)&&r>=1&&r<=400&&/^\d{1,8}$/.test(id)&&!(id in m)){m[id]=r;l.push({rank:r,id,school:String(x.school||'').slice(0,40)})}});
+      R.net=m;R.netConf=cf;R.netList=l.sort((a,b)=>a.rank-b.rank);R.netLabel=String(j.label||'NET').slice(0,80);R.netThrough=/^\d{4}-\d{2}-\d{2}$/.test(j.through||'')?j.through:''}catch(e){}};
   const get=async(u,o)=>{const c=typeof AbortController!=='undefined'?new AbortController():null,t=c?setTimeout(()=>c.abort(),10000):null;try{const r=await fetch(u,Object.assign({signal:c?c.signal:undefined},o||{}));if(!r.ok)throw new Error('http');return await r.json()}finally{if(t)clearTimeout(t)}};
   const slim=j=>({rankings:(j.rankings||[]).filter(x=>x&&x.type==='ap').map(x=>({type:'ap',date:x.date,ranks:(x.ranks||[]).map(y=>({current:y.current,team:{id:y.team&&y.team.id,location:y.team&&y.team.location}}))}))});
   R.load=async function(){let ch=false;
