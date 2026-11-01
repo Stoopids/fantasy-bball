@@ -1,7 +1,7 @@
 d41d8cd98f00b204e9800998ecf8427e  .nojekyll
 aab153233971799b3f33f8771338cdb2  CHANGE-NOTES-s24.md
 fdb538b9a8247a3f56406fb69fa80031  CHANGE-NOTES-s25.md
-f54266af0a417e3a4bcffea04f025a7b  CHANGED-FILES.md
+0da9458418cd5a57c1fba4da66bfe8f5  CHANGED-FILES.md
 fc4c2520be569d292be962f8ba4efdeb  LICENSE-third-party.txt
 262bee0799369fbf2298360c827e790f  README.md
 dc050cbfbdc4a7acac091c14b90bb9d0  UNCLEAR.md
@@ -47,7 +47,7 @@ e23c8f96ab3ce7de4c03ce8625002c85  js/power-gen.js
 ade6fadbb2f4be5a575390360ff3af5b  js/qr.min.js
 563093cd2e3f54dcc3fdaefd0ee78286  js/recap.js
 757c3c165a79010c4b592f2eeffcb64c  js/redraft.js
-0fed80ec3d63a8602552d4f0470ba5c4  js/room.js
+5a235eea2f3e80856995c4f1dcbb780a  js/room.js
 b6c40f01a574e3c88d516c6c075879f3  js/rules.js
 dea3951c79015c462034d16d386d2548  js/scoring.js
 325fd1c31be3daa075c692517c505d03  js/setup.js
@@ -55,7 +55,7 @@ dea3951c79015c462034d16d386d2548  js/scoring.js
 a1c776ffcad4a1e1444e2a41913572c1  js/store.js
 b31b8d130f47a378f2358995614b9470  js/time.js
 5aa18165b81a3f7791885f84dd19a04d  js/ui.js
-c3f0a7e328b69a4df2e6e559517af9b6  js/version.js
+a85b3c18ffbcf003cf867481b589ae0f  js/version.js
 20d047f6fc4424e7521baac3f5781940  league.html
 dde6bc94069703616dc2b911b7422ae9  manifest.webmanifest
 8651de3c384a5387ec19ec8c1dc594e4  mock.html
@@ -63,7 +63,7 @@ dde6bc94069703616dc2b911b7422ae9  manifest.webmanifest
 67894e74e4d6680fd2750e8f15cfaa0c  redraft.html
 dc5dc90e7dd8ad325b34f5fb28fe1425  room.html
 ba0bad6039db68759ec53e44ca6569dd  setup.html
-81f8040dcc54741a7886cce2ca46fcfd  sw.js
+192b67d75a35c0bf9018b4aae109d5e8  sw.js
 25852915b747ecd22afa1599b4d1357c  time.html
 806c1ebcb679950c59121f0d77b3528e  tools/gen_stoopids_import.js
 be1290331d89ff8782ac60ce0b8143b9  tools/kenpom_rank.py

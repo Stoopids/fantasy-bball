@@ -1,3 +1,20 @@
+# s26c16d (build 2026-11-01s26c16d): seat sound cues (Paul)
+Base: staged s26c16c = /workspace/fantasy-bball-releases/s26c16c (MD5SUMS e32a9c33d30bc3bbb8d825880c8a221e). Staged only, not published. Only js/room.js changed in code; core.js (34363368) and every League-owned file unchanged. tests/, shots/, node_modules, __pycache__, .git not in MD5SUMS.
+- WebAudio (OscillatorNode, no audio file) cues for THIS device's own seat: 3 beeps when the seat goes on the clock, 2 beeps at 30 s left, 1 beep at 10 s left. Each at most once per pick (localStorage fbn.beepLast.<league> = epoch:n + done keys n:start / n:30 / n:10), so reloads, polls and re-renders never repeat one.
+- Thresholds already passed when a page first sees the pick are skipped silently; at most one cue per check (never a burst).
+- None for spectators (watch=1), the commissioner without a seat, auto-picks (away/auto-pick on), a paused, complete or lobby draft, after the pick is made, or with the clock off (no 30/10 cues).
+- AudioContext is created/resumed on the first pointerdown/keydown (browser autoplay rule). Everything in try/catch.
+- Mute: More tab, Alerts card, "Turn sound" switch (on by default), saved in localStorage fbn.beepMute = '1'. The old single beep at the 15-second warning is removed (the 10 s cue replaces it); the 15 s vibrate and toast stay.
+
+| file | md5 | owner | why |
+|---|---|---|---|
+| js/room.js | 5a235eea2f3e80856995c4f1dcbb780a | Draft Room | seat sound cues, Turn sound toggle |
+| js/version.js | a85b3c18ffbcf003cf867481b589ae0f | Draft Room | build 2026-11-01s26c16d |
+| sw.js | 192b67d75a35c0bf9018b4aae109d5e8 | Draft Room | line 3 comment; cache -> fbnc-2026-11-01s26c16d |
+| tests/e2e_beep_s26c16d.js | 894d770c1e4284026ed5eef5c9c0fa42 | Draft Room | new e2e (stubbed AudioContext; not in bundle) |
+| CHANGED-FILES.md | (this file) | Draft Room | s26c16d section |
+| MD5SUMS.txt | - | Draft Room | regenerated |
+
 # s26c16c (build 2026-11-01s26c16c): hotfix on LIVE s26c16b (QA s27 BUG 2: Back to Draft bounced to the recap)
 Base: LIVE s26c16b = /workspace/fantasy-bball-releases/s26c16b (git bb00eec). Staged only, not published. Only js/room.js changed in code; core.js and every League-owned file unchanged. tests/, shots/, node_modules, __pycache__, .git not in MD5SUMS.
 - Cause: a natural finish left meta status 'live' with endedAt null. On opening room.html the board first derives 'live' (pick log still loading), then 'complete' once all 64 picks load, and onState() took that as "the draft just ended" and sent the page to recap.html 1.8 s later.
