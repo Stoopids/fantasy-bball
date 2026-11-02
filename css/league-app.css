@@ -873,3 +873,90 @@ html.bd-a #ptsv .pq .ptab .ptn,html.bd-a #ptsv .pq .ptab .ptn .chip.school-chip{
 @media (min-width:900px){.ggrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (min-width:1200px){body.lsite[data-ltab=games] main{max-width:1600px;width:calc(100% - 32px)}}
 @media (min-width:1400px){.ggrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* ===== s28j (Paul preview fixes; shared numbers agreed with the reference site team, keep as variables) =====
+   --kicker-ratio: 'Stoopids presents' kicker = ratio x the rendered title size (titleFit sets --title-fs on #lhead), floor 11px.
+   --content-max: tab bar and every tab's content share one centred column (1080px, 1440px from 1700px), 16px side padding.
+   --games-min / --games-gap: Games cards auto-fill inside the column (3 at 1280-1440, 4 from 1700, 1 on phones). */
+:root{--kicker-ratio:.5;--kicker-min:11px;--content-max:1012px;--nav-max:1080px;--content-pad:16px;--games-min:320px;--games-gap:16px}
+/* s28j item 2 change: no 1440px rule; every tab's content = the reference site Standings column (--content-max, value pending from the reference site team); header + tab bar keep --nav-max */
+#lhead{--title-fs:clamp(34px,10.5vw,72px)}
+#lhead #ltitle{font-size:var(--title-fs)}
+#lhead .s27-pres{font-size:max(var(--kicker-min),calc(var(--title-fs) * var(--kicker-ratio)))}
+body.lsite header,body.lsite nav#ltabs,body.lsite footer{box-sizing:border-box;width:100%;max-width:var(--nav-max);margin-left:auto;margin-right:auto;padding-left:var(--content-pad);padding-right:var(--content-pad)}
+body.lsite main,
+body.lsite[data-ltab] main{box-sizing:border-box;width:100%;max-width:var(--content-max);margin-left:auto;margin-right:auto;padding-left:var(--content-pad);padding-right:var(--content-pad)}
+body.lsite nav#ltabs{margin-top:8px}
+body.lsite .ggrid{grid-template-columns:repeat(auto-fill,minmax(min(var(--games-min),100%),1fr));gap:var(--games-gap)}
+/* Bets Pool card: Copy pinned top-right on the header line (like bet cards); '· N managers' wraps underneath */
+.b27-pool .s24hd{position:relative;padding-right:84px;min-height:44px}
+.b27-pool .s24hd>.s27-copy{position:absolute;top:0;right:0;margin:0}
+body.lsite header{padding-left:0;padding-right:0}   /* banner spans the column; tab bar and content are inset by --content-pad inside the same box */
+#sharecard.s29sh{margin-left:auto;margin-right:auto}   /* s28j: Share card centred under the tabs (like the compact All teams card) */
+/* s28j Paste a bet (top of the New bet form) */
+.b27-pz{margin:8px 0 10px;padding:10px;border:1px dashed var(--line);border-radius:12px;display:flex;flex-direction:column;gap:6px}
+.b27-pz .b27-q{margin:0}.b27-pz-t{width:100%;box-sizing:border-box;min-height:56px;resize:vertical;font:inherit;font-size:15px;padding:8px 10px}
+#b27PzRead{align-self:flex-start;min-height:44px}
+.b27-pz-sum{font-weight:800;font-size:15px;line-height:1.35;overflow-wrap:anywhere}
+.b27-pz-q{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.b27-pz-q .b27-sm{min-height:44px}
+.b27-pz-bad{color:#ffb4b4}
+#b27PzOk{min-height:44px}
+.b27-posted{font-size:12px;margin-top:4px}
+/* s28j item 8: every table / table-like list fills the capped content column (= tab bar inner width = Games grid): no fit-content / max-width shrink.
+   Phones keep sideways scroll inside the table wrapper (.swipe / .ptw / .card.obk overflow-x:auto) when a table is wider than the screen. */
+body.lsite #lbody .obk.atk,body.lsite #lbody .obk,body.lsite #lbody .ocl,body.lsite #lbody .b27-grid,body.lsite #lbody .oqw{width:100%;max-width:none;margin-left:0;margin-right:0;box-sizing:border-box}
+body.lsite #lbody p.note.atn,body.lsite #lbody .atfw{max-width:none}
+body.lsite #lbody .card>table,body.lsite #lbody .obk table,body.lsite #lbody .ptw,body.lsite #lbody .oq{width:100%;max-width:none}
+@media (min-width:481px){body.lsite #lbody .obk.atk{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) repeat(2,max-content) minmax(0,1fr) repeat(4,max-content)}}   /* All teams columns share the full width (was fit-content <= 720px, centred) */
+@media (max-width:759px){body.lsite #lbody .ptw,body.lsite #lbody .oqw{overflow-x:auto;-webkit-overflow-scrolling:touch}}
+/* s28j item 9: Share = 'Read-only link for friends and family'; a small separate managers line (regular link + its own Copy), hidden in view mode */
+.s29sh-sub{margin:-4px 0 0;font-weight:700;font-size:14px}
+.s29sh-mg{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px;padding-top:8px;border-top:1px solid var(--line);font-size:12.5px}
+.s29sh-mg .s29sh-ml{font-weight:700;color:var(--mut)}.s29sh-mg .s29sh-u{flex:1 1 220px;min-width:0;font-size:12px}
+html.viewonly .s29sh-mg{display:none}
+#profile-share #sharecard.s29sh{max-width:none}#profile-share{margin-top:10px}#profile-who .pf-team{font-size:17px}   /* s28j item 10: Profile sections share the column width */
+/* s28j item 13: Games tab = the reference site (verbatim from /workspace/s29d/games_kit.md = s29d/stage/index.html 198-216, 512-518, 559-585, 692-693), scoped under
+   body.lsite #lbody so the older League game rules (.gl1/.gtr/.gfr…) no longer apply; grid columns stay item 2 (auto-fill minmax(320px,1fr), gap 16px, inside --content-max). */
+body.lsite #lbody .gday{margin:16px 2px 4px;font-weight:800;color:var(--acc)}
+body.lsite #lbody .gm{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:8px 0}
+body.lsite #lbody .gm.h2h{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
+body.lsite #lbody .gm .gh{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--mut);margin-bottom:6px;position:relative}
+body.lsite #lbody .gside{display:flex;align-items:center;gap:8px;padding:4px 0;flex-direction:row;text-align:left}
+body.lsite #lbody .gside .nm{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:4px;align-items:center;flex-direction:row}
+body.lsite #lbody .gside .sc2{font-size:22px;font-weight:900;min-width:34px;width:auto;text-align:right}
+body.lsite #lbody .gside.lose .sc2{color:var(--mut);font-weight:700}
+body.lsite #lbody .gm .opill{display:inline-block;padding:0 7px;border-radius:99px;font-size:11.5px;font-weight:700;background:var(--card2);border:1px solid var(--line)}
+body.lsite #lbody .gm .gl{border-top:1px dashed var(--line);margin-top:6px;padding-top:6px;font-size:13px}
+body.lsite #lbody .gm .up{display:inline-block;padding:1px 8px;border-radius:99px;font-weight:800;font-size:12px;background:#7c2d12;color:#ffedd5}
+body.lsite #lbody .gm .up.ns{background:var(--card2);color:var(--mut)}
+body.lsite #lbody .h2b{display:inline-block;padding:1px 8px;border-radius:99px;font-weight:800;font-size:12px;background:var(--acc);color:#111}
+body.lsite #lbody .gm .seed{font-size:11px;color:var(--mut)}
+body.lsite #lbody .gm .s27-copy{margin-left:auto;min-height:32px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+body.lsite #lbody .gm .s27-copy.on{background:var(--acc);color:#111;border-color:var(--acc)}
+body.lsite #lbody .gf2{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}
+body.lsite #lbody .gf2-s,body.lsite #lbody .gf2-b{box-sizing:border-box;height:44px;font:inherit;font-size:.85em;font-weight:600;border-radius:999px;border:1px solid #444;background:#222;color:#bbb;padding:0 12px;cursor:pointer;max-width:100%}
+body.lsite #lbody .gf2-s{padding:0 8px 0 12px;width:auto;min-width:0}
+body.lsite #lbody .gf2-s.on,body.lsite #lbody .gf2-b.on{background:#FFD400;color:#111;border-color:#FFD400}
+body.lsite #lbody .ggrid{align-items:stretch;margin:6px 0 10px}
+body.lsite #lbody .ggrid>.gm{margin:0;padding:8px 10px;display:flex;flex-direction:column;box-sizing:border-box;min-width:0}
+body.lsite #lbody .ggrid>.gm>*{flex:none}body.lsite #lbody .ggrid>.gm>.gsp{margin-top:auto;height:0}
+body.lsite #lbody .ggrid .gm .gh{margin-bottom:2px}body.lsite #lbody .ggrid .gside{padding:1px 0}body.lsite #lbody .ggrid .gside .sc2{font-size:19px}body.lsite #lbody .ggrid .gl{margin-top:4px;padding-top:4px;font-size:12.5px}
+body.lsite #lbody .ggrid .qbw{display:flex;justify-content:flex-end;margin-top:8px;padding-top:0}
+body.lsite #lbody .ggrid .qb-btn{display:inline-flex;align-items:center;justify-content:center;width:auto;padding:8px 16px;min-height:44px;font-size:.9em;font-weight:700;border-radius:10px;background:#FFD400;color:#111;border:0;box-shadow:none}
+body.lsite #lbody .ggrid>.gm.gfin{padding:0;align-self:start}
+body.lsite #lbody .gsum{all:unset;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:6px;align-items:center;width:100%;min-height:44px;padding:8px 12px;font-size:13.5px;cursor:pointer;border-radius:14px}
+body.lsite #lbody .gsum:focus-visible{outline:2px solid var(--acc)}body.lsite #lbody .gsum .gst{font-size:11.5px;font-weight:800;color:var(--mut)}body.lsite #lbody .gsum .w{font-weight:900}body.lsite #lbody .gsum .gch{margin-left:auto;color:var(--mut)}
+body.lsite #lbody .gfin .gbody{padding:0 10px 8px;border-top:0}body.lsite #lbody .gfin .gbody[hidden]{display:none}
+body.lsite #lbody .ggrid .gside .nm{flex-wrap:nowrap}
+body.lsite #lbody .ggrid .gside .chip{flex:none;width:260px;height:40px;max-width:calc(100% - 44px);box-sizing:border-box;overflow:hidden;white-space:nowrap}
+body.lsite #lbody .ggrid .gside .chip .cn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.lsite #lbody .ggrid .gside .nm>span{flex:none}
+body.lsite #lbody .ggrid .gow{height:20px;overflow:hidden;white-space:nowrap;display:flex;gap:4px;align-items:center;padding-left:2px;justify-content:flex-start}
+body.lsite #lbody .ggrid .gow .opill{flex:none;line-height:16px}
+body.lsite #lbody .ggrid:not(:has(>.gfin)){row-gap:0}
+body.lsite #lbody .ggrid:not(:has(>.gfin))>.gm{display:grid;grid-row:span 9;grid-template-rows:subgrid;grid-template-columns:minmax(0,1fr);row-gap:0;margin-bottom:12px;align-content:start}
+/* s28j item 2 FINAL (shared_rules.md, content column 980 = 1012 - 2x16): tab bar 1440 at >=1700 (content stays 1012); 320px phone guard; tables fill the column and scroll sideways in their own wrapper */
+@media (min-width:1700px){:root{--nav-max:1440px}}
+@media (max-width:351px){body.lsite #lbody .ggrid{grid-template-columns:minmax(0,1fr)}}
+body.lsite #lbody table{width:100%}
+body.lsite #lbody .card:has(>table),body.lsite #lbody .sc,body.lsite #lbody .swipe{max-width:100%;overflow-x:auto}
+body.lsite #lbody th,body.lsite #lbody td{min-width:2.5em}

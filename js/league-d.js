@@ -67,7 +67,7 @@ A.build=function(a){
     const f=S.isFinal(g),w=f?S.winnerSide(g):null;
     const side=s=>({id:String(s.id),short:shortOf(String(s.id),s.short),score:num(s.score),win:!!(w&&w===s),seed:num(s.seed),owners:ownersOf(s.id)});
     const home=side(g.home),away=side(g.away);
-    const o={id:String(g.id),day:g.day||'',start:g.start||null,status:g.status||'scheduled',kind:g.kind||'reg',round:g.round||'',neutral:!!g.neutral,home,away};if(g.line&&typeof g.line==='object')o.line={fav:String(g.line.fav),sp:Number(g.line.sp),ou:Number(g.line.ou)};   /* s25: a posted line (when the data has one) for the Games card spread */
+    const o={id:String(g.id),day:g.day||'',start:g.start||null,status:g.status||'scheduled',kind:g.kind||'reg',round:g.round||'',neutral:!!g.neutral,home,away};if(g.line&&typeof g.line==='object')o.line={fav:String(g.line.fav),sp:Number(g.line.sp),ou:Number(g.line.ou)};if(g.line&&typeof g.line==="object"){const L0=g.line,nf=v=>v!=null&&v!==''&&isFinite(+v)?+v:null;if(L0.dog!=null)o.line.dog=String(L0.dog);const am=nf(L0.aml!=null?L0.aml:L0.mlA),hm=nf(L0.hml!=null?L0.hml:L0.mlH);if(am!=null)o.line.aml=am;if(hm!=null)o.line.hml=hm;const pv=L0.p||L0.src||L0.provider;if(pv)o.line.p=String(pv).slice(0,40);if(L0.type==='close')o.line.type='close'}   /* s28j item 13: + dog, moneylines, book, closing flag for the the reference site card line */   /* s25: a posted line (when the data has one) for the Games card spread */
     o.h2h=!!(home.owners.length&&away.owners.length&&home.owners[0]!==away.owners[0]);
     o.civil=!!(home.owners.length&&away.owners.length&&home.owners[0]===away.owners[0]);
     if(f&&g.kind==='ncaa')o.upset={is:S.isUpset(g),scored:true};
@@ -111,9 +111,9 @@ if(typeof module!=='undefined'&&module.exports)module.exports=A;else root.FBNLea
   const D=x=>x instanceof Date?x:new Date(x),okD=d=>!isNaN(d.getTime());
   const T={
     zone(x){const d0=x==null?new Date():D(x),d=okD(d0)?d0:new Date();let first='';for(const f of FZS){try{const p=f.formatToParts(d).find(q=>q.type==='timeZoneName'),v=p?p.value:'';if(!first)first=v;if(v&&!/^(GMT|UTC)[+-]/.test(v))return v}catch(e){}}return first},   /* a named short zone (WIB, PST) when any device locale has one, else GMT+7 */
-    time(x){const d=D(x);return okD(d)?FT.format(d)+' '+T.zone(d):''},              /* 7:00 PM WIB */
-    stamp(x){const d=D(x);return okD(d)?FMD.format(d)+', '+FT.format(d)+' '+T.zone(d):''},   /* Nov 3, 7:00 PM WIB */
-    wdTime(x){const d=D(x);return okD(d)?FW.format(d)+' '+FT.format(d)+' '+T.zone(d):''},     /* Tue 7:00 PM WIB */
+    time(x){const d=D(x);return okD(d)?FT.format(d):''},              /* 7:00 PM (s28j item 12: no zone label anywhere) */
+    stamp(x){const d=D(x);return okD(d)?FMD.format(d)+', '+FT.format(d):''},   /* Nov 3, 7:00 PM */
+    wdTime(x){const d=D(x);return okD(d)?FW.format(d)+' '+FT.format(d):''},     /* Tue 7:00 PM */
     dayKey(x){const d=D(x);if(!okD(d))return'';const p={};FK.formatToParts(d).forEach(q=>p[q.type]=q.value);return p.year+'-'+p.month+'-'+p.day},   /* local YYYY-MM-DD */
     dayNum(k){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(k||'');return m?Math.round(Date.UTC(+m[1],+m[2]-1,+m[3])/864e5):NaN},
     daysSince(k0,x){return T.dayNum(T.dayKey(x))-T.dayNum(k0)},                     /* whole local days from key k0 to the local date of x */

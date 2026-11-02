@@ -66,7 +66,7 @@ const oddsLabel=(a,b)=>a===1&&b===1?'Even (1-1)':a+'-'+b;
 const oddsShort=(a,b)=>a===1&&b===1?'at even odds':'at '+a+'-'+b;
 function vEv(e){if(!e||typeof e!=='object')return null;const ts=Number(e.ts);if(!isFinite(ts)||ts<1e12||ts>4e12||!idOk(e.u)||!idOk(e.id))return null;
   if(e.k==='p'){const amt=Number(e.amt),a=Number(e.a),b=Number(e.b);if(!(e.to==='*'||midOk(e.to))||!Number.isInteger(amt)||amt<C.min||amt>C.max||!Number.isInteger(a)||!Number.isInteger(b)||a<1||b<1||a>C.maxOdds||b>C.maxOdds||typeof e.text!=='string')return null;
-    const text=clean(e.text);if(!text)return null;return{k:'p',u:e.u,ts,id:e.id,to:e.to,amt,a,b,text,g:idOk(e.g)?e.g:undefined,c:vClaim(e.c),v:vV(e)}}
+    const text=clean(e.text);if(!text)return null;return{k:'p',u:e.u,ts,id:e.id,to:e.to,amt,a,b,text,g:idOk(e.g)?e.g:undefined,c:vClaim(e.c),v:vV(e),...vPost(e),...(midOk(e.for)&&e.to!=='*'&&e.for!==e.to?{for:e.for}:{})}}
   if(e.k==='a'||e.k==='d'||e.k==='w')return{k:e.k,u:e.u,ts,id:e.id,v:vV(e)};
   if(e.k==='s'&&(e.r==='b'||e.r==='o'||e.r==='p'))return{k:'s',u:e.u,ts,id:e.id,r:e.r,src:vSrc(e.src),v:vV(e)};
   if(e.k==='fr'&&idOk(e.fx)&&(e.r==='b'||e.r==='o'||e.r==='p'))return{k:'fr',u:e.u,ts,id:e.id,fx:e.fx,r:e.r};
@@ -75,12 +75,14 @@ function vEv(e){if(!e||typeof e!=='object')return null;const ts=Number(e.ts);if(
   /* s28 pool: pl = build a pool {id,parts:[mids, builder included],amt:buy-in each,text,places?:[amount by place]}  pb = payouts {id,back:{mid:amount}} (builder only, counted in reduce) */
   if(e.k==='pl'){const amt=Number(e.amt);if(!Array.isArray(e.parts)||e.parts.length<2||e.parts.length>8||!e.parts.every(midOk)||new Set(e.parts).size!==e.parts.length||!Number.isInteger(amt)||amt<C.min||amt>POOL_MAX||typeof e.text!=='string')return null;
     const text=clean(e.text);if(!text)return null;const pl=Array.isArray(e.places)&&e.places.length&&e.places.length<=10&&e.places.every(v=>Number.isInteger(v)&&v>=0&&v<=POOL_MAX)&&e.places.reduce((a,v)=>a+v,0)===amt*e.parts.length?e.places.slice():undefined;
-    return{k:'pl',u:e.u,ts,id:e.id,parts:e.parts.slice(),amt,text,places:pl,v:vV(e)}}
+    return{k:'pl',u:e.u,ts,id:e.id,parts:e.parts.slice(),amt,text,places:pl,v:vV(e),...vPost(e)}}
   if(e.k==='pb'&&e.back&&typeof e.back==='object'&&!Array.isArray(e.back)){const bk={};for(const k of Object.keys(e.back)){const v=e.back[k];if(!midOk(k)||!Number.isInteger(v)||v<0||v>POOL_MAX)return null;bk[k]=v}return{k:'pb',u:e.u,ts,id:e.id,back:bk,v:vV(e)}}
   return null}
 /* s25: a settle confirmed from the final score carries {g: ESPN event id, sc: 'Kansas 78, Duke 71'} */
 const SV=25;   /* s25 version marker on new events */
 const vV=e=>e.v===SV?SV:undefined;
+/* s28j: postedBy (the manager on the posting device; reduce keeps it only when it equals the log owner) + postedAt (ms). Missing on older events = no 'Posted by' line. */
+function vPost(e){const t=Number(e.postedAt);return midOk(e.postedBy)&&Number.isFinite(t)&&t>1e12&&t<4e12?{postedBy:e.postedBy,postedAt:t}:{}}
 function vSrc(x){return x&&typeof x==='object'&&typeof x.g==='string'&&/^\d{1,12}$/.test(x.g)&&typeof x.sc==='string'&&x.sc.length<=80?{g:x.g,sc:x.sc.replace(/[<>]/g,'')}:undefined}
 function parseLog(txt){try{if(!txt||!String(txt).trim())return[];let d=JSON.parse(txt);if(typeof d==='string')d=JSON.parse(d);const ev=d&&Array.isArray(d.ev)?d.ev:[];return ev.slice(0,C.maxEv).map(vEv).filter(Boolean)}catch(e){return[]}}
 /* logs: {mid:[events]}  mids: the league's managers. Every event is checked against WHO wrote it (= whose log it is in). */
@@ -93,10 +95,13 @@ function reduce(logs,mids,now){const set=new Set(mids),all=[];
   all.sort((x,y)=>x.t-y.t||(x.mid<y.mid?-1:x.mid>y.mid?1:0)||x.i-y.i);
   const bets=new Map(),seen=new Set();let n=0;
   for(const{e,mid,late}of all){if(seen.has(mid+'|'+e.u))continue;seen.add(mid+'|'+e.u);
-    if(e.k==='p'){if(bets.has(e.id)||(e.to!=='*'&&(!set.has(e.to)||e.to===mid)))continue;
-      bets.set(e.id,{v25:e.v===SV,id:e.id,n:++n,by:mid,to:e.to,amt:e.amt,a:e.a,b:e.b,text:e.text,g:e.g,c:e.c,rx:{},ts:e.ts,status:'pending',acc:null,reps:{},res:null,auto:false,fixes:[],fix:null});continue}
+    if(e.k==='p'){/* s28j: a bet can be posted FOR another manager (e.for = bettor A, written in the poster's log): A (by) and B (to) both have to accept; postedBy = the log owner */
+      const fr=e.for&&e.for!==mid?e.for:null,by=fr||mid;if(bets.has(e.id)||(fr&&(!set.has(fr)||e.to==='*'))||(e.to!=='*'&&(!set.has(e.to)||e.to===by)))continue;
+      const nb={v25:e.v===SV,id:e.id,n:++n,by,to:e.to,amt:e.amt,a:e.a,b:e.b,text:e.text,g:e.g,c:e.c,rx:{},ts:e.ts,status:'pending',acc:null,reps:{},res:null,auto:false,fixes:[],fix:null,tp:!!fr,ackA:!fr};
+      if(e.postedBy===mid){nb.postedBy=mid;nb.postedAt=Number(e.postedAt)||e.ts}if(fr&&e.to===mid){nb.acc=mid;nb.accTs=e.ts}if(!AF()&&e.to!=='*'){nb.status='open';nb.acc=e.to;nb.accTs=e.ts;nb.ackA=true}
+      bets.set(e.id,nb);continue}
     if(e.k==='pl'){if(bets.has(e.id)||!e.parts.includes(mid)||!e.parts.every(p=>set.has(p)))continue;   /* s28 pool: the builder is always in it; numbered with the bets */
-      bets.set(e.id,{kind:'pool',v25:true,id:e.id,n:++n,by:mid,parts:e.parts,amt:e.amt,places:e.places,text:e.text,rx:{},ts:e.ts,status:'open',back:null,reps:{},fixes:[],fix:null});continue}
+      bets.set(e.id,Object.assign({kind:'pool',v25:true,id:e.id,n:++n,by:mid,parts:e.parts,amt:e.amt,places:e.places,text:e.text,rx:{},ts:e.ts,status:'open',back:null,reps:{},fixes:[],fix:null},e.postedBy===mid?{postedBy:mid,postedAt:Number(e.postedAt)||e.ts}:{}));continue}
     const b=bets.get(e.id);if(!b)continue;
     if(e.k==='rx'){const m=b.rx[e.e]||(b.rx[e.e]={});m[mid]=e.on;continue}   /* s25 reactions: latest per manager + bet + emoji wins */
     if(b.kind==='pool'){   /* s28 pool: only the builder enters the payouts (once, they must add up to the pot) or cancels it (any time before the payouts; within 30 s = undo, also after) */
@@ -111,9 +116,11 @@ function reduce(logs,mids,now){const set=new Set(mids),all=[];
       if(!F||F.fx!==e.fx)continue;
       if(e.k==='fc'){if(mid===F.by)continue;F.st='confirmed';F.cby=mid;F.endTs=e.ts;b.res=F.to;b.fix=null;b.auto=false}
       else{F.st=mid===F.by?'withdrawn':'declined';F.cby=mid;F.endTs=e.ts;b.fix=null}continue}
-    if(e.k==='a'){if(b.status!=='pending'||mid===b.by||(b.to!=='*'&&b.to!==mid))continue;b.status='open';b.acc=mid;b.accTs=e.ts}
-    else if(e.k==='d'){if(b.status!=='pending'||b.to!==mid)continue;b.status='declined'}
-    else if(e.k==='w'){if(b.status!=='pending'||mid!==b.by)continue;b.status='withdrawn'}
+    if(e.k==='a'){if(b.status!=='pending')continue;if(b.tp&&mid===b.by){b.ackA=true;if(b.acc)b.status='open';continue}
+      if(mid===b.by||(b.to!=='*'&&b.to!==mid))continue;b.acc=mid;b.accTs=e.ts;if(b.ackA)b.status='open'}
+    else if(e.k==='d'){if(b.status!=='pending'||(b.to!==mid&&!(b.tp&&mid===b.by)))continue;b.status='declined'}
+    else if(e.k==='w'&&!AF()&&b.status==='open'&&b.kind!=='pool'&&mid===(b.postedBy||b.by)&&!Object.keys(b.reps).length&&e.ts-b.ts<UNDO_MS){b.status='withdrawn'}   /* flag off: the 30 s undo of a just-placed (already open) bet */
+    else if(e.k==='w'){if(b.status!=='pending'||(mid!==b.by&&!(b.tp&&mid===b.postedBy)))continue;b.status='withdrawn'}
     else if(e.k==='s'&&e.v===SV){/* s25 settle (marked v:25): only the bet's creator, in one step; from anyone else it is ignored */
       if(!LIVE(b)||mid!==b.by)continue;b.reps[mid]={r:e.r,ts:e.ts};b.status='settled';b.res=e.r;b.settledTs=e.ts;b.src=e.src;b.auto=false}
     else if(e.k==='s'){/* legacy settle (no v marker, written before s25, on a bet placed before s25): exactly the s24 rule, so old bets are never reopened */
@@ -204,7 +211,8 @@ async function act(evs,okMsg){if(S.busy)return;if(!meMid()){S.msg='Open this pag
 /* ---------- form ---------- */
 const others=()=>owners().filter(o=>o.mid!==meMid());
 function formOK(){const me=meMid(),f=S.f;if(!me)return'Open this page from your own manager link to bet.';
-  if(!f.open){const ids=others().map(o=>o.mid);if(!f.opps.length||!f.opps.every(m=>ids.includes(m)))return'Choose who you are betting against.'}
+  if(f.forMid){const ids=owners().map(o=>o.mid);if(f.forMid===me||!ids.includes(f.forMid)||f.opps.length!==1||f.opps[0]===f.forMid||!ids.includes(f.opps[0]))return'Choose who is betting.'}
+  else if(!f.open){const ids=others().map(o=>o.mid);if(!f.opps.length||!f.opps.every(m=>ids.includes(m)))return'Choose who you are betting against.'}
   if(!clean(f.text))return'Say what the bet is about.';
   if(!Number.isInteger(f.amt)||f.amt<C.min||f.amt>C.max)return f.amtCustom?(parseAmt(f.amtTxt).err||'Pick an amount.'):'Tap an amount or type your own (minimum '+C.min+').';
   if(!(f.odds&&f.odds[0]>=1&&f.odds[1]>=1))return'Pick the odds.';return''}
@@ -220,7 +228,6 @@ function shortName(n){n=String(n);const w=n.split(/\s+/).filter(Boolean),l=w[w.l
 const tinyName=n=>{const t=shortName(n);return t.length<=7?t:t.slice(0,4)};
 function syncDom(){const m=document.getElementById('main');if(!m||!document.getElementById('b27Form'))return;const f=S.f,oth=others();
   m.querySelectorAll('[data-lb=opp]').forEach(b=>b.setAttribute('aria-pressed',String(!f.open&&f.opps.includes(b.dataset.mid))));
-  const any=m.querySelector('[data-lb=anyone]');if(any)any.setAttribute('aria-pressed',String(f.open));
   const sc=document.getElementById('b27SelCnt');if(sc)sc.textContent=f.open?'Open to anyone':f.opps.length?f.opps.length+' selected':'None selected';
   m.querySelectorAll('[data-lb=amt]').forEach(b=>b.setAttribute('aria-pressed',String(!f.amtCustom&&+b.dataset.v===f.amt)));
   const ab=m.querySelector('[data-lb=amtcustom]');if(ab)ab.setAttribute('aria-pressed',String(f.amtCustom));
@@ -231,8 +238,16 @@ function syncDom(){const m=document.getElementById('main');if(!m||!document.getE
   const live=document.getElementById('b27Live');if(live)live.innerHTML=liveHtml();const sum=document.getElementById('b27Sum');if(sum)sum.textContent=summary();autoSoon();
   const err=formOK();const pb=document.getElementById('b27Place');if(pb){pb.disabled=!!err||S.busy;pb.setAttribute('aria-disabled',String(!!err))}
   const hint=document.getElementById('b27Hint');if(hint)hint.textContent=err&&(f.opps.length||f.open||f.text||f.amt)?err:''}
-const sync=()=>{try{syncDom()}catch(e){}};
+const sync=()=>{try{syncDom()}catch(e){}try{pzSync()}catch(e){}};
+/* s28j: form edits repaint the paste summary + Confirm state in place (no re-render, so typing keeps focus) */
+function pzSync(){const z=S.pz;if(!z||!z.read||!z.r||!z.r.ok)return;const box=document.getElementById('b27Pz');if(!box)return;const t=document.createElement('div');t.innerHTML=pasteHtml(meMid());const nb=t.firstElementChild;const ta=document.getElementById('b27PzT');const v=ta?ta.value:'';
+  ['b27PzSum','b27PzGame','b27PzOk'].forEach(id=>{const o=document.getElementById(id),n=nb.querySelector('#'+id);if(o&&n)o.replaceWith(n)})}
 /* ---------- view ---------- */
+/* s28j #19: ACCEPT_FLOW (default OFF; only the preview build sets window.LACCEPT_FLOW=true). OFF = the reference site: a new bet (form / Paste / Quick bet / posted-for) is Open
+   at once between the two named managers; no Accept / Decline / Waiting; no 'Waiting on me' filter. Stored events are never rewritten: the reducer reads a named
+   pending bet as open. Legacy to='*' (anyone) bets stay as they are: shown Open with 'anyone' as the other side, not settleable until the poster edits in a name. */
+const PF=()=>{try{return window.LPASTE_BET===true}catch(e){return false}};   /* s28j2: PASTE_BET flag (default OFF; only the preview sets window.LPASTE_BET=true): off = no Paste a bet box, no 'Read it', no paste handlers */
+const AF=()=>{try{return window.LACCEPT_FLOW===true}catch(e){return false}};
 const STX={pending:['Waiting','open'],open:['Open','open'],reported:['Result reported','open'],disputed:['Disagreement','unparsed'],settled:['Settled','settled'],declined:['Declined','unparsed'],withdrawn:['Withdrawn','unparsed']};
 function resultLine(b){if(b.status!=='settled')return'';const p=payFor(b);const d=(b.auto?' (settled automatically: no reply for 2 days)':'')+(b.src&&!(b.fixes||[]).some(x=>x.st==='confirmed')?' · from the final score: '+b.src.sc:'');
   if(b.res==='p')return'Wash: nobody owes anything'+d;
@@ -248,23 +263,39 @@ function fixHtml(b,me,btn,ask){let h='';const party=me&&(b.by===me||b.acc===me),
   if(S.fixOpen===b.id)return h+`<div class="b27-act" data-fixpick="${esc(b.id)}"><span class="note">Correct result? The other side must confirm.</span>${['b','o','p'].filter(r=>r!==b.res).map(r=>btn('fixreq',rLab(b,r),'sec',r)).join('')}${btn('fixcancel','Cancel')}</div>`;
   return h+`<div class="b27-act">${btn('fixopen','✏️ Fix result')}</div>`}
 /* s28c: the per-bet button copies only the bet as text (no link) and shows 'Copied' (leaguehome.js cpText / LCPBTN, same button as Games) */
-const betText=b=>{const other=b.acc||b.to;return (b.kind==='pool'?'Pool':'Bet')+' #'+b.n+': '+String(b.text||'')+'\n'+nm(b.by)+' vs '+(b.to==='*'&&!b.acc?'anyone who takes it':(b.parts&&b.kind==='pool'?b.parts.map(nm).join(', '):nm(other)))+' · '+num(b.amt)+(b.kind==='pool'?'':' · '+oddsLabel(b.a,b.b))};
+const betText=b=>{/* s28j: per-bet Copy = the reference s29e copy-card format (paste_bet_spec.md item 6); brand suffix = this league's name; no zone label */
+    const pool=b.kind==='pool',other=b.acc||b.to,on=b.to==='*'&&!b.acc?'anyone':(pool&&b.parts?b.parts.map(nm).join(', '):nm(other));
+    const stw=b.status==='settled'?(b.res==='p'?'Wash':'Settled'):(b.status==='withdrawn'||b.status==='declined'||b.status==='cancelled')?'Cancelled':'Open';
+    const won=b.status==='settled'&&!pool&&b.res!=='p'?' · '+(b.res==='b'?nm(b.by):on)+' won':'';
+    const day=t=>{try{return new Date(+t).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}catch(e){return''}};
+    const lg=(String(document.title||'').split(' · ')[0]||'').trim();
+    const L=[(pool?'Pool':'Bet')+' #'+b.n+' · '+stw+won,String(b.text||'')];
+    if(pool){const n=(b.parts||[]).length;L.push('Buy-in '+num(b.amt)+' · '+n+' managers · Total '+num(b.amt*n));L.push('Members: '+(b.parts||[]).map(nm).join(', '))}
+    else{L.push(nm(b.by)+' vs '+on+' · '+num(b.amt)+' '+oddsShort(b.a,b.b));const p={right:win(b.amt,b.a,b.b),wrong:b.amt};
+      L.push('If '+nm(b.by)+' is right: '+on+' owes '+nm(b.by)+' '+num(p.right));L.push('If '+on+' is right: '+nm(b.by)+' owes '+on+' '+num(p.wrong));
+      if(stw==='Open'&&b.c)L.push('Auto-settles after the game')}
+    const pt=b.postedAt||b.ts;if(pt!=null)L.push('Posted '+day(pt)+(b.postedBy?' by '+nm(b.postedBy):'')+(lg?' · '+lg:''));
+    return L.join('\n')};
 const linkBtn=(b,w)=>window.LCPBTN?window.LCPBTN(betText(b),w):'';
-function card(b,me){const L=lines(b.by,b.acc||b.to,b.amt,b.a,b.b);const st=b.status==='settled'&&b.res==='p'?['Wash','wash']:STX[b.status];const party=me&&(b.by===me||b.acc===me);
+function card(b,me){const L=lines(b.by,b.acc||b.to,b.amt,b.a,b.b);const st=b.status==='settled'&&b.res==='p'?['Wash','wash']:(!AF()&&b.status==='pending')?STX.open:STX[b.status];const party=me&&(b.by===me||b.acc===me);
   const other=b.acc||b.to;const vs=b.to==='*'&&!b.acc?'anyone who takes it':nm(other);
   let h=`<div class="card b27-c" data-bet="${esc(b.id)}"><div class="s24hd"><b>Bet #${b.n}</b> <span class="st ${st[1]}">${esc(st[0])}</span> <span class="mut" style="font-size:12px">${esc(day(b.ts))}</span>${b.g&&CUR.filter(x=>x.g===b.g).length>1?` <span class="mut" style="font-size:12px">· 1 of ${CUR.filter(x=>x.g===b.g).length} placed together</span>`:''}${linkBtn(b,'bet')}</div>
    <div class="b27-t${esc(S.more[b.id]?' open':'')}" id="b27T-${esc(b.id)}">${esc(b.text)}</div><button type="button" class="b27-more" data-lb="more" data-id="${esc(b.id)}" aria-controls="b27T-${esc(b.id)}" aria-expanded="${esc(String(!!S.more[b.id]))}"${S.more[b.id]?'':' hidden'}>${S.more[b.id]?'less':'more'}</button><div class="b27-m">${tmH(b.by)} vs ${b.to==='*'&&!b.acc?`<b>${esc(vs)}</b>`:tmH(other)} · <b>${esc(num(b.amt))}</b> · ${esc(oddsLabel(b.a,b.b))}</div>
-   <div class="b27-w">${esc(L.win)}</div><div class="b27-l">${esc(L.lose)}</div>${L.rounded?'<div class="mut b27-r">Rounded to a whole number.</div>':''}`;
+   <div class="b27-w">${esc(L.win)}</div><div class="b27-l">${esc(L.lose)}</div>${L.rounded?'<div class="mut b27-r">Rounded to a whole number.</div>':''}${postedHtml(b)}`;
   if(!clampQ){clampQ=true;requestAnimationFrame(clampFix)}
   const rl=resultLine(b);if(rl)h+=`<div class="note" style="margin-top:4px"><b>Result:</b> ${esc(rl)}${b.fixes&&b.fixes.some(x=>x.st==='confirmed')?' <span class="st settled">Corrected</span>':''}</div>`;
   h+='<div class="b27-sp" aria-hidden="true"></div>';
   h+=stampHtml(b);   /* s25: 'Placed … · Settled …' in the viewer's zone, top of the pinned-bottom block */   /* s25: pushes notes, buttons and reactions to the bottom so they line up across a row */
   const ask=(k,r)=>S.ask&&S.ask.id===b.id&&S.ask.w===k+(r||'');
   const btn=(k,label,extra,r,fx)=>`<button type="button" class="btn ${extra||'sec'} b27-b" data-lb="${k}" data-id="${esc(b.id)}"${r?` data-r="${esc(r)}"`:''}${fx?` data-fx="${esc(fx)}"`:''}${S.busy?' disabled':''}>${ask(k,r)?'Tap again to confirm':esc(label)}</button>`;
-  if(b.status==='pending'){
+  if(b.status==='pending'&&b.tp&&me&&((me===b.by&&!b.ackA)||(me===b.to&&!b.acc)))h+=`<div class="note" style="margin-top:4px">${esc(nm(b.postedBy||b.by))} posted this bet for ${esc(nm(b.by))} and ${esc(nm(b.to))}. Is it right?</div><div class="b27-act">${btn('accept','✅ Accept','pri')}${btn('decline','✖ Decline')}</div>`;
+  else if(b.status==='pending'&&b.tp)h+=`<div class="note" style="margin-top:4px">Waiting for ${esc([!b.ackA&&b.by,!b.acc&&b.to].filter(Boolean).map(nm).join(' and '))} to accept.</div>${me&&me===b.postedBy?`<div class="b27-act">${btn('withdraw','↩ Withdraw this bet')}</div>`:''}`;
+  else if(b.status==='pending'&&!AF())h+=`<div class="note" style="margin-top:4px">Open to anyone (older bet). It can be settled once ${esc(nm(b.by))} edits in the other manager.</div>${me===b.by?`<div class="b27-act">${btn('betedit','✏️ Edit')}</div>`:''}`;
+  else if(b.status==='pending'){
     if(me&&me!==b.by&&(b.to==='*'||b.to===me))h+=`<div class="note" style="margin-top:4px">${b.to==='*'?esc(nm(b.by))+' is open to anyone: take it?':esc(nm(b.by))+' is asking you.'}</div><div class="b27-act">${btn('accept','✅ Accept','pri')}${b.to===me?btn('decline','✖ Decline'):''}</div>`;
     else if(me===b.by)h+=`<div class="note" style="margin-top:4px">Waiting for ${b.to==='*'?'someone to take it':esc(nm(b.to))+' to answer'}.</div><div class="b27-act">${btn('betedit','✏️ Edit')}${btn('withdraw',undoable(b,me)?'↩ Undo this bet (30 s)':'↩ Withdraw this bet')}</div>${(()=>{const gu=grpUndo(b.g,me);return gu.length>1&&gu.slice().sort((p,q)=>q.n-p.n)[0].id===b.id?`<div class="b27-act"><button type="button" class="btn sec b27-b" data-lb="undogroup" data-g="${esc(b.g)}"${S.busy?' disabled':''}>↩ Undo all ${gu.length} bets placed together (30 s)</button></div>`:''})()}`;
     else h+=`<div class="note" style="margin-top:4px">Waiting for ${b.to==='*'?'someone to take it':esc(nm(b.to))+' to answer'}.</div>`}
+  if(!AF()&&b.status==='open'&&b.kind!=='pool'&&undoable(b,me))h+=`<div class="b27-act">${btn('withdraw','↩ Undo this bet (30 s)')}</div>`;
   if(b.status==='reported'||b.status==='disputed'){const lb={b:nm(b.by)+' won',o:nm(b.acc)+' won',p:'Wash'};const said=Object.entries(b.reps).map(([m,x])=>esc(nm(m))+' said <b>'+esc(lb[x.r])+'</b>').join(', ');
     h+=`<div class="note b27-legacy" style="margin-top:4px">Earlier answer${Object.keys(b.reps).length>1?'s':''} (before the new rule): ${said}.${b.status==='reported'?' Without a result from '+esc(nm(b.by))+' it settles by itself 2 days after that answer.':''}</div>`}
   if(LIVE(b)&&party&&me!==b.by)h+=`<div class="note b27-onlyc" style="margin-top:6px">Only ${esc(nm(b.by))} (who placed it) can enter the result.</div>`;
@@ -278,7 +309,7 @@ function card(b,me){const L=lines(b.by,b.acc||b.to,b.amt,b.a,b.b);const st=b.sta
    'Placed Nov 2, 8:00 AM WIB · Settled Nov 3, 9:15 PM WIB'; the year only when it is not the viewer's current year; either part left out if missing. */
 function stampDate(ms,now){const d=new Date(ms);if(isNaN(d))return'';const y=n=>new Intl.DateTimeFormat('en-US',{year:'numeric'}).format(new Date(n));
   const o={month:'short',day:'numeric'};if(y(ms)!==y(now==null?Date.now():now))o.year='numeric';return new Intl.DateTimeFormat('en-US',o).format(d)}
-function stampTime(ms){const S5=window.S25;return S5&&S5.localTime?S5.localTime(ms):LTIME.time(ms)}
+function stampTime(ms){return LTIME.time(ms)}   /* s28j item 12: LTIME (no zone label), not S25.localTime (shared file, labelled) */
 function stampText(b,now){const p=[];if(b&&b.ts!=null&&!isNaN(+b.ts))p.push('Placed '+stampDate(+b.ts,now)+', '+stampTime(+b.ts));
   if(b&&b.status==='settled'&&b.settledTs!=null&&!isNaN(+b.settledTs))p.push('Settled '+stampDate(+b.settledTs,now)+', '+stampTime(+b.settledTs));return p.join(' · ')}
 function stampHtml(b){const t=stampText(b);return t?`<div class="b27-stamp">${esc(t)}</div>`:''}
@@ -293,8 +324,8 @@ function fLoad(){if(S.fl)return;S.fl=1;S.fp=S.fp||'all';S.fs=S.fs||'all';S.fq=S.
 function fSave(){try{if(S.fp==='all'&&S.fs==='all'&&!S.fq)localStorage.removeItem(fKey());else localStorage.setItem(fKey(),JSON.stringify(S.fq?{p:S.fp,s:S.fs,q:S.fq}:{p:S.fp,s:S.fs}))}catch(e){}}
 function fSet(p,s,quiet,q){if(!fOk(p,s))return false;S.fl=1;S.fp=p;S.fs=s;if(q!==undefined)S.fq=qClean(q);fSave();if(!quiet&&H&&H.onFilter)H.onFilter();return true}
 const fPm=me=>S.fp==='me'?me:S.fp==='all'?null:((owners()[+S.fp-1]||{}).mid||null);
-const fEff=me=>({p:(S.fp==='me'&&!me)?'all':S.fp,s:(S.fs==='waiting'&&!me)?'all':S.fs});   /* a watcher has no "me": those choices fall back */
-function waitsOn(b,me){if(!me)return false;if(b.kind==='pool')return b.status==='open'&&!b.back&&b.by!==me&&b.parts.includes(me);const party=b.by===me||b.acc===me;
+const fEff=me=>({p:(S.fp==='me'&&!me)?'all':S.fp,s:(S.fs==='waiting'&&(!me||!AF()))?'all':S.fs});   /* a watcher has no "me": those choices fall back */
+function waitsOn(b,me){if(!me)return false;if(!AF()&&b.kind!=='pool')return false;if(b.kind==='pool')return b.status==='open'&&!b.back&&b.by!==me&&b.parts.includes(me);const party=b.by===me||b.acc===me;
   if(b.status==='pending')return b.by!==me&&(b.to===me||b.to==='*');
   if(b.status==='reported')return party&&!b.reps[me];
   if(b.status==='disputed')return party;
@@ -309,14 +340,14 @@ const fActive=me=>{fLoad();const e=fEff(me);return e.p!=='all'||e.s!=='all'||!!S
 function fEmpty(me){return 'No bets match this filter.'}
 function fBar(me,bets){fLoad();const e=fEff(me),oth=owners(),wn=me?bets.filter(b=>waitsOn(b,me)).length:0;
   const po=`<option value="all"${e.p==='all'?' selected':''}>Everyone</option>`+(me?`<option value="me"${S.fp==='me'?' selected':''}>Me</option>`:'')+oth.map((o,i)=>`<option value="${i+1}"${S.fp===String(i+1)?' selected':''}>${esc(bRNm(o)?o.team_name+' · '+bRNm(o):(o.team_name||o.name))}</option>`).join('');
-  const so=Object.keys(FS).filter(k=>k!=='waiting'||me).map(k=>`<option value="${k}"${e.s===k?' selected':''}>${esc(FS[k])}${k==='waiting'&&wn?' ('+wn+')':''}</option>`).join('');
+  const so=Object.keys(FS).filter(k=>k!=='waiting'||(me&&AF())).map(k=>`<option value="${k}"${e.s===k?' selected':''}>${esc(FS[k])}${k==='waiting'&&wn?' ('+wn+')':''}</option>`).join('');
   const lost=!me&&(S.fp==='me'||S.fs==='waiting')?'<div class="note" id="b27FltNote">“Me” and “Waiting on me” need your own manager link, so this shows everyone.</div>':'';
   return`<div class="card s24fb b27-flt" id="b27Flt" role="search" aria-label="Filter bets"><div class="b27-fr"><select id="b27FP" aria-label="Person">${po}</select><select id="b27FS" aria-label="Status">${so}</select><input id="b27FQ" type="search" class="b27-fq" placeholder="search terms…" aria-label="Search bets" autocomplete="off" maxlength="60" enterkeyhint="search" value="${esc(S.fq)}"></div>${lost}</div>`}
 function fHashOut(){fLoad();return S.fp==='all'&&S.fs==='all'&&!S.fq?'':'f='+S.fp+'-'+S.fs+(S.fq?'/q='+encodeURIComponent(S.fq):'')}
 function fFromHash(f,q){const m=/^(all|me|[1-8])-(all|waiting|open|settled|wash)$/.exec(String(f||''));if(m)fSet(m[1],m[2],true,q==null?'':q)}
 function reveal(id){const me=meMid(),b=compute().find(x=>x.id===id);if(!b||!fActive(me)||fMatch(b,me))return false;fSet('all','all',true,'');return true}
 let CUR=[];const UNDO_MS=30000;
-const undoable=(b,me)=>!!me&&(b.kind==='pool'?b.status==='open':b.status==='pending')&&b.by===me&&Date.now()-b.ts<UNDO_MS;
+const undoable=(b,me)=>!!me&&(b.kind==='pool'?b.status==='open'&&b.by===me:AF()?b.status==='pending'&&b.by===me:b.status==='open'&&(b.postedBy||b.by)===me&&!Object.keys(b.reps||{}).length)&&Date.now()-b.ts<UNDO_MS;
 const grpUndo=(g,me)=>g?CUR.filter(x=>x.g===g&&undoable(x,me)):[];
 const nmHtml=mid=>{const o0=own(mid),o=Object.assign({},o0,{name:o0.team_name||o0.name}),sh=shortName(o.name);return`<span class="oqn${sh!==o.name?' hs':''}" data-em="${esc(o.emoji||'')}" data-e1="${esc(first(o.emoji))}"><span class="f">${esc(o.name)}</span>${sh!==o.name?`<span class="s">${esc(sh)}</span>`:''}</span>`};
 const first=e=>{e=String(e||'');try{return new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(e)[Symbol.iterator]().next().value.segment}catch(_){return Array.from(e)[0]||''}};
@@ -327,10 +358,64 @@ const nick=o=>{o=o||{};const t=String(o.team_name||o.team||'').replace(/^\s*Test
 const bTst=x=>String(x==null?'':x).replace(/^\s*Test\s+/i,'').trim(),bRNm=(o,st)=>{const f=st?bTst:(x=>String(x==null?'':x).trim()),t=f(o&&o.team_name),r=f(o&&o.name);return t&&r&&t!==r?r:''};
 const chip=(o,k,on)=>`<button type="button" class="b27-chip op" data-lb="${k}" data-mid="${esc(o.mid)}" aria-label="${esc(o.team_name?o.team_name+' ('+o.name+')':o.name)}" aria-pressed="${on}"><span class="ck" aria-hidden="true">✓</span><span class="em" aria-hidden="true">${esc(o.emoji||'')}</span><span class="nm" aria-hidden="true"><span class="tl"><span class="f">${esc(o.team_name||o.name)}</span><span class="sh">${esc(shortName(o.team_name||o.name))}</span><span class="xs">${esc(tinyName(o.team_name||o.name))}</span></span>${bRNm(o)?`<small class="tnr">${esc(bRNm(o))}</small>`:''}</span></button>`;
 const kindTabs=()=>`<div class="tabs b27-kind" role="group" aria-label="Bet type" style="margin:8px 0"><button type="button" class="${S.kind!=='pool'?'on':''}" aria-pressed="${S.kind!=='pool'}" data-lb="kind" data-v="bet" id="b27KindBet">${esc(POOL_TXT.toggleBet)}</button><button type="button" class="${S.kind==='pool'?'on':''}" aria-pressed="${S.kind==='pool'}" data-lb="kind" data-v="pool" id="b27KindPool">${esc(POOL_TXT.toggle)}</button></div>`;
+/* ---------- s28j 'Paste a bet' (Paul via NCAA; spec /workspace/s28j-paste-bet-spec.md): a WhatsApp-style line such as 'ken v paul 2-1 odds, duke +4 v Virginia'
+   fills the New bet form (bettors, odds, bet text through readBet = the auto-settle reader, amount only when it is in the line) and shows ONE summary line
+   'Ken bets Paul: Duke +4 vs Virginia, 2-1' with a single Confirm. A field it cannot fill is asked inline (quick buttons); Confirm stays disabled until answered.
+   Never guesses a name. Nothing is written before Confirm; Confirm = the normal New bet save (confirmPlace + formOK). ---------- */
+const PZ_EX='ken v paul 2-1 odds, duke +4 v Virginia';
+const pzN=s=>String(s||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+function pzWho(q){q=pzN(q);if(!q)return{none:true};const O=owners();const keys=o=>{const n=pzN(o.name),t=pzN(o.team),k=[n,t,...n.split(' '),...t.split(' ')];if(/^test /.test(n))k.push(n.slice(5));return k.filter(Boolean)};
+  const ex=O.filter(o=>keys(o).includes(q));if(ex.length===1)return{mid:ex[0].mid};if(ex.length>1)return{cands:ex.map(o=>o.mid)};
+  const pf=O.filter(o=>keys(o).some(k=>k.startsWith(q)));if(pf.length===1&&q.length>=2)return{mid:pf[0].mid};if(pf.length>1)return{cands:pf.map(o=>o.mid)};return{none:true}}
+function pzPhrase(c,fallback){if(!c)return fallback;const A=tName(c.a),B=tName(c.b);if(c.t==='win')return A+' beats '+B;if(c.t==='margin'&&c.op==='plus')return A+' +'+c.l+' vs '+B;if(c.t==='margin'&&c.op==='line')return A+' -'+c.l+' vs '+B;
+  if(c.t==='margin')return claimText(c);return A+' vs '+B+' '+(c.s==='o'?'over':'under')+' '+c.l}
+function pzRead(txt){const raw=String(txt||'').replace(/[’`]/g,"'").replace(/\s+/g,' ').trim();if(!raw)return null;
+  const r={raw,a:null,b:null,aQ:null,bQ:null,odds:null,amt:null,text:'',claim:null,ok:false};let s=raw;
+  const am=s.match(/\bfor (\d{1,4})\b(?! ?[-\/:] ?\d)|\b(\d{1,4}) ?(?:pushups?|push-ups?)\b/i);if(am){r.amt=+(am[1]||am[2]);s=s.replace(am[0],' ')}
+  const om=s.match(/\b(\d{1,3}) ?(?:-|\/|:|to) ?(\d{1,3})\b(?: odds)?/i);const ev=s.match(/\b(?:at )?(?:evens|even(?: odds| money)?)\b/i);
+  let head=s,rest='';const ci=s.search(/[,;]/);if(ci>=0){head=s.slice(0,ci);rest=s.slice(ci+1)}
+  const nmRe=/^\s*([a-z][\w'.]*)\s+(?:v|vs\.?|versus|bets|against|x|and)\s+([a-z][\w'.]*)\b/i;const hm=head.match(nmRe);
+  if(!hm&&ci>=0){const one=head.replace(om?om[0]:'\u0000',' ').replace(ev?ev[0]:'\u0000',' ').replace(/\bodds\b/ig,' ').trim();if(/^[a-z][\w'.]*$/i.test(one)){const B=pzWho(one);if(B.mid||B.cands){r.a=meMid();r.b=B.mid||null;r.bQ=B.mid?null:{q:one,c:B.cands};rest=rest;r.one=true}}}   /* one name = the opponent; the device's manager bets (= the reference site s29e) */
+  if(hm){if(ci<0)rest=head.slice(hm[0].length);else rest=head.slice(hm[0].length)+' '+rest;const A=pzWho(hm[1]),B=pzWho(hm[2]);r.a=A.mid||null;r.b=B.mid||null;r.aQ=A.mid?null:{q:hm[1],c:A.cands||null};r.bQ=B.mid?null:{q:hm[2],c:B.cands||null}}
+  if(om&&rest.includes(om[0])&&(!hm||!head.includes(om[0])||true)){rest=rest.replace(om[0],' ')}
+  if(om){const a=+om[1],b=+om[2];if(a>=1&&b>=1&&a<=C.maxOdds&&b<=C.maxOdds)r.odds=[a,b]}else if(ev){r.odds=[1,1];rest=rest.replace(ev[0],' ')}
+  rest=rest.replace(/\bodds\b/ig,' ').replace(/^[\s,;:.-]+|[\s,;:]+$/g,'').replace(/\s+/g,' ').trim();
+  r.claim=rest?readBet(rest):null;r.text=rest?pzPhrase(r.claim,rest.charAt(0).toUpperCase()+rest.slice(1)):'';
+  r.ok=!!((hm||r.one)&&(r.a||r.aQ)&&(r.b||r.bQ))&&(!!r.text||!!r.odds);return r}
+function pzGames(c){if(!c)return[];return((H&&H.games&&H.games())||[]).filter(g=>g&&g.home&&g.away&&g.status!=='final'&&[String(g.home.id),String(g.away.id)].includes(String(c.a))&&[String(g.home.id),String(g.away.id)].includes(String(c.b)))}
+const pzGameTxt=g=>tName(String(g.away.id))+' at '+tName(String(g.home.id))+' · '+new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(g.start));
+const pzOdds=o=>o?(o[0]===1&&o[1]===1?'evens':o[0]+'-'+o[1]):'?';
+/* the one summary line: '<A> bets <B>: <pick> vs <opponent>, <odds>[, <amount> pushups]' */
+function pzSummary(a,b,text,odds,amt){return nm(a)+' bets '+nm(b)+': '+text+', '+pzOdds(odds)+(Number.isInteger(amt)?', '+num(amt)+' pushups':'')}
+function pzFill(){const z=S.pz,me=meMid();if(!z||!z.r||!z.r.ok)return;const r=z.r,A=z.a||r.a,B=z.b||r.b;
+  const f=S.f;f.text=r.text||f.text;if(z.odds||r.odds){const o=z.odds||r.odds;f.odds=o.slice();const std=C.odds.some(([x,y])=>x===o[0]&&y===o[1]);f.custom=!std;f.customTxt=std?'':o[0]+'-'+o[1];f.oddsErr=''}
+  const amt=Number.isInteger(z.amt)?z.amt:r.amt;if(Number.isInteger(amt)){f.amt=amt;f.amtCustom=!C.amounts.includes(amt);f.amtTxt=f.amtCustom?String(amt):'';f.amtErr=''}
+  f.open=false;if(A&&B&&A!==B){if(A===me){f.forMid=null;f.opps=[B]}else{f.forMid=A;f.opps=[B]}}}
+function pzMissing(){const z=S.pz;if(!z||!z.r||!z.r.ok)return[];const r=z.r,A=z.a||r.a,B=z.b||r.b,m=[];if(!A)m.push('a');if(!B)m.push('b');if(A&&B&&A===B)m.push('same');
+  if(!(z.odds||r.odds))m.push('odds');if(!Number.isInteger(Number.isInteger(z.amt)?z.amt:r.amt))m.push('amt');if(!r.text)m.push('text');const gs=pzGames(r.claim);if(gs.length>1&&!z.gid)m.push('game');return m}
+function pasteHtml(me){const z=S.pz||{txt:''};const r=z.r;let body='';
+  if(z.read&&(!r||!r.ok))body=`<div class="note b27-pz-bad" id="b27PzBad" role="status">Couldn’t read that. Try a line like “${esc(PZ_EX)}”, or fill in the form below.</div>`;
+  else if(z.read&&r&&r.ok){const A=z.a||r.a,B=z.b||r.b,miss=pzMissing();const q=[];
+    const who=(k,lab)=>{const Q=k==='a'?r.aQ:r.bQ;const list=(Q&&Q.c&&Q.c.length?Q.c:owners().map(o=>o.mid)).filter(m=>m!==(k==='a'?B:A));return`<div class="b27-pz-q" data-pzq="${k}"><span class="note">${Q&&Q.c&&Q.c.length?'Which '+esc(Q.q)+'?':'Who is “'+esc(Q?Q.q:'?')+'”?'}</span> ${list.map(m=>`<button type="button" class="b27-sm" data-lb="pzwho" data-k="${k}" data-mid="${esc(m)}">${esc(nm(m))}</button>`).join('')}</div>`};
+    if(miss.includes('a'))q.push(who('a'));if(miss.includes('b'))q.push(who('b'));
+    if(miss.includes('same'))q.push(`<div class="b27-pz-q"><span class="note">Both names are the same manager. Paste it again with two different managers.</span></div>`);
+    if(miss.includes('odds'))q.push(`<div class="b27-pz-q" data-pzq="odds"><span class="note">Odds?</span> ${C.odds.map(([a,b])=>`<button type="button" class="b27-sm" data-lb="pzodds" data-v="${a}-${b}">${a===1&&b===1?'Even':a+'-'+b}</button>`).join('')}</div>`);
+    if(miss.includes('amt'))q.push(`<div class="b27-pz-q" data-pzq="amt"><span class="note">Amount?</span> ${C.amounts.map(a=>`<button type="button" class="b27-sm" data-lb="pzamt" data-v="${a}">${a}</button>`).join('')}</div>`);
+    if(miss.includes('text'))q.push(`<div class="b27-pz-q" data-pzq="text"><span class="note">What’s the bet? Type it in step 2 below.</span></div>`);
+    const gs=pzGames(r.claim);if(miss.includes('game'))q.push(`<div class="b27-pz-q" data-pzq="game"><span class="note">Which game?</span> ${gs.map(g=>`<button type="button" class="b27-sm" data-lb="pzgame" data-v="${esc(String(g.id))}">${esc(pzGameTxt(g))}</button>`).join('')}</div>`);
+    const f=S.f,text=clean(f.text)||r.text||'…',odds=f.odds||z.odds||r.odds,amt=Number.isInteger(f.amt)?f.amt:null;
+    const g=gs.length===1?gs[0]:gs.find(x=>String(x.id)===z.gid);const gl=r.claim&&g?`<div class="note b27-pz-g" id="b27PzGame">Game: ${esc(pzGameTxt(g))}</div>`:miss.includes('game')?'':`<div class="note b27-pz-g" id="b27PzGame">Couldn’t match a game, will be settled by hand</div>`;
+    const err=miss.length?'x':formOK();
+    body=`<div class="b27-pz-sum" id="b27PzSum" aria-live="polite">${esc(A&&B?pzSummary(A,B,text,odds,amt):(A?nm(A):'?')+' bets '+(B?nm(B):'?')+': '+text+', '+pzOdds(odds))}</div>${gl}${q.join('')}
+      <button type="button" class="btn b27-big" id="b27PzOk" data-lb="pzconfirm"${err||S.busy?' disabled aria-disabled="true"':''}>${S.busy?'Saving…':'Confirm'}</button>${!miss.length&&err?`<div class="b27-bad-t">${esc(err)}</div>`:''}`}
+  return`<div class="b27-pz" id="b27Pz"><label for="b27PzT" class="b27-q">Paste a bet <span class="note">e.g. ${esc(PZ_EX)}</span></label><textarea id="b27PzT" class="sb-in b27-in b27-pz-t" rows="2" maxlength="300" autocomplete="off" placeholder="${esc(PZ_EX)}">${esc(z.txt||'')}</textarea><button type="button" class="btn sec b27-b" id="b27PzRead" data-lb="pzread">Read it</button>${body}</div>`}
+/* s28j: 'Posted by <name> · Nov 3, 7:00 PM WIB' = LTIME.stamp (the League's one time helper: device zone + short label); the same string goes into the copied text */
+const postedTxt=b=>b&&b.postedBy?'Posted by '+nm(b.postedBy)+' · '+(window.LTIME&&LTIME.stamp?LTIME.stamp(b.postedAt):new Date(b.postedAt).toLocaleString()):'';
+function postedHtml(b){return b&&b.postedBy?`<div class="mut b27-posted" data-posted="1">${esc(postedTxt(b))}</div>`:''}
 function formHtml(me){const f=S.f,oth=others();const err=formOK();
-  return`<div class="card b27-form" id="b27Form"><b>New bet</b> <span class="note">· you are <b>${esc(nm(me))}</b></span>${qbHint()}${S.edited?`<div class="note b27-edhint" role="status" id="b27EdHint">✏️ Filled in from Bet #${esc(S.edited)} (withdrawn). Change it, then place it again.</div>`:kindTabs()}
+  return`<div class="card b27-form" id="b27Form"><b>New bet</b> <span class="note">· you are <b>${esc(nm(me))}</b></span>${qbHint()}${S.edited||!PF()?'':pasteHtml(me)}${S.edited?`<div class="note b27-edhint" role="status" id="b27EdHint">✏️ Filled in from Bet #${esc(S.edited)} (withdrawn). Change it, then place it again.</div>`:kindTabs()}
    <div class="b27-q">1. Who are you betting against? <span class="note">Tap one or more. Several = one bet each.</span></div><div class="b27-opps" role="group" aria-label="Opponents" style="--n:${oth.length}">${oth.map(o=>chip(o,'opp',!f.open&&f.opps.includes(o.mid))).join('')}</div>
-   <div class="b27-selbar"><button type="button" class="b27-sm" data-lb="anyone" aria-pressed="${f.open}">🌍 Anyone</button><button type="button" class="b27-sm" data-lb="oppall">Select all</button><button type="button" class="b27-sm" data-lb="oppclear">Clear</button><span class="cnt" id="b27SelCnt" aria-live="polite">${f.open?'Open to anyone':f.opps.length?f.opps.length+' selected':'None selected'}</span></div>
+   <div class="b27-selbar"><button type="button" class="b27-sm" data-lb="oppall">Select all</button><button type="button" class="b27-sm" data-lb="oppclear">Clear</button><span class="cnt" id="b27SelCnt" aria-live="polite">${f.open?'Open to anyone':f.opps.length?f.opps.length+' selected':'None selected'}</span></div>
    <div class="b27-q"><label for="b27Text">2. What’s the bet? <span class="note">I say…</span></label></div><input id="b27Text" class="sb-in b27-in" maxlength="${C.maxText}" autocomplete="off" enterkeyhint="go" placeholder="e.g. Kansas -4 beats Duke" value="${esc(f.text)}">
    <div class="b27-q">3. Amount <span class="note">(minimum ${C.min})</span></div><div class="b27-amts" role="group" aria-label="Amount">${C.amounts.map(a=>`<button type="button" class="b27-amt" data-lb="amt" data-v="${a}" aria-pressed="${!f.amtCustom&&a===f.amt}">${a}</button>`).join('')}<button type="button" class="b27-amt cu" data-lb="amtcustom" aria-pressed="${f.amtCustom}">Custom</button></div>
    <div id="b27Aw" class="b27-cw"${f.amtCustom?'':' hidden'}><label for="b27Ao" class="sr">Custom amount</label><input id="b27Ao" class="sb-in b27-in" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6" placeholder="Whole number, ${C.min} to ${C.max}" value="${esc(f.amtTxt)}"><div id="b27Ae" class="b27-bad-t" role="alert">${esc(f.amtErr)}</div></div>
@@ -390,7 +475,7 @@ function poolParse(b,txt){const sz=b.amt*b.parts.length;if(!String(txt||'').trim
   b.parts.forEach(p=>{if(!(p in back))back[p]=0});const tot=b.parts.reduce((a,p)=>a+back[p],0);if(tot!==sz)return{ok:false,err:PT('eSum',{sum:num(tot),total:num(sz)})};return{ok:true,back}}
 const poolCanSettle=(b,me)=>b.status==='open'&&!b.back&&!!me&&me===b.by;
 function poolCard(b,me){const st=b.status,done=st==='open'&&!!b.back,stTxt=st==='void'?POOL_TXT.stVoid:b.back?POOL_TXT.stDone:POOL_TXT.stOpen,ask=S.ask&&S.ask.id===b.id&&S.ask.w==='pool';
-  let h=`<div class="card b27-c b27-pool" data-bet="${esc(b.id)}" data-kind="pool"><div class="s24hd"><b>${esc(POOL_TXT.word)} #${b.n}</b> <span class="st ${st==='void'?'unparsed':done?'settled':'open'}">${esc(stTxt)}</span> <span class="mut" style="font-size:12px">${esc(day(b.ts))}</span> <span class="mut" style="font-size:12px">· ${esc(PT('who',{n:b.parts.length}))}</span>${linkBtn(b,'pool')}</div>
+  let h=`<div class="card b27-c b27-pool" data-bet="${esc(b.id)}" data-kind="pool"><div class="s24hd"><b>${esc(POOL_TXT.word)} #${b.n}</b> <span class="st ${st==='void'?'unparsed':done?'settled':'open'}">${esc(stTxt)}</span> <span class="mut" style="font-size:12px">${esc(day(b.ts))}</span> <span class="mut b27-pwho" style="font-size:12px">· ${esc(PT('who',{n:b.parts.length}))}</span>${linkBtn(b,'pool')}</div>${postedHtml(b)}
    <div class="b27-t">${esc(b.text)}</div><div class="b27-m">${esc(PT('line',{buy:num(b.amt),tot:num(b.amt*b.parts.length)}))}</div><div class="b27-m">${esc(PT('with',{names:b.parts.map(nm).join(', ')}))}</div>`;
   if(b.places)h+=`<div class="b27-m">${esc(PT('payLine',{x:b.places.map((a,i)=>placeName(i)+' '+num(a)).join(' · ')}))}</div>`;
   if(st==='open'&&!b.back)h+=`<div class="note" style="margin-top:6px">${esc(POOL_TXT.noPay)}</div>`;
@@ -407,7 +492,7 @@ function poolCard(b,me){const st=b.status,done=st==='open'&&!!b.back,stTxt=st===
 async function poolConfirm(){if(S.busy)return;const c=poolCheck(),e=firstErr(c);if(e){S.msg=e;S.bad=true;S.p.confirm=false;render(true);return}
   const sig='pool|'+c.parts.join('|')+'|'+c.amt+'|'+JSON.stringify(c.places)+'|'+clean(S.p.text);
   if(!S.pid||S.pid.sig!==sig)S.pid={sig,id:rid(),u:rid()};   /* same ids for the same pool, so a retry after a failed save never double-posts */
-  const ev=Object.assign({k:'pl',u:S.pid.u,ts:Date.now(),v:SV,id:S.pid.id,parts:c.parts,amt:c.amt,text:clean(S.p.text)},c.places?{places:c.places}:{});
+  const ev=Object.assign({k:'pl',u:S.pid.u,ts:Date.now(),v:SV,id:S.pid.id,parts:c.parts,amt:c.amt,text:clean(S.p.text),postedBy:meMid(),postedAt:Date.now()},c.places?{places:c.places}:{});
   const ok=await act([ev],'');
   if(ok){const b=compute().find(x=>x.id===ev.id);S.msg=PT('placed',{n:b?b.n:''});S.bad=false;S.p={text:'',pp:[],entry:'',places:['',''],showErr:{},confirm:false};S.pid=null;render(true);placedFx([ev.id])}
   else{if(S.bad&&!/full/.test(S.msg))S.msg=PT('cantSave');S.p.confirm=true;render(true)}}
@@ -474,6 +559,7 @@ function readBet(text){try{const X=teamIdx();let s=' '+String(text||'').replace(
   if(m=new RegExp('^@1 (?:beats?|defeats?|tops?|over|to beat|will beat|wins? (?:over|against|vs\\.?|v\\.?))(?: the)? @2$').exec(t))return{t:'win',a:A,b:B};
   if(m=new RegExp('^@1 (?:loses to|falls to|to lose to)(?: the)? @2$').exec(t))return{t:'win',a:B,b:A};
   if(m=new RegExp('^@1 -'+N+' (?:vs\\.?|v\\.?|over|against|at|@|beats?|defeats?|tops?|covers? (?:vs\\.?|against)) @2(?: \\+\\d{1,3}(?:\\.5)?)?$').exec(t))return{t:'margin',a:A,b:B,l:+m[1],op:'line'};
+  if(m=new RegExp('^@1 \\+'+N+' (?:vs\\.?|v\\.?|over|against|at|@|beats?|covers? (?:vs\\.?|against)) @2$').exec(t))return{t:'margin',a:A,b:B,l:+m[1],op:'plus'};   /* s28j: 'Duke +4 vs Virginia' = Duke covers unless Virginia wins by more than 4 */
   if(m=new RegExp('^@1 (?:beats?|defeats?|wins? (?:over|against|vs\\.?)) @2 by more than '+N+'(?: points?)?$').exec(t))return{t:'margin',a:A,b:B,l:+m[1],op:'gt'};
   if(m=new RegExp('^@1 (?:beats?|defeats?|wins? (?:over|against|vs\\.?)) @2 by (\\d{1,3})(?: points?)? or more(?: points?)?$').exec(t))return{t:'margin',a:A,b:B,l:+m[1],op:'ge'};
   if(m=new RegExp('^(over|under) '+N+'(?: points?| total)?[,:]? @1 '+VS+' @2$').exec(t))return{t:'total',a:A,b:B,l:+m[2],s:m[1][0]};
@@ -481,14 +567,15 @@ function readBet(text){try{const X=teamIdx();let s=' '+String(text||'').replace(
   return null}catch(e){return null}}
 function vClaim(c){if(!c||typeof c!=='object')return undefined;const tid=v=>typeof v==='string'&&/^\d{1,8}$/.test(v);if(!tid(c.a)||!tid(c.b)||c.a===c.b)return undefined;
   if(c.t==='win')return{t:'win',a:c.a,b:c.b};const l=Number(c.l);if(!isFinite(l)||l<0||l>400||Math.round(l*2)!==l*2)return undefined;
-  if(c.t==='margin'&&['gt','ge','line'].includes(c.op))return{t:'margin',a:c.a,b:c.b,l,op:c.op};if(c.t==='total'&&(c.s==='o'||c.s==='u'))return{t:'total',a:c.a,b:c.b,l,s:c.s};return undefined}
+  if(c.t==='margin'&&['gt','ge','line','plus'].includes(c.op))return{t:'margin',a:c.a,b:c.b,l,op:c.op};if(c.t==='total'&&(c.s==='o'||c.s==='u'))return{t:'total',a:c.a,b:c.b,l,s:c.s};return undefined}
 function claimText(c){if(!c)return'';const A=tName(c.a),B=tName(c.b);
   if(c.t==='win')return A+' beats '+B;
+  if(c.t==='margin'&&c.op==='plus')return A+' +'+String(c.l)+' vs '+B+' ('+A+' wins, or loses by less than '+String(c.l)+(Number.isInteger(c.l)?'; loses by exactly '+String(c.l)+' = wash)':')');
   if(c.t==='margin')return c.op==='gt'?A+' beats '+B+' by more than '+String(c.l)+' points':c.op==='ge'?A+' beats '+B+' by '+String(c.l)+' or more points':A+' beats '+B+' by more than '+String(c.l)+' points'+(Number.isInteger(c.l)?' (exactly '+String(c.l)+' = wash)':'');
   return(c.s==='o'?'Over ':'Under ')+String(c.l)+' total points in '+A+' vs '+B+(Number.isInteger(c.l)?' (exactly '+String(c.l)+' = wash)':'')}
 /* the claim against a final score: 'b' = the creator was right, 'o' = wrong, 'p' = wash */
 function judge(c,sa,sb){if(c.t==='win')return sa>sb?'b':'o';
-  if(c.t==='margin'){const m=sa-sb;if(c.op==='ge')return m>=c.l?'b':'o';if(c.op==='gt')return m>c.l?'b':'o';return m>c.l?'b':m===c.l?'p':'o'}
+  if(c.t==='margin'){const m=sa-sb;if(c.op==='plus')return m>-c.l?'b':m===-c.l?'p':'o';if(c.op==='ge')return m>=c.l?'b':'o';if(c.op==='gt')return m>c.l?'b':'o';return m>c.l?'b':m===c.l?'p':'o'}
   const tot=sa+sb;if(tot===c.l)return'p';return(c.s==='o'?tot>c.l:tot<c.l)?'b':'o'}
 const etDay=ms=>(S25.etDay(ms)||'').replace(/-/g,'');   /* ESPN ?dates= = the US Eastern game day (S25.etDay, shared s25d file), never the viewer's day; display uses LTIME */
 const FEEDC={};   /* day -> {at, ev} (memory only) */
@@ -586,10 +673,15 @@ const ACT={
   poolgo:el=>{const id=el.dataset.id,b=compute().find(x=>x.id===id);if(!b)return;const r=poolParse(b,S.poolTxt[id]||'');if(!r.ok||!r.back){S.poolErr[id]=r.ok?PT('eEmptyPay'):r.err;S.ask=null;render(true);return}poolSettle(b,r.back)},
   poolvoid:el=>{const b=compute().find(x=>x.id===el.dataset.id),me=meMid();if(!b||!me||b.by!==me||b.status!=='open')return;act([mkEv('w',{id:b.id})],'Saved.')},
   obview:el=>{const v=el.dataset.v==='tally'?'tally':'form';if(S.ob===v)return;S.ob=v;render(true);window.scrollTo(0,0)},   /* partner obView(): a sub-tab tap opens it at the top */
-  opp:el=>{const f=S.f,m=el.dataset.mid;f.open=false;const k=f.opps.indexOf(m);if(k>=0)f.opps.splice(k,1);else{f.opps.push(m);const o=others().map(x=>x.mid);f.opps.sort((x,y)=>o.indexOf(x)-o.indexOf(y))}sync()},
-  anyone:()=>{S.f.open=!S.f.open;if(S.f.open)S.f.opps=[];sync()},
-  oppall:()=>{S.f.open=false;S.f.opps=others().map(o=>o.mid);sync()},
-  oppclear:()=>{S.f.open=false;S.f.opps=[];sync()},
+  opp:el=>{const f=S.f,m=el.dataset.mid;f.open=false;S.f.forMid=null;if(S.pz){S.pz.a=S.pz.b=null;S.pz.read=false}const k=f.opps.indexOf(m);if(k>=0)f.opps.splice(k,1);else{f.opps.push(m);const o=others().map(x=>x.mid);f.opps.sort((x,y)=>o.indexOf(x)-o.indexOf(y))}sync()},
+  oppall:()=>{S.f.open=false;S.f.forMid=null;if(S.pz){S.pz.a=S.pz.b=null;S.pz.read=false}S.f.opps=others().map(o=>o.mid);sync()},
+  oppclear:()=>{S.f.open=false;S.f.forMid=null;if(S.pz){S.pz.a=S.pz.b=null;S.pz.read=false}S.f.opps=[];sync()},
+  pzread:!PF()?undefined:()=>{const t=document.getElementById('b27PzT');const v=t?t.value:'';S.pz={txt:v,read:true,r:pzRead(v),a:null,b:null,odds:null,amt:null,gid:null};pzFill();render(true)},
+  pzwho:!PF()?undefined:el=>{if(!S.pz)return;S.pz[el.dataset.k]=el.dataset.mid;pzFill();render(true)},
+  pzodds:!PF()?undefined:el=>{if(!S.pz)return;const [a,b]=el.dataset.v.split('-').map(Number);S.pz.odds=[a,b];pzFill();render(true)},
+  pzamt:!PF()?undefined:el=>{if(!S.pz)return;S.pz.amt=+el.dataset.v;pzFill();render(true)},
+  pzgame:!PF()?undefined:el=>{if(!S.pz)return;S.pz.gid=el.dataset.v;render(true)},
+  pzconfirm:!PF()?undefined:()=>{if(!S.pz||pzMissing().length||formOK())return;confirmPlace()},
   amt:el=>{const v=+el.dataset.v,f=S.f;f.amtCustom=false;f.amtErr='';f.amt=C.amounts.includes(v)?v:null;sync()},
   amtcustom:()=>{const f=S.f;f.amtCustom=true;applyAmt(f.amtTxt,true);sync();const i=document.getElementById('b27Ao');if(i)i.focus({preventScroll:true})},
   odds:el=>{const[a,b]=el.dataset.v.split('-').map(Number),f=S.f;f.custom=false;f.oddsErr='';f.odds=[a,b];sync()},
@@ -657,20 +749,20 @@ function readAsHtml(){const c=readBet(clean(S.f.text));return c?`<div class="not
 async function confirmPlace(){if(S.busy)return;const e=formOK();if(e){S.msg=e;S.bad=true;S.f.confirm=false;render(true);return}
   const f=S.f,targets=f.open?['*']:f.opps.slice();
   /* ids are remembered for this exact form content, so tapping again after a failed save re-sends the SAME events (the log skips ones that already landed) */
-  const sig=targets.join(',')+'|'+clean(f.text)+'|'+f.amt+'|'+f.odds.join('-');
+  const sig=(f.forMid||'')+'>'+targets.join(',')+'|'+clean(f.text)+'|'+f.amt+'|'+f.odds.join('-');
   if(!S.fid||S.fid.sig!==sig)S.fid={sig,g:targets.length>1?rid():undefined,evs:targets.map(t=>({id:rid(),u:rid(),to:t}))};
   const ts=Date.now();
-  const evs=S.fid.evs.map((x,i)=>Object.assign({k:'p',u:x.u,ts:ts+i,v:SV,id:x.id,to:x.to,amt:f.amt,a:f.odds[0],b:f.odds[1],text:clean(f.text)},S.fid.g?{g:S.fid.g}:{},(()=>{const c=readBet(clean(f.text));return c?{c}:{}})()));
+  const evs=S.fid.evs.map((x,i)=>Object.assign({k:'p',u:x.u,ts:ts+i,v:SV,id:x.id,to:x.to,amt:f.amt,a:f.odds[0],b:f.odds[1],text:clean(f.text),postedBy:meMid(),postedAt:ts},f.forMid?{for:f.forMid}:{},S.fid.g?{g:S.fid.g}:{},(()=>{const c=readBet(clean(f.text));return c?{c}:{}})()));
   const ok=await act(evs,'');
-  if(ok){const ns=S.fid.evs.map(x=>(compute().find(b=>b.id===x.id)||{}).n).filter(Boolean);S.msg='Placed! Bet #'+ns.join(', #')+(f.open?' is open to anyone.':targets.length>1?' ('+targets.length+' managers, '+num(f.amt)+' each) '+(targets.length>1?'are':'is')+' waiting for an answer.':' is waiting for '+nm(targets[0])+' to accept.')+' You can undo it for 30 seconds.';S.bad=false}
-  if(ok){const pids=S.fid.evs.map(x=>x.id);S.edited=null;S.undoG=S.fid.g||null;S.f={opps:[],open:false,text:'',amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false};S.fid=null;render(true);placedFx(pids)}else{S.f.confirm=true;render(true)}}
+  if(ok){const ns=S.fid.evs.map(x=>(compute().find(b=>b.id===x.id)||{}).n).filter(Boolean);S.msg='Placed! Bet #'+ns.join(', #')+(f.open?' is open to anyone.':targets.length>1?' ('+targets.length+' managers, '+num(f.amt)+' each) '+(targets.length>1?'are':'is')+(AF()?' waiting for an answer.':' open.'):(!AF()?' is open between '+nm(f.forMid||meMid())+' and '+nm(targets[0])+'.':f.forMid?' is waiting for '+[f.forMid,targets[0]].filter(m=>m!==meMid()).map(nm).join(' and ')+' to accept.':' is waiting for '+nm(targets[0])+' to accept.'))+' You can undo it for 30 seconds.';S.bad=false}
+  if(ok){const pids=S.fid.evs.map(x=>x.id);S.edited=null;S.undoG=S.fid.g||null;S.f={opps:[],open:false,text:'',amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false};S.fid=null;S.pz=null;render(true);placedFx(pids)}else{S.f.confirm=true;render(true)}}
 /* "new" mark on the Bets tab: the highest bet number this device has looked at is kept in localStorage (fbn.x.<league>.betseen); a higher number now = something new */
 /* s28g new-bets badge: count of bets placed (b.ts) after this device's last look (localStorage fbn.betsSeen.<league> = ms), not my own; first load sets it to now (0);
    opening Bets sets it to now. Local only: no server write, no extra fetch (uses the loaded bets). League view mode (league-d.js) only guards fbn.me./fbn.cm., so this key works there too. */
 const seenKey=()=>'fbn.betsSeen.'+(H&&H.id);
 const maxN=()=>compute().reduce((m,b)=>Math.max(m,b.n),0);
 function markSeen(){try{if(H&&!H.demo&&S.state==='ok'&&!S.stale)localStorage.setItem(seenKey(),String(Date.now()))}catch(e){}}
-function badge(){try{if(!H||H.demo||S.state!=='ok'||S.stale)return 0;const raw=localStorage.getItem(seenKey());if(raw==null){markSeen();return 0}const t=parseInt(raw,10)||0,me=meMid();return compute().filter(b=>b&&(b.ts||0)>t&&b.by!==me).length}catch(e){return 0}}
+function badge(){try{if(!H||H.demo||S.state!=='ok'||S.stale)return 0;const raw=localStorage.getItem(seenKey());if(raw==null){markSeen();return 0}const t=parseInt(raw,10)||0,me=meMid();return compute().filter(b=>b&&(b.ts||0)>t&&(b.postedBy||b.by)!==me).length}catch(e){return 0}}   /* s28j: own = posted by me (older bets: placed by me), = the reference site s29e */
 /* ---------- Quick bet (the pill on a Games card; s22) ----------
    Shown only when the two teams belong to DIFFERENT managers of this league, the game has not started, and this device has a manager link (watchers get no button).
    The picker lists the sides of up to three bet types: Winner (always, even odds), Spread / Over-under ONLY when the game data really carries a posted line (g.line = {fav,sp,ou}); the schedule feeds carry no lines, so today it is Winner only.
@@ -712,7 +804,7 @@ function bind(){
   document.addEventListener('contextmenu',e=>{const el=e.target.closest&&e.target.closest('[data-lb=rx]');if(el&&document.getElementById('main')&&document.getElementById('main').contains(el)){e.preventDefault();rxTap(el,true)}});
 document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('[data-lb]');if(!el||!H||!document.getElementById('main')||!document.getElementById('main').contains(el))return;const f=ACT[el.dataset.lb];if(f){e.preventDefault();f(el,e)}});
   document.addEventListener('change',e=>{const t=e.target;if(!t||!H)return;if(t.dataset&&t.dataset.pw){(S.placeWho[t.dataset.pw]=S.placeWho[t.dataset.pw]||[])[+t.dataset.i]=t.value;S.poolErr[t.dataset.pw]='';S.ask=null;return}if(t.id==='b27FP'||t.id==='b27FS'){fLoad();const p=t.id==='b27FP'?t.value:S.fp,s=t.id==='b27FS'?t.value:S.fs;if(fSet(p,s)){render(true);setTimeout(()=>{const x=document.getElementById(t.id);if(x)x.focus({preventScroll:true})},0)}}});
-  document.addEventListener('input',e=>{const t=e.target;if(t&&t.id==='b27FQ'&&H){fLoad();const v=t.value,c=t.selectionStart;if(fSet(S.fp,S.fs,false,v)){render(true);const x=document.getElementById('b27FQ');if(x){x.value=v;x.focus({preventScroll:true});try{x.setSelectionRange(c,c)}catch(_){}}}return}if(!t||!H)return;if(t.dataset&&t.dataset.place!=null){S.p.places[+t.dataset.place]=t.value;poolPaint();return}if(t.dataset&&t.dataset.pt){S.poolTxt[t.dataset.pt]=t.value;S.poolErr[t.dataset.pt]='';S.ask=null;return}if(!t.id)return;
+  let PZT=0;if(PF())document.addEventListener('input',e=>{const t=e.target;if(t&&t.id==='b27PzT'&&H){if(!S.pz)S.pz={txt:''};S.pz.txt=t.value;if(e.inputType==='insertFromPaste'||S.pz.read){clearTimeout(PZT);PZT=setTimeout(()=>{const x=document.getElementById('b27PzT');if(!x)return;const c=x.selectionStart;ACT.pzread();const y=document.getElementById('b27PzT');if(y){y.focus({preventScroll:true});try{y.setSelectionRange(c,c)}catch(_){}}},e.inputType==='insertFromPaste'?50:500)}return}if(t&&t.id==='b27FQ'&&H){fLoad();const v=t.value,c=t.selectionStart;if(fSet(S.fp,S.fs,false,v)){render(true);const x=document.getElementById('b27FQ');if(x){x.value=v;x.focus({preventScroll:true});try{x.setSelectionRange(c,c)}catch(_){}}}return}if(!t||!H)return;if(t.dataset&&t.dataset.place!=null){S.p.places[+t.dataset.place]=t.value;poolPaint();return}if(t.dataset&&t.dataset.pt){S.poolTxt[t.dataset.pt]=t.value;S.poolErr[t.dataset.pt]='';S.ask=null;return}if(!t.id)return;
     if(S.kind==='pool'&&!S.edited&&t.id==='b27Text'){S.p.text=t.value;poolPaint();return}if(t.id==='b27En'){S.p.entry=t.value;poolPaint();return}
     if(t.id==='b27Text'){S.f.text=t.value;sync()}else if(t.id==='b27Ao'){applyAmt(t.value);sync()}else if(t.id==='b27Co'){applyOdds(t.value);sync()}});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.q.g&&H&&document.getElementById('main')&&!(e.target&&/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))){const g=S.q.g;S.q.g=null;redraw();setTimeout(()=>{try{const b=document.querySelector('.qb-btn[data-g="'+g+'"]');if(b)b.focus({preventScroll:true})}catch(_){}},20);return}if(e.key==='Escape'&&H&&document.querySelector('.s26k-m')&&!S.busy){e.preventDefault();S.f.confirm=false;S.p.confirm=false;render(true);return}

@@ -1,3 +1,84 @@
+# s28j2 (build 2026-11-02s28j2): s28j + Paste a bet behind PASTE_BET (OFF on live)
+Base: s28j (MD5SUMS deaef6e0). Staged only, not published.
+- js/league-bets.js: PF() reads window.LPASTE_BET (default OFF; only the preview guard sets it). Off: no Paste a bet box, no 'Read it' button, pz* click handlers and the paste input listener not registered. New bet form, Quick bet, postedBy/postedAt and full-card Copy unchanged.
+- js/version.js 2026-11-02s28j2; sw.js cache name fbnc-2026-11-02s28j2.
+- Tests (not shipped): tests/lib.js pasteBet option / PASTE_BET=1; tests/e2e_pastebet_flag_s28j2.js (390 + 1280: off = no box, preview on = box shown); tests/pending/paste_bet_wed.md (Paul's case, not run).
+
+| file | s28j | s28j2 |
+|---|---|---|
+| js/league-bets.js | c59a1500 | 1212179e |
+| js/version.js | bf4543ac | 0e69d150 |
+| sw.js | 382ead34 | 98f9981d |
+
+---
+# s28j (build 2026-11-02s28j): s28i + League parity items 1-15, #19 ACCEPT_FLOW (off), quick items #1 #2 #3 #14, final 980px content column, s29e copy formats
+Base: s28i (MD5SUMS c2c83579). Staged only, not published. js/room.js and js/core.js unchanged; manifest.webmanifest = s28i.
+
+| file | s28i | s28j |
+|---|---|---|
+| css/league-app.css | 0c513aac | ed17cb12 |
+| js/league-bets.js | 46b4f35a | c59a1500 |
+| js/league-d.js | e7516736 | 4356cd8d |
+| js/leaguehome.js | 6bfce2af | d6c92b86 |
+| js/version.js | 90274800 | bf4543ac |
+| sw.js | e96d9000 | 382ead34 |
+
+# s28j (build 2026-11-02s28j): s28i + League Paul preview fixes (kicker, content width, Games grid, Pool Copy, no Anyone) + Paste a bet + Posted by + Games/bet copy text
+Base: /workspace/fantasy-bball-releases/s28i (MD5SUMS c2c83579, QA GO, not live), copied; s28i not modified. Only League-owned files changed (League Site paused): css/league-app.css, js/leaguehome.js, js/league-bets.js; plus js/version.js, sw.js (line 3), this file, MD5SUMS.txt. room.js, core.js, join.js, app.css, league.html, help.html and data/ unchanged. No files added, so the sw.js precache list is unchanged. Staged only, not published.
+- Shared numbers agreed with Stoopids Site, all CSS variables at the end of league-app.css: --kicker-ratio .5, --kicker-min 11px, --content-max 1080px (1440px at min-width 1700px), --content-pad 16px, --games-min 320px, --games-gap 16px.
+- 1 Kicker: #lhead sets --title-fs (clamp(34px,10.5vw,72px)); #ltitle uses it; .s27-pres = max(11px, --title-fs × --kicker-ratio). titleFit() (leaguehome.js) now steps --title-fs on #lhead instead of the title's own font-size, so the kicker follows the fitted size on phones and for long names.
+- 2 Width: header, nav#ltabs, main and footer = width 100%, max-width var(--content-max), margin 0 auto; tab bar and content both 16px side padding (header 0, banner spans the column). Replaces the s20 980px column and the s28g uncapped Games (1600px) rule. Games .ggrid = repeat(auto-fill,minmax(min(320px,100%),1fr)), gap 16px: 1 col on phones, 2 at 700-1000, 3 at 1280/1440, 4 from 1700. Share card (#sharecard) centred like All teams.
+- 3 Pool card: '· N managers' gets .b27-pwho; .b27-pool .s24hd reserves 84px on the right and the Copy button is absolutely pinned top-right (44px).
+- 4 Bet form: 'Anyone' button and its handler removed (Select all + Clear kept). formOK still needs at least one opponent. Older open-to-anyone bets still read/accept as before.
+- 5 Paste a bet (spec /workspace/s28j-paste-bet-spec.md): textarea + Read it above the New bet form (manager devices only; hidden in view mode). Parses names (manager/team/nickname, exact then prefix, ambiguous = buttons, never guesses), odds (A-B, evens), amount only if in the line, bet text via readBet() (new pattern '@1 +N vs @2' = claim op 'plus'; existing patterns and settle maths unchanged), matched not-final game or 'Couldn’t match a game, will be settled by hand'. One summary line '<A> bets <B>: <bet>, <odds>[, <amount> pushups]', inline asks only for missing fields, one Confirm (disabled until answered) = confirmPlace()/formOK(). Bets posted FOR two other managers: event field for:A (A and B must both accept; poster or A can withdraw while pending).
+- 5b Posted by: new p/pl events carry postedBy (device manager) + postedAt; validator vPost(), reducer keeps postedBy only when it equals the log owner. Cards show 'Posted by <name> · <LTIME.stamp>' (device zone + label); older bets show nothing. New-bets badge: own = postedBy (older: by).
+- 7 Copy text: Games copy drops 'Lines: <book>' and the 'Owner, ' prefix ('<School>: <emoji> <manager>'); copied date/time already came from LTIME (device-zone day key + time with zone label, no ET bug in s28i); 'Yesterday · ' stripped like Today/Tomorrow. Bet and pool copies add the card's own 'Posted by … · <stamp>' line when present. No '$' or new money words.
+- Tests (not shipped): new e2e_layout_s28j.js, e2e_paste_bet_s28j.js, e2e_copy_tz_s28j.js; updated e2e_hero_pres_s27 (ratio 0.45-0.55, kicker follows fit), e2e_games_s28c / e2e_games_s25 (column counts), e2e_alignment (16px inset, centred Share), e2e_bets (Anyone removed -> no-opponent validation check; concurrent count 4), e2e_share_s28c (copy format), league_step (1080 column).
+
+### Item 8 — tables fill the content width
+- css/league-app.css: .obk.atk, .obk, .ocl, .b27-grid, .oqw full width (no max-width); p.note.atn/.atfw max-width none; tables in cards, .ptw, .oq width 100%; .obk.atk columns use minmax(0,…fr); ≤759px .ptw/.oqw scroll sideways inside the wrapper.
+- tests/e2e_alignment.js: new table-block section (1280/1440/1800, edges vs tab bar inner edges within 1px).
+
+### Item 9 — Share labels + managers link
+- js/leaguehome.js: 'Read-only link for friends and family'; 'Managers: use the regular link' line with clean ?l=id URL and its own Copy (copymgr → 'Copied'); hidden in view mode.
+- css: .s29sh-sub, .s29sh-mg. tests/e2e_share_s28j.js (new).
+
+### Item 10 — Profile tab
+- js/leaguehome.js: TABS 'share' → ['profile','👤 Profile'] (same slot); readRoute #share → #profile; vProfile (who / My settings → existing room.html?settings=1 / Notifications · Coming soon / share). No core.js or room.js change, no new writes.
+- css: #profile-share, #profile-who. tests/e2e_profile_s28j.js (new); tabs_exp, e2e_league_tabs, e2e_drafttabs_s26c10, e2e_layout_s28j, e2e_alignment updated for 'profile'.
+
+### Item 11 — standings places match STOOPIDS (T-1 ties)
+- js/leaguehome.js: new pure placeRanks(rows,total) + placeLabel (window.LPLACE), a port of STOOPIDS score.py 388-393 (stable sort by -total, competition rank, no tiebreak beyond points) and index.html:1364 rankTxt ('T-' when the rank is shared). Source read-only at /workspace/s29d/stage/score.py, /workspace/s29e/stage/index.html (same code in stoopids_pub). rebuild() re-ranks D.owners (and the NCAA tournament list by score) in league config order. Replaces League's old total→wins→win%→diff tiebreak (FBNScore.leagueTotals left unchanged: scoring.js is shared).
+- tests/unit_place_s28j.js (new, 7), tests/e2e_place_s28j.js (new, 6).
+
+### Item 12 — no time-zone label anywhere (screen and copies)
+- js/league-d.js LTIME.time/stamp/wdTime: no zone suffix (one formatter for cards and copies). js/leaguehome.js: Games day-header zone span, 'Last updated' zone, footer '(WIB)' removed. js/league-bets.js stampTime → LTIME.time. room.js does not use LTIME (unchanged).
+- tests: e2e_copy_tz_s28j (0 labels in DOM, copy strings and clipboard, Jakarta + New York; copy = card), e2e_games_s25, e2e_paste_bet_s28j.
+
+### Item 13 — Games tab = STOOPIDS (s29d/stage b12d5bb via /workspace/s29d/games_kit.md)
+- js/leaguehome.js: gameBody/gameCard rebuilt to STOOPIDS markup (.gh head + Copy, .gside rows with ⭐/🐶, .gow owner line, .gl 'Line: … · Moneyline … · Over/under … · book', .gsp, Quick bet; finals collapse to .gsum); 'Pool only' pill; 12-game-day cap + '+N more games' note.
+- js/league-d.js: game line keeps dog, aml/hml, book, closing flag. css/league-app.css: STOOPIDS game CSS scoped under body.lsite #lbody.
+
+### Item 14 — title only
+- js/leaguehome.js: one constant; document.title = '<League> · NCAA Fantasy'. Manifest, icons and og:title unchanged (wait for Wednesday). tests/e2e_title_s28j.js (new).
+
+### Item 15 — no Rosters tab
+- js/leaguehome.js: Rosters removed from TABS; #rosters → #teams; a Standings row opens All teams filtered to that owner. Folded into All teams: owner card (avatar, total, place, category totals) when one owner is filtered; Pts tooltip with per-category points.
+
+### Item 2 change — content width
+- css: --content-max 800px placeholder (STOOPIDS Standings column; exact px pending from Stoopids Site); 1440px rule removed; header / tab bar / footer keep --nav-max 1080px. Games auto-fill 320px + 16px gap inside the cap (2 across on desktop). Tests read CONTENT_MAX (default 800).
+
+### Parity quick items
+- #19 js/league-bets.js ACCEPT_FLOW (window.LACCEPT_FLOW, default OFF; preview guard turns it on): off = new bets Open at once, named pending bets read as Open (stored events untouched), no Accept/Decline/Waiting, no 'Waiting on me' filter, 30 s Undo kept; legacy to='*' bets shown Open with 'Anyone' and a note, settleable after the poster edits in a name (0 such bets in demo data). tests/e2e_accept_s28j.js (new); legacy bet tests run with ACCEPT_FLOW=1.
+- #1 no 'NCAA Fantasy Basketball' heading. #2 no 'Schedule updated' line. #3 footer without Draft recap / Home / Build / Reload. #14 no Refresh Live Games button on Games (live polling unchanged).
+
+### Item 2 FINAL (15:00, Stoopids Site shared_rules.md)
+- css/league-app.css: --content-max 1012px (16px padding → 980px column, = live Standings column); tab bar 1080 (1440 at ≥1700); Games auto-fill minmax(320px,1fr) gap 16 (2 across in 980); @media (max-width:351px) one Games column; tables width 100%, wrappers scroll sideways. Measured: 980 at 1280 and 1440 on Standings/Games/Bets/All teams; no sideways scroll on any tab at 320/390.
+### Copy card = s29e paste_bet_spec item 6
+- js/league-bets.js betText: 'Bet #n · Open|Settled|Wash|Cancelled[ · X won]' / text / 'A vs B · amt odds' / two 'If … is right:' lines / 'Auto-settles after the game' (open + readable) / 'Posted <Mon d, yyyy>[ by X] · <league name>'. Pool: Buy-in · N managers · Total, Members. Pool payout lines not added (not quick). Game copy already = item 7. No zone labels; ACCEPT_FLOW off on live.
+
+
+---
 # s28i (build 2026-11-02s28i): s28g + dev material removed from the public site (redo of s28h) + League s28g-hero (hero, tabs, Games filters/grid, Bets form + badge)
 Base: /workspace/fantasy-bball-releases/s28g (MD5SUMS 79728362). Rebuilt after the box rollback (the s28h folder now holds s28g contents and was not used). js/room.js (36bc5b45) and js/core.js (f53b3b35) NOT changed; css/app.css, js/join.js, league.html NOT changed; data/ identical to s28g (League's FORMAT.md / demo json tidies were lost and are not recreated). No site files added, so the sw.js precache list is unchanged. Staged only, not published.
 - s28h cleanup redone: removed CHANGE-NOTES-s24.md, CHANGE-NOTES-s25.md, tools/ (md5-identical copies in /workspace/fantasy-bball-devtools/). README.md, import/README.md: no tools/ paths or CHANGE-NOTES links (scripts named as maintainer scripts, commands use "$FBN_TOOLS"/...).
