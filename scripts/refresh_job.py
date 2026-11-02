@@ -28,6 +28,7 @@ import refresh_data_s27 as RD  # unchanged copy of s27 tools/refresh_data.py (md
 DEFAULT_BASE = "/workspace/fantasy-bball-releases/s27"
 N_TEAMS = 365
 UA = "fantasy-bball-refresh-job/1 (+static app data refresh; contact via repo)"
+CORE = "https://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball"
 ESPN = "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball"
 ESPN_RANKINGS = ESPN + "/rankings"
 ESPN_STANDINGS = "https://site.api.espn.com/apis/v2/sports/basketball/mens-college-basketball/standings?group=50&season=%d"
@@ -69,6 +70,65 @@ def http_get(url, tries=3, timeout=25, as_json=True):
 
 
 RD.http_json = lambda url, tries=3: http_get(url, tries)  # vendored code uses our polite client
+
+
+def _num(v):
+    try:
+        return float(str(v).replace("+", "")) if v not in (None, "", "OFF", "EVEN") else (100.0 if v == "EVEN" else None)
+    except Exception:
+        return None
+
+
+def espn_line(c, st):
+    """betting line from the scoreboard's competitions[0].odds (no extra calls), in the field names js/leaguehome.js lineTxt() reads:
+    fav (team id), dog, sp (points, >0), ou, aml/hml (American moneyline), p (provider), type ('close' once final)"""
+    ods = c.get("odds") or []
+    if not ods:
+        return None
+    o = sorted(ods, key=lambda x: (x.get("provider") or {}).get("priority", 99))[0]
+    comps = c.get("competitors") or []
+    hid = next((str(x["team"]["id"]) for x in comps if x.get("homeAway") == "home"), None)
+    aid = next((str(x["team"]["id"]) for x in comps if x.get("homeAway") == "away"), None)
+    h, a = o.get("homeTeamOdds") or {}, o.get("awayTeamOdds") or {}
+    sp = _num(o.get("spread"))
+    fav = hid if h.get("favorite") else aid if a.get("favorite") else (hid if sp is not None and sp < 0 else aid if sp is not None and sp > 0 else None)
+    ml = o.get("moneyline") or {}
+    def mlv(side):
+        m = ml.get(side) or {}
+        v = _num((m.get("close") or {}).get("odds") or (m.get("open") or {}).get("odds"))
+        if v is None:
+            t = (h if side == "home" else a)
+            mv = t.get("moneyLine")
+            v = _num(mv.get("american") if isinstance(mv, dict) else mv)
+            if v is None and isinstance(t.get("close"), dict):
+                cm = t["close"].get("moneyLine")
+                v = _num(cm.get("american") if isinstance(cm, dict) else cm)
+        return int(v) if v is not None else None
+    ou = _num(o.get("overUnder"))
+    line = {"fav": fav, "dog": (aid if fav == hid else hid) if fav else None, "sp": abs(sp) if sp is not None else None,
+            "ou": ou, "hml": mlv("home"), "aml": mlv("away"), "p": (o.get("provider") or {}).get("name"),
+            "type": "close" if st == "final" else "pre", "src": "ESPN scoreboard"}
+    if line["sp"] is None and line["ou"] is None and line["hml"] is None and line["aml"] is None:
+        return None
+    return line
+
+
+_espn_game0 = RD.espn_game
+
+
+def _espn_game(e, day):
+    g = _espn_game0(e, day)
+    if g is not None:
+        try:
+            ln = espn_line(e["competitions"][0], g["status"])
+            if ln:
+                g["line"] = ln
+        except Exception as ex:
+            log("line parse failed", e.get("id"), ex)
+    return g
+
+
+RD.espn_game = _espn_game  # s29 fix: the vendored s27 parser dropped competitions[0].odds, so no game ever had a line
 
 
 def log(*a):
@@ -402,6 +462,27 @@ def main(argv=None):
         for x in sorted(games + keep, key=lambda x: (x["day"], x.get("start") or "", x["id"])):
             if x["id"] not in seen:
                 seen.add(x["id"]); uniq.append(x)
+        old_ln = {str(x["id"]): x["line"] for x in (base["scores"] or {}).get("games", []) if x.get("line")}
+        for x in uniq:  # ESPN drops odds from some finished games; keep the last line we saw
+            if not x.get("line") and str(x["id"]) in old_ln:
+                x["line"] = old_ln[str(x["id"])]
+        # ESPN's scoreboard drops odds once a game tips off: one serial core-odds call per started game still missing a line (recent days only, capped)
+        lo3 = (today - dt.timedelta(3)).isoformat()
+        miss = [x for x in uniq if not x.get("line") and x["status"] in ("live", "final") and lo3 <= x["day"] <= today.isoformat()][:int(os.environ.get("LINE_FETCH_CAP", "60"))]
+        for x in miss:
+            try:
+                time.sleep(max(0.0, 1.0 - MIN_GAP))
+                j = http_get("%s/events/%s/competitions/%s/odds" % (CORE, x["id"], x["id"]), tries=2)
+                its = [it for it in j.get("items", []) if "live" not in ((it.get("provider") or {}).get("name") or "").lower()]
+                if its:
+                    c = {"odds": [dict(it, provider=dict(it.get("provider") or {}, priority=0 if (it.get("provider") or {}).get("name") == "DraftKings" else 9))
+                                  for it in its],
+                         "competitors": [{"homeAway": "home", "team": {"id": x["home"]["id"]}}, {"homeAway": "away", "team": {"id": x["away"]["id"]}}]}
+                    ln = espn_line(c, x["status"])
+                    if ln:
+                        ln["src"] = "ESPN core odds API"; x["line"] = ln
+            except Exception as ex:
+                log("core odds failed", x["id"], ex)
         old_conf = (base["scores"] or {}).get("conf") or {}
         scores, tourney = RD.build(uniq, year, season, min(today, dt.date.fromisoformat(end)).isoformat(), "espn" if srcs.get("espn") else "ncaa.com",
                                    (base["tournament"] or {}).get("field", {}), RD.build_conf(set(pool), uniq, None, old_conf))
