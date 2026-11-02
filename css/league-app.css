@@ -749,7 +749,8 @@ footer#foot{padding-left:14px;padding-right:14px}
 /* s27qa BUG3: the older '.obk.atk .obh span:nth-child(2){display:none}' (<=480px) also hid span.s27-ls inside the ST/KP sort buttons; show it again, 44px tap targets */
 @media (max-width:600px){.obk.atk .obh .s27-sort .s27-ls{display:inline}.obk.atk .obh .s27-sort button{min-width:44px;min-height:44px;justify-content:center}}
 /* s27qa: hero kicker 'STOOPIDS PRESENTS' above the league name (STOOPIDS muted small caps, letter-spaced) */
-.s27-pres{margin:0 0 2px;text-align:center;font-variant:small-caps;text-transform:lowercase;font-size:13px;font-weight:800;letter-spacing:.16em;color:var(--mut);line-height:1.2}
+.s27-pres{font-size:clamp(28px,8.6vw,59px);font-weight:900;letter-spacing:.08em;line-height:1.1;font-variant:small-caps;text-transform:lowercase;margin:0 0 4px;color:var(--mut);text-align:center}
+#lhead #ltitle{font-size:clamp(34px,10.5vw,72px)}
 
 /* ===== s28 Bets page = partner Bets page: rules copied from the live page <style> (S26W-ROW, s24lk, s24hd, s24fb, s25mute, POOL / S26F-POOL, S26K-MODAL, CARD-SIZE).
    Changed for the League's 44px tap-target rule: .s25mute 34px -> 44px, .s26px 40px -> 44px. ===== */
@@ -803,3 +804,44 @@ body.s26k-lock{overflow:hidden}
 .segw{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.segw .s24lb{margin-left:auto}
 /* s28 team on top, real name under */
 .tn2{display:inline-flex;flex-direction:column;line-height:1.15;min-width:0;vertical-align:middle}.tn2 .tnt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tnr{display:block;font-size:11.5px;font-weight:600;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ato .tnt{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}.pkn .tnr{display:block}#b27People td .tnr{font-size:11px}
+/* s28c Games = STOOPIDS s29b (/workspace/s29b/games_snippet.md). .rkseg/.rkseg-b = the STOOPIDS Standings toggle classes (League's Standings uses .segv/.seg with the same values) */
+.rkseg{display:inline-flex;background:#222;border:1px solid #444;border-radius:999px;padding:2px;margin:0 0 10px}
+.rkseg-b{font:inherit;padding:6px 14px;font-size:.85em;font-weight:600;min-height:44px;border:0;border-radius:999px;background:transparent;color:#bbb;cursor:pointer}
+.rkseg-b.on{background:#FFD400;color:#111}
+.rkseg-b:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.rkseg.g4{display:flex;width:100%;box-sizing:border-box;margin:0 0 8px;gap:2px}
+.rkseg.g4>.rkseg-b{flex:1 1 0;min-width:0;padding:6px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.rkseg.g4>select.rkseg-b{-webkit-appearance:none;appearance:none;text-align-last:center;margin:0;line-height:normal}
+.rkseg.g4>select.rkseg-b option{background:#222;color:#eee}
+.g4s{display:none}
+@media(max-width:359px){.rkseg.g4>.rkseg-b{padding:6px 2px;font-size:.8em}
+.g4l{display:none}
+.g4s{display:inline}
+}
+.tabs.g2row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0}
+.tabs.g2row>select{flex:1 1 0;min-width:110px;width:auto}
+.tabs.g2row>button{flex:0 0 auto;width:auto;white-space:nowrap}
+.tabs.g2row>.s24lb{margin:0 0 0 auto;flex:0 0 auto}
+/* League fit: row 2 controls keep the League filter look and 44px taps */
+.tabs.g2row>select,.tabs.g2row>button{min-height:44px;padding:4px 8px;font-size:13px;border-radius:8px;box-sizing:border-box}
+.tabs.g2row>button{border:1px solid var(--line);background:var(--card2);color:var(--tx);font-weight:700;cursor:pointer}
+.tabs.g2row>button.on{background:var(--acc);color:#111;border-color:var(--acc)}
+.gctl2{margin:0 0 8px}
+/* s28c Standings > Breakdown on desktop (>=900px) = STOOPIDS s29b S29B-BD on League's #ptsv / .pk.pq. Default B: 2 across at full content width. Variant A: html.bd-a (one full-width column, stat columns spread out). Phones (<900px): one column. */
+@media (min-width:900px){
+#ptsv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));justify-items:stretch;align-items:start;gap:10px}#ptsv>.note{grid-column:1/-1}
+#ptsv>.obk.pk.pq{width:auto;max-width:none;min-width:0;margin:0}
+#ptsv .pq .ptw{width:auto;overflow-x:auto}
+#ptsv .pq .ptab{width:100%;font-size:13px}#ptsv .pq .ptab th{font-size:11px}#ptsv .pq .ptab th,#ptsv .pq .ptab td{padding:4px 4px}
+#ptsv .pq .ptab .ptn,#ptsv .pq .ptab .ptn .chip.school-chip{width:140px;min-width:140px;max-width:140px}#ptsv .pq .ptab .ptn .chip.school-chip{font-size:12.5px}
+html.bd-a #ptsv{grid-template-columns:minmax(0,1fr)}
+html.bd-a #ptsv .pq .ptab{font-size:15px}html.bd-a #ptsv .pq .ptab th{font-size:12.5px}html.bd-a #ptsv .pq .ptab th,html.bd-a #ptsv .pq .ptab td{padding:5px 8px}
+html.bd-a #ptsv .pq .ptab .ptn,html.bd-a #ptsv .pq .ptab .ptn .chip.school-chip{width:220px;min-width:220px;max-width:220px}html.bd-a #ptsv .pq .ptab .ptn .chip.school-chip{font-size:14px}
+}
+/* s28c one Share: view-only badge; Share tab = STOOPIDS s29b S29B-SHARE; per-card Copy = .s27-copy (League keeps its 44px min-height for taps; STOOPIDS uses 32px) */
+.vobadge{display:inline-flex;align-items:center;min-height:32px;margin:0 0 8px;padding:4px 12px;border-radius:999px;background:#d8ecff;color:#0b2540;font-size:13px;font-weight:800}
+.s29sh{display:flex;flex-direction:column;gap:8px;max-width:520px}.s29sh-l{font-weight:700;font-size:13px}.s29sh select{min-height:44px;width:100%}.s29sh-b{align-self:flex-start;min-width:120px}.s29sh-u{font-family:ui-monospace,Menlo,monospace;font-size:13px;word-break:break-all;padding:8px 10px;border:1px solid var(--line);border-radius:8px;user-select:all}
+.s29sh h2{margin:0}
+.s27-copy.on{background:var(--acc);color:#111;border-color:var(--acc)}
+.gl2 .s27-copy,.s24hd .s27-copy{flex:none}
+.s29g{padding:8px}

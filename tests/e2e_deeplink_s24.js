@@ -90,18 +90,18 @@ if(TABS.includes('redraft')){  const NT=await P.ctx.newPage();await NT.setViewpo
   await Gp.page.evaluate(()=>{location.hash='#games/g6'});await sleep(500);ok('a game that is not on the League site (nobody owns either team, so the site drops it) gets the "not found" note',/not found/.test(await Gp.page.$eval('#dlmiss',e=>e.innerText).catch(()=>'')));
   await Gp.page.evaluate(()=>{location.hash='#games/nogame1'});await sleep(500);ok('deep link to a missing game: Games tab + "not found" note',(await cur(Gp))==='games'&&/not found/.test(await Gp.page.$eval('#dlmiss',e=>e.innerText).catch(()=>'')));
   await Gp.page.goBack();await sleep(500);ok('Back from a deep link returns to the previous deep link (g6)',/#games\/g6$/.test(url(Gp)),url(Gp));
-  /* ---- copy links ---- */
-  await Gp.page.click('#ltabs [data-v="bets"]');await Gp.page.waitForSelector('[data-bet] .cpl',{timeout:15000});await Gp.page.click('#cptab');await sleep(300);
-  let c=await Gp.page.evaluate(()=>window.__copied.slice());const exp=APP+'/league.html?l='+id;
-  ok('Copy link on a tab: exactly origin + path + ?l=CODE + #bets, nothing else',c[0]===exp+'#bets'&&secretFree(c[0],info),c);
-  const toast=await Gp.page.$eval('#toast',e=>({t:e.innerText,vis:!e.classList.contains('hide')})).catch(()=>null);ok('a "Link copied" toast shows',toast&&toast.vis&&/Link copied/.test(toast.t),toast);
+  /* ---- s28c: one Share (Share tab, ?view=1), per-card Copy = text only ---- */
+  await Gp.page.click('#ltabs [data-v="bets"]');await Gp.page.waitForSelector('[data-bet] .s27-copy',{timeout:15000});const exp=APP+'/league.html?l='+id;
+  ok('s28c: no Copy link / per-card link buttons on Bets',!(await Gp.page.$('#cptab,#b27CopyLink,#lbody [data-a=cptab],#lbody [data-a=cplink]')));
+  await Gp.page.click('[data-bet="'+betId+'"] .s27-copy');await sleep(200);let c=await Gp.page.evaluate(()=>window.__copied.slice());ok('per-bet Copy: bet text only, no link / identity, shows Copied',c.length===1&&!/https?:|[?&](k|as|cm)=/.test(c[0])&&secretFree(c[0],info)&&(await Gp.page.$eval('[data-bet="'+betId+'"] .s27-copy',e=>e.textContent))==='Copied',c);
+  await Gp.page.click('#ltabs [data-v="games"]');await sleep(300);await Gp.page.click('[data-a=gmode][data-v=upcoming]');await sleep(300);await Gp.page.$eval('[data-gid="g1"] .s27-copy',e=>{e.scrollIntoView({block:'center'});e.click()});await sleep(200);c=await Gp.page.evaluate(()=>window.__copied.slice());ok('per-game Copy: game text only, no link',c.length===2&&!/https?:|[?&](k|as|cm)=/.test(c[1])&&/ vs /.test(c[1]),c);
+  await Gp.page.click('#ltabs [data-v="share"]');await sleep(300);await Gp.page.select('#s29shSel','bets');await sleep(100);await Gp.page.click('#s29shBtn');await sleep(300);c=await Gp.page.evaluate(()=>window.__copied.slice());
+  ok('Share tab (Bets picked, no native share): exactly origin + path + ?l=CODE&view=1#bets',c[2]===exp+'&view=1#bets'&&secretFree(c[2],info),c);
   await Gp.page.screenshot({path:SH+'/s24_dl_4_copy_link_toast_390.png'});
-  await Gp.page.click('[data-bet="'+betId+'"] .cpl');await sleep(200);c=await Gp.page.evaluate(()=>window.__copied.slice());ok('per-card copy link on a bet: ?l=CODE#bets/<betId>, no identity',c[1]===exp+'#bets/'+betId&&secretFree(c[1],info),c);
-  await Gp.page.click('#ltabs [data-v="games"]');await sleep(300);await Gp.page.click('[data-a=gmode][data-v=upcoming]');await sleep(300);await Gp.page.$eval('[data-gid="g1"] .cpl',e=>{e.scrollIntoView({block:'center'});e.click()});await sleep(200);c=await Gp.page.evaluate(()=>window.__copied.slice());ok('per-card copy link on a game: ?l=CODE#games/g1',c[2]===exp+'#games/g1',c);
-  ok('room link still goes to the draft room with only ?l=CODE',/room\.html\?l=/.test(await Gp.page.$eval('#tab_room',e=>e.getAttribute('href')))&&secretFree(await Gp.page.$eval('#tab_room',e=>e.href),info));
+  ok('every link on the page is secret-free (s28c: the old #tab_room nav link no longer exists since s28)',(await Gp.page.$$eval('a[href]',x=>x.map(e=>e.href))).every(u=>secretFree(u,info)));
   ok('no page errors',Gp.errs.length===0,Gp.errs);await Gp.page.close();
-  const SP=await phone(id,info,0,{share:true});await SP.go('league.html?l='+id+'#teams');await ready(SP);await sleep(300);const lab=await SP.page.$eval('#cptab',e=>e.innerText);await SP.page.click('#cptab');await sleep(200);
-  const sh=await SP.page.evaluate(()=>window.__shared);ok('when navigator.share exists the button says Share and shares the clean link',/Share/.test(lab)&&sh[0]===exp+'#teams'&&secretFree(sh[0],info),{lab,sh});await SP.page.close();
+  const SP=await phone(id,info,0,{share:true});await SP.go('league.html?l='+id+'#share');await ready(SP);await sleep(300);await SP.page.select('#s29shSel','teams');const lab=await SP.page.$eval('#s29shBtn',e=>e.innerText);await SP.page.click('#s29shBtn');await sleep(200);
+  const sh=await SP.page.evaluate(()=>window.__shared);ok('when navigator.share exists the button says Share and shares the clean view-only link',/Share/.test(lab)&&sh[0]===exp+'&view=1#teams'&&secretFree(sh[0],info),{lab,sh});await SP.page.close();
   /* ---- widths, labels, wording ---- */
   for(const w of [320,360,390,1280])for(const t of ['bets','games','standings']){const W=await phone(id,info,0,{w});await W.go('league.html?l='+id+'#'+t);await ready(W);if(t==='bets')await W.page.waitForSelector('[data-bet]',{timeout:15000});await sleep(300);const a=await audit(W);
     ok(w+'px #'+t+': no overflow; Copy link / card link / tab buttons >= 44px',!a.over&&!a.small.length&&a.n>0,a);

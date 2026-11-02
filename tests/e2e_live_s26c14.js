@@ -23,7 +23,7 @@ let n=0,bad=0;const notes=[];function ok(name,c,x){n++;if(c)console.log('  ok  '
     const card=()=>P.page.evaluate(()=>{const c=document.querySelector('#lbody [data-gid="401999001"]');return{has:!!c,txt:c?c.innerText.replace(/\n/g,' '):'',labels:[...document.querySelectorAll('[data-a=gmode]')].map(b=>b.innerText.trim()),sw:document.documentElement.scrollWidth,iw:innerWidth}});
     const stand=async()=>{await P.page.evaluate(()=>{location.hash='#standings'});await L.sleep(600);const v=await P.page.evaluate(()=>[...document.querySelectorAll('#lbody .ocl .oc')].map(o=>o.querySelector('.pv')&&o.querySelector('.pv').innerText).join(','));await P.page.evaluate(()=>{location.hash='#games'});await L.sleep(600);return v};
     await mode('upcoming');const c1=await card();const s1=await stand();
-    ok(w+'px: Games toggle labels exactly Upcoming | Past',c1.labels.join('|')==='Upcoming|Past',c1.labels);
+    ok(w+'px: Games toggle labels exactly Upcoming | Past games (s28c)',c1.labels.join('|')===(w<360?'Upcoming|Past':'Upcoming|Past games'),c1.labels);
     ok(w+'px: no overflow on Games',c1.sw<=c1.iw,c1);
     if(w!==390){await P.close();continue}
     ok('live: the live game is under Upcoming with the live score 30-28',c1.has&&/30/.test(c1.txt)&&/28/.test(c1.txt),c1.txt);

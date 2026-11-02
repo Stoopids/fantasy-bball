@@ -247,7 +247,9 @@ function fixHtml(b,me,btn,ask){let h='';const party=me&&(b.by===me||b.acc===me),
   if(F)return h+`<div class="note" style="margin-top:4px">${esc(nm(F.by))} asks to change the result from <b>${esc(rLab(b,F.from))}</b> to <b>${esc(rLab(b,F.to))}</b>.</div><div class="b27-act">${btn('fixok','✅ Confirm: '+rLab(b,F.to),'pri','',F.fx)}${btn('fixno','✖ Keep '+rLab(b,F.from),'sec','',F.fx)}</div>`;
   if(S.fixOpen===b.id)return h+`<div class="b27-act" data-fixpick="${esc(b.id)}"><span class="note">Correct result? The other side must confirm.</span>${['b','o','p'].filter(r=>r!==b.res).map(r=>btn('fixreq',rLab(b,r),'sec',r)).join('')}${btn('fixcancel','Cancel')}</div>`;
   return h+`<div class="b27-act">${btn('fixopen','✏️ Fix result')}</div>`}
-const linkBtn=(b,w)=>`<button type="button" class="s24lk i b27-cpl" data-a="cplink" data-h="bets/${esc(b.id)}" aria-label="Copy link to this ${w}" title="Copy link to this ${w}">🔗</button>`;
+/* s28c: the per-bet button copies only the bet as text (no link) and shows 'Copied' (leaguehome.js cpText / LCPBTN, same button as Games) */
+const betText=b=>{const other=b.acc||b.to;return (b.kind==='pool'?'Pool':'Bet')+' #'+b.n+': '+String(b.text||'')+'\n'+nm(b.by)+' vs '+(b.to==='*'&&!b.acc?'anyone who takes it':(b.parts&&b.kind==='pool'?b.parts.map(nm).join(', '):nm(other)))+' · '+num(b.amt)+(b.kind==='pool'?'':' · '+oddsLabel(b.a,b.b))};
+const linkBtn=(b,w)=>window.LCPBTN?window.LCPBTN(betText(b),w):'';
 function card(b,me){const L=lines(b.by,b.acc||b.to,b.amt,b.a,b.b);const st=b.status==='settled'&&b.res==='p'?['Wash','wash']:STX[b.status];const party=me&&(b.by===me||b.acc===me);
   const other=b.acc||b.to;const vs=b.to==='*'&&!b.acc?'anyone who takes it':nm(other);
   let h=`<div class="card b27-c" data-bet="${esc(b.id)}"><div class="s24hd"><b>Bet #${b.n}</b> <span class="st ${st[1]}">${esc(st[0])}</span> <span class="mut" style="font-size:12px">${esc(day(b.ts))}</span>${b.g&&CUR.filter(x=>x.g===b.g).length>1?` <span class="mut" style="font-size:12px">· 1 of ${CUR.filter(x=>x.g===b.g).length} placed together</span>`:''}${linkBtn(b,'bet')}</div>
@@ -434,7 +436,7 @@ function view(){if(!H)return'';
   const top=S.state==='ok'?(S.stale?`<span class="bad" id="b27Off">● offline: showing the last saved bets. Retrying…</span>`:'<span class="good">● live</span> · everyone in this league sees the same bets')
     :S.state==='error'?`<span class="bad" id="b27Off">● can’t reach the bets right now. Retrying… <button type="button" class="btn sec b27-b" data-lb="retry" id="b27Retry">Try now</button></span>`:'';
   const intro=`<div class="card b27-intro" id="b27Intro"><div class="note b27-note" id="b27Note">${esc(DISCLAIMER)}</div><div class="note" style="margin-top:6px">This page just <b>records</b> who bet what and who owes whom.</div><div class="note b27-top" id="b27Head" style="margin-top:6px"><span id="b27Top">${top}</span></div></div>`;
-  const seg=`<div class="s26w-row" id="b27SegRow">${obSeg()}<div class="s24lb"><button type="button" class="s24lk" data-a="cptab" id="b27CopyLink">🔗 Copy link</button></div></div>`;
+  const seg=`<div class="s26w-row" id="b27SegRow">${obSeg()}</div>`;
   if(S.ob==='tally'&&S.state!=='init')return seg+tallyHtml(T);
   let h=seg;
   if(S.msg)h+=`<div class="card ${S.bad?'b27-bad':'b27-ok'}" role="status" id="b27Msg">${esc(S.msg)}${(()=>{const gu=me&&S.undoG?grpUndo(S.undoG,me):[];return gu.length>1?`<div class="b27-act"><button type="button" class="btn sec b27-b" data-lb="undogroup" data-g="${esc(S.undoG)}"${S.busy?' disabled':''}>↩ Undo all ${gu.length} bets (30 s)</button></div>`:''})()}</div>`;

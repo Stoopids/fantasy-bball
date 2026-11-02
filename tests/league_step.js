@@ -32,12 +32,12 @@ ok('tournament totals are not all equal (sample has real variety)',new Set(TOU.m
 await C.page.evaluate(()=>window.scrollTo(0,0));await sleep(150);await C.shot('league_postseason');}
 await tabClick(C,'teams');await sleep(300);ok('All teams: one row per drafted school (48) with owner and record (s26c11 #allteams grid)',(await C.page.$$eval('#allteams .obr',x=>x.length))===48&&/\d+-\d+/.test(await txt(C,'#allteams')||''));
 await tabClick(C,'games');await sleep(300);
-const GV=LS.gamesView(scj.games,owners,{});const head=await txt(C,'#main .s27-seg');
-ok('Games: toggle labels are exactly Upcoming / Past (no emoji, no counts)',/(^|\n)Upcoming(\n|$)/.test(head)&&/(^|\n)Past(\n|$)/.test(head)&&!/[⏭✅(]/.test(head),{head,res:GV.results.length,up:GV.upcoming.length});
+const GV=LS.gamesView(scj.games,owners,{});const head=await txt(C,'#main .gctl');
+ok('Games: toggle labels are exactly Upcoming / Past games (no emoji, no counts; s28c)',/(^|\n)Upcoming(\n|$)/.test(head)&&/(^|\n)Past games(\n|$)/.test(head)&&!/[⏭✅(]/.test(head),{head,res:GV.results.length,up:GV.upcoming.length});
 const g0=await C.page.$$eval('#main .gm',g=>g.length);ok('Games: a list of game cards with a day header',g0>=1&&(await exists(C,'.gday')),g0);
 await C.page.evaluate(()=>document.querySelector('[data-a=gmode][data-v=scores]').click());await sleep(300);
 const firstDay=await txt(C,'.gday');ok('Scores: newest day first',/Mar 2[89], 2027/i.test(firstDay||''),firstDay);
-const gm=MGS[1];await C.page.select('#gOwnerSel',(await C.page.$$eval('#gOwnerSel option',o=>o.map(x=>x.value)))[2]);await sleep(300);const GM=LS.gamesView(scj.games,owners,{mid:gm.mid});ok('Games: owner filter changes the count',(await txt(C,'#main .s27-seg')||'').includes('Past')||true);
+const gm=MGS[1];await C.page.select('#gOwnerSel',(await C.page.$$eval('#gOwnerSel option',o=>o.map(x=>x.value)))[2]);await sleep(300);const GM=LS.gamesView(scj.games,owners,{mid:gm.mid});ok('Games: owner filter changes the count',(await txt(C,'#main .gctl')||'').includes('Past games')||true);
 await C.page.select('#gOwnerSel','all');await sleep(200);
 ok('Games: tournament games flag upsets',(await C.page.$$('.gm .up')).length>=1);
 await C.page.evaluate(()=>window.scrollTo(0,0));await sleep(150);await C.shot('league_games');

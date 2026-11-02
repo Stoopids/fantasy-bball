@@ -1,3 +1,23 @@
+# s28f (build 2026-11-02s28f): s28e + League s28e-pres re-stage
+Base: /workspace/fantasy-bball-releases/s28e (MD5SUMS 76730ddb). Source: /workspace/league-site-work/s28e-pres (re-staged by League). Both files copied unedited after md5 check; diff of League folder vs s28e (ignoring shots/, CHANGED-FILES.md, MD5SUMS.txt) showed only these two files plus League's older js/version.js / sw.js (build s28d, not taken). Staged only, not published.
+| file | md5 | owner |
+|---|---|---|
+| css/league-app.css | 239e6eed935df6be50563d624c193066 | League |
+| tests/e2e_hero_pres_s27.js | 425b822781b9a2cc82e6f3b941f9781f | League (not in bundle) |
+| js/version.js | c3ed499143e7ceeaf7a75c6dee918ed9 | Draft Room (build 2026-11-02s28f) |
+| sw.js | f9f0b9fc2036b637cad7d5d404ab29bc | Draft Room (line 3; cache fbnc-2026-11-02s28f) |
+| CHANGED-FILES.md / MD5SUMS.txt | - | regenerated |
+
+# s28e (build 2026-11-02s28e): s28d + League s28e-pres (bigger STOOPIDS PRESENTS hero kicker)
+Base: /workspace/fantasy-bball-releases/s28d (MD5SUMS df8c4df1). Source: /workspace/league-site-work/s28e-pres (League entry "s28e-pres (staging only): s28d + bigger STOOPIDS PRESENTS hero kicker": css/league-app.css line 752 .s27-pres clamp(22px,6.5vw,30px)/900, one line, centered; tests/e2e_hero_pres_s27.js new size/one-line/no-overflow check). Both files copied unedited after md5 check. Staged only, not published.
+| file | md5 | owner |
+|---|---|---|
+| css/league-app.css | aa149134d6ec24194175c70d8e0a1689 | League |
+| tests/e2e_hero_pres_s27.js | 5be7aaeba02808ea93d62a438be05810 | League (not in bundle) |
+| js/version.js | 982927f95c5b78d561495a9d020117d1 | Draft Room (build 2026-11-02s28e) |
+| sw.js | d5e37ce2afdc6ba16089182a168c69d5 | Draft Room (line 3; cache fbnc-2026-11-02s28e) |
+| CHANGED-FILES.md / MD5SUMS.txt | - | regenerated |
+
 # s27c (build 2026-11-01s27c): s27b + the s26c16d beep
 Base: s27b (MD5SUMS 69d0f885, kept at s27.prev-s27b). Source: /workspace/fantasy-bball-releases/s26c16d (room.js 5a235eea, built on s26c16c). Staged only, not published.
 - room.js: 3-way merge (base s26c16c, ours s27b, theirs s26c16d), clean; the 24 changed lines are identical to the s26c16c->s26c16d diff. WebAudio cues for this device's own seat (3 beeps on the clock, 2 at 30 s, 1 at 10 s, once per pick via localStorage fbn.beepLast.<league>), More tab Alerts card 'Turn sound' (fbn.beepMute), old 15 s beep removed. No other file changed except version/sw.
@@ -592,5 +612,22 @@ Test-only (not shipped): tests/e2e_picksheet_clock_s28.js, e2e_beep_s28.js, e2e_
 - Base: s28L (live as commit 6949500; MD5SUMS 731d6146). data/ unchanged from s28L (nothing taken from League's data/).
 - From League /workspace/league-site-work/s28b-chips (copied unedited, md5 verified): js/league-bets.js, css/league-app.css, tests/e2e_bets_copy_s28.js. No other file taken.
 - js/version.js: FBN_BUILD 2026-11-02s28b. sw.js: cache fbnc-2026-11-02s28b (follows FBN_BUILD), line 3 comment updated.
-- tests/test_core.js: narrow allow-list for the exact phrase 'is our model of expected STOOPIDS points' in js/room.js only (room.js unchanged).
+- tests/test_core.js: narrow allow-list for the exact phrase 'is our model of expected STOOPIDS points' in js/room.js and js/rules.js (the phrase is in both; room.js and rules.js unchanged). [corrected in s28c: the earlier note said room.js only]
+- MD5SUMS.txt regenerated (excludes tests/ node_modules shots/ __pycache__ .git; keeps empty .nojekyll).
+
+## s28c (2026-11-02s28c) — s28b + two draft-room reliability fixes
+- Base: s28b (MD5SUMS e93b6b56, QA GO). Only js/room.js, js/version.js, sw.js and this file changed. core.js unchanged. No League-owned file touched.
+- Bug A (e2e_slowstore_s28 R1 intermittent): the stall state was only updated inside autoTick, and autoTick returns early while the page is busy, an auto-pick is in flight, or the log is not ready. A page that was busy when the store went slow never entered the stall, so it read the recovery as healthy at once and auto-picked 2-3 s after lat=0. Fix: the stall check also runs on its own 500 ms timer while a draft is live (FBN_health() checks it too), so slow reads, polls and saves count on every page. When a stall clears, a 5 s recovery hold follows the existing 20 s healthy window. The auto-pick re-checks the stall after its fresh poll and once more right before writing.
+- Bug B (e2e_startcd_s28 once under load): auto-pick and clock-out could act on a stale on-screen or local-timer state during the 60 s start countdown. Fix: new startGate() uses the server start instant (meta startedAt / resumeAt against server time). No auto-pick (autoTick, the in-flight auto-pick, or submitPick by 'auto') happens before that instant, and the clock never shows 0:00 before it. syncTime keeps its old server offset when a re-sync round trip takes longer than 2.5 s, because a slow answer under load gives a poor time estimate.
+- s28b note corrected: the test_core.js allow-list covers js/room.js and js/rules.js.
+- js/version.js: FBN_BUILD 2026-11-02s28c. sw.js: cache fbnc-2026-11-02s28c (follows FBN_BUILD), line 3 comment updated.
+- MD5SUMS.txt regenerated (excludes tests/ node_modules shots/ __pycache__ .git; keeps empty .nojekyll).
+
+## s28d (2026-11-02s28d) — s28c + League s28c-games
+- Base: s28c (MD5SUMS bf792019; s28b live as commit 8090fde + room.js auto-pick fix 508d0ff4). core.js, join.js, app.css and data/ unchanged from s28c; room.js = s28c's 508d0ff4 + the display fix below (League's data/scores.json not taken).
+- From League /workspace/league-site-work/s28c-games (MD5SUMS 3e1adbd2; copied unedited, md5 verified): js/leaguehome.js d008c4d9, css/league-app.css 81d5b2d0, js/league-bets.js 1de9cb14. league-bets.js builds on s28b's 04fc866b: the s28b chip fix (team name on top, bRNm/.tl) is included; the only change is the s28c per-bet copy-as-text button and removal of the tab Copy link button.
+- Tests from League: new e2e_games_s28c, e2e_share_s28c, e2e_breakdown_grid_s28c; updated e2e_betfilter_s24, e2e_bets_copy_s28, e2e_deeplink_s24, e2e_games_s25, e2e_live_s26c14, e2e_parity_s28, league_step.
+- No other League-owned file differed (league.html, league-*.js, power-*, css/power.css, help.html, shared-s25.js identical). No new files, so the sw.js precache list is unchanged.
+- js/room.js (Draft Room, QA beep_s28 freeze): root cause: s28c's startGate() compares server time (Date.now()+srvOff) with max(startedAt,resumeAt), and remaining() returned the full clock whenever it was true. A stale, failed or wrong server offset (e.g. a Date header hours behind) keeps nowSrv() before startedAt, so the display was frozen at full time until the first pick, and the 30 s / countdown beeps never fired. Fix: the clock display is held only while the start instant is still ahead by this device's own clock too (dispHold); with no start time, or once it has passed locally, the display counts down, using local time when the server offset says 'before start' but the local clock says 'after' (dispNow). Auto-pick, clock-out and their save still use startGate() (server time), so early-pick protection is unchanged.
+- js/version.js: FBN_BUILD 2026-11-02s28d. sw.js: cache fbnc-2026-11-02s28d (follows FBN_BUILD), line 3 comment updated.
 - MD5SUMS.txt regenerated (excludes tests/ node_modules shots/ __pycache__ .git; keeps empty .nojekyll).

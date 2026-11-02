@@ -81,7 +81,7 @@ function saveLast(){const mk=MOCK();try{if(!mk)sessionStorage.setItem('fbn.ltab.
 const fHash=()=>{try{return tab==='bets'&&window.LBETS&&LBETS.filterHash?LBETS.filterHash():''}catch(e){return''}};
 const routeHash=()=>tab+(tab==='standings'&&(()=>{try{return SVIEW==='breakdown'}catch(e){return false}})()?'/breakdown':'')+(SUB?'/'+encodeURIComponent(SUB):fHash()?'/'+fHash():'');
 const cleanPath=h=>location.pathname+'?l='+encodeURIComponent(id)+(DEMO?'&demo=1':'')+(h?'#'+h:'');
-const shareUrl=h=>location.origin+cleanPath(h);
+const shareUrl=h=>location.origin+location.pathname+'?l='+encodeURIComponent(id)+'&view=1'+(h?'#'+h:'');   /* s28c: every shared link opens view-only (?view=1, js/league-d.js); built only from origin + path + l + view=1 (every other param dropped, demo too, as STOOPIDS s29b) + route hash: never k=, cm=, a commissioner key or a manager id */
 function hashPut(push){try{const want=cleanPath(routeHash());saveLast();if(location.pathname+location.search+location.hash===want)return;history[push?'pushState':'replaceState'](null,'',want)}catch(e){}}
 function applyRoute(r){if(r.t!==tab||r.sub!==SUB)MISS=null;tab=r.t;SUB=r.sub;if(r.f&&window.LBETS&&LBETS.setFilterHash)LBETS.setFilterHash(r.f,r.q);if(tab==='games'&&SUB&&D){const g=(D.games||[]).find(x=>String(x.id)===SUB);if(g){gOwner='all';gDay='all';gH2H=false;if(!gOwned(g))gAll=true;gMode=g.status==='final'?'scores':'upcoming'}}}
 function normalizeUrl(){saveLast();try{if(ROUTE0){history.replaceState(null,'',cleanPath(routeHash()))}else if(location.hash||location.search!==cleanPath('').slice(location.pathname.length))history.replaceState(null,'',cleanPath(''))}catch(e){}}
@@ -221,7 +221,7 @@ const opills=a=>a&&a.length?a.map(n=>{const o=ownerByName(n);return `<span class
 const rkB=tid=>{try{return window.LRANK?LRANK.badge(tid):''}catch(e){return''}};
 /* s25 Standings toggle: League (default) | AP / NET, remembered in localStorage 'standingsView' */
 let SVIEW=(()=>{if(PJV)return 'breakdown';try{return localStorage.getItem('standingsView')==='breakdown'?'breakdown':'league'}catch(e){return'league'}})();   /* s26c5: League | Breakdown */
-const segHtml=()=>`<div class="segw"><div class="segv" role="group" aria-label="Standings view">${[['league','League'],['breakdown','Breakdown']].map(([v,l])=>`<button type="button" class="seg" data-a="stview" data-v="${v}" aria-pressed="${SVIEW===v}">${esc(l)}</button>`).join('')}</div><div class="s24lb"><button type="button" class="s24lk" data-a="cptab" id="stcopy">🔗 Copy link</button></div></div>`;   /* s28: partner toggle row with Copy link on the right (shareLink, no k=) */
+const segHtml=()=>`<div class="segw"><div class="segv" role="group" aria-label="Standings view">${[['league','League'],['breakdown','Breakdown']].map(([v,l])=>`<button type="button" class="seg" data-a="stview" data-v="${v}" aria-pressed="${SVIEW===v}">${esc(l)}</button>`).join('')}</div></div>`;   /* s28c: no Copy link here (one Share: the Share tab) */   /* s28: partner toggle row with Copy link on the right (shareLink, no k=) */
 function ownerOfTid(){const m={};D.owners.forEach(o=>o.teams.forEach(t=>{m[String(t.tid)]=o}));return m}
 function vRankings(){const R=window.LRANK,own=ownerOfTid();if(!R||!R.ready)return '<div class="card note" id="rkload">Loading rankings…</div>';
   const row=x=>{const o=own[x.id],ap=R.apOf(x.id),nt=R.netOf(x.id),parts=[ap?'AP #'+ap:'',nt?'NET '+nt:''].filter(Boolean).join(' · ');
@@ -254,6 +254,28 @@ const GEXP=new Set();
 const gxId=g=>'gx-'+String(g.id).replace(/[^A-Za-z0-9_-]/g,'_');
 function gSpread(g){const ln=g.line&&typeof g.line==='object'?g.line:null,sp=ln&&Number(ln.sp);if(!ln||!isFinite(sp)||sp<=0)return '';const f=String(ln.fav)===String(g.home.id)?g.home:String(ln.fav)===String(g.away.id)?g.away:null;if(!f)return '';const t=T.TEAMS[f.id];return 'Spread '+((t&&(t.short||t.name))||f.short||'')+' -'+sp}
 function gName(s){const t=T.TEAMS[s.id];return (t&&(t.short||t.name))||s.short||String(s.id)}
+/* s28c per-card copy (Games + Bets, same button): copies clean multi-line text for WhatsApp, never a link; the button flips to 'Copied' for 2 s */
+const CPI='Copy';const cpBtn=window.LCPBTN=(t,w)=>`<button type="button" class="s27-copy cpt" data-a="cptext" data-t="${esc(t)}" aria-label="Copy this ${esc(w)} as text" title="Copy this ${esc(w)}">${CPI}</button>`;   /* = STOOPIDS s29b .s27-copy */
+function cpText(el){const t=String(el.dataset.t||'').replace(/https?:\/\/\S+/g,'').trim();const done=()=>{el.textContent='Copied';el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>{el.textContent=CPI;el.classList.remove('on')},2000)};
+  const fall=()=>{try{const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()}catch(e){}done()};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,fall);else fall()}
+function gameText(g){/* STOOPIDS s29b copy format (games_snippet.md): lines with missing data are left out; the time uses the viewer's zone label */
+  const fin=g.status==='final',live=g.status==='live',ln=g.line&&typeof g.line==='object'?g.line:{};
+  const rk=s=>{const r=s.rank!=null&&s.rank!==''?s.rank:(s.seed!=null&&s.seed!==''?s.seed:null);return r!=null?'#'+r+' ':''};
+  const fav=ln.fav!=null?(String(ln.fav)===String(g.home.id)?g.home:String(ln.fav)===String(g.away.id)?g.away:null):null,dog=fav?(fav===g.home?g.away:g.home):null;
+  const mk=s=>(s===fav?' ⭐':s===dog?' 🐶':'');const sc=s=>(fin||live)&&s.score!=null?' '+s.score:'';const num_=v=>v!=null&&v!==''&&isFinite(+v);
+  const out=[`${rk(g.away)}${gName(g.away)}${mk(g.away)}${sc(g.away)} vs ${rk(g.home)}${gName(g.home)}${mk(g.home)}${sc(g.home)}`];
+  out.push(etLabel(etKey(g)).replace(/^(Today|Tomorrow) · /,'')+' · '+(fin?'Final':live?'LIVE':etTime(g)));
+  const ven=g.venue&&(g.venue.name||g.venue)||'';if(ven)out.push(String(ven));if(g.neutral)out.push('Neutral site');
+  if(g.round)out.push(String(g.round));
+  const sp=gSpread(g);if(sp)out.push(sp.replace(/^Spread /,'Spread: '));
+  const ml=s=>{const v=s===g.home?(ln.mlH!=null?ln.mlH:ln.ml&&ln.ml.home):(ln.mlA!=null?ln.mlA:ln.ml&&ln.ml.away);return num_(v)?(+v>0?'+':'')+v:''};
+  if(ml(g.away)&&ml(g.home))out.push('Moneyline: '+gName(g.away)+' '+ml(g.away)+' / '+gName(g.home)+' '+ml(g.home));
+  const ou=ln.ou!=null?ln.ou:ln.total;if(num_(ou)&&+ou>0)out.push('Over/under: '+ou);
+  if(ln.src||ln.book)out.push('Lines: '+(ln.src||ln.book));
+  const em=n=>{const o=(D&&D.owners||[]).find(x=>x.name===n);return o&&o.emoji?o.emoji+' '+n:n};
+  [g.away,g.home].forEach(s=>{if(s.owners&&s.owners.length)out.push('Owner, '+gName(s)+': '+s.owners.map(em).join(', '))});
+  return out.join('\n')}
 function gameBody(g){const fin=g.status==='final',live=g.status==='live';
   const side=(s,cl)=>{const lose=fin&&!s.win;const sc=(fin||live)&&s.score!=null;   /* s26c11: pill row + one fixed-height owner line on BOTH sides (muted – when nobody owns it); no empty score box before tip-off */
     return `<div class="gside ${cl}${lose?' lose':''}${fin||live?'':' nosc'}"><div class="nm"><div class="gtr">${chip(s.id,{big:1,name:s.short})}${s.seed?`<span class="seed">(${esc(s.seed)})</span>`:''}</div><div class="gow">${s.owners&&s.owners.length?opills(s.owners):'<span class="gno" aria-label="No owner">–</span>'}</div></div><div class="sc2">${sc?s.score:''}</div></div>`};
@@ -263,7 +285,7 @@ function gameBody(g){const fin=g.status==='final',live=g.status==='live';
   if(g.neutral)l2+='<span>· neutral site</span>';
   if(g.h2h)l2+=`<span class="h2b">🥊 ${esc(g.away.owners.join('/'))} vs ${esc(g.home.owners.join('/'))}</span>`;
   if(g.civil)l2+=`<span class="h2b">🙃 SAME OWNER (${esc(g.away.owners.join('/'))} wins either way)</span>`;
-  l2+=`<button type="button" class="cpl" data-a="cplink" data-h="games/${esc(encodeURIComponent(String(g.id)))}" aria-label="Copy link to this game" title="Copy link to this game">🔗</button>`;
+  l2+=cpBtn(gameText(g),'game');   /* s28c: copies the game as text (no link) */
   let foot='';if(fin&&g.upset&&g.kind==='ncaa'){if(g.upset.is)foot+=` <span class="up">😱 UPSET +${esc(D.meta.points.upset)}</span>`}
   foot+=lvNote(g);
   return `<div class="gl1">${side(g.away,'ga')}<span class="gat" aria-hidden="true">@</span>${side(g.home,'gh2')}</div><div class="gh gl2">${l2}</div>${foot.trim()?`<div class="gl">${foot}</div>`:''}`}
@@ -279,14 +301,15 @@ const liveRow=()=>'<div id="live" class="lv" hidden><span id="lvT" aria-live="po
 function vGames(){const every=D.games||[],nHidden=every.filter(g=>!gOwned(g)).length;if(!nHidden)gAll=false;const all=gAll?every:every.filter(gOwned);
   const ups=all.filter(g=>g.status!=='final'),fin=all.filter(g=>g.status==='final');if(!gMode)gMode=ups.length?'upcoming':'scores';
   let list=(gMode==='upcoming'?ups:fin.slice().reverse());if(gOwner!=='all')list=list.filter(g=>g.home.owners.includes(gOwner)||g.away.owners.includes(gOwner));if(gH2H)list=list.filter(g=>g.h2h||g.civil);
+  /* s28c = STOOPIDS s29b Games controls (/workspace/s29b/games_snippet.md): row 1 .rkseg.g4 = Upcoming | Past games | owners | months (jump to the first game day of that month);
+     row 2 .tabs.g2row = day select + Owner vs owner; no counts, no emoji, no time-zone / betting-lines notes. League has no Copy link here (Share is its own tab). */
   const days=[...new Set(list.map(etKey))];if(gDay!=='all'&&!days.includes(gDay))gDay='all';if(gDay!=='all')list=list.filter(g=>etKey(g)===gDay);
   if(gMode==='upcoming'){const sk=g=>etKey(g)+(isTBD(g)?'~':' ')+(g.start||'');list.sort((a,b)=>sk(a).localeCompare(sk(b)))}
-  /* s27: Upcoming / Past pill toggle, compact filters, one info line */const gb=(k,l)=>`<button type="button" class="seg${gMode===k?' on':''}" data-a="gmode" data-v="${k}" aria-pressed="${gMode===k}">${l}</button>`;
-  let h=`<div class="segw s27-seg"><div class="segv" role="group" aria-label="Games">${gb('upcoming','Upcoming')}${gb('scores','Past')}</div></div>
-   <div class="s27-gf"><select id="gOwnerSel" aria-label="Owner"><option value="all">All owners</option>${D.owners.map(o=>`<option value="${esc(o.name)}"${o.name===gOwner?' selected':''}>${esc(o.emoji)} ${esc(TNm(o))}${RNm(o)?' · '+esc(RNm(o)):''}</option>`).join('')}</select>
-   <select id="gDaySel" aria-label="Day"><option value="all">All days</option>${days.map(k=>`<option value="${esc(k)}"${k===gDay?' selected':''}>${esc(etLabel(k))}</option>`).join('')}</select>
-   <button type="button" data-a="gh2h" class="${gH2H?'on':''}" aria-pressed="${gH2H?'true':'false'}">🥊 Owner vs owner</button>${nHidden?`<label class="gUn s27-ck"><input type="checkbox" id="gUnowned"${gAll?' checked':''}> Show unowned games <span class="mut">(${nHidden} hidden)</span></label>`:''}</div>
-   <p class="s27-info">Times in your time zone (${esc(TZ_NAME)}).</p>`;
+  const firstDay={};days.slice().sort().forEach(k=>{const m=String(k).slice(5,7);if(!firstDay[m])firstDay[m]=k});const curM=gDay!=='all'?String(gDay).slice(5,7):'';
+  const monSel=`<select class="rkseg-b gmon-sel${curM?' on':''}" id="gMonthSel" aria-label="Jump to month"><option value="">Month</option>${[['11','Nov'],['12','Dec'],['01','Jan'],['02','Feb'],['03','Mar'],['04','Apr']].map(([m,l])=>firstDay[m]?`<option value="${esc(firstDay[m])}" data-mon="${m}"${m===curM?' selected':''}>${l}</option>`:`<option value="" data-mon="${m}" disabled>${l}</option>`).join('')}</select>`;
+  const gb=(k,l)=>`<button type="button" class="rkseg-b${gMode===k?' on':''}" data-a="gmode" data-v="${k}" aria-pressed="${gMode===k}">${l}</button>`;
+  let h=`<div class="card s29g"><div class="rkseg g4 gctl" role="group" aria-label="Games view">${gb('upcoming','Upcoming')}${gb('scores','<span class="g4l">Past games</span><span class="g4s">Past</span>')}<select id="gOwnerSel" class="rkseg-b${gOwner!=='all'?' on':''}" aria-label="Owner"><option value="all">All owners</option>${D.owners.map(o=>`<option value="${esc(o.name)}"${o.name===gOwner?' selected':''}>${esc(o.emoji)} ${esc(TNm(o))}${RNm(o)?' · '+esc(RNm(o)):''}</option>`).join('')}</select>${monSel}</div>
+   <div class="tabs g2row gctl2"><select id="gDaySel" aria-label="Day"><option value="all">All days</option>${days.map(k=>`<option value="${esc(k)}"${k===gDay?' selected':''}>${esc(etLabel(k))}</option>`).join('')}</select><button type="button" data-a="gh2h" class="${gH2H?'on':''}" aria-pressed="${gH2H?'true':'false'}">🥊 Owner vs owner</button></div>${nHidden?`<label class="gUn s27-ck"><input type="checkbox" id="gUnowned"${gAll?' checked':''}> Show unowned games <span class="mut">(${nHidden} hidden)</span></label>`:''}</div>`;
   if(!list.length)return h+`<div class="card" id="gempty">${all.length?'Nothing matches those filters.':nHidden?'No games with an owned team right now 🏀 Check back soon. (Games where nobody in the league owns either team are hidden.)':'No games for rostered teams yet. The schedule and scores show up here as soon as games are played. Everything refreshes automatically.'}</div>`;
   let cur=null;list.slice(0,300).forEach(g=>{const k=etKey(g);if(k!==cur){if(cur!==null)h+='</div>';cur=k;h+=`<div class="gday">${esc(etLabel(k))} <span class="gtz">${esc(LTIME.zone())}</span></div><div class="${gMode==='scores'?'ggrid gfins':'ggrid'}">`}h+=gameCard(g)});if(cur!==null)h+='</div>';
   if(list.length>300)h+=`<div class="card note">Showing the first 300 games. Use the filters to narrow the list.</div>`;return h}
@@ -418,8 +441,10 @@ function vRecap(){/* s28: partner order: draft grades (two-column card grid on d
   return `<div class="s28-rc" id="recapcols"><section class="s28-rcc" id="recapgradescol"><h2>🎓 Draft grades</h2><div id="recapgrades"></div></section><section class="s28-rcc" id="recapweekly"><h2 class="wkh">📰 Weekly recaps</h2><div class="card" id="weeklyempty"><b>First recap coming after opening week</b></div></section></div>${draftComplete(m,st)?vDraft():''}${recapRoomLink()}`}
 const recapRoomLink=()=>`<p class="rcroom"><a class="rcrl" id="recaproom" href="${esc(U.roomHref(id))}">Draft room →</a></p>`;
 function recapMount(){const h=document.getElementById('recapgrades');if(!h||!window.FBNPower)return;FBNPower.mount(h,{id,done:true,managers:MG,state:L.state,teams:T.TEAMS,meta:(window.TEAMS_DATA&&TEAMS_DATA.meta)||L.meta})}/* s27qa BUG1: grades need the teams.js meta (o/p ranks), not the league meta */
-function vShare(){const u=shareUrl('standings'),nm=(L&&L.meta?A.disp(L.meta.name,isTestL()):'this league');   /* s28: Share tab (was the hero Share button); same shareLink/shareUrl, never a k= secret */
-  return `<h2>🔗 Share</h2><div class="card" id="sharecard"><b>Share ${esc(nm)}</b><div class="note">Anyone with this link can read the league site. It never carries a manager key.</div><div class="sharebox"><input id="shareurl" readonly value="${esc(u)}" aria-label="League link"></div><div class="sharebtns"><button type="button" class="btn" data-a="shareleague" id="shareleague">🔗 Share this league</button><button type="button" class="btn sec" data-a="copyleague" id="copyleague">Copy link</button></div></div>`}
+/* s28c Share tab: pick the whole site or one tab; the link carries that route hash and ?view=1 */
+const SHTABS=[['','Whole site'],['standings','Standings'],['games','Games'],['bets','Bets'],['teams','All teams'],['recap','Recap'],['rules','Rules']];let SHTAB='';
+function vShare(){const u=shareUrl(SHTAB),nm=(L&&L.meta?A.disp(L.meta.name,isTestL()):'this league');   /* = STOOPIDS s29b .s29sh (League: no Archive) */
+  return `<div class="card s29sh" id="sharecard"><h2>Share ${esc(nm)}</h2><label class="s29sh-l" for="s29shSel">What to share</label><select id="s29shSel">${SHTABS.map(([v,l])=>`<option value="${v}"${v===SHTAB?' selected':''}>${esc(l)}</option>`).join('')}</select><button type="button" class="rkseg-b on s29sh-b" id="s29shBtn" data-a="shareleague">${canShare()?'Share':'Copy link'}</button><div class="s29sh-u" id="s29shUrl">${esc(u)}</div><p class="mut">View-only link: people who open it can look around but can't add or change bets.</p></div>`}
 const VIEWS={share:vShare,recap:vRecap,draft:vDraft,standings:vStandings,games:()=>liveRow()+vGames(),rosters:vRosters,bets:()=>LBETS.view(),teams:vTeams,postseason:vPostseason,redraft:vRedraft,archive:vArchive,rules:vRules};
 /* one line per school name: shrink the font a step at a time until it fits (floor 9px), else ellipsis */
 function chipFit(){/* chips are one fixed size; a long name is cut with an ellipsis (the title attribute has the full name), never shrunk or wrapped */}
@@ -461,7 +486,7 @@ function schedUpdate(){try{rebuild()}catch(e){return}const a=document.activeElem
 function scoreNotice(){if(DEMO||!D||(D.games&&D.games.length)||!/^(standings|games|rosters|teams|postseason)$/.test(tab))return '';return '<div class="card note" id="noscores" role="note">\u{1F4C5} Scores update once games start (first games November 2, 2026)</div>'}
 function render(){if(!tabOn(tab)){tab='standings';SUB=null;MISS=null;hashPut(false)}const keepScroll=window.scrollY,AK=TOP0?null:aTake();const nv0=document.getElementById('ltabs'),nsl=nv0?nv0.scrollLeft:0;
   const demo=DEMO?`<div class="demobar" id="demobar" role="note"><b>DEMO</b> · invented games and scores. These are not real results and not this league’s standings. <a href="${esc(U.pageUrl('league.html',{l:id}))}">Leave the demo</a></div>`:'';
-  app.innerHTML=demo+header()+navHtml()+'<main id="main">'+(DEMO?'<div class="card note" id="demonote"><b>DEMO data.</b> Invented games and scores, to show how standings will look. Not real results.</div>':'')+offHtml()+dataNote()+scoreNotice()+schedLine()+`<div id="dlnote">${missHtml()}</div>`+'<div id="lbody">'+(VIEWS[tab]||vStandings)()+'</div></main>'+chatBar()+footer();
+  app.innerHTML=demo+header()+navHtml()+'<main id="main">'+(window.LVIEW?'<div class="vobadge" id="vobadge" role="status">👀 View only</div>':'')+(DEMO?'<div class="card note" id="demonote"><b>DEMO data.</b> Invented games and scores, to show how standings will look. Not real results.</div>':'')+offHtml()+dataNote()+scoreNotice()+schedLine()+`<div id="dlnote">${missHtml()}</div>`+'<div id="lbody">'+(VIEWS[tab]||vStandings)()+'</div></main>'+(window.LVIEW?'':chatBar())+footer();
   document.body.classList.add('lsite');paintHero();paintChat();freshStart();try{chipFit()}catch(_){}try{if(window.LBETS&&LBETS.after)LBETS.after()}catch(_){}try{if(tab==='recap')recapMount()}catch(_){}syncChat();navScroll(nsl);if(TOP0&&topReady()){TOP0=false;topNow()}else if(AK)aPut(AK);else if(!TOP0&&keepScroll>0&&Math.abs(window.scrollY-keepScroll)>=1)selfScroll(keepScroll)}
 /* phone: the tab bar scrolls sideways inside itself; keep its position and make sure the open tab is visible */
 function navScroll(x){const n=document.getElementById('ltabs');if(!n)return;n.scrollLeft=x;const on=n.querySelector('.on');if(!on||n.scrollWidth<=n.clientWidth+1)return;const l=on.offsetLeft,r=l+on.offsetWidth;if(l<n.scrollLeft+8)n.scrollLeft=Math.max(0,l-8);else if(r>n.scrollLeft+n.clientWidth-8)n.scrollLeft=r-n.clientWidth+8}
@@ -522,7 +547,8 @@ const ACT={trynow:()=>boot(true),
     if(CHAT.open){U.lsSet('lchat.'+id,String(CHAT.n));paintChat();syncChat();loadChat().then(()=>{paintChat()});const ci=document.getElementById('chatin');if(ci)setTimeout(()=>ci.focus({preventScroll:true}),30)}else syncChat();chatPoll();paintChat()},
   chatroom:()=>{U.lsSet('x.'+id+'.tab','chat');U.lsSet('lchat.'+id,String(CHAT.n))},
   tab:(el,e)=>{if(e&&(e.defaultPrevented||e.button>0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey))return;if(e)e.preventDefault();tab=el.dataset.v;SUB=null;MISS=null;TOP0=true;hashPut(true);render();window.scrollTo(0,0)},
-  shareleague:()=>shareLink('standings',(L&&L.meta?L.meta.name:'League site')),copyleague:()=>copyText(shareUrl('standings')),
+  shareleague:el=>{const url=shareUrl(SHTAB),done=()=>{if(!el)return;el.textContent='Copied';clearTimeout(el._t);el._t=setTimeout(()=>{el.textContent=canShare()?'Share':'Copy link'},2000)};if(canShare()){navigator.share({title:(L&&L.meta?L.meta.name:'League site'),url}).catch(e=>{if(!(e&&e.name==='AbortError')){copyText(url);done()}})}else{copyText(url);done()}},
+  cptext:el=>cpText(el),
   cptab:()=>shareLink(tab+(fHash()?'/'+fHash():''),tabTitle()),
   cplink:el=>{const r=readRoute(el.dataset.h||'');if(r)shareLink(r.t+(r.sub?'/'+encodeURIComponent(r.sub):''),tabTitle())},
   owner:(el,e)=>{if(e.target.closest('a.chip,a.tl'))return;goOwner(el.dataset.mid)},
@@ -537,7 +563,7 @@ const ACT={trynow:()=>boot(true),
   gmode:el=>{gMode=el.dataset.v;gDay='all';render()},gh2h:()=>{gH2H=!gH2H;render()},
   fresh:()=>freshToggle(),lvrefresh:()=>lvManual()};
 document.addEventListener('change',e=>{const el=e.target;if(el.id==='herofile'){const f=el.files&&el.files[0];el.value='';if(f)heroChange(f);return}
-  if(el.id==='gOwnerSel'){gOwner=el.value;render()}else if(el.id==='gDaySel'){gDay=el.value;render()}else if(el.id==='gUnowned'){gAll=el.checked;render()}});
+  if(el.id==='s29shSel'){SHTAB=el.value;const i=document.getElementById('s29shUrl');if(i)i.textContent=shareUrl(SHTAB)}else if(el.id==='gOwnerSel'){gOwner=el.value;render()}else if(el.id==='gMonthSel'){if(el.value){gDay=el.value;render()}}else if(el.id==='gDaySel'){gDay=el.value;render()}else if(el.id==='gUnowned'){gAll=el.checked;render()}});
 document.addEventListener('submit',e=>{if(e.target&&e.target.id==='chatform'){e.preventDefault();const i=document.getElementById('chatin');const t=i?i.value.trim():'';if(!t||!ME||DEMO)return;i.value='';CHAT.draft='';sendChat(t)}});
 document.addEventListener('input',e=>{if(e.target&&e.target.id==='chatin')CHAT.draft=e.target.value});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&CHAT.open&&e.target&&e.target.closest&&e.target.closest('#chat')){ACT.chatopen();const b=document.getElementById('chatbar');if(b)b.focus({preventScroll:true})}});
@@ -573,7 +599,7 @@ let ME=null;
 async function resolveMe(){try{if(DEMO)return null;const me=U.getMe(id);if(!me||!me.mid||!me.k)return null;const c=F.joinedList(L.meta,L.claims).find(x=>x.mid===me.mid);return c&&await F.checkMgrSecret(c,me.k)?me.mid:null}catch(e){return null}}
 async function start(d){const m=d.meta;L=d;MG=d.managers;
   if(/[#&]cm=/.test(location.hash)){const fr=U.takeFragment();const cmF=F.extractSecret(fr.get('cm')||'','cm');if(cmF&&await F.checkPass(m,cmF)){U.lsSet('cm.'+id,cmF);U.rememberLeague(id,m.name,'commissioner')}}
-  CM=!DEMO&&await U.isCommish(m);ME=await resolveMe();LBETS.init({id,demo:DEMO,owners:()=>D?D.owners:[],me:()=>ME,games:()=>D?D.games:[],rerender:()=>render(),goBets:()=>{tab='bets';SUB=null;MISS=null;hashPut(true);render();window.scrollTo(0,0)},active:()=>tab==='bets'&&!document.hidden,roomHref:()=>U.roomHref(id),onFilter:()=>{SUB=null;MISS=null;hashPut(false)},render:()=>{if(tab!=='bets')return;const b=document.getElementById('lbody');if(b)keepPos(()=>{b.innerHTML=LBETS.view();try{LBETS.after()}catch(_){}})}});if(window.LSCHED&&!DEMO){LSCHED.init({ids:()=>(L.state.roster||L.state.picks||[]).map(p=>p&&p.tid).filter(x=>x!=null),enabled:()=>!DEMO,onUpdate:schedUpdate})}await loadHero(false);await loadScores();rebuild();if(ROUTE0)applyRoute(ROUTE0);normalizeUrl();render();BO.booted=true;LBETS.start();if(window.LSCHED&&!DEMO)LSCHED.start();
+  CM=!DEMO&&!window.LVIEW&&await U.isCommish(m);ME=await resolveMe();LBETS.init({id,demo:DEMO,owners:()=>D?D.owners:[],me:()=>ME,games:()=>D?D.games:[],rerender:()=>render(),goBets:()=>{tab='bets';SUB=null;MISS=null;hashPut(true);render();window.scrollTo(0,0)},active:()=>tab==='bets'&&!document.hidden,roomHref:()=>U.roomHref(id),onFilter:()=>{SUB=null;MISS=null;hashPut(false)},render:()=>{if(tab!=='bets')return;const b=document.getElementById('lbody');if(b)keepPos(()=>{b.innerHTML=LBETS.view();try{LBETS.after()}catch(_){}})}});if(window.LSCHED&&!DEMO){LSCHED.init({ids:()=>(L.state.roster||L.state.picks||[]).map(p=>p&&p.tid).filter(x=>x!=null),enabled:()=>!DEMO,onUpdate:schedUpdate})}await loadHero(false);await loadScores();rebuild();if(ROUTE0)applyRoute(ROUTE0);normalizeUrl();render();BO.booted=true;LBETS.start();if(window.LSCHED&&!DEMO)LSCHED.start();
   loadChat().then(()=>{paintChat();setOff()});setInterval(()=>{if(!document.hidden)loadChat().then(()=>{paintChat();setOff()})},30000);
   /* scores / tournament refresh every 5 min; after a failed refresh it retries with back-off and keeps the last good data on screen */
   let rf=0;const refresh=async()=>{const a=document.activeElement,t=a&&a.tagName;if(document.hidden||t==='INPUT'||t==='SELECT'){setTimeout(refresh,15000);return}

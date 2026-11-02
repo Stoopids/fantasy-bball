@@ -71,7 +71,7 @@ const audit=P=>P.page.evaluate(()=>{const A=[...document.querySelectorAll('#lbod
   await mode(P,'scores');
   const st=()=>P.page.evaluate(()=>{const b=document.querySelector('[data-gid=f1] .gfr'),x=document.getElementById(b.getAttribute('aria-controls')),r=b.getBoundingClientRect();return{tag:b.tagName,ae:b.getAttribute('aria-expanded'),hid:x.hidden,txt:b.innerText.replace(/\s+/g,' ').trim(),h:Math.round(r.height),w:Math.round(r.width),focus:document.activeElement===b,rows:[...document.querySelectorAll('#lbody .gm.gfin')].map(c=>Math.round(c.getBoundingClientRect().height))}});
   let s=await st();ok('finished games are one-line rows (teams, final score, Final), collapsed, 44px button',s.tag==='BUTTON'&&s.ae==='false'&&s.hid&&/64.*70.*Final/.test(s.txt)&&s.h>=44&&s.rows.every(h=>h<=50),s);
-  await P.page.click('[data-gid=f1] .gfr');await sleep(200);s=await st();ok('tap expands it (aria-expanded=true, details shown)',s.ae==='true'&&!s.hid,s);
+  await P.page.$eval('[data-gid=f1] .gfr',e=>e.scrollIntoView({block:'center'}));/* s28c: shorter Games header; keep the row clear of the fixed chat bar */await P.page.click('[data-gid=f1] .gfr');await sleep(200);s=await st();ok('tap expands it (aria-expanded=true, details shown)',s.ae==='true'&&!s.hid,s);
   await P.page.click('[data-gid=f1] .gfr');await sleep(200);s=await st();ok('tap again collapses it',s.ae==='false'&&s.hid,s);
   await P.page.focus('[data-gid=f1] .gfr');await P.page.keyboard.press('Enter');await sleep(200);s=await st();ok('keyboard Enter expands',s.ae==='true'&&!s.hid&&s.focus,s);
   await P.page.keyboard.press('Space');await sleep(200);s=await st();ok('keyboard Space collapses',s.ae==='false'&&s.hid,s);

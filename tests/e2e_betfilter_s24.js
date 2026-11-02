@@ -76,8 +76,7 @@ const state=P=>P.page.evaluate(()=>({p:(document.getElementById('b27FP')||{}).va
   ok('a fresh open of plain #bets on this device uses the remembered filter and writes it into the URL',s2.p==='me'&&s2.s==='waiting'&&s2.h==='#bets/f=me-waiting',s2);await A2.page.close()}
   await A.page.evaluate(()=>{location.hash='#bets'});await sleep(400);ok('typing plain #bets keeps the filter and puts it back into the URL',(await state(A)).h==='#bets/f=me-waiting');
   /* copy link */
-  await A.page.click('#b27CopyLink');await sleep(200);const cp=await A.page.evaluate(()=>window.__copied.slice(-1)[0]);
-  ok('Copy link with a filter: ?l=CODE#bets/f=me-waiting, no manager id or k=',cp===APP+'/league.html?l='+id+'#bets/f=me-waiting'&&!M.some(m=>cp.includes(m))&&!/k=|as=/.test(cp),cp);
+  ok('s28c: no Copy link on the Bets tab (one Share: the Share tab)',!(await A.page.$('#b27CopyLink'))&&!(await A.page.$('#lbody [data-a=cptab]')));
   /* hash round trip from a link */
   const B=await phone(id,info,1);await go(B,id,'#bets/f=3-settled');st=await state(B);
   ok('hash -> filters: #bets/f=3-settled opens Person=Cy, Status=Settled (B4 only)',st.p==='3'&&st.s==='settled'&&(await shown(B)).map(t=>t.split(' ')[0]).join()==='B4',st);

@@ -50,7 +50,7 @@ const joinedMids=()=>MG.map(m=>m.mid);
 const missing=()=>Math.max(0,F.MANAGERS-MG.length);const waitTxt=()=>'Waiting for '+missing()+' more manager'+(missing()===1?'':'s');const full8=()=>MG.length===F.MANAGERS;const phTxt=()=>missing()+' empty seat'+(missing()===1?'':'s')+' will be auto-picked';
 /* ===================== time sync ===================== */
 async function syncTime(){try{const t0=Date.now();const ac=new AbortController();const to=setTimeout(()=>ac.abort(),5000);let h;try{const r=await fetch(location.href.split('#')[0],{method:'HEAD',cache:'no-store',signal:ac.signal});h=r.headers.get('Date')}finally{clearTimeout(to)}
-  const t1=Date.now();const off=F.offsetFromDate(h,t0,t1);if(off!=null&&F.sane(off)){srvOff=off;srvSync=Date.now();srvInfo=Math.abs(off)<1500?'in sync with server time':'device clock is '+(off>0?'behind':'ahead')+' by '+Math.round(Math.abs(off)/1000)+'s (corrected)'}}catch(e){}if(!tSynced){tSynced=true;try{renderBanner();tickClock()}catch(e){}}}
+  const t1=Date.now();const off=F.offsetFromDate(h,t0,t1);/* s28c: a slow answer under load gives a poor estimate; once synced, keep the old offset unless the round trip was short */if(off!=null&&F.sane(off)&&!(srvSync&&t1-t0>2500)){srvOff=off;srvSync=Date.now();srvInfo=Math.abs(off)<1500?'in sync with server time':'device clock is '+(off>0?'behind':'ahead')+' by '+Math.round(Math.abs(off)/1000)+'s (corrected)'}}catch(e){}if(!tSynced){tSynced=true;try{renderBanner();tickClock()}catch(e){}}}
 /* ===================== derive + paint ===================== */
 function signature(){return Mraw+'|'+Object.keys(CLraw).map(k=>k+CLraw[k]).join(',')+'|'+Object.keys(PROFraw).map(k=>k+PROFraw[k].length+PROFraw[k].slice(-12)).join(',')+'|'+Object.keys(ENTraw).map(k=>k+':'+ENTraw[k]).join(',')+'|'+JSON.stringify(PREF)+'|'+Object.keys(SPINraw).map(k=>k+':'+SPINraw[k]).join(',')+'|'+logReady}
 function rebuild(force){const sig=signature();if(!force&&sig===lastSig)return;lastSig=sig;
@@ -174,7 +174,7 @@ async function verifyPref(mid,batch){let d=null;try{d=F.parseJ(await readRaw(K.p
 const prefBusy=mid=>!!(PENDQ[mid]&&PENDQ[mid].length);
 /* is tid in mid's queue as this device last decided it (latest pending add/remove wins, else the shown queue) */
 function inQueueNow(mid,t){const q=PENDQ[mid]||[];for(let i=q.length-1;i>=0;i--){const g=q[i].tag;if(g&&g.t===t)return g.want}return ((PREF[mid]&&PREF[mid].queue)||[]).includes(t)}
-async function submitPick(n,owner,tid,by,o){o=o||{};const prevId=n>1&&S.picks.length===n-1?S.picks[n-2].id:(n>1?null:'');const entry=F.makeEntry(n,owner,tid,{by,now:nowSrv(),writer:WRITER,epoch:M.epoch,prev:prevId,voided:M.voided});
+async function submitPick(n,owner,tid,by,o){o=o||{};if(by==='auto'&&(preStart()||startGate()||HL.stalled()))return{ok:false,msg:'held'};/* s28c: last guard for every auto-pick write */const prevId=n>1&&S.picks.length===n-1?S.picks[n-2].id:(n>1?null:'');const entry=F.makeEntry(n,owner,tid,{by,now:nowSrv(),writer:WRITER,epoch:M.epoch,prev:prevId,voided:M.voided});
   const io={read:u=>Store.get(u,undefined,{write:1}).then(r=>{storeOk();return r}),write:postJ,sleep,adopt:(k,e)=>{ENT[k]=e||null;ENTraw[k]=e?JSON.stringify(e):'';rebuild()},later:fn=>{fn()},alert:k=>toast('Pick #'+k+' was replaced by a simultaneous write — check the board.',6000)};
   return F.submitSlot(io,{meta:M,url:K.pick(M.epoch,n),n,entry,taken:F.takenMap({picks:S.picks.filter(p=>p.n<n),kept:S.kept}),pool:POOLSET,prevId:prevId==null?undefined:prevId,fast:o.fast})}
 /* s23 (BUG-2): the chat is one key (read-modify-write), so two people sending at the same moment can overwrite each other. Every message this device sent is remembered for 3 minutes; if a later read of the chat does not have it, it is shown again at once and written back (merged), until it sticks. */
@@ -193,7 +193,7 @@ const toast=UI.toast;
 function needUnlock(){if(commish())return true;toast('Commissioner tools are locked. Open your commissioner link, or paste it under More → Unlock.',4500);return false}
 const forWho=o=>o===myMid()?'you':mg(o).name;
 async function doPick(tid,forOwner,opt){opt=opt||{};const cs0=S&&F.onClock(S);const slot0=cs0?cs0.n:-1;if(busy&&busy===slot0){if(!opt.auto)toast('Still saving your pick, one moment…',2500);return}const mySlot=slot0;busy=slot0;
-  try{await pollOnce();if(preStart()){toast('The draft starts in '+UI.fmtClock(+M.startedAt-nowSrv())+'. Picks open at 0:00.',4000);return false}const v=F.validatePick(S,forOwner,String(tid),{pool:POOLSET});
+  try{await pollOnce();if(preStart()||startGate()){toast('The draft starts in '+UI.fmtClock(+M.startedAt-nowSrv())+'. Picks open at 0:00.',4000);return false}const v=F.validatePick(S,forOwner,String(tid),{pool:POOLSET});
     if(v.error){const tk=F.takenMap(S)[String(tid)];if(tk&&tk.owner===forOwner)toast('Already picked for '+forWho(forOwner)+': '+tn(tid)+' (pick #'+tk.n+'). Nothing more to do.',6000);
       else if(tk)toast('Someone beat you to it: '+tn(tid)+' was just taken by '+mg(tk.owner).name+' (pick #'+tk.n+'). Pick another.',6000);
       else if(v.turn){const s=F.onClock(S);toast("It's "+(s?mg(s.owner).name:'someone else')+"'s turn now (pick #"+(s?s.n:'?')+'). The board moved while you were choosing.',6000)}else toast(v.error,5000);return false}
@@ -222,6 +222,10 @@ async function actStart(auto){if(!auto&&!needUnlock())return;await pollOnce();
   const cd=!auto&&!isMock();
   return simple(m=>{const r=F.mStart(m,joinedMids(),nowSrv(),seedOf(m),POOL.length,Object.assign(hasPh?{autoSpin:!!auto,phMap:phm}:{autoSpin:!!auto},isMock()?{}:{fixed:true}));if(cd&&r.state){const t=r.state.startedAt+START_CD_MS;r.state.startedAt=t;r.state.resumeAt=t;r.state.startCd=START_CD_MS}return r},auto?null:(cd?'Draft starts in 1 minute':'The draft is LIVE!'),chk=>chk.status==='live')}
 const START_CD_MS=60000;
+/* s28c (bug B): nothing auto-picks or expires before the server start instant (meta startedAt / resumeAt, server time), whatever the local timer or a stale on-screen state says */
+const startGate=()=>!!(M&&M.status==='live'&&!M.paused&&nowSrv()<Math.max(+M.startedAt||0,+M.resumeAt||0)&&!(S&&S.picks&&S.picks.some(p=>!p.skip&&(+p.ts||0)>=(+M.startedAt||0))));
+/* s28d: the start gate holds the clock DISPLAY only while the stored start instant is still ahead by this device's own clock too; with no start time, or once it has passed locally, the display counts down (a stale/failed/huge server offset can no longer freeze it at full time). Auto-pick and its save keep using startGate() (server time). */
+const startSt=()=>M?Math.max(+M.startedAt||0,+M.resumeAt||0):0;const dispHold=()=>{const st=startSt();return st>0&&Date.now()<st&&startGate()};const dispNow=()=>{const st=startSt();const n=nowSrv();return st>0&&n<st&&Date.now()>=st?Date.now():n};
 const preStart=()=>!!(M&&M.status==='live'&&M.startCd&&nowSrv()<(+M.startedAt||0)&&!(S&&S.picks&&S.picks.length));
 async function actStartNow(){if(!needUnlock())return;const r=await simple(m=>{const now=nowSrv();if(m.status!=='live'||!m.startCd||!(+m.startedAt>now))return{noop:true};const n=F.clone(m);n.startedAt=now;n.resumeAt=now;return{state:n}},'The draft is LIVE!',chk=>!(+chk.startedAt>nowSrv()+1000));preWas=null;rebuild(true);return r}
 let preWas=null;
@@ -260,7 +264,7 @@ const prankOf=t=>(META[t]||{}).p||0;/* s26c14 (Paul: 'Use Kenpom for AUTODRAFT')
 let autoPlan={n:0,at:0},autoBusy=false;
 /* s28 R1: store health of THIS page. Every request (Store.fetchT) is timed. Stalled when: a request has been in flight > 8 s; the last 2 finished requests each took > 8 s or failed; 3+ failures in 20 s; or (visible and online) no successful request for 12 s; or the device is offline.
    Healthy again only after 20 s with 4+ successes and p90 < 2.5 s (enter fast, leave slow). Test hook (localhost only): localStorage fbn.healthOff=1 turns the guard off. */
-const HL=(function(){const ev=[],fly=new Map();let seq=0,lastOk=Date.now(),stallOn=false,stallSince=0,quietFrom=0;
+const HL=(function(){const ev=[],fly=new Map();let seq=0,lastOk=Date.now(),stallOn=false,stallSince=0,quietFrom=0,recUntil=0;const REC_MS=5000;
   const off=()=>{try{return /^(localhost|127\.0\.0\.1)$/.test(location.hostname)&&localStorage.getItem('fbn.healthOff')==='1'}catch(e){return false}};
   try{const f0=Store.fetchT;Store.fetchT=function(url,opt,ms){const id=++seq,t=Date.now();fly.set(id,t);const done=ok=>{fly.delete(id);const now=Date.now();ev.push({ok,ms:now-t,at:now});if(ok)lastOk=now;while(ev.length&&now-ev[0].at>60000)ev.shift()};
     return f0.call(this,url,opt,ms).then(r=>{done(true);return r},e=>{done(false);throw e})}}catch(e){}
@@ -268,11 +272,13 @@ const HL=(function(){const ev=[],fly=new Map();let seq=0,lastOk=Date.now(),stall
     const fin=ev.slice(-2);if(fin.length===2&&fin.every(e=>!e.ok||e.ms>8000))return true;if(ev.filter(e=>!e.ok&&now-e.at<20000).length>=3)return true;
     if(!document.hidden&&now-lastOk>12000)return true;return false}
   function healthy(now){const w=ev.filter(e=>e.at>=quietFrom);if(now-quietFrom<20000||w.length<4||w.some(e=>!e.ok))return false;const ms=w.map(e=>e.ms).sort((a,b)=>a-b);return ms[Math.floor(ms.length*.9)]<2500}
-  function stalled(){if(off())return false;const now=Date.now();if(bad(now)){if(!stallOn){stallOn=true;stallSince=now}quietFrom=now;return true}if(stallOn){if(healthy(now)){stallOn=false}else return true}return false}
-  return{stalled,seen:()=>{lastOk=Math.max(lastOk,Date.now()-4000)},info:()=>({stalled:stallOn,since:stallSince,inflight:fly.size,recent:ev.slice(-5)})}})();
+  function stalled(){if(off())return false;const now=Date.now();if(bad(now)){if(!stallOn){stallOn=true;stallSince=now}quietFrom=now;return true}if(stallOn){if(healthy(now)){stallOn=false;recUntil=now+REC_MS}else return true}return now<recUntil}
+  /* s28c (bug A): the stall state is evaluated on its own 500 ms timer, not only from autoTick (which returns early while busy / auto-pick in flight / log not ready), so a page can never miss a stall and then treat the recovery as healthy at once */
+  try{setInterval(()=>{try{if(typeof S!=='undefined'&&S&&S.status==='live'&&!S.paused)stalled()}catch(e){}},500)}catch(e){}/* only while a draft is running (the lobby polls slowly) */
+  return{stalled,seen:()=>{lastOk=Math.max(lastOk,Date.now()-4000)},info:()=>{try{if(S&&S.status==='live')stalled()}catch(e){}return{stalled:stallOn,recovering:Date.now()<recUntil,since:stallSince,inflight:fly.size,recent:ev.slice(-5)}}}})();
 window.FBN_health=()=>HL.info();
 try{document.addEventListener('visibilitychange',()=>{if(!document.hidden)HL.seen()})}catch(e){}
-function autoTick(){if(!S||!loaded||autoBusy||busy||!S.logReady)return;if(preStart()){autoPlan={n:0,at:0};return}
+function autoTick(){if(!S||!loaded||autoBusy||busy||!S.logReady)return;if(preStart()||startGate()){autoPlan={n:0,at:0};return}
   /* s28 R1 (reliability plan 2b): this page never auto-picks while its own store requests are stalling (slow / failing / no answer); it is a local freeze, no write needed */
   if(HL.stalled()){autoPlan={n:0,at:0};return}
   /* s28 R2: a stuck on-clock slot is never auto-picked because the clock ran out (the 15 s go-ahead is gone for 'expired'); away / auto-draft / placeholder seats keep the 15 s hold, then go through the backup spot. A stuck slot that is not on the clock holds auto-pick as before. */
@@ -285,7 +291,7 @@ function autoTick(){if(!S||!loaded||autoBusy||busy||!S.logReady)return;if(preSta
   /* s25-full (Paul via NCAA): an auto-pick-on or away manager is picked for at once when the turn starts (delay 0); bots keep 1-2 s; a run-out clock is 0 as before */
   if(autoPlan.n!==s.n){autoPlan={n:s.n,at:Date.now()+(reason!=='expired'&&!isBot(s.owner)?Math.max(0,F.autoBase(M,S.picks)+F.AUTO.delayMs-nowSrv()):F.autoDelayMs(reason,isBot(s.owner)))}/* s26c8b: auto/away go 2 s after the turn began (last pick / start / resume), not after this phone noticed it */}if(Date.now()<autoPlan.at)return;
   autoBusy=true;autoPlan.at=Date.now()+5000;const n=s.n;
-  (async()=>{{const s1=F.onClock(S);const rp=s1&&s1.n===n&&!isBot(s1.owner)?readPref(s1.owner).catch(()=>false):null;await pollOnce();if(rp){await rp;rebuild()}}/* s26c8b: fresh switch, so OFF cancels a pending fast pick on every phone */const s2=F.onClock(S);if(!s2||s2.n!==n||!F.autoReason(S,nowSrv(),CFG.graceMs-200))return;
+  (async()=>{{const s1=F.onClock(S);const rp=s1&&s1.n===n&&!isBot(s1.owner)?readPref(s1.owner).catch(()=>false):null;await pollOnce();if(rp){await rp;rebuild()}}/* s26c8b: fresh switch, so OFF cancels a pending fast pick on every phone */const s2=F.onClock(S);if(!s2||s2.n!==n||!F.autoReason(S,nowSrv(),CFG.graceMs-200))return;/* s28c: the store may have stalled or the start countdown may still run (server start time) while we waited for the poll */if(HL.stalled()||startGate())return;
     const ch=F.autoChoice(S,s2.owner,POOL,F.mulberry(n*7919),autoRankOf);if(!ch)return;const r=await submitPick(n,s2.owner,ch.tid,'auto');if(r&&r.ok){toast('Auto-pick: '+tn(ch.tid)+' for '+mg(s2.owner).name);markDone(n)}})().finally(()=>{autoBusy=false;setTimeout(autoTick,50)/* s25-full: the next auto-pick-on turn goes at once */})}
 let startTried=0;
 function autoStartTick(){/* s24: a solo mock (you + 7 bots) starts at once on the creator's page */if(M&&!busy&&M.status==='lobby'&&M.mock&&M.solo&&commish()&&full8()&&Date.now()>=startTried){startTried=Date.now()+4000;actStart(true);return}
@@ -458,7 +464,7 @@ function renderTop(){const done=!!(S&&S.status==='complete');const site=isMock()
   $('top').innerHTML=UI.header({below:true,sub:M?M.name:'Draft room',right:'<span id="conn" class="pill bad"><i></i>Connecting…</span>'+who+site/* s26c14: header Rules buttons replaced by the Rules tab */});renderConn()}
 /* s25-full (Paul via NCAA): the Rules page. Every line comes from the code and this league's own settings (M.settings, read live); nothing is invented. Questions are in draftroom-notes/s25-full/rules/UNCLEAR.md */
 function canPick(){if(!S||!S.logReady)return false;if(preStart())return false;if(WATCH)return false;const s=F.onClock(S);if(!s||S.paused)return false;return(!isSpec()&&s.owner===myMid())||commish()}
-function remaining(){if(!S||!S.clockSecs)return null;const cap=S.clockSecs*1000;/* s28 item 3: never more than the clock length (a server-offset or rounding error showed 11 for a 10 s hold) */if(S.paused)return S.pausedLeft==null?null:Math.min(cap,S.pausedLeft);if(!tSynced&&Date.now()-bootAt<2000)return null;return S.deadline?Math.min(cap,S.deadline-nowSrv()):null}
+function remaining(){if(!S||!S.clockSecs)return null;const cap=S.clockSecs*1000;/* s28 item 3: never more than the clock length (a server-offset or rounding error showed 11 for a 10 s hold) */if(S.paused)return S.pausedLeft==null?null:Math.min(cap,S.pausedLeft);if(!tSynced&&Date.now()-bootAt<2000)return null;if(dispHold())return cap;/* s28c: never 0:00 before the start instant; s28d: fail-open by local time */return S.deadline?Math.min(cap,S.deadline-dispNow()):null}
 const holdLeftS=hu=>Math.max(0,Math.min(Math.ceil(F.AUTO.undoHoldMs/1000),Math.ceil((hu-nowSrv())/1000)));/* s28 item 3: re-pick hold countdown clamped to the hold length */
 function autoNote(){if(!commish()||!S||!loaded||WATCH)return'';const s=M.settings;
   if(M.status==='lobby'&&s.startMode==='auto'&&s.startAt!=null){const due=nowSrv()>=s.startAt+500&&full8();
