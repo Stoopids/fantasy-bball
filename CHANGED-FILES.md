@@ -1,3 +1,30 @@
+# s28i (build 2026-11-02s28i): s28g + dev material removed from the public site (redo of s28h) + League s28g-hero (hero, tabs, Games filters/grid, Bets form + badge)
+Base: /workspace/fantasy-bball-releases/s28g (MD5SUMS 79728362). Rebuilt after the box rollback (the s28h folder now holds s28g contents and was not used). js/room.js (36bc5b45) and js/core.js (f53b3b35) NOT changed; css/app.css, js/join.js, league.html NOT changed; data/ identical to s28g (League's FORMAT.md / demo json tidies were lost and are not recreated). No site files added, so the sw.js precache list is unchanged. Staged only, not published.
+- s28h cleanup redone: removed CHANGE-NOTES-s24.md, CHANGE-NOTES-s25.md, tools/ (md5-identical copies in /workspace/fantasy-bball-devtools/). README.md, import/README.md: no tools/ paths or CHANGE-NOTES links (scripts named as maintainer scripts, commands use "$FBN_TOOLS"/...).
+- Tests (not shipped): new tests/devtools_path.js (FBN_TOOLS env, else ../tools, else /workspace/fantasy-bball-devtools/tools), used by test_core.js (make_bundle.sh) and e2e_cheer.js; test_refresh_conf.py same lookup.
+- League (copied unedited from /workspace/league-site-work/s28g-hero): hero title fit (titleFit, kicker ~68%), nav tabs +12% wrapping grid, Standings hint + footer demo link removed, Games S29D-GF filters and 1/2/3/4-col grid at <600/600/900/1400 (Games uncapped from 1200px), Bets placeholder / '@1 -N beats @2' spread / 'This will be auto-settled after completion.' note / equal-width type buttons / new-bets count pill. League tests: hero, games_s28c, bets_copy_s28, league_step updated; new e2e_bets_form_s28g, e2e_betsbadge_s28g (share_s28c in s28g-hero = s28g, kept).
+- All teams STOOPID column: already the plain hand-set rank (leaguehome.js x.sr=rkNum(mm.p) from raw TEAMS_DATA meta; sort on sr; labels STOOPID/ST); no app change. New tests/e2e_allteams_stoopid_s28i.js proves column + sort = meta.p and that mock bots, F.teamStrength and draft grades still use the 50/50 F.blendRank.
+- Stale tests, expectations only: e2e_games_s25 (new column breakpoints), e2e_alignment (fitted centred title, uncapped Games, centred compact All teams card, narrower cards inside the column); e2e_chipgrid and e2e_s25 already failed identically on s28g (pre-existing): chipgrid inline chips 32px in >= 44px rows with name-width; e2e_s25 sound button is icon + aria-label ('Settle sounds off/on'), and the money-word scan exempts the shipped fun-only disclaimer ('not money', 'gambling for money').
+
+| file | md5 | owner |
+|---|---|---|
+| css/league-app.css | 0c513aac5c0d62228feefa88838af91e | League |
+| js/leaguehome.js | 6bfce2af4e6d60f8bc860be75e06b2b1 | League |
+| js/league-bets.js | 46b4f35a089138b0a70fed167c4a8bb2 | League |
+| js/version.js | 90274800f4febeadb43120bfb83269e8 | Draft Room (build 2026-11-02s28i) |
+| sw.js | e96d9000d46d494ebc6ba1a958f53ace | Draft Room (line 3; cache fbnc-2026-11-02s28i) |
+| README.md, import/README.md | see MD5SUMS | no tools/ paths |
+| CHANGED-FILES.md / MD5SUMS.txt | - | regenerated |
+
+# s28g (build 2026-11-02s28g): s28f + draft-room fix for a server-time offset ahead of the turn writer
+Base: /workspace/fantasy-bball-releases/s28f (MD5SUMS b3d32389). Only js/room.js, js/version.js, sw.js, this file and MD5SUMS.txt changed; js/core.js NOT changed (League shares it). Staged only, not published.
+- Bug (QA, s28b..s28f; live s28b has it): the turn start (meta startedAt / resumeAt, last pick ts) is stamped by the page that wrote it, in that page's server time (Date.now()+srvOff). Every page computes deadline = turn start + clock and compares it with its OWN server time. When one page's server time is ahead of the writer's by at least the time left (failed time sync on a fast device clock, so srvOff stays 0; or a proxy/cache with a fast Date header - F.sane accepts up to 24 h), that page sees the deadline already past: F.autoReason says 'expired', it auto-picks the present human seat after the 1.8 s grace, the beeps are skipped (all thresholds 'already passed') and the clock sticks at 0:29/0:30. With the page behind by hours, the start gate / 'Draft starts in' held forever and no clock showed.
+- Fix (room.js): each page keeps a local turn timer on its own clock (turnLocal): from when it saw the turn begin, a full clock (plus the 60 s start countdown when it saw the draft go live from the lobby, capped at 60 s); opened mid-turn: the server time left at that moment, 0..clock. 'expired' is not trusted before that local deadline + grace (autoR() wraps every autoReason use; submitPick by 'auto' re-checks). remaining() (display and beeps) follows the local timer when it and the server deadline differ by more than 5 s, still capped to the clock length. Local start instant (localStartAt): start gate and the 'Draft starts in' countdown end when the start has passed by this page's own timer too (never held more than 60 s past first sight). New picks are stamped no earlier than the turn they follow (stampNow = max(server now, turn start + 1 ms)).
+- js/version.js: FBN_BUILD 2026-11-02s28g. sw.js: cache fbnc-2026-11-02s28g (follows FBN_BUILD), line 3 comment updated.
+- New test (not shipped): tests/e2e_skew_s28g.js (from QA qa_skewclean.js CASE=seat, no seeded timestamps): seat 1's HEAD Date at +3 h, +90 s, 0, -3 h; checks turn-start + countdown beeps, clock counts down from <= 0:30, no auto-pick before 29 s.
+- Removed vs s28f (old dev notes, not to be served): UNCLEAR.md, tests/_tmp_e2e_ports.js, tests/_tmp_midswap_s28.js, tests/_tmp_mock64.js.
+- MD5SUMS.txt regenerated (excludes tests/ node_modules shots/ __pycache__ .git; keeps empty .nojekyll).
+
 # s28f (build 2026-11-02s28f): s28e + League s28e-pres re-stage
 Base: /workspace/fantasy-bball-releases/s28e (MD5SUMS 76730ddb). Source: /workspace/league-site-work/s28e-pres (re-staged by League). Both files copied unedited after md5 check; diff of League folder vs s28e (ignoring shots/, CHANGED-FILES.md, MD5SUMS.txt) showed only these two files plus League's older js/version.js / sw.js (build s28d, not taken). Staged only, not published.
 | file | md5 | owner |

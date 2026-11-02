@@ -228,7 +228,7 @@ function syncDom(){const m=document.getElementById('main');if(!m||!document.getE
   m.querySelectorAll('[data-lb=odds]').forEach(b=>{const[a,c]=b.dataset.v.split('-').map(Number);b.setAttribute('aria-pressed',String(!f.custom&&f.odds&&f.odds[0]===a&&f.odds[1]===c))});
   const cb=m.querySelector('[data-lb=oddscustom]');if(cb)cb.setAttribute('aria-pressed',String(f.custom));
   const cw=document.getElementById('b27Cw');if(cw)cw.hidden=!f.custom;const ce=document.getElementById('b27Ce');if(ce)ce.textContent=f.oddsErr;
-  const live=document.getElementById('b27Live');if(live)live.innerHTML=liveHtml();const sum=document.getElementById('b27Sum');if(sum)sum.textContent=summary();
+  const live=document.getElementById('b27Live');if(live)live.innerHTML=liveHtml();const sum=document.getElementById('b27Sum');if(sum)sum.textContent=summary();autoSoon();
   const err=formOK();const pb=document.getElementById('b27Place');if(pb){pb.disabled=!!err||S.busy;pb.setAttribute('aria-disabled',String(!!err))}
   const hint=document.getElementById('b27Hint');if(hint)hint.textContent=err&&(f.opps.length||f.open||f.text||f.amt)?err:''}
 const sync=()=>{try{syncDom()}catch(e){}};
@@ -331,12 +331,12 @@ function formHtml(me){const f=S.f,oth=others();const err=formOK();
   return`<div class="card b27-form" id="b27Form"><b>New bet</b> <span class="note">· you are <b>${esc(nm(me))}</b></span>${qbHint()}${S.edited?`<div class="note b27-edhint" role="status" id="b27EdHint">✏️ Filled in from Bet #${esc(S.edited)} (withdrawn). Change it, then place it again.</div>`:kindTabs()}
    <div class="b27-q">1. Who are you betting against? <span class="note">Tap one or more. Several = one bet each.</span></div><div class="b27-opps" role="group" aria-label="Opponents" style="--n:${oth.length}">${oth.map(o=>chip(o,'opp',!f.open&&f.opps.includes(o.mid))).join('')}</div>
    <div class="b27-selbar"><button type="button" class="b27-sm" data-lb="anyone" aria-pressed="${f.open}">🌍 Anyone</button><button type="button" class="b27-sm" data-lb="oppall">Select all</button><button type="button" class="b27-sm" data-lb="oppclear">Clear</button><span class="cnt" id="b27SelCnt" aria-live="polite">${f.open?'Open to anyone':f.opps.length?f.opps.length+' selected':'None selected'}</span></div>
-   <div class="b27-q"><label for="b27Text">2. What’s the bet? <span class="note">I say…</span></label></div><input id="b27Text" class="sb-in b27-in" maxlength="${C.maxText}" autocomplete="off" enterkeyhint="go" placeholder="e.g. Kansas beats Duke" value="${esc(f.text)}">
+   <div class="b27-q"><label for="b27Text">2. What’s the bet? <span class="note">I say…</span></label></div><input id="b27Text" class="sb-in b27-in" maxlength="${C.maxText}" autocomplete="off" enterkeyhint="go" placeholder="e.g. Kansas -4 beats Duke" value="${esc(f.text)}">
    <div class="b27-q">3. Amount <span class="note">(minimum ${C.min})</span></div><div class="b27-amts" role="group" aria-label="Amount">${C.amounts.map(a=>`<button type="button" class="b27-amt" data-lb="amt" data-v="${a}" aria-pressed="${!f.amtCustom&&a===f.amt}">${a}</button>`).join('')}<button type="button" class="b27-amt cu" data-lb="amtcustom" aria-pressed="${f.amtCustom}">Custom</button></div>
    <div id="b27Aw" class="b27-cw"${f.amtCustom?'':' hidden'}><label for="b27Ao" class="sr">Custom amount</label><input id="b27Ao" class="sb-in b27-in" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6" placeholder="Whole number, ${C.min} to ${C.max}" value="${esc(f.amtTxt)}"><div id="b27Ae" class="b27-bad-t" role="alert">${esc(f.amtErr)}</div></div>
    <div class="b27-q">4. Odds <span class="note">(if you’re right, they owe amount × first ÷ second)</span></div><div class="b27-chips" role="group" aria-label="Odds">${C.odds.map(([a,b])=>`<button type="button" class="b27-chip" data-lb="odds" data-v="${a}-${b}" aria-pressed="${!f.custom&&!!f.odds&&f.odds[0]===a&&f.odds[1]===b}">${a===1&&b===1?'Even':a+'-'+b}</button>`).join('')}<button type="button" class="b27-chip" data-lb="oddscustom" aria-pressed="${f.custom}">Custom…</button></div>
    <div id="b27Cw" class="b27-cw"${f.custom?'':' hidden'}><label for="b27Co" class="sr">Custom odds</label><input id="b27Co" class="sb-in b27-in" inputmode="text" autocomplete="off" maxlength="9" placeholder="e.g. 7-2 or 10-1" value="${esc(f.customTxt)}"><div id="b27Ce" class="b27-bad-t" role="alert">${esc(f.oddsErr)}</div></div>
-   <div class="b27-livebox" id="b27Live" aria-live="polite">${liveHtml()}</div><div class="b27-sum" id="b27Sum">${esc(summary())}</div><div class="b27-bad-t" id="b27Hint"></div>
+   <div class="b27-livebox" id="b27Live" aria-live="polite">${liveHtml()}</div><div class="b27-sum" id="b27Sum">${esc(summary())}</div><div id="b27AutoN">${autoNoteForm()}</div><div class="b27-bad-t" id="b27Hint"></div>
    <button type="button" id="b27Place" class="btn b27-big" data-lb="place"${err?' disabled aria-disabled="true"':''}>Place bet</button></div>`}
 /* ----- pool form: 1 terms, 2 who's in, 3 buy-in (live pot line), 4 payouts by place (amounts only; optional) ----- */
 const poolParts=()=>{const me=meMid();return owners().map(o=>o.mid).filter(m=>m===me||S.p.pp.includes(m))};
@@ -473,7 +473,7 @@ function readBet(text){try{const X=teamIdx();let s=' '+String(text||'').replace(
   const t=s.toLowerCase().replace(/\s+/g,' ').trim().replace(/^the /,''),A=ids[0],B=ids[1],N='(\\d{1,3}(?:\\.5)?)',VS='(?:vs\\.?|v\\.?|versus|against|and|at|@|-)';let m;
   if(m=new RegExp('^@1 (?:beats?|defeats?|tops?|over|to beat|will beat|wins? (?:over|against|vs\\.?|v\\.?))(?: the)? @2$').exec(t))return{t:'win',a:A,b:B};
   if(m=new RegExp('^@1 (?:loses to|falls to|to lose to)(?: the)? @2$').exec(t))return{t:'win',a:B,b:A};
-  if(m=new RegExp('^@1 -'+N+' (?:vs\\.?|v\\.?|over|against|at|@) @2(?: \\+\\d{1,3}(?:\\.5)?)?$').exec(t))return{t:'margin',a:A,b:B,l:+m[1],op:'line'};
+  if(m=new RegExp('^@1 -'+N+' (?:vs\\.?|v\\.?|over|against|at|@|beats?|defeats?|tops?|covers? (?:vs\\.?|against)) @2(?: \\+\\d{1,3}(?:\\.5)?)?$').exec(t))return{t:'margin',a:A,b:B,l:+m[1],op:'line'};
   if(m=new RegExp('^@1 (?:beats?|defeats?|wins? (?:over|against|vs\\.?)) @2 by more than '+N+'(?: points?)?$').exec(t))return{t:'margin',a:A,b:B,l:+m[1],op:'gt'};
   if(m=new RegExp('^@1 (?:beats?|defeats?|wins? (?:over|against|vs\\.?)) @2 by (\\d{1,3})(?: points?)? or more(?: points?)?$').exec(t))return{t:'margin',a:A,b:B,l:+m[1],op:'ge'};
   if(m=new RegExp('^(over|under) '+N+'(?: points?| total)?[,:]? @1 '+VS+' @2$').exec(t))return{t:'total',a:A,b:B,l:+m[2],s:m[1][0]};
@@ -509,7 +509,7 @@ async function propose(b){const P=S.prop[b.id];if(P&&(P.busy||Date.now()-P.at<AS
   catch(e){out={st:'down'}}
   S.prop[b.id]=Object.assign(out,{at:Date.now(),busy:false});if(H&&H.active())render()}
 function scoreText(b,P){return tName(b.c.a)+' '+P.sa+', '+tName(b.c.b)+' '+P.sb}
-function autoHtml(b,me,btn,ask){if(!b.c)return'';const rk=x=>{try{return window.LRANK?LRANK.badge(x):''}catch(e){return''}};const read=`<div class="note b27-read">Read as: ${rk(b.c.a)}${rk(b.c.b)}${esc(claimText(b.c))}</div>`;if(!LIVE(b))return read;
+function autoHtml(b,me,btn,ask){if(!b.c)return'';const rk=x=>{try{return window.LRANK?LRANK.badge(x):''}catch(e){return''}};const read=`<div class="note b27-read">Read as: ${rk(b.c.a)}${rk(b.c.b)}${esc(claimText(b.c))}</div>`+((b.status==='pending'||LIVE(b))&&autoGame(b.c,false)?autoNoteHtml():'');if(!LIVE(b))return read;
   const P=S.prop[b.id];const cr=me&&me===b.by;if(cr&&(!P||(!P.busy&&Date.now()-P.at>=AS.ttl)))setTimeout(()=>propose(b),0);
   if(!P||P.st==='look')return read+`<div class="note b27-prop">Checking the final score…</div>`;
   if(P.st==='wait')return read+`<div class="note b27-prop">No final score yet. ${cr?'Settle it by hand any time, or come back after the game.':''}</div>`;
@@ -646,7 +646,14 @@ async function editBet(el){const me=meMid(),id=el.dataset.id,b0=compute().find(x
   setTimeout(()=>{try{const f=document.getElementById('b27Form');if(f)f.scrollIntoView({block:'start'})}catch(_){}},30)}
 function applyAmt(t,quiet){const f=S.f;f.amtTxt=t;const r=parseAmt(t);if(r.ok){f.amt=r.n;f.amtErr=''}else{f.amt=null;f.amtErr=quiet&&!String(t||'').trim()?'':r.err}}
 function applyOdds(t,quiet){const f=S.f;f.customTxt=t;const r=parseOdds(t);if(r.ok){f.odds=[r.a,r.b];f.oddsErr=''}else{f.odds=null;f.oddsErr=quiet&&!t?'':r.err}}
-function readAsHtml(){const c=readBet(clean(S.f.text));return c?`<div class="note b27-readas" id="b27ReadAs">We read this as: <b>${esc(claimText(c))}</b>. After the final we’ll show you the score and a proposed result to confirm. Not right? Tap ← Change.</div>`:`<div class="note b27-readas" id="b27ReadAs">We can’t read this one automatically, so you’ll settle it by hand.</div>`}
+/* s28g: 'This will be auto-settled after completion.' = the existing auto-settle path applies: readBet() reads a clear claim (team, spread or total) AND the League schedule
+   (H.games()) has a game between those two teams (not final yet for the form; any for a live placed card). Same readBet/propose logic, no new parser. */
+const AUTO_NOTE='This will be auto-settled after completion.';
+function autoGame(c,upcoming){if(!c)return null;return((H&&H.games&&H.games())||[]).find(g=>g&&g.home&&g.away&&(!upcoming||g.status!=='final')&&[String(g.home.id),String(g.away.id)].includes(String(c.a))&&[String(g.home.id),String(g.away.id)].includes(String(c.b)))||null}
+const autoNoteHtml=()=>`<div class="s29-auto" data-s29-auto="1">${AUTO_NOTE}</div>`;   /* = STOOPIDS s29d S29D-AUTO markup/class */
+let AUTOT=0;function autoSoon(){clearTimeout(AUTOT);AUTOT=setTimeout(()=>{const e=document.getElementById('b27AutoN');if(e)e.innerHTML=autoNoteForm()},250)}   /* = STOOPIDS s29AutoSoon: live while typing, 250 ms debounce */
+function autoNoteForm(){try{return autoGame(readBet(clean(S.f.text)),true)?autoNoteHtml():''}catch(e){return''}}
+function readAsHtml(){const c=readBet(clean(S.f.text));return c?`<div class="note b27-readas" id="b27ReadAs">We read this as: <b>${esc(claimText(c))}</b>. After the final we’ll show you the score and a proposed result to confirm. Not right? Tap ← Change.</div>${autoGame(c,true)?autoNoteHtml():''}`:`<div class="note b27-readas" id="b27ReadAs">We can’t read this one automatically, so you’ll settle it by hand.</div>`}
 async function confirmPlace(){if(S.busy)return;const e=formOK();if(e){S.msg=e;S.bad=true;S.f.confirm=false;render(true);return}
   const f=S.f,targets=f.open?['*']:f.opps.slice();
   /* ids are remembered for this exact form content, so tapping again after a failed save re-sends the SAME events (the log skips ones that already landed) */
@@ -658,10 +665,12 @@ async function confirmPlace(){if(S.busy)return;const e=formOK();if(e){S.msg=e;S.
   if(ok){const ns=S.fid.evs.map(x=>(compute().find(b=>b.id===x.id)||{}).n).filter(Boolean);S.msg='Placed! Bet #'+ns.join(', #')+(f.open?' is open to anyone.':targets.length>1?' ('+targets.length+' managers, '+num(f.amt)+' each) '+(targets.length>1?'are':'is')+' waiting for an answer.':' is waiting for '+nm(targets[0])+' to accept.')+' You can undo it for 30 seconds.';S.bad=false}
   if(ok){const pids=S.fid.evs.map(x=>x.id);S.edited=null;S.undoG=S.fid.g||null;S.f={opps:[],open:false,text:'',amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false};S.fid=null;render(true);placedFx(pids)}else{S.f.confirm=true;render(true)}}
 /* "new" mark on the Bets tab: the highest bet number this device has looked at is kept in localStorage (fbn.x.<league>.betseen); a higher number now = something new */
-const seenKey=()=>'fbn.x.'+(H&&H.id)+'.betseen';
+/* s28g new-bets badge: count of bets placed (b.ts) after this device's last look (localStorage fbn.betsSeen.<league> = ms), not my own; first load sets it to now (0);
+   opening Bets sets it to now. Local only: no server write, no extra fetch (uses the loaded bets). League view mode (league-d.js) only guards fbn.me./fbn.cm., so this key works there too. */
+const seenKey=()=>'fbn.betsSeen.'+(H&&H.id);
 const maxN=()=>compute().reduce((m,b)=>Math.max(m,b.n),0);
-function markSeen(){try{if(H&&!H.demo&&S.state==='ok'&&!S.stale)localStorage.setItem(seenKey(),String(maxN()))}catch(e){}}
-function badge(){try{if(!H||H.demo||S.state!=='ok'||S.stale)return false;const raw=localStorage.getItem(seenKey());if(raw==null){markSeen();return false}return maxN()>(parseInt(raw,10)||0)}catch(e){return false}}
+function markSeen(){try{if(H&&!H.demo&&S.state==='ok'&&!S.stale)localStorage.setItem(seenKey(),String(Date.now()))}catch(e){}}
+function badge(){try{if(!H||H.demo||S.state!=='ok'||S.stale)return 0;const raw=localStorage.getItem(seenKey());if(raw==null){markSeen();return 0}const t=parseInt(raw,10)||0,me=meMid();return compute().filter(b=>b&&(b.ts||0)>t&&b.by!==me).length}catch(e){return 0}}
 /* ---------- Quick bet (the pill on a Games card; s22) ----------
    Shown only when the two teams belong to DIFFERENT managers of this league, the game has not started, and this device has a manager link (watchers get no button).
    The picker lists the sides of up to three bet types: Winner (always, even odds), Spread / Over-under ONLY when the game data really carries a posted line (g.line = {fav,sp,ou}); the schedule feeds carry no lines, so today it is Winner only.
@@ -714,5 +723,5 @@ function init(h){H=h;if(!S.started){S.started=true;bind()}}
 function start(){if(!H||H.demo)return;poll(false)}
 let modalWas=false;
 function afterRender(){try{mountRx()}catch(e){}try{const m=document.querySelector('.s26k-m');document.body.classList.toggle('s26k-lock',!!m);if(m&&!modalWas){const b=m.querySelector('.b27-act .btn');if(b)b.focus({preventScroll:true})}modalWas=!!m}catch(e){}}
-window.LBETS={after:afterRender,_t:{propose,S,stampText,poolEntries,poolCheck,poolParse,greedy,POOL_TXT,DISCLAIMER,placedFx,mountRx,clampFix,RX,settlePop,readBet,claimText,judge,settleSound,soundFor,sndMuted},init,start,view,badge,poll,reduce,tally,parseLog,win,filterHash:()=>{try{return fHashOut()}catch(e){return''}},setFilterHash:(f,q)=>{try{fFromHash(f,q)}catch(e){}},reveal:id=>{try{return reveal(id)}catch(e){return false}},quickHtml:(g,ctx)=>{QCTX=ctx||null;try{return quickHtml(g,ctx)}catch(e){return''}},_state:S};
+window.LBETS={after:afterRender,_t:{propose,S,stampText,poolEntries,poolCheck,poolParse,greedy,POOL_TXT,DISCLAIMER,placedFx,mountRx,clampFix,RX,settlePop,readBet,claimText,judge,autoGame,AUTO_NOTE,settleSound,soundFor,sndMuted},init,start,view,badge,poll,reduce,tally,parseLog,win,filterHash:()=>{try{return fHashOut()}catch(e){return''}},setFilterHash:(f,q)=>{try{fFromHash(f,q)}catch(e){}},reveal:id=>{try{return reveal(id)}catch(e){return false}},quickHtml:(g,ctx)=>{QCTX=ctx||null;try{return quickHtml(g,ctx)}catch(e){return''}},_state:S};
 })();

@@ -749,7 +749,7 @@ footer#foot{padding-left:14px;padding-right:14px}
 /* s27qa BUG3: the older '.obk.atk .obh span:nth-child(2){display:none}' (<=480px) also hid span.s27-ls inside the ST/KP sort buttons; show it again, 44px tap targets */
 @media (max-width:600px){.obk.atk .obh .s27-sort .s27-ls{display:inline}.obk.atk .obh .s27-sort button{min-width:44px;min-height:44px;justify-content:center}}
 /* s27qa: hero kicker 'STOOPIDS PRESENTS' above the league name (STOOPIDS muted small caps, letter-spaced) */
-.s27-pres{font-size:clamp(28px,8.6vw,59px);font-weight:900;letter-spacing:.08em;line-height:1.1;font-variant:small-caps;text-transform:lowercase;margin:0 0 4px;color:var(--mut);text-align:center}
+.s27-pres{font-size:clamp(23px,7.1vw,49px);font-weight:900;letter-spacing:.08em;line-height:1.1;font-variant:small-caps;text-transform:lowercase;margin:0 0 4px;color:var(--mut);text-align:center}
 #lhead #ltitle{font-size:clamp(34px,10.5vw,72px)}
 
 /* ===== s28 Bets page = partner Bets page: rules copied from the live page <style> (S26W-ROW, s24lk, s24hd, s24fb, s25mute, POOL / S26F-POOL, S26K-MODAL, CARD-SIZE).
@@ -845,3 +845,31 @@ html.bd-a #ptsv .pq .ptab .ptn,html.bd-a #ptsv .pq .ptab .ptn .chip.school-chip{
 .s27-copy.on{background:var(--acc);color:#111;border-color:var(--acc)}
 .gl2 .s27-copy,.s24hd .s27-copy{flex:none}
 .s29g{padding:8px}
+/* s28g main nav +12% = STOOPIDS s29d S29D-NAV (/workspace/s29d/games_filters_snippet.md), same values and breakpoints; selector mapped from their nav>a.nt to League's nav#ltabs a.tb
+   (+ .nl label spans, which carry their own font-size on League). Before (s28f): <=759px a.tb/.nl 12px (<=339px 11px), >=760px 12.5px; padding 4px 2px (>=760px 4px 8px); min-height 48px; icon 17px (app.css). */
+/*<S29D-NAV>*/
+@media (max-width:1039px){nav#ltabs a.tb,nav#ltabs a.tb .nl{font-size:13.5px}nav#ltabs a.tb{min-height:52px;padding:4.5px 9px}nav#ltabs a.tb .ni{font-size:17px}}
+@media (max-width:559px){nav#ltabs a.tb{padding:4.5px}}
+@media (min-width:1040px){nav#ltabs a.tb,nav#ltabs a.tb .nl{font-size:14px}nav#ltabs a.tb{min-height:45px;padding:9px}nav#ltabs a.tb .ni{font-size:16px}}
+/*</S29D-NAV>*/
+/* s28g Games filters = STOOPIDS s29d /workspace/s29d/games_filters_snippet.md, copied verbatim (.rkseg/.rkseg-b above are the same 'reused, unchanged' rules) */
+/*<S29D-GF>*/ /* Games filters: no card. Row 1 = the plain Standings .rkseg/.rkseg-b toggle (no overrides at all). Row 2 = .gf2: compact selects + Pool only pill, same 44px height and font as a toggle button */
+.gf2{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}
+.gf2-s,.gf2-b{box-sizing:border-box;height:44px;font:inherit;font-size:.85em;font-weight:600;border-radius:999px;border:1px solid #444;background:#222;color:#bbb;padding:0 12px;cursor:pointer;max-width:100%}
+.gf2-s{padding:0 8px 0 12px;width:auto;min-width:0}
+.gf2-s.on,.gf2-b.on{background:#FFD400;color:#111;border-color:#FFD400}
+.gf2+.gUn{margin-top:-4px;margin-bottom:8px}
+/*</S29D-GF>*/
+.gf2 #gDaySel{max-width:132px;text-overflow:ellipsis}   /* League-only: long 'Tomorrow · Tue, Nov 3' labels would push row 2 to a third line at 320 */
+/* s28g New bet form: 'One side vs another' | 'Pool / buy-in' = two equal buttons filling the row, one line each, ~+10% font (app.css .tabs button 11px -> 12.1px; <=350px 10px -> 11px), >=44px tall */
+.tabs.b27-kind{display:flex;flex-wrap:nowrap;gap:6px;width:100%;box-sizing:border-box}
+.tabs.b27-kind>button{flex:1 1 0;min-width:0;width:auto;min-height:48px;padding:8px 6px;font-size:12.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+@media (max-width:350px){.tabs.b27-kind>button{font-size:11px;padding:8px 4px;letter-spacing:0}}
+/* s28g auto-settle note = STOOPIDS s29d S29D-AUTO (verbatim) */
+/*<S29D-AUTO>*/.s29-auto{margin:4px 0 0;font-size:12.5px;font-weight:600;color:#7fd99a}.s29-auto.s29-hand{color:var(--mut);font-weight:500}/*</S29D-AUTO>*/
+/* s28g Games cards grid (no STOOPIDS s29d rule for this yet): 1 col <600, 2 at 600-899, 3 at 900-1399, 4 at >=1400; on the Games tab the main column is not capped at 980/1000px from 1200px */
+.ggrid{grid-template-columns:minmax(0,1fr)}
+@media (min-width:600px){.ggrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:900px){.ggrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:1200px){body.lsite[data-ltab=games] main{max-width:1600px;width:calc(100% - 32px)}}
+@media (min-width:1400px){.ggrid{grid-template-columns:repeat(4,minmax(0,1fr))}}

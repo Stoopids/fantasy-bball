@@ -32,5 +32,5 @@ run on these 64 picks with `assets/teams.js` (TEAMS_DATA.meta, built 2026-10-28)
 - School score = mean of available parts (each 0..1): (101 − power rank)/100 and (17 − projected seed)/16; a school with neither scores 0.
 - Roster strength = mean school score of all 8 schools × 100. Rank = strength, highest first (ties by name).
 - Grade by rank: 1 A+, 2 A, 3 A-, 4 B+, 5 B, 6 B-, 7 C, 8 D.
-- Text (s26c wording pass): hand-written per manager in `tools/stoopids-2026-27-text.js`, playful and accurate; every number is checked against teams.js meta and the picks, team names match the card headers. Grade, rank and strength come from the generator. A rough preseason guide, just for fun.
-Regenerate: `node tools/gen_stoopids_import.js` (reads /workspace/ss-s26c/picks-2026-27-final.json; same output byte for byte).
+- Text (s26c wording pass): hand-written per manager in `stoopids-2026-27-text.js` (maintainer script, not shipped), playful and accurate; every number is checked against teams.js meta and the picks, team names match the card headers. Grade, rank and strength come from the generator. A rough preseason guide, just for fun.
+Regenerate: `node "$FBN_TOOLS"/gen_stoopids_import.js` (reads /workspace/ss-s26c/picks-2026-27-final.json; same output byte for byte).
