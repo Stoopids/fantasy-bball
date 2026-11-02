@@ -1,0 +1,63 @@
+# Stoopids/fantasy-bball - automatic score + rank refresh (approved by Paul, Nov 2 2026).
+# Runs scripts/refresh_job.py --league-only (copy of refresh-job c7a44228 + league-only mode), which
+# writes ONLY data/scores.json, data/tournament.json, data/net.json in FORMAT.md (cf4fc8b4) format via the
+# vendored, unchanged tools/refresh_data.py (6559e8a1). Never touches assets/teams.js (meta.p / meta.r / meta.o),
+# bets, picks or rosters. Backup = git history: every refresh is its own commit, so the previous files are
+# `git show HEAD~1:data/<file>`; roll back with `git revert <sha>`.
+name: refresh-data
+on:
+  schedule:
+    # UTC. Every 30 min, Nov 1 - Mar 31 ...
+    - cron: "15,45 * * 11,12,1,2,3 *"
+    # ... and Apr 1-8 (through the national championship, early April)
+    - cron: "15,45 * 1-8 4 *"
+  workflow_dispatch: {}
+permissions:
+  contents: write          # only to commit data/ files
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false  # a run never overlaps another; the next one waits
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      REFRESH_MIN_GAP: "1.0"   # >= 1 s between requests to the same host; --league-only also forces 1 worker (serial)
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: build + validate candidate (staging dir outside the repo)
+        # validation failure => exit 1, nothing written, nothing committed; the previous files stay live
+        # Scoreboard window: last 3 days .. +7 days on scheduled runs (a full Nov 1.. rebuild on manual runs)
+        run: |
+          set -eu
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            START=$(date -u -d '3 days ago' +%F)
+            python3 scripts/refresh_job.py --league-only --no-dry-run --base . --out "$RUNNER_TEMP/stage" --start "$START"
+          else
+            python3 scripts/refresh_job.py --league-only --no-dry-run --base . --out "$RUNNER_TEMP/stage"
+          fi
+      - name: copy data/ files into the repo
+        run: |
+          set -eu
+          for f in scores.json tournament.json net.json; do
+            [ -f "$RUNNER_TEMP/stage/data/$f" ] && cp "$RUNNER_TEMP/stage/data/$f" "data/$f"
+          done
+          # sanity: never sample, never a demo file
+          python3 -c "import json;[exit('sample true in '+f) for f in ('data/scores.json','data/tournament.json') if json.load(open(f)).get('sample')]"
+      - name: commit data/ only (bot identity)
+        run: |
+          set -eu
+          git config user.name  "fantasy-bball-refresh[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- data/scores.json data/tournament.json data/net.json
+          if git diff --cached --quiet; then echo "no data change"; exit 0; fi
+          # refuse if anything outside data/ is staged
+          if git diff --cached --name-only | grep -v '^data/'; then echo "non-data change staged, aborting"; exit 1; fi
+          git commit -m "data: auto refresh $(date -u +%FT%H:%MZ)"
+          git pull --rebase --autostash -q && git push -q
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: refresh-report, path: "${{ runner.temp }}/stage/*.md", retention-days: 7 }
