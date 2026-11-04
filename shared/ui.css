@@ -1,4 +1,4 @@
-/* shared/ui.css v1.8.0: design CSS used by BOTH sites (moved verbatim from SYNC7..SYNC14). Edit here only; synced to the other repo by PR. */
+/* shared/ui.css v1.9.0: design CSS used by BOTH sites (moved verbatim from SYNC7..SYNC14). Edit here only; synced to the other repo by PR. */
 /*<SYNC7>*/ /* design fixes 4 Nov (same CSS on STOOPIDS and League) */
 /* 1. Standings, laptop: the old live row layout (rank | manager + points | 2x4 pills on the right) with ALL CAPS names, centred Points, trophies inline */
 @media (min-width:700px){
@@ -248,3 +248,10 @@ html body .lgref .tap td:first-child .chip.school-chip>.cn{flex:0 0 auto;width:a
 html body .lgref .card.tap td.to .tnt{display:block;font-weight:400;overflow:hidden;text-overflow:ellipsis}
 html body .lgref .card.tap td.to .tnr{display:block;font-size:10px;opacity:.7;overflow:hidden;text-overflow:ellipsis}
 /*</STEP6-TAP>*/
+
+/*<STEP6-TIPS> STOOPIDS tap-for-tip labels (same values as STOOPIDS inline) */
+.s27-tipk{all:unset;cursor:pointer;font-weight:700;font-size:14px;border-bottom:1px dotted currentColor}
+.s27-tipk:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.s27-pop{display:block;margin:6px 0 4px;padding:8px 10px;max-width:340px;border-radius:10px;background:#d8ecff;color:#0b2540;font-size:13px;font-weight:500;line-height:1.35;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.s27-pop a{color:#0b4fa0;font-weight:700;white-space:nowrap}
+/*</STEP6-TIPS>*/
