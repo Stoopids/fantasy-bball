@@ -223,3 +223,57 @@ main,#main{padding-top:6px!important}
 .obk.atk .obt>.chip .cn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gm .chip.big{height:40px!important;min-height:40px!important;box-sizing:border-box}
 /*</SYNC5>*/
+/*<SYNC7>*/ /* design fixes 4 Nov (same CSS on STOOPIDS and League) */
+/* 1. Standings, laptop: the old live row layout (rank | manager + points | 2x4 pills on the right) with ALL CAPS names, centred Points, trophies inline */
+@media (min-width:700px){
+ .ocl{display:grid!important;grid-template-columns:56px fit-content(260px) 64px minmax(0,1fr)!important;gap:8px 12px!important;margin-top:6px}
+ .card.oc .who>b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .ocl>.card.oc{grid-column:1/-1!important;grid-template-columns:56px 200px 64px minmax(0,1fr)!important;grid-template-areas:"rank who pts chips" "bar bar bar bar"!important;column-gap:12px!important;align-items:center;margin:0!important}
+ @supports (grid-template-columns:subgrid){.ocl>.card.oc{grid-template-columns:subgrid!important}}
+ .card.oc .rank{text-align:left}
+ .card.oc .pts{text-align:center!important;justify-self:center!important}
+ .card.oc .chips,.card.oc .chips.school-grid{grid-area:chips;grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-auto-rows:40px!important;gap:4px!important;margin-top:0!important;min-height:0!important}
+ .card.oc .bar{margin:8px 0 0!important}
+ .card.oc .chip .cn,.card.oc .chip.school-chip .cn{display:block!important;grid-column:2!important;grid-row:1!important;align-self:end;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;-webkit-line-clamp:unset;text-transform:uppercase;letter-spacing:.02em;font-weight:800;text-align:left}
+ .card.oc .chip .cab,.card.oc .chip .mkab{display:none!important}
+ .card.oc .chip,.card.oc .chip.school-chip{height:40px!important;min-height:40px!important;font-size:12px!important;padding:0 6px 0 3px!important}
+ .card.oc .chip img,.card.oc .chip .nologo{width:20px!important;height:20px!important}
+}
+/* League phone: pills 4 across like STOOPIDS whatever the roster size */
+@media (max-width:699px){
+ .card.oc .chips.school-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-auto-rows:40px!important;gap:4px!important}
+ .card.oc .chip.school-chip{height:40px!important;min-height:40px!important;padding:0 3px 0 2px!important;column-gap:3px!important}
+ .card.oc .chip.school-chip img,.card.oc .chip.school-chip .nologo{width:20px!important;height:20px!important}
+}
+@media (max-width:339px){.card.oc .chips.school-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+/* 2. Games filters, laptop: one compact row  Upcoming|Past · All owners · Pool vs Pool · More · round refresh */
+@media (min-width:641px){
+ .gfrow{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;margin:0 0 6px}
+ .gfrow>.segrow,.gfrow>.mkrow,.gfrow>.gf2r{display:contents!important}
+ .gfrow .rkseg{order:1;margin:0!important;flex:none}
+ .gfrow .gf2r>select{order:2;flex:none;width:170px!important}
+ .gfrow .gf2r>.gf2-b:not(.gmore),.gfrow .gf2r>span{order:3;flex:none}
+ .gfrow .gf2r>span:empty{display:none}
+ .gfrow .gmore{order:4;flex:none}
+ .gfrow .gref{order:5;flex:none;margin-left:2px!important}
+ .gfrow .gf2r>select,.gfrow .gf2r>.gf2-b{height:36px!important;min-height:36px!important;width:auto;padding:0 14px!important;box-sizing:border-box}
+ .gfrow .gf2r>select{padding:0 10px!important}
+ .gfrow .gf2r>.gf2-b{width:auto!important;max-width:none!important;flex:none!important;white-space:nowrap}
+}
+/* 3. New bet form: bet-type toggle (yellow segmented, left) + Select all / Clear (small outlined, right) on one line */
+.b27-kindrow{display:flex;align-items:center;gap:8px;margin:8px 0;min-width:0}
+.b27-kindrow>.tabs{display:inline-flex!important;flex:0 1 auto;min-width:0;width:auto!important;margin:0!important;gap:0!important;padding:2px!important;background:var(--card2,#222939);border:1px solid var(--line,#2d3548);border-radius:999px;box-sizing:border-box;grid-template-columns:none!important}
+.b27-kindrow>.tabs>button{flex:0 1 auto!important;width:auto!important;min-width:0!important;min-height:36px!important;height:36px;padding:0 14px!important;border:0!important;border-radius:999px!important;background:transparent!important;color:var(--mut,#aab)!important;font:inherit;font-size:13px!important;font-weight:700!important;line-height:1!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:none!important}
+.b27-kindrow>.tabs>button.on{background:var(--pill,#FFD400)!important;color:var(--pill-ink,#111)!important}
+.b27-kindrow>.s27-sel,.b27-kindrow>.b27-selbar{display:flex!important;flex:none;align-items:center;gap:6px!important;margin:0 0 0 auto!important;grid-template-rows:none!important;flex-wrap:nowrap!important}
+.b27-kindrow .s27-selb,.b27-kindrow .b27-sm{min-height:28px!important;height:28px!important;min-width:0!important;padding:0 10px!important;border-radius:999px!important;border:1px solid var(--line,#3a4256)!important;background:transparent!important;color:var(--tx,#eef1f7)!important;font:inherit;font-size:12px!important;font-weight:600!important;line-height:1!important;cursor:pointer}
+.b27-kindrow .b27-selbar .cnt{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0);white-space:nowrap;margin:0!important;padding:0!important}
+.b27-kindrow .b27-sm .s,.b27-kindrow .s27-selb .s{display:none}
+@media (max-width:599px){
+ .b27-kindrow{gap:6px}
+ .b27-kindrow>.tabs>button{font-size:12px!important;padding:0 9px!important}
+ .b27-kindrow .s27-selb,.b27-kindrow .b27-sm{min-height:36px!important;height:36px!important;padding:0 9px!important;font-size:12px!important}
+ .b27-kindrow .b27-sm .f,.b27-kindrow .s27-selb .f{display:none}
+ .b27-kindrow .b27-sm .s,.b27-kindrow .s27-selb .s{display:inline}
+}
+/*</SYNC7>*/
