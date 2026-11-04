@@ -1,4 +1,4 @@
-/* shared/ui.css v1.0.0: design CSS used by BOTH sites (moved verbatim from SYNC7..SYNC14). Edit here only; synced to the other repo by PR. */
+/* shared/ui.css v1.2.0: design CSS used by BOTH sites (moved verbatim from SYNC7..SYNC14). Edit here only; synced to the other repo by PR. */
 /*<SYNC7>*/ /* design fixes 4 Nov (same CSS on STOOPIDS and League) */
 /* 1. Standings, laptop: the old live row layout (rank | manager + points | 2x4 pills on the right) with ALL CAPS names, centred Points, trophies inline */
 @media (min-width:700px){
@@ -151,3 +151,9 @@ html body .segrow .rkseg .rkseg-b,html body .segv .seg,html body .b27-kindrow>.t
 @keyframes onlglow{0%,100%{box-shadow:0 0 4px 1px rgba(34,197,94,.45)}50%{box-shadow:0 0 12px 3px rgba(34,197,94,.85)}}
 @media (prefers-reduced-motion:reduce){.card.oc.isonl .who>b{animation:none}}
 /*</SYNC14>*/
+
+/*<TABS-TALL>*/@media (min-width:701px){html body #nav>a,html body #nav>button,html body #ltabs>a,html body #ltabs>button{min-height:46px!important;height:46px!important;font-size:15px!important;font-weight:600!important;box-sizing:border-box!important}
+html body #nav>a .nl,html body #nav>button .nl,html body #ltabs>a .nl,html body #ltabs>button .nl{font-size:15px!important;font-weight:600!important}
+html body #nav>a .ni,html body #nav>button .ni,html body #ltabs>a .ni,html body #ltabs>button .ni{font-size:17px!important}}
+@media (max-width:700px){html body #nav>a,html body #nav>button,html body #ltabs>a,html body #ltabs>button{min-height:44px!important;height:44px!important;box-sizing:border-box!important}
+html body #nav>a .nl,html body #ltabs>a .nl{font-size:14px!important;font-weight:700!important}html body #nav>a .ni,html body #ltabs>a .ni{font-size:15px!important}}/*</TABS-TALL>*/
