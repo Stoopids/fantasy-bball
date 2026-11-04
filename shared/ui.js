@@ -1,10 +1,10 @@
-/* shared/ui.js v1.12.0: ONE table of input limits and shared wording, loaded by BOTH sites.
+/* shared/ui.js v1.13.0: ONE table of input limits and shared wording, loaded by BOTH sites.
    Edit here only, copy to the other repo by hand, and run scripts/check_shared.sh.
    Each site keeps its old values as fallbacks, so the pages still work if this file fails to load. */
 (function(g){var LIMITS={team:15,stoopName:12,leagueName:24,chat:200,betText:140,paste:300,payouts:120,stake:20,item:40,odds:9};
 var STRINGS={maxLen:'Keep it to {n} characters or fewer.',nameTooLong:'Keep the name to {n} characters or fewer.',teamTooLong:'Keep the team name to {n} characters or fewer.',checkedNow:'checked just now',online:'Who\u2019s online'};
 function t(k,n){var s=STRINGS[k];return s==null?'':String(s).replace('{n}',n)}
-g.SHARED_UI={version:'1.12.0',LIMITS:LIMITS,STRINGS:STRINGS,t:t};})(typeof window!=='undefined'?window:globalThis);
+g.SHARED_UI={version:'1.13.0',LIMITS:LIMITS,STRINGS:STRINGS,t:t};})(typeof window!=='undefined'?window:globalThis);
 
 /* ---- shared modules (step 4). Source of truth: stoopids/stoopids shared/; copy to fantasy-bball and run scripts/check_shared.sh ---- */
 /* sortCmp(a,b,kind,dir): kind 's' = text A-Z (case-insensitive), 'r' = rank (null/'–' always last), 'n' = number. Used by the All teams table on both sites. */
@@ -87,4 +87,12 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
 
   /* STEP5-ARCHIVE: Season archive empty state, both sites (wording still differs per site). */
   SHARED_UI.archiveEmpty=function(attr,title,note){return '<h2>🗂️ Season archive</h2><div '+attr+'><b>'+title+'</b><div class="note">'+note+'</div></div>'};
+
+  /* STEP6-BREAKDOWN: STOOPIDS Breakdown cards (one table per owner), both sites.
+     cards: [{attr,hAttr,rank,emoji,team,person,gold,total,rows:[{attr,drop,title,chip,cells:[n],cellAttr:[s],total}]}], cols: [[label,title]] */
+  SHARED_UI.pCell=function(v){return v?'<b class="'+(v<0?'bad':'')+'">'+(v>0?v:'\u2212'+(-v))+'</b>':'<span class="mut">\u2014</span>'};
+  SHARED_UI.pointsList=function(cards,cols,e,wrapAttr){var pc=SHARED_UI.pCell;
+    var hd='<tr><th class="pn" scope="col"><span class="sr">Team</span></th>'+cols.map(function(c){return '<th scope="col" title="'+e(c[1])+'">'+c[0]+'</th>'}).join('')+'<th class="ptot" scope="col" title="Team total">Tot</th></tr>';
+    return '<div class="orl q"'+(wrapAttr||'')+'>'+cards.map(function(o){return '<div class="card pcard"'+(o.attr||'')+'><div class="orh"'+(o.hAttr||'')+'><span class="rank">'+o.rank+'</span><div class="who"><b>'+e(o.emoji)+' '+e(o.team)+'</b><small>'+e(o.person)+(o.gold||'')+'</small></div><div class="pts">'+o.total+'<small>Points</small></div></div><div class="ptw"><table class="ptab">'+hd+
+      o.rows.map(function(r){return '<tr class="prow'+(r.drop?' drop':'')+'"'+(r.attr||'')+'><td class="pn" title="'+e(r.title)+'">'+r.chip+'</td>'+r.cells.map(function(v,i){return '<td'+((r.cellAttr&&r.cellAttr[i])||'')+'>'+pc(v||0)+'</td>'}).join('')+'<td class="ptot">'+r.total+'</td></tr>'}).join('')+'</table></div></div>'}).join('')+'</div>'};
 })(typeof window!=='undefined'?window:globalThis);

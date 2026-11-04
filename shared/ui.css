@@ -1,4 +1,4 @@
-/* shared/ui.css v1.6.0: design CSS used by BOTH sites (moved verbatim from SYNC7..SYNC14). Edit here only; synced to the other repo by PR. */
+/* shared/ui.css v1.7.0: design CSS used by BOTH sites (moved verbatim from SYNC7..SYNC14). Edit here only; synced to the other repo by PR. */
 /*<SYNC7>*/ /* design fixes 4 Nov (same CSS on STOOPIDS and League) */
 /* 1. Standings, laptop: the old live row layout (rank | manager + points | 2x4 pills on the right) with ALL CAPS names, centred Points, trophies inline */
 @media (min-width:700px){
@@ -172,3 +172,34 @@ html body .gf3 select.gf2-s,html body .gf3 .gf2-b,html body .gf3 input.gf2-s{hei
 /*</SIZES-DOWN>*/
 /*<SORT-ARROWS> every sortable header shows its arrow, phone too */html body .s27-sort i{display:inline!important;font-size:.75em;margin-left:1px}/*</SORT-ARROWS>*/
 /*<HS-INLINE>*/html body .gside .sc2 .hsg{display:inline-grid;grid-auto-flow:column;column-gap:5px;align-items:end}html body .gside .sc2 .hsq{position:relative;min-width:1.3em;text-align:right}html body .gside .sc2 .hsq>i{font-style:normal;font-size:.55em;font-weight:600;opacity:.8}html body .gside .sc2 .hst{position:relative;min-width:1.4em;text-align:right}html body .gside .sc2 [data-h]::before{content:attr(data-h);position:absolute;right:0;bottom:100%;margin-bottom:2px;font-size:10px;line-height:1;font-weight:700;opacity:.6;letter-spacing:.03em;white-space:nowrap}html body .gside.hs1{margin-top:14px}/*</HS-INLINE>*/
+
+/*<STEP6-PTAB> STOOPIDS Breakdown look for League (League wraps it in .lgref; STOOPIDS keeps its own inline rules) */
+.lgref .orl{display:grid;gap:8px}
+.lgref .pcard{padding:10px;min-width:0}
+.lgref .orh{display:flex;align-items:center;gap:8px;cursor:pointer}
+.lgref .orh .who{flex:1;min-width:0}
+.lgref .orh .who b{display:block;overflow-wrap:anywhere}
+.lgref .orh .who small{display:block;opacity:.7}
+.lgref .orh .pts{text-align:right;font-weight:800;font-size:1.3em}
+.lgref .orh .pts small{display:block;font-size:.55em;font-weight:400;opacity:.7}
+.lgref .prow{border-top:1px solid rgba(255,255,255,.08);padding:6px 0 4px;margin-top:6px}
+.lgref .ptot{font-weight:800;color:#FFD400}
+.lgref .prow.drop .pv{opacity:.7}
+.lgref .orl.q{justify-items:center}
+.lgref .orl.q .pcard{width:fit-content;max-width:100%;box-sizing:border-box}
+.lgref .ptw{overflow-x:auto;max-width:100%;margin-top:6px;-webkit-overflow-scrolling:touch}
+.lgref .ptab{border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:12px;line-height:1.3}
+.lgref .ptab th,.lgref .ptab td{padding:3px 5px;text-align:center;white-space:nowrap;min-width:22px}
+.lgref .ptab th{font-size:10px;font-weight:600;opacity:.65}
+.lgref .ptab tr+tr td{border-top:1px solid rgba(255,255,255,.08)}
+.lgref .ptab .pn{position:sticky;left:0;z-index:1;background:var(--card,#1b2130);text-align:left;padding-left:0;width:150px;min-width:150px;max-width:150px}
+.lgref .ptab .pn .chip{display:flex;width:150px;max-width:150px;box-sizing:border-box;overflow:hidden}
+.lgref .ptab .pn .chip .cn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.lgref .ptab td.ptot,.lgref .ptab th.ptot{text-align:right;padding-right:2px;font-weight:800}
+.lgref .ptab td.ptot{color:#FFD400}
+.lgref .ptab tr.drop td:not(.pn){opacity:.7}
+@media (max-width:480px){.lgref .orl.q{justify-items:stretch}.lgref .orl.q .pcard{width:auto}.lgref .ptab th,.lgref .ptab td{padding:3px 3px;min-width:16px;font-size:11px}.lgref .ptab th{font-size:9.5px}.lgref .ptab .pn,.lgref .ptab .pn .chip{width:112px;min-width:112px;max-width:112px}.lgref .ptab .pn .chip{font-size:11px}}
+@media (max-width:340px){.lgref .ptab th,.lgref .ptab td{padding:3px 1px;min-width:13px;font-size:10.5px}.lgref .ptab th{font-size:8.5px;letter-spacing:-.03em}.lgref .ptab .pn,.lgref .ptab .pn .chip{width:90px;min-width:90px;max-width:90px}.lgref .ptab .pn .chip{font-size:10.5px}}
+@media (min-width:900px){.lgref .orl.q{grid-template-columns:repeat(2,minmax(0,1fr));justify-items:stretch;align-items:start;gap:10px}.lgref .orl.q .pcard{width:auto;max-width:none;min-width:0}.lgref .orl.q .ptw{overflow-x:auto}.lgref .orl.q .ptab{width:100%;font-size:13px}.lgref .orl.q .ptab th{font-size:11px}.lgref .orl.q .ptab th,.lgref .orl.q .ptab td{padding:4px 4px}.lgref .orl.q .ptab .pn,.lgref .orl.q .ptab .pn .chip{width:140px;min-width:140px;max-width:140px}.lgref .orl.q .ptab .pn .chip{font-size:12.5px}html.bd-a .lgref .orl.q{grid-template-columns:minmax(0,1fr)}html.bd-a .lgref .orl.q .ptab{font-size:15px}html.bd-a .lgref .orl.q .ptab th{font-size:12.5px}html.bd-a .lgref .orl.q .ptab th,html.bd-a .lgref .orl.q .ptab td{padding:5px 8px}html.bd-a .lgref .orl.q .ptab .pn,html.bd-a .lgref .orl.q .ptab .pn .chip{width:220px;min-width:220px;max-width:220px}html.bd-a .lgref .orl.q .ptab .pn .chip{font-size:14px}}
+.lgref .card.oc .pts,.lgref .orh .pts{text-align:center;justify-self:center}
+/*</STEP6-PTAB>*/
