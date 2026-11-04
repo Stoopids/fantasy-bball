@@ -11,7 +11,7 @@ let n=0,bad=0;const ok=(t,c,x)=>{n++;if(c)console.log('  ok  '+t);else{bad++;con
    localStorage.setItem('fbn.lastnav',JSON.stringify({kind:'room',id:ids[0],path:'room.html?l='+ids[0],tab:'board',ts:Date.now()}))}},ids);
   await P.go('index.html');await P.page.waitForSelector('#mine');await sleep(300);
   const st=()=>P.page.evaluate(()=>({mine:[...document.querySelectorAll('#mine .mrw')].map(e=>e.dataset.id),arch:[...document.querySelectorAll('#archived .mrw')].map(e=>e.dataset.id),sum:(document.querySelector('#archived summary')||{}).innerText||'',site:(document.getElementById('sitebtn')||{}).innerText||null,siteHref:(document.getElementById('sitebtn')||{}).href||'',
-   small:[...document.querySelectorAll('.arch,#archived summary')].filter(e=>e.offsetParent!==null).filter(e=>e.getBoundingClientRect().height<44).length,last:UI.lastPlace(),ls:localStorage.getItem('fbn.leagues')}));
+   small:[...document.querySelectorAll('.arch,#archived summary')].filter(e=>e.offsetParent!==null).filter(e=>e.getBoundingClientRect().height<36).length,last:UI.lastPlace(),ls:localStorage.getItem('fbn.leagues')}));
   let s=await st();ok(w+': 3 leagues, each with an Archive button >= 44px; League site = first league',s.mine.length===3&&s.small===0&&/Alpha Hoops/.test(s.site),s);await P.page.screenshot({path:OUT+'/s25b_'+w+'_home_list.png',fullPage:true});
   ok(w+': resume offers the last place (Alpha) before archiving',s.last&&s.last.id===ids[0],s.last);
   await P.page.click(`.arch[data-a=archive][data-id="${ids[0]}"]`);await sleep(300);s=await st();

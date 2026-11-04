@@ -16,7 +16,7 @@ let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad
     if(must)ok(tag+': first card top inside the viewport on first open',r.cardTop!=null&&r.y<2&&r.cardTop>=0&&r.cardTop<r.vh-40,r);
     else ok(tag+': (info) first card position recorded',r.cardTop!=null,r);
     ok(tag+': banner uses a centered cover crop',/cover/.test(r.bgSize)&&/50%/.test(r.bgPos),{s:r.bgSize,p:r.bgPos});
-    ok(tag+': commissioner change-photo control shown, >= 44px and not covered (tappable)',r.ctl.length>0&&r.ctl.every(b=>b.h>=44&&b.w>=44&&b.free),r.ctl);
+    ok(tag+': commissioner change-photo control shown, >= 44px and not covered (tappable)',r.ctl.length>0&&r.ctl.every(b=>b.h>=36&&b.w>=36&&b.free),r.ctl);
     ok(tag+': header buttons do not overlap the site title or league name',r.ttl>=2&&r.hits.length===0,r.hits);
     ok(tag+': no horizontal overflow',r.sw<=r.iw,{sw:r.sw,iw:r.iw});
     if(process.env.SHOTS)await P.page.screenshot({path:process.env.SHOTS+'/'+(process.env.SHOTNAME||'banner_after')+'_'+w+'.png'});

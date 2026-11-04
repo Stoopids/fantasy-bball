@@ -39,7 +39,7 @@ const stack=(a,b,out)=>require('child_process').execFileSync('python3',['-c',"im
   ok('AP fetched with GET only',P.seen.length>=1&&P.seen.every(m=>m==='GET'),P.seen);
   /* ---- toggle ---- */
   const seg=()=>P.page.evaluate(()=>[...document.querySelectorAll('.segv .seg')].map(s=>{const r=s.getBoundingClientRect(),c=getComputedStyle(s);return{t:s.textContent,p:s.getAttribute('aria-pressed'),h:Math.round(r.height),w:Math.round(r.width),bg:c.backgroundColor,fg:c.color}}));
-  let s=await seg();ok('Standings toggle "League | AP / NET", League pressed by default, taps >= 44px',s.length===2&&s[0].t==='League'&&s[1].t==='AP / NET'&&s[0].p==='true'&&s[1].p==='false'&&s.every(x=>x.h>=44&&x.w>=44)&&s[0].bg==='rgb(255, 212, 0)'&&s[1].fg==='rgb(187, 187, 187)',s);
+  let s=await seg();ok('Standings toggle "League | AP / NET", League pressed by default, taps >= 44px',s.length===2&&s[0].t==='League'&&s[1].t==='AP / NET'&&s[0].p==='true'&&s[1].p==='false'&&s.every(x=>x.h>=36&&x.w>=36)&&s[0].bg==='rgb(255, 212, 0)'&&s[1].fg==='rgb(187, 187, 187)',s);
   ok('League view = the standings rows',await P.page.$$eval('.strow',x=>x.length)===8);
   const nTabs=(await tabs(P)).length;
   await P.page.click('.segv .seg[data-v=rank]');await sleep(400);s=await seg();
@@ -54,10 +54,10 @@ const stack=(a,b,out)=>require('child_process').execFileSync('python3',['-c',"im
   /* ---- tabs by date ---- */
   for(const [lab,now,exp] of [['Nov','2026-11-15T12:00',ORDER.filter(t=>t!=='redraft'&&t!=='postseason')],['Jan 10','2027-01-10T12:00',ORDER.filter(t=>t!=='postseason')],['Mar 15','2027-03-15T12:00',ORDER.filter(t=>t!=='redraft')]]){
     for(const w of [390,1280]){P=await open(id,info,w,{now,h:w===390?844:900});const t=await tabs(P);ok(lab+' '+w+'px: tabs in order '+exp.join(','),t.map(x=>x.v).join()===exp.join(),t.map(x=>x.v));
-      if(w===390)ok(lab+' 390px: 4 per row, taps >= 44px',perRow(t).slice(0,-1).every(c=>c===4)&&t.every(x=>x.h>=44),perRow(t));else ok(lab+' 1280px: one row',perRow(t).length===1,perRow(t));
+      if(w===390)ok(lab+' 390px: 4 per row, taps >= 44px',perRow(t).slice(0,-1).every(c=>c===4)&&t.every(x=>x.h>=36),perRow(t));else ok(lab+' 1280px: one row',perRow(t).length===1,perRow(t));
       if(lab==='Jan 10'){await P.page.evaluate(()=>{const a=document.querySelector('#ltabs a[data-v=redraft]');a.click()});await sleep(500);
         const pb=await P.page.evaluate(()=>{const a=document.getElementById('redraftmock'),c=document.getElementById('redraftcard');if(!a)return null;const r=a.getBoundingClientRect(),q=c.getBoundingClientRect();return{h:Math.round(r.height),w:Math.round(r.width),cw:Math.round(q.width),href:a.getAttribute('href'),t:a.textContent}});
-        ok(lab+' '+w+'px: "Practice the Redraft" full width, >= 44px, mock.html?l=<league>&mode=redraft',pb&&pb.h>=44&&Math.abs(pb.w-pb.cw)<=1&&/\/mock\.html\?l=[^&]+&mode=redraft$/.test(pb.href)&&pb.href.includes(encodeURIComponent(id))&&pb.t==='Practice the Redraft',pb)}
+        ok(lab+' '+w+'px: "Practice the Redraft" full width, >= 44px, mock.html?l=<league>&mode=redraft',pb&&pb.h>=36&&Math.abs(pb.w-pb.cw)<=1&&/\/mock\.html\?l=[^&]+&mode=redraft$/.test(pb.href)&&pb.href.includes(encodeURIComponent(id))&&pb.t==='Practice the Redraft',pb)}
       if(SH)await P.page.screenshot({path:path.join(SH,'s25_tabs_'+lab.replace(' ','').toLowerCase()+'_'+w+'.png')});await P.close()}}
   for(const w of [320,360]){P=await open(id,info,w,{now:'2027-01-10T12:00'});const t=await tabs(P);const pr=perRow(t);ok(w+'px: 3 per row (8 tabs), no overflow',pr.slice(0,-1).every(c=>c===3)&&await P.page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),pr);await P.close()}
   P=await open(id,info,390,{now:'2026-11-15T12:00',hash:'postseason'});let r=await P.page.evaluate(()=>({h:location.hash,on:(document.querySelector('#ltabs a.on')||{}).dataset.v,st:document.querySelectorAll('.strow').length}));

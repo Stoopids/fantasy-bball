@@ -122,6 +122,14 @@ nav a.nt.on,#ltabs a.on,.rkseg-b.on,.gf2-b.on{background:var(--pill,#FFD400)!imp
 .gbx-ld div{display:flex;flex-wrap:wrap;gap:4px 10px}.gbx-ld span{color:var(--mut,#9aa6bd)}
 .gbx-bets{font-weight:600}.gbx-lk{color:var(--acc,#ffd23f);font-weight:700;text-decoration:none}
 /*</SYNC2-BOX>*/
+/*<SYNC2-ST>*/ /* Standings pills: logo | abbreviation over record | rank badge on the right, centred */
+.card.oc .chip,.card.oc .chip:has(>.aprk){display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;grid-template-rows:auto auto!important;align-content:center;align-items:center;column-gap:4px;row-gap:0}
+.card.oc .chip img,.card.oc .chip .nologo{grid-column:1!important;grid-row:1/3!important;align-self:center}
+.card.oc .chip .cn{display:none!important}
+.card.oc .chip .cab,.card.oc .chip .mkab{display:block!important;grid-column:2!important;grid-row:1!important;align-self:end;font-weight:800;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:clip;text-align:left}
+.card.oc .chip .cr,.card.oc .chip .mkrec{grid-column:2!important;grid-row:2!important;align-self:start;text-align:left;margin:0!important;position:static!important}
+.card.oc .chip>.aprk{grid-column:3!important;grid-row:1/3!important;align-self:center!important;justify-self:end!important;margin:0 2px 0 0!important}
+/*</SYNC2-ST>*/
 /*<SYNC2-ST2>*/ .card.oc .who .nm,.card.oc .who>b{text-transform:uppercase;letter-spacing:.02em}
 .card.oc .chip .cab,.card.oc .chip .mkab{white-space:nowrap!important;word-break:keep-all!important;overflow-wrap:normal!important;font-size:min(1em,11px);min-width:0}
 @media (max-width:640px){.card.oc .chip .cab,.card.oc .chip .mkab{font-size:10px;letter-spacing:0}}
@@ -135,3 +143,66 @@ nav a.nt.on,#ltabs a.on,.rkseg-b.on,.gf2-b.on{background:var(--pill,#FFD400)!imp
 .gf2>.gf2-b{text-align:center;justify-content:center}
 @media (max-width:640px){.gf2{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /*</SYNC2-GF>*/
+/*<SYNC3>*/ /* step3 (Paul: "too much space overall"): tighter shared layout, same CSS on STOOPIDS and League */
+/* header, banner, tab bar */
+.hero{height:clamp(96px,14vw,170px)!important;aspect-ratio:auto!important}
+.titlebar{padding:6px 12px 0!important}
+.titlebar h1,#ltitle{margin:0!important;line-height:1.05}
+.s27-pres,#lpres{margin:0!important}
+.tag,#tag{margin:2px 0 0!important}
+header,#lhdr{padding-bottom:4px!important}
+nav,#nav,#ltabs{padding-top:3px!important;padding-bottom:3px!important;margin-bottom:0!important}
+/* main, cards, headings, gaps */
+main,#main{padding-top:6px!important}
+.card{padding:8px!important;margin:6px 0!important}
+#main h2,#lbody h2{margin:10px 0 4px!important}
+#main h3,#lbody h3{margin:0 0 4px!important}
+.segrow{margin:0 0 6px!important}
+.gf2{margin:0 0 6px!important;gap:6px!important}
+.gday,.gdh{margin:8px 0 4px!important}
+.ggrid{gap:8px!important}
+.gm{padding:8px!important}
+.gm .gh{margin-bottom:2px!important}
+.gm .gow{margin:2px 0!important}
+.gm .gl{margin-top:4px!important;padding-top:4px!important}
+.gm .gsp{display:none!important}   /* empty spacer row inside game cards */
+.ocl{gap:6px!important}
+.card.oc .chips{margin-top:4px!important}
+.card.oc .bar{margin:4px 0 0!important}
+.card:empty,.note:empty,.b27-livebox:empty{display:none!important}
+.b27-q{margin:8px 0 4px!important}
+/* ranked lists: one fixed column grid  rank | movement slot | name/manager | points (right) */
+.card.oc{grid-template-columns:40px 14px minmax(0,1fr) 72px!important;grid-template-areas:"rank mv who pts" "bar bar bar bar" "chips chips chips chips"!important;column-gap:6px!important}
+.card.oc .rank{grid-area:rank;text-align:center}
+.card.oc .mv{grid-area:mv;text-align:center;font-size:11px}
+.card.oc .pts{grid-area:pts;text-align:right!important;justify-self:end!important;font-variant-numeric:tabular-nums}
+#powerrank .plb{grid-template-columns:40px 14px 40px minmax(0,1fr) 72px 20px!important;grid-template-areas:"rank mv av who grade chev" "meta meta meta meta meta meta"!important;column-gap:6px!important;padding:8px!important;min-height:0!important}
+#powerrank .pgr{justify-self:end}
+@media (min-width:700px){#powerrank .plb{grid-template-columns:40px 14px 44px minmax(0,1fr) 150px 72px 24px!important;grid-template-areas:"rank mv av who meta grade chev"!important}}
+/* bet form: Amount | Odds on one row (laptop), own rows on phone */
+@media (max-width:640px){
+ .b27-ao{grid-template-columns:minmax(0,1fr)!important;gap:2px!important}
+ .b27-ao .b27-amts,.b27-ao .b27-chips{gap:4px!important}
+ .b27-ao .b27-amt,.b27-ao .b27-chip{height:36px!important;min-height:36px!important;font-size:13px!important;letter-spacing:0!important}
+ .b27-ao .cu{font-size:11px!important}
+ /* phone tap targets >= 36px */
+ .rkseg-b,.segref,.gf2-s,.gf2-b,.gm .gbtns>button,.gm .mkbtns>button,.gm .mkbtns .qb-btn,.accsw{min-height:36px!important;height:auto}
+ .gm .gbtns>button,.gm .mkbtns>button,.gm .mkbtns .qb-btn{height:36px!important}
+ .accsw{width:36px!important;height:36px!important}
+ .card.oc .chip .cab,.card.oc .chip .mkab{font-size:10px!important;letter-spacing:-.03em!important}
+ .card{padding:7px!important}
+}
+/*</SYNC3>*/
+/*<SYNC3-GF>*/ /* Games filters v2: row 1 toggle + round refresh; row 2 owner | Pool vs Pool | More; More panel = Month | Day | team search */
+.segrow .gref{width:36px!important;height:36px!important;min-width:36px!important;padding:0!important;border-radius:50%!important;font-size:18px!important;line-height:1!important;display:inline-flex;align-items:center;justify-content:center}
+.gf2.gf2r{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 96px!important}
+.gf2.gmorep{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.gf2.gmorep[hidden]{display:none!important}
+.gf2>.gq{line-height:normal;color:var(--tx,#eef1f7);background:var(--card2,#222939);border:1px solid var(--line,#2d3548)}
+.gmore{position:relative}
+.gmore.dot::after{content:'';position:absolute;top:6px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--pill,#FFD400)}
+@media (max-width:640px){.gf2.gf2r{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 84px!important}.gf2.gmorep{grid-template-columns:repeat(2,minmax(0,1fr))!important}.gf2.gmorep>.gq{grid-column:1/-1}}
+/*</SYNC3-GF>*/
+/*<SYNC3-AT>*/ /* All teams numbers/ranks = STOOPIDS size (14px) on laptop and phone */
+.obk.atk .obl>.n,.obk.atk .obl>.n.ats{font-size:14px!important}
+/*</SYNC3-AT>*/

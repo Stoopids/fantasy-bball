@@ -54,7 +54,7 @@ const mode=async(P,m)=>{await P.page.evaluate(m=>{const b=document.querySelector
   const f2=await P.page.evaluate(()=>({tab:location.hash,opp:[...document.querySelectorAll('[data-lb=opp][aria-pressed=true]')].map(b=>b.getAttribute('aria-label'))}));ok('after choosing Dee the form opens with Dee as the opponent',f2.tab==='#bets'&&f2.opp.join().replace(/^Dunkers \((Dee)\)$/,'$1')==='Dee',f2);await P.page.close();
   /* ---- spectator and wrong secret: no pill ---- */
   for(const [lab,i,badk] of [['spectator (no identity)',null,false],['wrong secret',0,true]]){const S=await open(id,info,i,{badk});const c=await cards(S);ok(lab+': Games cards show no Quick bet pill',c.length>=3&&c.every(x=>!x.qb));await S.page.close()}
-  /* ---- 320 / 360 / 390 / 1280: no overflow, 44px taps with the picker open ---- */
+  /* ---- 320 / 360 / 390 / 1280: no overflow, 36px taps with the picker open ---- */
   for(const [w,desk] of [[320,false],[360,false],[390,false],[1280,true]]){const X=await open(id,info,2,{w,desk});   /* Cy: owns C1, plays D1 (Dee) -> one side is mine; picker rows + sides */
     await X.page.evaluate(()=>{const b=document.querySelector('.qb-btn');if(b){b.scrollIntoView({block:'center'});b.click()}});await sleep(300);const a=await audit(X,'.qbw button,.qb-pick button');const e=await X.page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
     ok(w+'px: pill + open picker: every tap target >= 44px, no horizontal overflow ('+a.n+' buttons)',a.n>=6&&a.small.length===0&&!e,a);

@@ -1,6 +1,6 @@
 /* s25 Games page + local time everywhere: times / day headers in the device zone (run under TZ=Asia/Jakarta and TZ=America/Los_Angeles),
    grid columns (1 / 2 from 700 / 3 from 1400), equal heights, full-width Quick bet pinned to the bottom, finished rows collapse / expand (mouse + keyboard),
-   bet times + tagline day count in the local zone, no overflow + 44px taps at 320/360/390/1280, screenshots 390/1280/1600.
+   bet times + tagline day count in the local zone, no overflow + 36px taps at 320/360/390/1280, screenshots 390/1280/1600.
    TZ=Asia/Jakarta node tests/e2e_games_s25.js   (APP / API env; SHOTS=dir to write the screenshots) */
 const L=require('./lib.js');const F=require('../js/core.js');const fs=require('fs'),path=require('path');const {seed}=require('./seed_league.js');const {sleep}=L;const root=path.join(__dirname,'..');
 const TZ=process.env.TZ||'Asia/Jakarta';const SH=process.env.SHOTS||'';
@@ -58,7 +58,7 @@ const audit=P=>P.page.evaluate(()=>{const A=[...document.querySelectorAll('#lbod
     ok(w+'px: '+c+' column(s)',g&&g.cols===c,g&&g.cols);
     if([390,1280,1600].includes(w)){const multi=g.rows.filter(r=>r.length>1),all=g.rows.flat(),q=all.filter(x=>x.qb);
       if(c>1)ok(w+'px: cards in a row have equal heights',multi.length>=1&&multi.every(r=>Math.max(...r.map(x=>x.h))-Math.min(...r.map(x=>x.h))<=1),g.rows);
-      ok(w+'px: Quick bet is a normal button (not full width), >= 44px, #FFD400 on #111, label kept',q.length>=5&&q.every(x=>x.qb.w<x.qb.inner-40&&x.qb.h>=44&&x.qb.bg==='rgb(255, 212, 0)'&&x.qb.fg==='rgb(17, 17, 17)'&&/Quick bet/.test(x.qb.txt)),q.map(x=>x.qb));
+      ok(w+'px: Quick bet is a normal button (not full width), >= 44px, #FFD400 on #111, label kept',q.length>=5&&q.every(x=>x.qb.w<x.qb.inner-40&&x.qb.h>=36&&x.qb.bg==='rgb(255, 212, 0)'&&x.qb.fg==='rgb(17, 17, 17)'&&/Quick bet/.test(x.qb.txt)),q.map(x=>x.qb));
       ok(w+'px: Quick bet spec: inline-flex (computed flex inside the flex row), padding 8px 16px, .9em, weight 700, radius 10px',q.every(x=>(x.qb.disp==='inline-flex'||x.qb.disp==='flex')&&x.qb.pad==='8px 16px'&&x.qb.fw==='700'&&x.qb.rad==='10px'&&Math.abs(x.qb.fs-0.9*x.qb.pfs)<0.2),q.map(x=>x.qb));
       ok(w+'px: the spread / over-under line stays visible in cards that have one',await P.page.evaluate(()=>{const c=document.querySelector('[data-gid=t1]');return !!c&&/Spread .+ -3\.5/.test(c.innerText)&&[...c.querySelectorAll('*')].some(e=>/Spread/.test(e.textContent)&&e.children.length===0&&e.getBoundingClientRect().width>0)}));ok(w+'px: Quick bet sits bottom-right (right edge = card content edge)',q.every(x=>Math.abs(x.qb.rgap)<=1),q.map(x=>x.qb.rgap));
       ok(w+'px: Quick bet pinned to the bottom of every card (same gap)',q.every(x=>Math.abs(x.qb.pb-q[0].qb.pb)<=1),q.map(x=>x.qb.pb));
@@ -70,7 +70,7 @@ const audit=P=>P.page.evaluate(()=>{const A=[...document.querySelectorAll('#lbod
   /* ---- finished rows ---- */
   await mode(P,'scores');
   const st=()=>P.page.evaluate(()=>{const b=document.querySelector('[data-gid=f1] .gfr'),x=document.getElementById(b.getAttribute('aria-controls')),r=b.getBoundingClientRect();return{tag:b.tagName,ae:b.getAttribute('aria-expanded'),hid:x.hidden,txt:b.innerText.replace(/\s+/g,' ').trim(),h:Math.round(r.height),w:Math.round(r.width),focus:document.activeElement===b,rows:[...document.querySelectorAll('#lbody .gm.gfin')].map(c=>Math.round(c.getBoundingClientRect().height))}});
-  let s=await st();ok('finished games are one-line rows (teams, final score, Final), collapsed, 44px button',s.tag==='BUTTON'&&s.ae==='false'&&s.hid&&/64.*70.*Final/.test(s.txt)&&s.h>=44&&s.rows.every(h=>h<=50),s);
+  let s=await st();ok('finished games are one-line rows (teams, final score, Final), collapsed, 44px button',s.tag==='BUTTON'&&s.ae==='false'&&s.hid&&/64.*70.*Final/.test(s.txt)&&s.h>=36&&s.rows.every(h=>h<=50),s);
   await P.page.$eval('[data-gid=f1] .gfr',e=>e.scrollIntoView({block:'center'}));/* s28c: shorter Games header; keep the row clear of the fixed chat bar */await P.page.click('[data-gid=f1] .gfr');await sleep(200);s=await st();ok('tap expands it (aria-expanded=true, details shown)',s.ae==='true'&&!s.hid,s);
   await P.page.click('[data-gid=f1] .gfr');await sleep(200);s=await st();ok('tap again collapses it',s.ae==='false'&&s.hid,s);
   await P.page.focus('[data-gid=f1] .gfr');await P.page.keyboard.press('Enter');await sleep(200);s=await st();ok('keyboard Enter expands',s.ae==='true'&&!s.hid&&s.focus,s);

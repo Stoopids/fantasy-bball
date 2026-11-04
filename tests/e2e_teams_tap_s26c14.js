@@ -23,7 +23,7 @@ const gj=async k=>F.parseJ(await (await fetch(API+encodeURIComponent(k))).text()
    const sh=await sheet();ok(w+': tap '+nm+' opens no confirm',!sh);if(sh){await P.page.evaluate(()=>UI.closeSheet());await sleep(300)}}
   await tap(row+' .qbtn');const q1=await P.page.evaluate(s=>document.querySelector(s+' .qbtn').classList.contains('on'),row);ok(w+': Queue button queues (no confirm)',q1&&!(await sheet()));
   const geo=await P.page.evaluate(s=>{const q=document.querySelector(s+' .qbtn').getBoundingClientRect(),d=document.querySelector(s+' .dbtn').getBoundingClientRect();return{qh:q.height,qw:q.width,dh:d.height,dw:d.width,gap:q.left-d.right}},row);
-  ok(w+': Queue >=48px tall and wider (>=52px), Draft >=48px, gap >=8px',geo.qh>=48&&geo.qw>=52&&geo.dh>=48&&geo.dw>=44&&geo.gap>=8,geo);
+  ok(w+': Queue >=48px tall and wider (>=52px), Draft >=48px, gap >=8px',geo.qh>=48&&geo.qw>=52&&geo.dh>=48&&geo.dw>=36&&geo.gap>=8,geo);
   ok(w+': no sideways scroll',await P.page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
   await sleep(1500);let pk=await picks();ok(w+': after all those taps, NO pick written',pk.length===0,pk);
   if(SD&&(w===390||w===320)){await box(row);await P.page.screenshot({path:path.join(SD,'teams-tap-'+w+'.png')})}

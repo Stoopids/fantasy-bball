@@ -20,7 +20,7 @@ async function open(id,me,mode,o){const P=await L.phone('ch'+Math.random().toStr
   p=await P.page.evaluate(()=>+(localStorage.getItem('__pc')||0));ok(kind+': re-renders, the room-to-recap hop and waiting do not replay it (1 play on this device)',p===1,p);
   await P.page.reload({waitUntil:'domcontentloaded'});await waitFor(()=>P.page.$('#cheermute'),25000);await sleep(1500);p=await P.page.evaluate(()=>window.__plays);ok(kind+': a reload does not replay it',p.length===0,p);
   const b=await P.page.evaluate(()=>{const e=document.getElementById('cheermute');if(!e)return null;const r=e.getBoundingClientRect();return{h:r.height,w:r.width,t:e.textContent,p:e.getAttribute('aria-pressed'),inCard:!!e.closest('#donecard,#recaphead')}});
-  ok(kind+': mute toggle on the draft-complete banner (recap hero / Draft complete card), 44px tap target',b&&b.inCard&&b.h>=44&&b.w>=44&&b.p==='false',b);
+  ok(kind+': mute toggle on the draft-complete banner (recap hero / Draft complete card), 36px tap target',b&&b.inCard&&b.h>=36&&b.w>=36&&b.p==='false',b);
   await P.page.click('#cheermute');await sleep(300);const b2=await P.page.evaluate(()=>({p:document.getElementById('cheermute').getAttribute('aria-pressed'),ls:localStorage.getItem('fbn.cheer.mute')}));ok(kind+': tapping it mutes and remembers it on the device',b2.p==='true'&&b2.ls==='1',b2);
   await P.page.click('#cheermute');await sleep(300);ok(kind+': no page errors',P.errs.length===0,P.errs);await P.close();
   /* muted device: never plays */

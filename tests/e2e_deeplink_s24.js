@@ -1,6 +1,6 @@
 /* s24: League site tab URLs + deep links + copy / share links.
    Refresh stays on every tab, Back / Forward, deep links to a bet and a game card (highlight, not-found note), copied / shared links carry no identity or k=,
-   identity fragments are stripped from the address bar, room link + Redraft label intact, no overflow and 44px tap targets at 320 / 360 / 390 / 1280.
+   identity fragments are stripped from the address bar, room link + Redraft label intact, no overflow and 36px tap targets at 320 / 360 / 390 / 1280.
    node tests/e2e_deeplink_s24.js  (APP / API env, mock store, ESPN + scores.json mocked). Screenshots to SHOTS (default /workspace/league-site-work/compare-s24). */
 const L=require('./lib.js');const {seed}=require('./seed_league.js');const {sleep,APP}=L;const F=require('../js/core.js');const fs=require('fs'),path=require('path');
 const SH=process.env.SHOTS||'/workspace/league-site-work/compare-s24';

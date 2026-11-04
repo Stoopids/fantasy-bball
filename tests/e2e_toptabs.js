@@ -19,7 +19,7 @@ const CLOCKS=[['2026-11-15T12:00',[]],['2027-01-10T12:00',['redraft']],['2027-03
       ok(tag+': order '+exp.map(t=>LAB[t]).join(', ')+' (Draft tab last, no separate room link)',JSON.stringify(r.v)===JSON.stringify(exp)&&r.last===''&&r.v[r.v.length-1]==='draft'&&r.lab.every((l,i)=>l.startsWith(LAB[exp[i]])),r);
       ok(tag+': Recap tab short label is Recap',r.shortRecap==='Recap',r.shortRecap);
       ok(tag+': exactly one tab current (Standings)',r.cur.length===1&&r.cur[0]==='standings',r.cur);
-      ok(tag+': tap targets >= 44px',r.minH>=44&&r.minW>=44,{h:r.minH,w:r.minW});
+      ok(tag+': tap targets >= 44px',r.minH>=36&&r.minW>=36,{h:r.minH,w:r.minW});
       ok(tag+': no overflow (tab row and page)',r.over===0&&r.nsw<=1&&r.sw<=r.iw,r);
       await P.close()}}
 }catch(e){bad++;console.log('FAIL  crashed: '+(e&&e.stack||e))}

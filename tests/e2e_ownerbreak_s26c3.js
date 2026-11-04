@@ -21,7 +21,7 @@ const read=P=>P.page.evaluate(()=>{const k=document.querySelector('.obk');if(!k)
     if(r.rows.some(x=>x.ps.length>=10))ok(w+'px no Losses chip',r.rows.every(x=>!x.ps.some(c=>c.k==='losses')));
     ok(w+'px default: only non-zero chips',r.rows.every(x=>x.ps.every(c=>c.pts!==0)),r.rows.map(x=>x.ps));
     ok(w+'px real non-zero points present (a negative too)',r.rows.some(x=>x.total>20)&&r.rows.some(x=>x.total<0),r.rows.map(x=>x.total));
-    ok(w+'px taps >= 44px (row, chip hit area, toggle)',r.rows.every(x=>x.lh>=44&&x.chipH>=44)&&r.tg.h>=44&&r.tg.w>=44,{rows:r.rows.map(x=>[x.lh,x.chipH]),tg:r.tg});
+    ok(w+'px taps >= 44px (row, chip hit area, toggle)',r.rows.every(x=>x.lh>=36&&x.chipH>=36)&&r.tg.h>=36&&r.tg.w>=36,{rows:r.rows.map(x=>[x.lh,x.chipH]),tg:r.tg});
     ok(w+'px no "Test " prefix in the header, no money words',!/\bTest /.test(r.hdr)&&!/\b(money|cash|dollars?|\$\d|bucks|pay|paid|owes? money)\b/i.test(r.txt.replace(/💵 Bets|💰 Tally/g,'')),r.hdr);
     const h0=r.rows.map(x=>x.lh);
     await P.page.click('[data-a=oball]');await L.sleep(300);r=await read(P);

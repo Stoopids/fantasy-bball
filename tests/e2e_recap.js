@@ -45,7 +45,7 @@ async function open(P,id,me){await P.page.setBypassServiceWorker(true);if(me)awa
     ok(w+'px: draft order has 64 rows (8 managers x 8 rounds) in 8 round groups of 8',ro.rows.length===64&&ro.grp.length===8&&ro.grp.every(x=>x===8),{rows:ro.rows.length,grp:ro.grp});
     ok(w+'px: rows follow the snake order: pick numbers 1..64 ascending, owner and school of every pick match the draft',ro.rows.every((r,i)=>r.n===i+1&&r.o===exp[i].o&&r.href===('https://www.espn.com/mens-college-basketball/team/_/id/'+exp[i].tid)),ro.rows.find((r,i)=>!(r.n===i+1&&r.o===exp[i].o&&r.href===('https://www.espn.com/mens-college-basketball/team/_/id/'+exp[i].tid))));
     ok(w+'px: round 2 runs backward (pick 9 = the manager who had pick 8) and round headers say so',ro.rows[8].o===ro.rows[7].o&&/Round 2.*reversed/.test(ro.heads[1])&&/Round 1/.test(ro.heads[0]),ro.heads.slice(0,2));
-    ok(w+'px: rows are compact (>= 44 px, <= 60 px) and the viewing manager\'s 8 picks are marked',ro.rows.every(r=>r.h>=44&&r.h<=60)&&ro.rows.filter(r=>r.mine).length===8,{mine:ro.rows.filter(r=>r.mine).length});
+    ok(w+'px: rows are compact (>= 36 px, <= 60 px) and the viewing manager\'s 8 picks are marked',ro.rows.every(r=>r.h>=36&&r.h<=60)&&ro.rows.filter(r=>r.mine).length===8,{mine:ro.rows.filter(r=>r.mine).length});
     ok(w+'px: round headers are sticky',ro.sticky==='sticky',ro.sticky);
     ok(w+'px: '+(desk?'two columns':'one column')+' of rows',new Set(ro.rows.slice(0,8).map(r=>r.left)).size===(desk?2:1),[...new Set(ro.rows.slice(0,8).map(r=>r.left))]);
     /* other sections */
@@ -61,8 +61,8 @@ async function open(P,id,me){await P.page.setBypassServiceWorker(true);if(me)awa
     /* every school link, 44 px, controls */
     const a=await Q.page.evaluate(()=>{const A=[...document.querySelectorAll('#app a.tlink')];return{n:A.length,bad:A.filter(x=>!/^https:\/\/www\.espn\.com\/mens-college-basketball\/team\/_\/id\/\d+$/.test(x.href)||x.target!=='_blank'||!/noopener/.test(x.rel)||!/noreferrer/.test(x.rel)).length,small:A.filter(x=>x.getBoundingClientRect().height<43.5).length,
       btns:[...document.querySelectorAll('#app button:not(.lnkbtn),#app a.btn')].filter(b=>{const r=b.getBoundingClientRect();return r.width>0&&r.height<43.5}).map(b=>b.id||b.className),chips:document.querySelectorAll('#app .chip').length,plainChips:[...document.querySelectorAll('#app .chip')].filter(c=>!c.closest('a.tlink')).length}});
-    ok(w+'px: every school chip on the page is an ESPN link (correct URL, target=_blank, noopener noreferrer), links >= 44 px tall ('+a.n+' links)',a.n>=130&&a.bad===0&&a.small===0&&a.plainChips===0,a);
-    ok(w+'px: buttons are >= 44 px (except the small export text links)',a.btns.length===0,a.btns);
+    ok(w+'px: every school chip on the page is an ESPN link (correct URL, target=_blank, noopener noreferrer), links >= 36 px tall ('+a.n+' links)',a.n>=130&&a.bad===0&&a.small===0&&a.plainChips===0,a);
+    ok(w+'px: buttons are >= 36 px (except the small export text links)',a.btns.length===0,a.btns);
     ok(w+'px: no page errors',Q.errs.length===0,Q.errs);
     ok(w+'px: no sticky League site bar (s23 design)',!(await Q.page.$('#stickysite')));
     await Q.page.close();

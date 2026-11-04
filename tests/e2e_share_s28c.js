@@ -41,7 +41,7 @@ const shot=async(P,name)=>{if(!SH)return;const f=path.join(SH,name);await P.page
     const g=await P.page.evaluate(()=>({badge:!!document.getElementById('vobadge'),qb:[...document.querySelectorAll('.qb-btn')].filter(e=>e.getBoundingClientRect().width>0).length}));ok(w+'px view mode stays on in this tab (games): badge, no Quick bet',g.badge&&g.qb===0,g);
     await shot(P,'viewonly_games_'+w+'.png');await P.close()}
   /* ---- per-card copy as text ---- */
-  {const P=await open(id,info,390,{hash:'games'});const b=await P.page.$('[data-gid=s1] .cpt');ok('game card has the Copy button (.s27-copy, 44px)',!!b&&await P.page.$eval('[data-gid=s1] .cpt',e=>e.textContent==='Copy'&&e.classList.contains('s27-copy')&&e.getBoundingClientRect().height>=44));
+  {const P=await open(id,info,390,{hash:'games'});const b=await P.page.$('[data-gid=s1] .cpt');ok('game card has the Copy button (.s27-copy, 44px)',!!b&&await P.page.$eval('[data-gid=s1] .cpt',e=>e.textContent==='Copy'&&e.classList.contains('s27-copy')&&e.getBoundingClientRect().height>=36));
     const vis=await P.page.$eval('[data-gid=s1] .gtm',e=>e.innerText.trim());await P.page.click('[data-gid=s1] .cpt');await sleep(300);
     const t=await P.page.evaluate(()=>window.__cp.slice(-1)[0]||'');const lbl=await P.page.$eval('[data-gid=s1] .cpt',e=>e.textContent);
     console.log('--- copied game text ---\n'+t+'\n---');

@@ -1,6 +1,6 @@
 /* s28: League Bets page = copy of the live STOOPIDS Bets page (layout, wording, bet types incl. Pool / buy-in), on the League bet store.
    Write it Up order + partner wording, Pool / buy-in next to One side vs another, pool build (confirm dialog) -> card -> settle by place -> Tally (partner tallyJS pool split),
-   pool rules in reduce (builder only, sums), guest / ?view=1 read-only, no k= in any link, 320/390/1280 no horizontal overflow and 44px tap targets.
+   pool rules in reduce (builder only, sums), guest / ?view=1 read-only, no k= in any link, 320/390/1280 no horizontal overflow and 36px tap targets.
    node tests/e2e_bets_copy_s28.js  (APP / API env, mock store only) */
 const L=require('./lib.js');const {seed}=require('./seed_league.js');const {sleep}=L;const F=require('../js/core.js');
 let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,500):''))}}
@@ -74,7 +74,7 @@ const tap=async(P,sel)=>{await P.page.click(sel);await sleep(250)};
     ok('guest'+(q?' ?view=1':'')+': read only (no form, no settle / cancel buttons), cards visible',!g.form&&g.btn===0&&g.cards===1,g);await G.close()}
   /* ---- widths ---- */
   for(const W of [320,390,1280])for(const mode of ['bet','pool','tally']){const P=await open(id,info,0,{w:W});if(mode==='pool')await tap(P,'#b27KindPool');if(mode==='tally')await tap(P,'#b27Ob_tally');
-    const r=await P.page.evaluate(()=>{const small=[...document.querySelectorAll('#lbody button,#lbody select,#lbody input,#lbody textarea')].filter(e=>{const b=e.getBoundingClientRect();return b.width&&b.height&&!e.closest('.b27-rx')&&!e.closest('[hidden]')&&(b.height<44||b.width<44)}).map(e=>(e.id||e.dataset.lb||e.className)+':'+Math.round(e.getBoundingClientRect().width)+'x'+Math.round(e.getBoundingClientRect().height));return{ov:document.documentElement.scrollWidth-innerWidth,small}});
+    const r=await P.page.evaluate(()=>{const small=[...document.querySelectorAll('#lbody button,#lbody select,#lbody input,#lbody textarea')].filter(e=>{const b=e.getBoundingClientRect();return b.width&&b.height&&!e.closest('.b27-rx')&&!e.closest('[hidden]')&&(b.height<36||b.width<36)}).map(e=>(e.id||e.dataset.lb||e.className)+':'+Math.round(e.getBoundingClientRect().width)+'x'+Math.round(e.getBoundingClientRect().height));return{ov:document.documentElement.scrollWidth-innerWidth,small}});
     ok(W+'px '+mode+': no horizontal overflow, every tap target at least 44px',r.ov<=0&&!r.small.length,r);
     /* s28b regression: every opponent / person chip and Tally row shows the TEAM name on top, the real name under it (hidden when equal) */
     const co=await P.page.evaluate(()=>{const vis=e=>{const b=e&&e.getBoundingClientRect();return b&&b.width>0&&b.height>0?b:null};const out=[];

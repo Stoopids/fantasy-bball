@@ -13,7 +13,7 @@ const MONEY=/\$|\b(money|cash|dollars?|wager|betting|gambl\w*|odds|payout|stake)
     const r=await P.page.evaluate(id=>{const R=e=>e.getBoundingClientRect();const tap=[...document.querySelectorAll('#ltabs a,#lbody a,#lbody button')].filter(e=>R(e).width>0);
       return{hash:location.hash,q:location.search,cur:[...document.querySelectorAll('#ltabs a[aria-current=page]')].map(a=>a.dataset.v).join(),tabs:[...document.querySelectorAll('#ltabs a')].map(a=>a.dataset.v).join(),
         sc:document.querySelectorAll('#lbody .card.sc tr').length,set:document.getElementById('presettings').innerText,me:localStorage.getItem('fbn.me.'+id),
-        sw:document.documentElement.scrollWidth,iw:innerWidth,small:tap.filter(e=>R(e).height<44||R(e).width<44).map(e=>(e.id||e.className)+':'+Math.round(R(e).width)+'x'+Math.round(R(e).height)),txt:document.body.innerText}},id);
+        sw:document.documentElement.scrollWidth,iw:innerWidth,small:tap.filter(e=>R(e).height<36||R(e).width<36).map(e=>(e.id||e.className)+':'+Math.round(R(e).width)+'x'+Math.round(R(e).height)),txt:document.body.innerText}},id);
     const tag=w+'px pre-draft ('+pm+' picks) #rules';
     ok(tag+': Rules tab current, hash #rules kept, league code kept in the URL',r.cur==='rules'&&r.hash==='#rules'&&new URLSearchParams(r.q).get('l')===id&&r.tabs==='rules,recap,draft',r);
     ok(tag+': league settings + scoring table + house rules shown (no rosters needed)',/Managers: 8/.test(r.set)&&/Rounds:/.test(r.set)&&/Pick clock: 60 s/.test(r.set)&&/Redraft: January 20, 2027/.test(r.set)&&r.sc>=9&&/House interpretations/.test(r.txt)&&/League rules/.test(r.txt),{set:r.set,sc:r.sc});

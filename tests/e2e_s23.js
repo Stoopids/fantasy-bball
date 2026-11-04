@@ -1,5 +1,5 @@
 /* s23 batch: QA s20 B1 (ONE strength / rank on the recap: Power rankings = Rosters side by side = Chalk Boss, and the footer describes the real formula), B2 (dash, never a blank, for "Avg STOOPID rank" with no ranked school),
-   B6 (Redraft drop-list team links >= 44 px), B7 (error-state links >= 44 px at 390 and 1280).
+   B6 (Redraft drop-list team links >= 36 px), B7 (error-state links >= 36 px at 390 and 1280).
    needs: node tools/mock_textdb.js 9995 "$PWD" 9996        node tests/e2e_s23.js   (APP / API env) */
 const L=require('./lib.js');const F=require('../js/core.js');const {seed}=require('./seed_league.js');const {seedRecap}=require('./recap_seed.js');const {sleep,APP}=L;const API=process.env.API||'http://localhost:9996/api/data/';
 const fs=require('fs'),path=require('path');
@@ -51,7 +51,7 @@ for(const [w,h,d] of [[390,844,0],[1280,900,1]]){
   for(const [nm,url] of [['room unknown league',`room.html?l=${NOPE}`],['recap unknown league',`recap.html?l=${NOPE}`],['redraft unknown league',`redraft.html?l=${NOPE}`],['join unknown league',`join.html?l=${NOPE}`],['time page, bad link','time.html?t=bad'],['404-style unknown path','nothing-here.html']]){
     const P=await open('e'+w,url,d?{desktop:true,w,h}:{w,h});await sleep(2500);
     const m=await P.page.evaluate(()=>[...document.querySelectorAll('#nf a,#app a,.card a,main a,body>a')].filter(a=>a.offsetParent!==null&&!a.closest('#buildtag')).map(a=>{const r=a.getBoundingClientRect();return{t:(a.textContent||'').trim().slice(0,30),w:Math.round(r.width),h:Math.round(r.height*10)/10}}));
-    ok(w+'px '+nm+': every visible link is a >= 44 px tap target',m.every(x=>x.h>=43.9&&x.w>=43.9),m);await P.close()}}
+    ok(w+'px '+nm+': every visible link is a >= 36 px tap target',m.every(x=>x.h>=43.9&&x.w>=43.9),m);await P.close()}}
 /* ---------- B6: Redraft drop list ---------- */
 {const id=await seed(API,{managers:8,rounds:6});const I=seed.info;const K=F.Keys(id);
  const RECORDS=[[8,2],[7,3],[5,5],[2,2],[6,4],[4,6],[3,7],[1,9]];const owned=new Set(I.picks.map(p=>String(p.teamId)));const free=TD.teams.map(t=>String(t[0])).filter(t=>!owned.has(t));let g=0;const games=[];
@@ -62,6 +62,6 @@ for(const [w,h,d] of [[390,844,0],[1280,900,1]]){
  for(const [w,h,d] of [[390,844,0],[1280,900,1]]){
   const P=await open('o'+w,`redraft.html?l=${id}#as=${I.managers[0].id}&k=${I.managers[0].k}`,d?{desktop:true,w,h}:{w,h},scores);await P.page.waitForSelector('#rdowner .dropchk',{timeout:25000}).catch(()=>{});await sleep(800);
   const m=await P.page.evaluate(()=>[...document.querySelectorAll('#rdowner label a.tlink')].map(a=>{const r=a.getBoundingClientRect();return{w:Math.round(r.width),h:Math.round(r.height*10)/10}}));
-  ok(w+'px Redraft drop list: '+m.length+' team links, each >= 44 px high',m.length>=4&&m.every(x=>x.h>=43.9),m);ok(w+'px Redraft drop list: no page errors',P.errs.length===0,P.errs);await P.close()}
+  ok(w+'px Redraft drop list: '+m.length+' team links, each >= 36 px high',m.length>=4&&m.every(x=>x.h>=43.9),m);ok(w+'px Redraft drop list: no page errors',P.errs.length===0,P.errs);await P.close()}
  await CM.close()}
 console.log('\n'+(n-bad)+'/'+n+' passed'+(bad?'  FAILED: '+fails.join(' | '):''));process.exitCode=bad?1:0}catch(e){console.log(e.stack);process.exitCode=1}finally{await L.close()}})();

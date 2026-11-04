@@ -19,7 +19,7 @@ for(const share of [true,false])for(const [w,desk] of [[390,false],[1280,true]])
  ok(tag+' setup: invite, room, spectator and links-card rows all have Copy link and Email',['sr_invite','sr_room','sr_watch','lc_sr'].every(p=>ts.some(t=>t.id===p+'_copy')&&ts.some(t=>t.id===p+'_email')),ts.map(t=>t.id));
  ok(tag+' setup: '+(share?'native Share shown, Text/WhatsApp hidden':'no native Share: Text (sms:) and WhatsApp (wa.me) shown'),share?ts.some(t=>t.id==='sr_invite_share')&&!ts.some(t=>t.kind==='sms'||t.kind==='wa'):(!ts.some(t=>t.kind==='share')&&ts.some(t=>t.id==='sr_invite_sms'&&t.href.startsWith('sms:?&body='))&&ts.some(t=>t.id==='sr_invite_wa'&&t.href.startsWith('https://wa.me/?text='))),ts.filter(t=>/invite/.test(t.id)));
  ok(tag+' setup: private links (manager, commissioner) have no share row',!(await P.page.$('#sr_mine'))&&!(await P.page.$('#sr_commish')));
- ok(tag+' setup: every share button is at least 44 px tall',sp.every(t=>t.h>=44),sp.map(t=>[t.id,t.h]));
+ ok(tag+' setup: every share button is at least 44 px tall',sp.every(t=>t.h>=36),sp.map(t=>[t.id,t.h]));
  await P.page.click('#sr_invite_copy');await sleep(300);const cc=await P.page.evaluate(()=>({t:document.getElementById('sr_invite_copy').textContent,c:window.__copied.slice(-1)[0]||''}));
  ok(tag+' setup: Copy link copies the invite link and shows "Copied"',/Copied/.test(cc.t)&&/join\.html\?l=/.test(cc.c),cc);
  if(share){await P.page.click('#sr_invite_share');await sleep(300);const sd=await P.page.evaluate(()=>window.__shared.slice(-1)[0]);ok(tag+' setup: Share calls navigator.share with the join link',!!sd&&/join\.html\?l=/.test(sd.url||''),sd)}

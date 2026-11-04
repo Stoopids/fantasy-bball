@@ -1,5 +1,5 @@
 /* School links to ESPN team pages in the draft room and the Draft Room pages: every school chip is an <a> with the exact ESPN URL, target=_blank, rel noopener noreferrer,
-   >= 44 px tall on the phone; a tap on a link never drafts, stars, queues or opens the confirm sheet; schools without an id are plain text. Mock store only.
+   >= 36 px tall on the phone; a tap on a link never drafts, stars, queues or opens the confirm sheet; schools without an id are plain text. Mock store only.
    needs: node tools/mock_textdb.js 9995 "$PWD" 9996        node tests/e2e_espn.js   (APP / API env) */
 const L=require('./lib.js');const fs=require('fs'),path=require('path');const F=require('../js/core.js');const {seed}=require('./seed_league.js');const {sleep}=L;const API=L.API;
 let n=0,bad=0;const fails=[];const ok=(name,c,x)=>{n++;if(c)console.log('  ok  '+name);else{bad++;fails.push(name);console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,400):''))}};
@@ -18,7 +18,7 @@ const RE=/^https:\/\/www\.espn\.com\/mens-college-basketball\/team\/_\/id\/\d+$/
     await P.go('room.html?l='+id+'#as='+me.id+'&k='+me.k);await pg.waitForSelector('#pickbtn',{timeout:25000});await sleep(800);
     const audit=async(sel,label,min)=>{const a=await pg.evaluate(sel=>{const A=[...document.querySelectorAll(sel)];return{n:A.length,bad:A.filter(x=>!/^https:\/\/www\.espn\.com\/mens-college-basketball\/team\/_\/id\/\d+$/.test(x.href)||x.target!=='_blank'||!/\bnoopener\b/.test(x.rel)||!/\bnoreferrer\b/.test(x.rel)).length,small:A.filter(x=>{const r=x.getBoundingClientRect();return r.width>0&&r.height<43.5}).length,
         plain:[...document.querySelectorAll(sel.replace(/a\.tlink/g,'.chip'))].filter(c=>!c.closest('a.tlink')).length}},sel);
-      ok(w+'px '+label+': '+a.n+' school links, exact ESPN URL, target=_blank, rel noopener noreferrer, >= 44 px tall, none left as plain text',a.n>=min&&a.bad===0&&a.small===0&&a.plain===0,a);return a};
+      ok(w+'px '+label+': '+a.n+' school links, exact ESPN URL, target=_blank, rel noopener noreferrer, >= 36 px tall, none left as plain text',a.n>=min&&a.bad===0&&a.small===0&&a.plain===0,a);return a};
     const same=async(label)=>{const s=await pg.evaluate(()=>({sheet:!!document.getElementById('confirmpick'),on:document.querySelectorAll('#view .trow .wstar.on,#tlist .qbtn.on').length,banner:(document.getElementById('banner')||{innerText:''}).innerText.match(/Pick #\d+/)}));
       const pk=await stateKey();ok(w+'px '+label+': tapping a school link did not open the confirm sheet, star, queue or make a pick',!s.sheet&&s.on===0&&(!pk||pk.length<5||/not found|^\s*$/i.test(pk)||pk.trim()==='')&&/Pick #12/.test(s.banner&&s.banner[0]),{s,pk:pk.slice(0,60)})};
     const tapLink=async(sel)=>{const el=await pg.$(sel);await el.evaluate(e=>e.scrollIntoView({block:'center'}));await sleep(150);await el.click();await sleep(400)};
@@ -27,7 +27,7 @@ const RE=/^https:\/\/www\.espn\.com\/mens-college-basketball\/team\/_\/id\/\d+$/
     /* s25-full (Paul via NCAA): no ESPN link or icon in Teams tab rows; the name / row is the Draft target */
     const tl=await pg.evaluate(()=>({rows:document.querySelectorAll('#tlist .trow').length,a:document.querySelectorAll('#tlist .trow a,#tlist .trow .espn').length}));ok(w+'px Teams tab rows: no ESPN anchors or icons ('+tl.rows+' rows)',tl.rows>=100&&tl.a===0,tl);
     const rowCtl=await pg.evaluate(()=>{const r=document.querySelector('#tlist .trow.go');const d=r.querySelector('.dbtn');const q=r.querySelector('.qbtn');const R=e=>{const b=e.getBoundingClientRect();return[Math.round(b.width),Math.round(b.height)]};return{d:R(d),q:R(q),star:!!r.querySelector('.wstar'),hasData:d.dataset.a}});
-    ok(w+'px Teams tab: Q+ is >= 44 px, no star; the Draft button is the Draft target',rowCtl.d[1]>=44&&!rowCtl.star&&rowCtl.q[0]>=44&&rowCtl.hasData==='draftrow',rowCtl);
+    ok(w+'px Teams tab: Q+ is >= 36 px, no star; the Draft button is the Draft target',rowCtl.d[1]>=36&&!rowCtl.star&&rowCtl.q[0]>=36&&rowCtl.hasData==='draftrow',rowCtl);
     /* explicit Draft button still opens the confirm sheet, and the school link on the sheet does not draft */
     await pg.$eval('#tlist .trow.go .dbtn[data-a=draftrow]',e=>e.click());await pg.waitForSelector('#confirmpick',{visible:true,timeout:8000});
     await audit('#sheetwrap a.tlink','confirm sheet',1);await tapLink('#sheetwrap a.tlink');

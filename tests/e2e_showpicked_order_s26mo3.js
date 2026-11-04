@@ -19,7 +19,7 @@ async function showPicked(p,tag,w){const pre=tag+' '+w+'px: ';await tap(p,'#tab_
   const st=()=>p.evaluate(()=>{const rows=[...document.querySelectorAll('#tlist .trow.taken')];const b=document.getElementById('tspk').getBoundingClientRect();
     return{pressed:document.getElementById('tspk').getAttribute('aria-pressed'),taken:rows.length,acts:rows.filter(r=>r.dataset.a||r.querySelector('[data-a=q],[data-a=draftrow]')).length,named:rows.filter(r=>/✔ \S/.test(r.innerText)).length,
       op:rows[0]?+getComputedStyle(rows[0]).opacity:null,h:Math.round(b.height),fit:b.right<=innerWidth+1&&b.left>=0,over:document.documentElement.scrollWidth<=innerWidth+1,money:/\$|bet|wager|money/i.test(document.getElementById('tspk').textContent)}});
-  let s=await st();ok(pre+'Show picked is off by default, picked teams hidden',s.pressed==='false'&&s.taken===0,s);ok(pre+'toggle is >= 44 px, fits, no sideways scroll, no money wording',s.h>=44&&s.fit&&s.over&&!s.money,s);
+  let s=await st();ok(pre+'Show picked is off by default, picked teams hidden',s.pressed==='false'&&s.taken===0,s);ok(pre+'toggle is >= 36 px, fits, no sideways scroll, no money wording',s.h>=36&&s.fit&&s.over&&!s.money,s);
   if(OUT&&w===390)await p.screenshot({path:OUT+'/showpicked_off_390'+(tag==='mock'?'_mock':'')+'.png'});
   ok(pre+'tap lands on the toggle',await tap(p,'#tspk'));if(tag==='mock'&&w>700){}s=await waitFor(async()=>{const x=await st();return x.taken>0?x:null},5000)||await st();
   ok(pre+'on: picked teams listed greyed out with the manager name',s.pressed==='true'&&s.taken>0&&s.named===s.taken&&s.op<1,s);ok(pre+'on: no draft / queue action on picked rows',s.acts===0,s);

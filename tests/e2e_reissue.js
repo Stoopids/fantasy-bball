@@ -25,7 +25,7 @@ await waitFor(()=>has(C,'#mgrcard'),15000);
 await C.page.evaluate(m=>{const b=document.querySelector('#mgrcard [data-a=mgr][data-m="'+m+'"]');b.scrollIntoView({block:'center'});b.click()},A.id);
 await waitFor(()=>has(C,'#reissuebtn'),8000);
 const info=await C.page.evaluate(()=>{const b=document.getElementById('reissuebtn');const r=b.getBoundingClientRect();return{h:Math.round(r.height),txt:b.textContent,sheet:document.querySelector('.sheet').innerText}});
-ok('Manage sheet has "Re-issue private link…" (>= 44 px) and explains that the old link stops working',/Re-issue/.test(info.txt)&&info.h>=44&&/old one stops working/.test(info.sheet),info);
+ok('Manage sheet has "Re-issue private link…" (>= 36 px) and explains that the old link stops working',/Re-issue/.test(info.txt)&&info.h>=36&&/old one stops working/.test(info.sheet),info);
 await C.page.$eval('#reissuebtn',e=>e.click());await waitFor(()=>has(C,'#cfyes'),6000);
 const cf=await C.page.evaluate(()=>document.querySelector('.sheet').innerText);
 ok('asks to confirm first, naming the manager, and nothing is written before the tap',/Re-issue link for Ben\?/.test(cf)&&JSON.stringify(await get(K.slot(2,0)))===JSON.stringify(claim0[1]),cf);

@@ -23,7 +23,7 @@ async function run(P,tag,w){await P.page.evaluate(()=>document.querySelector('#t
  ok(tag+' '+w+'px: two quick Q+ taps both land in the queue panel at once ('+q.n+')',cnt>=2&&ts.every(t=>q.order.includes(t))&&/\(2\)|2/.test(q.lbl),q);
  ok(tag+' '+w+'px: '+(w>700?'side panel beside the Teams list':'"My queue (N)" bar above the list'),q.side&&(w>700?q.side.beside:q.side.above),q.side);
  ok(tag+' '+w+'px: help text exact, old "(and the league auto-picks)" line gone',q.help.trim()===HELP&&!q.old,q.help);
- ok(tag+' '+w+'px: reorder / remove buttons are >= 44 px',q.btn.length>=4&&q.btn.every(x=>x>=44),q.btn);
+ ok(tag+' '+w+'px: reorder / remove buttons are >= 36 px',q.btn.length>=4&&q.btn.every(x=>x>=36),q.btn);
  await P.page.evaluate(t=>{const b=document.querySelector('#qpanel .qrow[data-t="'+t+'"] [data-a=qm][data-d="1"]');if(b)b.click()},q.order[0]);
  const o2=await waitFor(async()=>{const o=await P.page.evaluate(()=>[...document.querySelectorAll('#qpanel .qrow')].map(r=>r.dataset.t));return o[1]===q.order[0]?o:null},5000);ok(tag+' '+w+'px: down moves a team one place',!!o2,o2);
  await P.page.evaluate(t=>{const b=document.querySelector('#qpanel .qrow[data-t="'+t+'"] [data-a=qrm]');if(b)b.click()},q.order[0]);

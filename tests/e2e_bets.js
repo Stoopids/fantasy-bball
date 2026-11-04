@@ -1,6 +1,6 @@
 /* League site Bets tab (pushup challenges): empty state, propose, accept, decline, settle (creator only, s25), who-owes-who + net pushups, two managers writing at the same time,
    same manager on two devices, spectator read-only, a wrong secret / forged events cannot act as another manager, store outage and recovery keeps the last good view,
-   no money text or amounts, 44px tap targets at 390.   node tests/e2e_bets.js  (APP / API env, mock store) */
+   no money text or amounts, 36px tap targets at 390.   node tests/e2e_bets.js  (APP / API env, mock store) */
 const L=require('./lib.js');const fs=require('fs'),path=require('path');const {seed}=require('./seed_league.js');const {sleep,API}=L;
 const F=require('../js/core.js');
 let n=0,bad=0;const fails=[];function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;fails.push(name);console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,400):''))}}

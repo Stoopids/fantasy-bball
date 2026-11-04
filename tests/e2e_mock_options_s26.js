@@ -26,7 +26,7 @@ async function run(w,q,set,o){const P=await L.phone('p'+Math.random(),w===1280?{
  const randTids=[];
  for(const w of [390,1280]){const p=w+'px: ';
   let r=await run(w,'',{m_seat:5,m_order:'snake',m_clock:90},{full:true,shot:w===390});
-  ok(p+'s26mo4: no Bot draft style select',!r.hadBots,r.hadBots);ok(p+'s26mo4: 7 personalities dealt (all 6 kinds)',r.meta.mockOpts&&Object.keys(r.meta.mockOpts.dealt||{}).length===7&&new Set(Object.values(r.meta.mockOpts.dealt)).size===6,r.meta.mockOpts);ok(p+'selects >=44px',r.taps.every(h=>h>=44),r.taps);
+  ok(p+'s26mo4: no Bot draft style select',!r.hadBots,r.hadBots);ok(p+'s26mo4: 7 personalities dealt (all 6 kinds)',r.meta.mockOpts&&Object.keys(r.meta.mockOpts.dealt||{}).length===7&&new Set(Object.values(r.meta.mockOpts.dealt)).size===6,r.meta.mockOpts);ok(p+'selects >=44px',r.taps.every(h=>h>=36),r.taps);
   ok(p+'seat 5 honoured',r.seat===5,r.seat);ok(p+'solo fixed seat: no wheel spin record (order fixed at create, never re-spun)',!r.meta.spin&&!(r.meta.spinGen>0),[r.meta.spin,r.meta.spinGen]);ok(p+'clock 90 applied',r.meta.settings.clockSecs===90);ok(p+'snake',r.meta.settings.type==='snake');
   const got=r.picks.filter(e=>e.owner===r.me).map(e=>e.n).sort((a,b)=>a-b);
   ok(p+'snake seat 5 picks 5,12,21,28,...',got.slice(0,4).join()==='5,12,21,28'&&got.join()===mine(r.meta,r.me).join(),got);

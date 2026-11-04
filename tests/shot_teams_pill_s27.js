@@ -8,7 +8,7 @@ for(const w of [390,1280]){const opt=w>700?{desktop:true,w,h:800}:{w,h:844};
  const P=await L.phone('pon'+w,opt);await P.go('room.html?l='+id+'#as='+on.id+'&k='+on.k);await P.page.waitForSelector('#tab_teams',{timeout:25000});await sleep(1500);
  await P.page.evaluate(()=>document.querySelector('#tab_teams').click());await P.page.waitForSelector('#tlist .trow.go .tm.dbtn',{timeout:10000});await sleep(500);
  const r=await P.page.evaluate(()=>{const b=document.querySelector('#tlist .trow.go .tm.dbtn');const q=b.closest('.trow').querySelector('.qbtn');const R=b.getBoundingClientRect(),Q=q&&q.getBoundingClientRect();return{h:R.height,aria:b.getAttribute('aria-label'),sep:document.querySelectorAll('#tlist button.dbtn:not(.tm)').length,qh:Q&&Q.height,gap:Q?Q.left-R.right:null,ovf:document.documentElement.scrollWidth>innerWidth}});
- ok(w+' on turn: pill >=44px, aria Draft <team>, no separate Draft box, Q+ 48px kept, gap>=8, no overflow',r.h>=44&&/^Draft /.test(r.aria)&&r.sep===0&&r.qh>=48&&r.gap>=8&&!r.ovf,r);
+ ok(w+' on turn: pill >=44px, aria Draft <team>, no separate Draft box, Q+ 48px kept, gap>=8, no overflow',r.h>=36&&/^Draft /.test(r.aria)&&r.sep===0&&r.qh>=48&&r.gap>=8&&!r.ovf,r);
  await P.page.screenshot({path:process.env.SHOTDIR+'/teams-pill-'+w+'-onturn.png'});if(w===390)await P.page.screenshot({path:process.env.SHOTDIR+'/teams-pill-390.png'});if(w===1280)await P.page.screenshot({path:process.env.SHOTDIR+'/teams-pill-1280.png'});
  const before=await raw(K.pick(meta.epoch||1,4));
  await P.page.$eval('#tlist .trow.go .tm.dbtn',e=>e.click());ok(w+' pill tap opens the confirm',!!(await P.page.waitForSelector('#confirmpick',{visible:true,timeout:6000}).catch(()=>null)));

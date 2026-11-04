@@ -49,3 +49,10 @@ Profile: small copy/layout differences (Notifications 'Coming soon' line) left a
 ## Session 5 (4 Nov ~10:05-10:35 WIB)
 - Team dropdown: pool-owned teams across all games + Search teams box (gTeamFind), = STOOPIDS.
 - Phone overlap: 🏠 moved out of .cn into .ghome; name ellipsizes; matches STOOPIDS. Compare images in /workspace/compare/.
+
+## Step 2 + 3 (4 Nov ~10:10-10:45 WIB, local only)
+- SYNC2 (same code both sites): commissioner accent picker (6 presets, auto ink; STOOPIDS=localStorage `stoopids_accent` on the ?admin device, League=league store key fbn1-<id>-accent, commissioner-only), LIVE outline+pulsing dot on Games tab and Upcoming when a pool game is live (tested with faked live), bet form Amount|Odds (5,10,20,25,50,Custom / Even..5-1,Custom), Copy+Quick bet on the time row, no Moneyline on card face (kept in Copy and opened finals), opened FINAL card = ESPN summary (halves/OT, PTS/REB/AST leaders, spread + O/U result, box score link; fetched on open, cached), Standings pills (logo | abbr over record | rank right), team names uppercase, trophies inline after manager, "Points", Team dropdown removed (owner + Pool vs Pool = h2h only).
+- Header line: STOOPIDS cron */15 -> "Bragging rights are checked every 15 minutes." League has no such line (its cron is every 30 min, :15/:45).
+- SYNC3: tighter spacing (cards/gaps/header/banner/tabs), empty spacer rows hidden, ranked grid rank|movement slot|name|points (no movement data exists yet, slot reserved), bet form Amount/Odds stacked on phone, phone taps >=36px, Games filters v2 (toggle + round refresh; owner | Pool vs Pool | More; More = Month, Day, team search, dot when active).
+- League: tap-size specs changed 44 -> 36 (tests/*, Paul approved); All teams numbers 14px = STOOPIDS.
+- Shots: /workspace/compare/step2/, /workspace/compare/step3/ (before|after per site).

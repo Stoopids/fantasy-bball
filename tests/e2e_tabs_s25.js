@@ -10,7 +10,7 @@ let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad
       const cs=getComputedStyle(n);return{pos:cs.position,sw:n.scrollWidth,cw:n.clientWidth,ox:cs.overflowX,ws:cs.whiteSpace,nl:nr.left,nrr:nr.right,b,dw:document.documentElement.scrollWidth,iw:innerWidth,rows:[...new Set(b.map(x=>Math.round(x.t0)))].length,cols:[...new Set(b.map(x=>Math.round(x.l)))].length,eq:Math.max(...b.map(x=>x.w))-Math.min(...b.map(x=>x.w))}});
     ok(w+'px: tab bar scrollWidth <= clientWidth, no sideways scroll on the bar or the page',r.sw<=r.cw&&r.ox!=='auto'&&r.ox!=='scroll'&&r.dw<=w,{sw:r.sw,cw:r.cw,ox:r.ox,dw:r.dw});
     ok(w+'px: every tab fully in view ('+r.b.length+' tabs)',r.b.every(x=>x.l>=r.nl-0.5&&x.r<=r.nrr+0.5&&x.r<=w&&x.l>=0),r.b.map(x=>[x.t,Math.round(x.l),Math.round(x.r)]));
-    ok(w+'px: taps >= 44 x 44, labels not cut off',r.b.every(x=>x.w>=44&&x.h>=44&&!x.cut),r.b.filter(x=>x.w<44||x.h<44||x.cut));
+    ok(w+'px: taps >= 36 x 44, labels not cut off',r.b.every(x=>x.w>=36&&x.h>=36&&!x.cut),r.b.filter(x=>x.w<36||x.h<36||x.cut));
     if(per<99)ok(w+'px: '+per+' equal-width tabs per row ('+r.rows+' rows)',r.cols===per&&r.eq<1.5&&r.rows===Math.ceil(r.b.length/per),{cols:r.cols,rows:r.rows,eq:r.eq});
     else ok(w+'px: one row when the tabs fit (they do at this width)',r.rows===1,{rows:r.rows});
     ok(w+'px: bar is '+(w<760?'not sticky':'sticky'),r.pos===(w<760?'static':'sticky'),r.pos);

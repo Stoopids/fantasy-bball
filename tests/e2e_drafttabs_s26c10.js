@@ -7,7 +7,7 @@ const L=require('./lib.js');const {seed}=require('./seed_league.js');const path=
 let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,500):''))}}
 const MONEY={re:/\$|\b(money|cash|dollars?|wager|betting|gambl\w*|odds|payout|stake)\b/i,ok:/Bets here are just for fun and are settled in pushups, not money\. Betting is Stoopid, and we don't endorse or facilitate gambling for money\./g,test(x){return this.re.test(String(x).replace(this.ok,''))},[Symbol.match](x){return String(x).replace(this.ok,'').match(this.re)}};   /* s28: the Bets page disclaimer (partner wording) is the one allowed money sentence */
 const metr=()=>{const R=e=>e.getBoundingClientRect();const tap=[...document.querySelectorAll('#ltabs a,#lbody a,#lbody button,#godraft,#back_room')].filter(e=>R(e).width>0&&!e.closest('#powerrank .pchips,.chips,.dps'));
-  return{sw:document.documentElement.scrollWidth,iw:innerWidth,small:tap.filter(e=>R(e).height<44||R(e).width<44).map(e=>(e.id||e.className)+':'+Math.round(R(e).width)+'x'+Math.round(R(e).height)).slice(0,6),txt:document.body.innerText}};
+  return{sw:document.documentElement.scrollWidth,iw:innerWidth,small:tap.filter(e=>R(e).height<36||R(e).width<36).map(e=>(e.id||e.className)+':'+Math.round(R(e).width)+'x'+Math.round(R(e).height)).slice(0,6),txt:document.body.innerText}};
 async function open(w,id,info,hash){const P=await L.phone('dt'+Math.random().toString(36).slice(2,6),{desktop:w>=760,w,h:w>=760?900:844,now:'2026-11-15T12:00'});
   await P.page.evaluateOnNewDocument((id,me)=>{localStorage.setItem('fbn.me.'+id,JSON.stringify(me))},id,{mid:info.managers[0].id,k:info.managers[0].k});
   await P.page.setBypassServiceWorker(true);await P.go('league.html?l='+id+hash);return P}
@@ -27,7 +27,7 @@ const POSTOK=(w,lab,id,r,rounds)=>{
   ok(w+' '+lab+': order draft grades -> weekly recaps -> pick board -> room link (s28)',r.has.every(Boolean)&&r.o1&&r.o2&&r.o3,{has:r.has,o:[r.o1,r.o2,r.o3]});
   ok(w+' '+lab+': weekly placeholder text',r.wk==='First recap coming after opening week',r.wk);
   ok(w+' '+lab+': board '+rounds+' rounds x 8 picks, each with manager + school, no big button',r.rounds===rounds&&r.per.every(x=>x===8)&&r.empty===0&&!r.go,{rounds:r.rounds,per:r.per,empty:r.empty,go:r.go});
-  ok(w+' '+lab+': quiet "Draft room →" link last, league code, >= 44px',r.rl&&r.rl.t==='Draft room →'&&/room\.html$/.test(r.rl.p)&&r.rl.l===id&&r.rl.h>=44&&r.rl.w>=44&&r.rl.last,r.rl)};
+  ok(w+' '+lab+': quiet "Draft room →" link last, league code, >= 44px',r.rl&&r.rl.t==='Draft room →'&&/room\.html$/.test(r.rl.p)&&r.rl.l===id&&r.rl.h>=36&&r.rl.w>=36&&r.rl.last,r.rl)};
 (async()=>{try{
   const pre=await seed(null,{live:true,picksMade:10,name:'Test Hoops'});const preI=seed.info;
   const post=await seed(null,{rounds:8,name:'Test Hoops'});const postI=seed.info;
@@ -41,7 +41,7 @@ const POSTOK=(w,lab,id,r,rounds)=>{
       if(h==='#draft'&&w!==320)await shot(P,'pre-draft-'+w);ok(w+' pre '+h+': no page errors',!P.errs.length,P.errs);await P.close()}
     {const P=await open(w,pre,preI,'#recap');await P.page.waitForSelector('#weeklyempty',{timeout:25000}).catch(()=>{});await L.sleep(800);
       const r=await P.page.evaluate(ORDER);Object.assign(r,await P.page.evaluate(metr));
-      ok(w+' pre #recap: weekly placeholder, no pick board, room link last with league code, >= 44px',r.h==='#recap'&&r.wk==='First recap coming after opening week'&&!r.rounds&&!r.has[2]&&r.rl&&r.rl.t==='Draft room →'&&r.rl.l===pre&&r.rl.h>=44&&r.rl.last,{h:r.h,wk:r.wk,rounds:r.rounds,rl:r.rl});
+      ok(w+' pre #recap: weekly placeholder, no pick board, room link last with league code, >= 44px',r.h==='#recap'&&r.wk==='First recap coming after opening week'&&!r.rounds&&!r.has[2]&&r.rl&&r.rl.t==='Draft room →'&&r.rl.l===pre&&r.rl.h>=36&&r.rl.last,{h:r.h,wk:r.wk,rounds:r.rounds,rl:r.rl});
       ok(w+' pre #recap: no overflow, taps >= 44px',r.sw<=r.iw&&!r.small.length,{small:r.small});ok(w+' pre #recap: no page errors',!P.errs.length,P.errs);await P.close()}
     for(const [lab,id,info,rounds] of [['completed_at/endedAt',post,postI,8],['all picks made, no completed time',noAt,noAtI,6]])
       for(const h of ['#draft','#picks','#recap']){

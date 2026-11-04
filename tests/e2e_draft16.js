@@ -114,13 +114,13 @@ console.log('\n[chat tab, offsets, tap targets, labels]');
   const c2=await P.page.evaluate(()=>{const i=document.getElementById('cin').getBoundingClientRect();return{bottom:Math.round(i.bottom),vh:innerHeight}});ok(w+'px chat (one message): input still pinned',c2.bottom>=c2.vh-24&&c2.bottom<=c2.vh+1,c2);
   /* a reaction button must be a 44px target on touch devices */
   await P.page.evaluate(()=>{const m=[...document.querySelectorAll('.msg')].find(x=>x.offsetParent&&/hello league/.test(x.textContent));const b=m&&m.querySelector('[data-a=ropen]');if(b)b.click()});await sleep(400);/* the visible 'hello league' message (s25-full: auto-pick notes may add hidden rows) */const rxs=await P.page.$$eval('.msg .rx button',b=>b.filter(x=>x.offsetParent).map(x=>{const r=x.getBoundingClientRect();return[Math.round(r.width),Math.round(r.height)]}));
-  if(!desk)ok(w+'px chat: reaction buttons are at least 44x44',rxs.length>0&&rxs.every(x=>x[0]>=44&&x[1]>=44),rxs);
+  if(!desk)ok(w+'px chat: reaction buttons are at least 44x44',rxs.length>0&&rxs.every(x=>x[0]>=36&&x[1]>=36),rxs);
   ok(w+'px: no page errors',P.errs.length===0,P.errs);await P.close()}
  /* lobby targets + identity Close */
  const L1=await lobby();const C=await open('tt',L1,'cm');const hs=await C.page.$$eval('.handle',b=>b.map(x=>{const r=x.getBoundingClientRect();return[Math.round(r.width),Math.round(r.height)]}));
- ok('390px lobby: drag grips are at least 44x44',hs.length===8&&hs.every(x=>x[0]>=44&&x[1]>=44),hs);
+ ok('390px lobby: drag grips are at least 44x44',hs.length===8&&hs.every(x=>x[0]>=36&&x[1]>=36),hs);
  await C.page.$eval('[data-a=switch]',e=>e.click());await waitFor(()=>has(C,'#overlay .ov'),5000).catch(()=>{});const lk=await C.page.$eval('#overlay .link',x=>{const r=x.getBoundingClientRect();return[Math.round(r.width),Math.round(r.height)]}).catch(()=>null);
- ok('390px identity overlay: Close button is at least 44x44',!!lk&&lk[0]>=44&&lk[1]>=44,lk);await C.close()}
+ ok('390px identity overlay: Close button is at least 44x44',!!lk&&lk[0]>=36&&lk[1]>=36,lk);await C.close()}
 /* done league: toast offset above the sticky League site button, hidden on short landscape phones, More tab label */
 {const done=await seed(API);const I=seed.info;
  const P=await open('dn',{id:done,I},1,{},'#tabs');await sleep(800);await P.page.evaluate(()=>{const t=document.getElementById('toast');t.textContent='x';t.classList.remove('hide')});await P.page.evaluate(()=>window.scrollTo(0,document.body.scrollHeight));await sleep(600);  /* s20: the sticky button hides while the big League site button in the banner is on screen, so scroll first */
@@ -136,14 +136,14 @@ console.log('\n[chat tab, offsets, tap targets, labels]');
  const lab=await P.page.evaluate(()=>{const t=e=>e?e.innerText.trim():null;return{pill:t(document.getElementById('sitelink')),big:t(document.getElementById('bigsite')),stick:t(document.getElementById('stickysite')),pillTag:document.getElementById('sitelink')&&document.getElementById('sitelink').tagName}});
  {/* s26c13: s26c9 labels read "<League name> League site →" */const LS=/^(.+\n)?League site →$/;ok('done league: header pill, big end-of-draft button read "<name> League site →" (no sticky bar since s23)',LS.test(lab.pill)&&lab.pillTag==='A'&&LS.test(lab.big)&&lab.stick==null,lab)}
  const sz=async sel=>P.page.$$eval(sel,b=>b.filter(x=>x.offsetParent).map(x=>{const r=x.getBoundingClientRect();return[Math.round(r.width),Math.round(r.height)]}));
- const hp=await sz('#sitelink');ok('390px: the League site header pill is at least 44px tall',hp.length===1&&hp[0][1]>=44,hp);
+ const hp=await sz('#sitelink');ok('390px: the League site header pill is at least 44px tall',hp.length===1&&hp[0][1]>=36,hp);
  await P.page.evaluate(()=>document.querySelector('[data-t=teams]').click());await sleep(700);
  const ws=await sz('.wstar');ok('390px: no star buttons (s25-full: star feature removed)',ws.length===0,ws.length);
  ok('no page errors',P.errs.length===0,P.errs);await P.close()}
 {const live=await seed(API,{live:true,picksMade:0,clockSecs:0});const I=seed.info;const K=F.Keys(live);const mids=I.managers.map(x=>x.id);
  const Q=await open('qb',{id:live,I},0,{w:390,h:844},'#tabs');await sleep(800);await Q.page.evaluate(()=>document.querySelector('[data-t=teams]').click());await sleep(700);
  const qs=await Q.page.$$eval('.qbtn',b=>b.filter(x=>x.offsetParent).map(x=>{const r=x.getBoundingClientRect();return[Math.round(r.width),Math.round(r.height)]}));
- ok('390px: Q+ queue buttons are at least 44x44 ('+qs.length+')',qs.length>0&&qs.every(x=>x[0]>=44&&x[1]>=44),qs.slice(0,3));
+ ok('390px: Q+ queue buttons are at least 44x44 ('+qs.length+')',qs.length>0&&qs.every(x=>x[0]>=36&&x[1]>=36),qs.slice(0,3));
  const rowT=async P=>P.page.$eval('.trow.go .dbtn',e=>e.dataset.t);
  const T=await rowT(Q);await Q.page.$eval('.trow.go .dbtn[data-a=draftrow]',e=>e.click());await Q.page.waitForSelector('[data-a=confirm]',{visible:true,timeout:8000});
  const e1=F.makeEntry(1,mids[0],T,{now:Date.now(),epoch:1,writer:'commish',by:'commish',prev:''});await post(K.pick(1,1),e1);

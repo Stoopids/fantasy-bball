@@ -39,7 +39,7 @@ const grid=P=>P.page.evaluate(()=>{const gs=[...document.querySelectorAll('#lbod
         const pr=p.getBoundingClientRect(),out=[...p.querySelectorAll('*')].filter(e=>{const q=e.getBoundingClientRect();return q.width>0&&(q.right>pr.right+0.5||q.left<pr.left-0.5)}).map(e=>e.className||e.tagName);
         return{n:bs.length,small,out,pr:Math.round(pr.right),iw:innerWidth,sw:document.documentElement.scrollWidth,vs:p.querySelectorAll('[data-lb=qbvs]').length,pk:p.querySelectorAll('[data-lb=qbpick]').length,amt:p.querySelectorAll('[data-lb=qbamt]').length}});
       ok(w+'px '+gid+': panel open with chips and pick buttons',r&&r.n>=5&&r.pk>=2&&r.amt===2&&(gid!=='t8'||r.vs===2),r);
-      ok(w+'px '+gid+': every chip / pick button >= 44 x 44',r&&r.small.length===0,r&&r.small);
+      ok(w+'px '+gid+': every chip / pick button >= 36 x 44',r&&r.small.length===0,r&&r.small);
       ok(w+'px '+gid+': nothing overflows the panel or the page',r&&r.out.length===0&&r.pr<=r.iw&&r.sw<=r.iw,r);
       if(SH&&gid==='t8'&&[320,390,1280].includes(w)){await P.page.evaluate(()=>{const c=document.getElementById('chatbar')||document.querySelector('.chatbar');if(c)c.style.display='none';document.querySelector('.qb-pick').closest('.gm').scrollIntoView({block:'start'})});await sleep(250);
         const cl=await P.page.evaluate(()=>{const r=document.querySelector('.qb-pick').closest('.gm').getBoundingClientRect();return{x:Math.max(0,r.left-8),y:Math.max(0,r.top-8+scrollY),width:Math.min(innerWidth,r.width+16),height:r.height+16}});

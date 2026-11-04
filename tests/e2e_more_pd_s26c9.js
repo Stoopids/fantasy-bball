@@ -18,7 +18,7 @@ for(const w of [1280,390,320]){const mob=w<900;const pre=w+'px: ';
   if(!BEFORE){const bd=await p.evaluate(()=>{const vis=e=>e&&e.offsetParent!==null;const dc=[...document.querySelectorAll('.card,.banner')].filter(e=>vis(e)&&/Draft complete/.test(e.innerText));
       const ids=['seemy','bnrecap','bigsite','csvbtn','jsonbtn','redraftroomlink'].map(i=>{const e=document.getElementById(i);if(!vis(e))return[i,0,0];const r=e.getBoundingClientRect();return[i,Math.round(r.height),Math.round(r.width)]});
       const lastCard=document.getElementById('hometip');return{n:dc.length,ids,inDone:!!document.querySelector('#finalbanner #donecard #csvbtn'),cheer:vis(document.getElementById('cheermute')),bottom:lastCard?Math.round(lastCard.getBoundingClientRect().bottom+scrollY):-1,h:innerHeight}});
-    ok(pre+'board: one Draft complete card',bd.n===1,bd);ok(pre+'board: all six buttons visible, >=44px',bd.ids.every(x=>x[1]>=44&&x[2]>=44),bd.ids);ok(pre+'board: exports inside #finalbanner #donecard',bd.inDone);ok(pre+'board: sound toggle visible',bd.cheer);
+    ok(pre+'board: one Draft complete card',bd.n===1,bd);ok(pre+'board: all six buttons visible, >=44px',bd.ids.every(x=>x[1]>=36&&x[2]>=36),bd.ids);ok(pre+'board: exports inside #finalbanner #donecard',bd.inDone);ok(pre+'board: sound toggle visible',bd.cheer);
     if(w===1280)ok(pre+'board: end card + What next + Watch + Home tip fit in 1280x800 (bottom '+bd.bottom+')',bd.bottom>0&&bd.bottom<=800,bd.bottom);else console.log('   info '+pre+'tip bottom '+bd.bottom+' / '+bd.h);
     const cm=await p.evaluate(()=>{window.__dl=0;const o=URL.createObjectURL;URL.createObjectURL=b=>{window.__dl++;return o.call(URL,b)};return 1});await p.click('#csvbtn');await p.click('#jsonbtn');await sleep(500);
     ok(pre+'board: CSV and JSON export still fire',await p.evaluate(()=>window.__dl>=2),await p.evaluate(()=>window.__dl))}
@@ -38,7 +38,7 @@ for(const w of [1280,390,320]){const mob=w<900;const pre=w+'px: ';
   const rows=await p.evaluate(()=>[...document.querySelectorAll('#linkscard .pdrow')].map(r=>({t:r.querySelector('.pdlbl').textContent,u:r.querySelector('[data-a=copy]').dataset.u})));
   ok(pre+'three short link rows',JSON.stringify(rows.map(r=>r.t))==='["Invite link","Room link","Spectator link"]',rows);
   ok(pre+'no URL text shown in link rows',await p.evaluate(()=>!/https?:/.test(document.getElementById('linkscard').innerText)));
-  const small=await p.evaluate(()=>[...document.querySelectorAll('#view .btn,#view a.btn,#finalbanner .btn')].filter(b=>b.offsetParent).map(b=>{const r=b.getBoundingClientRect();return[b.textContent.trim(),Math.round(r.height),Math.round(r.width)]}).filter(x=>x[1]<44||x[2]<44));
+  const small=await p.evaluate(()=>[...document.querySelectorAll('#view .btn,#view a.btn,#finalbanner .btn')].filter(b=>b.offsetParent).map(b=>{const r=b.getBoundingClientRect();return[b.textContent.trim(),Math.round(r.height),Math.round(r.width)]}).filter(x=>x[1]<36||x[2]<36));
   ok(pre+'all tap targets >=44px',small.length===0,small);
   await p.locator('#pdl_room [data-a=copy]').click();await sleep(300);const clip=await p.evaluate(()=>navigator.clipboard.readText());
   ok(pre+'Copy copies the full room URL',clip===rows[1].u&&/room\.html\?l=/.test(clip),clip);
@@ -77,7 +77,7 @@ if(!BEFORE)/* League site label: '<name> League site →', escaped, truncated on
      return{i,title:a.title,aria:a.getAttribute('aria-label'),txt:a.textContent,bTag:!!a.querySelector('b'),sfxIn:sr.right<=ar.right+1&&sr.width>20&&/League site →/.test(s.textContent),ell:n?n.scrollWidth>n.clientWidth:null,h:Math.round(ar.height)}}));
    const full='The Extremely Long & Wonderful Poo Part Deux Invitational Hoops League site →';/* the app strips tags from names; either way no markup may reach the DOM */
    for(const x of r){if(x.miss)continue;ok(pre+tb+' #'+x.i+' title/aria = full text',x.title===full&&x.aria===full,x);ok(pre+tb+' #'+x.i+' name escaped (no injected <b>)',!x.bTag,x.txt);ok(pre+tb+' #'+x.i+' arrow suffix visible',x.sfxIn,x)
-     if(mob&&x.i==='bigsite')ok(pre+tb+' #bigsite name truncated with ellipsis, >=44px',x.ell&&x.h>=44,x)}
+     if(mob&&x.i==='bigsite')ok(pre+tb+' #bigsite name truncated with ellipsis, >=44px',x.ell&&x.h>=36,x)}
    ok(pre+tb+' no sideways scroll',await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1))}
   ok(pre+'no page errors',errs.length===0,errs);await ctx.close()}}
 

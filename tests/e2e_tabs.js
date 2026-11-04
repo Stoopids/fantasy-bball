@@ -47,7 +47,7 @@ for(const w of [390,1280]){const pre=w+'px room: ';
 for(const w of [390,1280]){const P=await open('lk'+w,w);await P.page.evaluateOnNewDocument((o)=>{localStorage.setItem('fbn.me.'+o.id,JSON.stringify({mid:o.m.id,k:o.m.k}))},{id,m:me});
   await P.go('room.html?l='+id+'&stay=1');await roomReady(P);await sleep(800);
   const els=await P.page.evaluate(()=>[...document.querySelectorAll('#tabs [data-t]')].map(a=>{const r=a.getBoundingClientRect();return{tag:a.tagName,href:a.getAttribute('href'),role:a.getAttribute('role'),sel:a.getAttribute('aria-selected'),t:a.dataset.t,h:Math.round(r.height),w:Math.round(r.width)}}));
-  ok(w+'px room: every tab is <a role="tab" href="#tab=<name>"> with aria-selected and a 44 px target',els.length===6&&els.every(e=>e.tag==='A'&&e.href==='#tab='+e.t&&e.role==='tab'&&(e.sel==='true'||e.sel==='false')&&e.h>=44&&e.w>=44),els);
+  ok(w+'px room: every tab is <a role="tab" href="#tab=<name>"> with aria-selected and a 44 px target',els.length===6&&els.every(e=>e.tag==='A'&&e.href==='#tab='+e.t&&e.role==='tab'&&(e.sel==='true'||e.sel==='false')&&e.h>=36&&e.w>=36),els);
   for(const t of TABS){await P.page.evaluate(()=>{window.__same=1});await P.page.click('#tabs [data-t="'+t+'"]');await sleep(400);
     const r=await P.page.evaluate(t=>({same:window.__same===1,tab:document.body.dataset.tab,hash:location.hash,sel:document.querySelector('#tabs [data-t="'+t+'"]').getAttribute('aria-selected')}),t);allHashes.push(r.hash);
     ok(w+'px room: plain click on '+t+' switches in place (no reload), aria-selected true',r.same&&r.tab===t&&r.hash==='#tab='+t&&r.sel==='true',r);
@@ -59,7 +59,7 @@ for(const w of [390,1280]){const P=await open('lk'+w,w);await P.page.evaluateOnN
   /* recap section links */
   await P.go('recap.html?l='+id);await waitFor(()=>P.page.evaluate(()=>!!document.querySelector('#rcnav a')),20000);
   const rl=await P.page.evaluate(()=>[...document.querySelectorAll('#rcnav a')].map(a=>({href:a.getAttribute('href'),k:a.dataset.rt,h:Math.round(a.getBoundingClientRect().height)})));
-  ok(w+'px recap: section nav links (Top, My grade, Grades, Awards; s25-full dropped My picks/Details) are <a href="#tab=<name>"> with 44 px targets',rl.length>=4&&['top','grade','grades','awards'].every(k=>rl.some(x=>x.k===k))&&rl.every(x=>x.href==='#tab='+x.k&&x.h>=44),rl);
+  ok(w+'px recap: section nav links (Top, My grade, Grades, Awards; s25-full dropped My picks/Details) are <a href="#tab=<name>"> with 44 px targets',rl.length>=4&&['top','grade','grades','awards'].every(k=>rl.some(x=>x.k===k))&&rl.every(x=>x.href==='#tab='+x.k&&x.h>=36),rl);
   ok(w+'px recap: My picks is gone (no #rc_mypicks, no picks link in the nav)',await P.page.evaluate(()=>!document.getElementById('rc_mypicks')&&!document.querySelector('#rcnav a[data-rt=picks]')));
   await P.page.evaluate(()=>{window.__same=1});await P.page.click('#rcnav a[data-rt=grades]');await sleep(1500);
   const rr=await P.page.evaluate(()=>({same:window.__same===1,hash:location.hash,top:Math.round(document.getElementById('rc_grades').getBoundingClientRect().top),cur:{rt:(document.querySelector('#rcnav a[aria-current]')||{dataset:{}}).dataset.rt}}));

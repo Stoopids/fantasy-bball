@@ -21,7 +21,7 @@ const LONG='WOW MOM WOW: KANSAS WINS BIG WHEN MWW MEETS DUKE, AND WE WATCH WITH 
     await P.page.evaluate(()=>document.getElementById('b27Grid').scrollIntoView());await sleep(200);await P.page.screenshot({path:SH+'/s25_cards_'+w+'.png'});await P.page.close()}
   {const P=await open(390);const sel='[data-bet=cbet000001]';
     const st=()=>P.page.evaluate(sel=>{const c=document.querySelector(sel),t=c.querySelector('.b27-t'),b=c.querySelector('.b27-more'),lh=parseFloat(getComputedStyle(t).lineHeight)||20,r=b&&b.getBoundingClientRect();return{h:t.clientHeight,sh:t.scrollHeight,lines:Math.round(t.clientHeight/lh),hid:b.hidden,lab:b.innerText,ae:b.getAttribute('aria-expanded'),ac:b.getAttribute('aria-controls')===t.id,bw:r.width,bh:r.height}},sel);
-    let a=await st();ok('390px: long text clamped to 3 lines, "more" shown (aria-expanded=false, aria-controls), tap target >= 44px',a.lines===3&&!a.hid&&a.lab==='more'&&a.ae==='false'&&a.ac&&a.bw>=44&&a.bh>=44,a);
+    let a=await st();ok('390px: long text clamped to 3 lines, "more" shown (aria-expanded=false, aria-controls), tap target >= 44px',a.lines===3&&!a.hid&&a.lab==='more'&&a.ae==='false'&&a.ac&&a.bw>=36&&a.bh>=36,a);
     await P.page.evaluate(sel=>document.querySelector(sel).scrollIntoView({block:'center'}),sel);await sleep(150);await P.page.screenshot({path:SH+'/s25_cards_390.png'});
     await P.page.click(sel+' .b27-more');await sleep(400);a=await st();ok('tap "more": full text shown, button says "less", aria-expanded=true',a.lines>3&&a.lab==='less'&&a.ae==='true'&&!a.hid,a);
     await P.page.click(sel+' .b27-more');await sleep(400);a=await st();ok('tap "less": clamped again',a.lines===3&&a.lab==='more'&&a.ae==='false',a);

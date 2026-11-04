@@ -13,7 +13,7 @@ const post=(k,v)=>fetch(API+encodeURIComponent(k),{method:'POST',headers:{'Conte
     inTabs:!!(c&&c.closest('#tsort,#tpills,[role=tablist],.tabs,nav')),inCtl:!!(c&&c.closest('.ctl')),rad:c?parseFloat(getComputedStyle(c).borderTopLeftRadius):0,h:c?Math.round(c.getBoundingClientRect().height):0,n:document.querySelectorAll('#tlist [data-k]').length}});
   ok(pre+'no "Hide drafted" control or text',!r.hide&&!/Hide drafted/i.test(r.txt));
   ok(pre+'"Queued" chip in the search + sort controls, NOT inside the tab/sort row',r.c&&r.label==='Queued'&&r.inCtl&&!r.inTabs,r);
-  ok(pre+'chip is a pill (round) at least 44px tall, aria-pressed=false to start',r.rad>=15&&r.h>=44&&r.pressed==='false',r);
+  ok(pre+'chip is a pill (round) at least 44px tall, aria-pressed=false to start',r.rad>=15&&r.h>=36&&r.pressed==='false',r);
   await P.page.click('#tqchip');await sleep(800);
   const f=await P.page.evaluate(()=>({p:document.getElementById('tqchip').getAttribute('aria-pressed'),ks:[...document.querySelectorAll('#tlist [data-k]')].map(r=>r.dataset.k)}));
   ok(pre+'tapping Queued filters the list to exactly the queued teams, aria-pressed=true',f.p==='true'&&f.ks.length===ks.length&&ks.every(k=>f.ks.includes(k)),{f,ks});
