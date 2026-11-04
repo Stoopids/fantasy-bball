@@ -19,7 +19,7 @@ const shot=async(P,name,w)=>{if(!process.env.SHOTS)return;const b=await P.page.e
     await shot(P,'standings-league',w);await P.close();
     P=await open(w,id,info,'#standings/breakdown');
     const bd=await P.page.evaluate(()=>[...document.querySelectorAll('#ptsv .pcard')].map(k=>({mid:k.dataset.mid,tot:+k.dataset.total,shown:+k.querySelector('.orh .pts').firstChild.textContent,
-      conf:[...k.querySelectorAll('td[data-cat]')].filter(p=>/^conf_/.test(p.dataset.cat)).map(p=>({tid:p.closest('tr.prow').dataset.tid,k:p.dataset.cat,pts:+p.dataset.pts})).filter(p=>p.pts)})));
+      conf:[...k.querySelectorAll('td[data-cat]')].filter(p=>/^conf/.test(p.dataset.cat)).map(p=>({tid:p.closest('tr.prow').dataset.tid,k:p.dataset.cat,pts:+p.dataset.pts})).filter(p=>p.pts)})));
     await shot(P,'standings-breakdown',w);await P.close();
     const tag=w+'px';const B={};bd.forEach(b=>{B[b.mid]=b});
     ok(tag+': 8 managers in both views',lg.length===8&&bd.length===8,[lg.length,bd.length]);
@@ -27,7 +27,7 @@ const shot=async(P,name,w)=>{if(!process.env.SHOTS)return;const b=await P.page.e
     ok(tag+': standings sorted by total (desc)',lg.every((o,i)=>!i||lg[i-1].tot>=o.tot),lg.map(o=>o.tot));
     const pl=o=>+String(o.rank).replace('T-','');ok(tag+': places follow the order (equal totals broken by wins / win % / point difference, else shared)',lg.every((o,i)=>!i||pl(lg[i-1])<=pl(o))&&lg.every((o,i)=>!i||pl(lg[i-1])!==pl(o)||lg[i-1].tot===o.tot),lg.map(o=>o.rank+':'+o.tot));
     const all=bd.flatMap(b=>b.conf);
-    ok(tag+': conf map scored: own(0,2) conf_reg +4 and conf_tourn +4, nothing else',all.length===2&&all.every(p=>p.tid===String(fx.own(0,2))&&p.pts===4)&&all.some(p=>p.k==='conf_season')&&all.some(p=>p.k==='conf_tourney'),all);
+    ok(tag+': conf map scored: own(0,2) conf_reg +4 and conf_tourn +4 (step7: one STOOPIDS Conf column = 8), nothing else',all.length===1&&all[0].tid===String(fx.own(0,2))&&all[0].pts===8&&all[0].k==='conf',all);
   }
   /* the same totals straight from js/scoring.js */
   const S=require('../js/scoring.js');ok('scoring.js has conf_reg / conf_tourn / leagueTotals',S.POINTS.conf_reg===4&&S.POINTS.conf_tourn===4&&typeof S.leagueTotals==='function');

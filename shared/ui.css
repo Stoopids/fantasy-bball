@@ -203,6 +203,7 @@ html body .gf3 select.gf2-s,html body .gf3 .gf2-b,html body .gf3 input.gf2-s{hei
 @media (min-width:900px){.lgref .orl.q{grid-template-columns:repeat(2,minmax(0,1fr));justify-items:stretch;align-items:start;gap:10px}.lgref .orl.q .pcard{width:auto;max-width:none;min-width:0}.lgref .orl.q .ptw{overflow-x:auto}.lgref .orl.q .ptab{width:100%;font-size:13px}.lgref .orl.q .ptab th{font-size:11px}.lgref .orl.q .ptab th,.lgref .orl.q .ptab td{padding:4px 4px}.lgref .orl.q .ptab .pn,.lgref .orl.q .ptab .pn .chip{width:140px;min-width:140px;max-width:140px}.lgref .orl.q .ptab .pn .chip{font-size:12.5px}html.bd-a .lgref .orl.q{grid-template-columns:minmax(0,1fr)}html.bd-a .lgref .orl.q .ptab{font-size:15px}html.bd-a .lgref .orl.q .ptab th{font-size:12.5px}html.bd-a .lgref .orl.q .ptab th,html.bd-a .lgref .orl.q .ptab td{padding:5px 8px}html.bd-a .lgref .orl.q .ptab .pn,html.bd-a .lgref .orl.q .ptab .pn .chip{width:220px;min-width:220px;max-width:220px}html.bd-a .lgref .orl.q .ptab .pn .chip{font-size:14px}}
 .lgref .card.oc .pts,.lgref .orh .pts{text-align:center;justify-self:center}
 html body #ptsv.lgref{display:block}
+html body .lgref .ptab .pn .chip.school-chip{height:36px;padding-top:2px;padding-bottom:2px}
 /*</STEP6-PTAB>*/
 
 /*<STEP6-TAP> STOOPIDS All-teams look for League (.lgref) */

@@ -24,9 +24,9 @@ const small=()=>[...document.querySelectorAll('#lbody a,#lbody button,#lbody [ro
     ok(tag+': 8 manager cards, 8 schools each',r.cards.length===8&&r.cards.every(c=>c.rows.length===8),r.cards.map(c=>c.rows.length));
     ok(tag+': each school: category chips sum to its total',r.cards.every(c=>c.rows.every(x=>x.ps.reduce((a,p)=>a+p.pts,0)===x.tot&&x.shown===x.tot)));
     ok(tag+': each manager total = sum of school totals',r.cards.every(c=>c.tot===c.shown&&c.tot===c.rows.reduce((a,x)=>a+x.tot,0)),r.cards.map(c=>c.tot));
-    ok(tag+': 10 categories per school, no Losses, dash for none',r.cards.every(c=>c.rows.every(x=>x.ps.length===10&&!x.ps.some(p=>p.k==='losses')&&x.ps.every(p=>p.pts!==0||p.b==='–'||p.b==='—'/*step6: STOOPIDS em dash*/))));
+    ok(tag+': 9 categories per school (STOOPIDS columns), no Losses, dash for none',r.cards.every(c=>c.rows.every(x=>x.ps.length===9/*step7: STOOPIDS 9 columns*/&&!x.ps.some(p=>p.k==='losses')&&x.ps.every(p=>p.pts!==0||p.b==='–'||p.b==='—'/*step6: STOOPIDS em dash*/))));
     const all=r.cards.flatMap(c=>c.rows.flatMap(x=>x.ps));const has=k=>all.some(p=>p.k===k&&p.pts!==0);
-    ok(tag+': real points: wins, conf season +4, conf tourney +4, NCAA entry/wins/F4/champ present',['wins','entry','ncaa_wins','final4','champ'].every(has)&&all.some(p=>p.k==='conf_season'&&p.pts===4)&&all.some(p=>p.k==='conf_tourney'&&p.pts===4),['wins','conf_season','conf_tourney','entry','ncaa_wins','upsets','final4','champ','missed','playin'].filter(has));
+    ok(tag+': real points: wins, conf season +4, conf tourney +4, NCAA entry/wins/F4/champ present',['wins','entry','ncaa_wins','final4','champ'].every(has)&&all.some(p=>p.k==='conf'&&p.pts===8)/*step7: conf season +4 and tourney +4 in one STOOPIDS Conf column*/,['wins','conf','entry','ncaa_wins','upsets','final4','champ','missed','playin'].filter(has));
     ok(tag+': no overflow',r.sw<=r.iw&&r.cards.every(c=>!c.out),{sw:r.sw,iw:r.iw});
     ok(tag+': s26c11 one row per school (pill, categories, total on one line), same-width pills',r.cards.every(c=>c.rows.every(x=>x.one))&&new Set(r.cards.flatMap(c=>c.rows.map(x=>x.cw))).size===1,r.cards[0].rows.map(x=>[x.one,x.cw]));
     ok(tag+': taps >= 36px',r.small.length===0,r.small);
