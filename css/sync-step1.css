@@ -266,13 +266,14 @@ main,#main{padding-top:6px!important}
 .b27-kindrow>.tabs>button{flex:0 1 auto!important;width:auto!important;min-width:0!important;min-height:36px!important;height:36px;padding:0 14px!important;border:0!important;border-radius:999px!important;background:transparent!important;color:var(--mut,#aab)!important;font:inherit;font-size:13px!important;font-weight:700!important;line-height:1!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:none!important}
 .b27-kindrow>.tabs>button.on{background:var(--pill,#FFD400)!important;color:var(--pill-ink,#111)!important}
 .b27-kindrow>.s27-sel,.b27-kindrow>.b27-selbar{display:flex!important;flex:none;align-items:center;gap:6px!important;margin:0 0 0 auto!important;grid-template-rows:none!important;flex-wrap:nowrap!important}
-.b27-kindrow .s27-selb,.b27-kindrow .b27-sm{min-height:28px!important;height:28px!important;min-width:0!important;padding:0 10px!important;border-radius:999px!important;border:1px solid var(--line,#3a4256)!important;background:transparent!important;color:var(--tx,#eef1f7)!important;font:inherit;font-size:12px!important;font-weight:600!important;line-height:1!important;cursor:pointer}
+.b27-kindrow .s27-selb,.b27-kindrow .b27-sm{min-height:32px!important;height:32px!important;min-width:0!important;padding:0 12px!important;border-radius:999px!important;border:1px solid var(--line,#3a4256)!important;background:transparent!important;color:var(--tx,#eef1f7)!important;font:inherit;font-size:14px!important;font-weight:600!important;line-height:1!important;cursor:pointer}
 .b27-kindrow .b27-selbar .cnt{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0);white-space:nowrap;margin:0!important;padding:0!important}
 .b27-kindrow .b27-sm .s,.b27-kindrow .s27-selb .s{display:none}
 @media (max-width:599px){
- .b27-kindrow{gap:6px}
- .b27-kindrow>.tabs>button{font-size:12px!important;padding:0 9px!important}
- .b27-kindrow .s27-selb,.b27-kindrow .b27-sm{min-height:36px!important;height:36px!important;padding:0 9px!important;font-size:12px!important}
+ .b27-kindrow{gap:4px}
+ .b27-kindrow>.s27-sel,.b27-kindrow>.b27-selbar{gap:4px!important}
+ .b27-kindrow>.tabs>button{font-size:12px!important;padding:0 8px!important}
+ .b27-kindrow .s27-selb,.b27-kindrow .b27-sm{min-height:36px!important;height:36px!important;padding:0 10px!important;font-size:13.5px!important}
  .b27-kindrow .b27-sm .f,.b27-kindrow .s27-selb .f{display:none}
  .b27-kindrow .b27-sm .s,.b27-kindrow .s27-selb .s{display:inline}
 }
