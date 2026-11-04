@@ -73,3 +73,5 @@ body.lsite #tag{margin-top:0!important;line-height:17px!important}
 #allteams .ato,#allteams .ato b{font-weight:400!important;font-size:12px!important}
 #allteams .n{font-size:12px!important;font-weight:800}
 #allteams .atp{color:inherit!important}
+@media (max-width:360px){.mkrow{flex-wrap:wrap}.mkrow .mkref{margin-left:auto}}
+body.lsite #lbody>.gday,body.lsite #lbody>.rcroom{margin-left:0!important;margin-right:0!important;padding-left:0!important;padding-right:0!important}

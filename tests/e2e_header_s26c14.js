@@ -24,13 +24,13 @@ let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad
     ok(tag+': no Refresh Live Games row off the Games tab',!h.liveAny);ok(tag+': no overflow (Standings)',h.sw<=h.iw,h);
     if(SH)await P.page.screenshot({path:SH+'/header-'+w+'.png'});
     await P.page.evaluate(()=>{location.hash='#games'});await L.sleep(1500);const p0=polls;
-    const g=await P.page.evaluate(()=>{const l=document.getElementById('live'),b=document.getElementById('lvB');const lb=document.getElementById('lbody');
-      return{first:lb.firstElementChild&&lb.firstElementChild.id,vis:!!l&&!l.hidden&&!!l.getClientRects().length,bh:b?Math.round(b.getBoundingClientRect().height):0,btxt:b?b.innerText:'',
+    const g=await P.page.evaluate(()=>{const l=document.querySelector('#lbody .mkrow'),b=l&&l.querySelector('.mkref');   /* sync-step1: Refresh Live Games lives at the far right of the Upcoming/Past row (= STOOPIDS) */const lb=document.getElementById('lbody');
+      return{first:lb.firstElementChild&&lb.firstElementChild.className,right:b&&l?Math.round(l.getBoundingClientRect().right-b.getBoundingClientRect().right):null,vis:!!b&&!!b.getClientRects().length,bh:b?Math.round(b.getBoundingClientRect().height):0,btxt:b?b.innerText:'',
         lu:(document.getElementById('lvU')||{}).innerText||'',sw:document.documentElement.scrollWidth,iw:innerWidth}});
-    ok(tag+': Games tab: Refresh Live Games row is the first thing in the tab, visible',g.first==='live'&&g.vis&&/Refresh Live Games/.test(g.btxt),g);
-    ok(tag+': Games tab: Refresh button >= 44px tall',g.bh>=44,g.bh);ok(tag+': Games tab: "Last updated <time>" shown after the poll',/^Last updated \d/.test(g.lu),g.lu);
+    ok(tag+': Games tab: the Upcoming/Past row is first, Refresh Live Games visible at its far right',g.first==='mkrow'&&g.right!==null&&Math.abs(g.right)<=1&&g.vis&&/Refresh Live Games/.test(g.btxt),g);
+    ok(tag+': Games tab: Refresh button >= 30px tall (STOOPIDS size)',g.bh>=30,g.bh);{await P.page.evaluate(()=>{location.hash='#standings'});await L.sleep(800);const u=await P.page.evaluate(()=>{const e=document.querySelector('#lbody .mkupd');return e?e.innerText:''});ok(tag+': Standings: "Updated …" + Refresh on the right of the League/Breakdown row',/Updated/.test(u)&&/Refresh/.test(u),u);await P.page.evaluate(()=>{location.hash='#games'});await L.sleep(800)}
     ok(tag+': no overflow (Games)',g.sw<=g.iw,g);ok(tag+': ESPN scoreboard polled (live overlay still runs)',polls>=1,polls);
     if(SH){await P.page.evaluate(()=>scrollTo(0,0));await P.page.screenshot({path:SH+'/games-top-'+w+'.png'});await P.page.evaluate(()=>scrollTo(0,document.body.scrollHeight));await L.sleep(300);await P.page.screenshot({path:SH+'/footer-'+w+'.png'})}
-    await L.sleep(21000);await P.page.evaluate(()=>{const b=document.getElementById('lvB');if(b)b.click()});await L.sleep(1500);ok(tag+': tapping Refresh Live Games polls ESPN again',polls>p0,{p0,polls});
+    await L.sleep(21000);await P.page.evaluate(()=>{const b=document.querySelector('#lbody .mkrow .mkref');if(b)b.click()});await L.sleep(1500);ok(tag+': tapping Refresh Live Games polls ESPN again',polls>p0,{p0,polls});
     ok(tag+': no page errors',P.errs.filter(e=>/pageerror/.test(e)).length===0,P.errs);await P.close()}
  }catch(e){bad++;console.log('FAIL exception',e&&e.stack)}finally{await L.close();console.log(`\n${n-bad}/${n} passed`);process.exit(bad?1:0)}})();

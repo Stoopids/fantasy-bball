@@ -16,7 +16,7 @@ const geom=()=>{const R=e=>{if(!e)return null;const b=e.getBoundingClientRect();
     const D=await L.phone('al'+label.length,{desktop:true,w:1280,h:900});await D.go('league.html?l='+idReal+qs);await D.page.waitForFunction('!!document.querySelector("#lapp[data-ready]")',{timeout:25000});await sleep(500);
     for(const t of TABS){await D.page.evaluate(t=>document.querySelector('#ltabs [data-v='+t+']').click(),t);await sleep(300);const g=await D.page.evaluate(geom);
       const L0=g.hero[0],R0=g.hero[1];const same=e=>e&&Math.abs(e[0]-L0)<=1&&Math.abs(e[1]-R0)<=1;
-      ok('1280 '+label+' / '+t+': banner, title, tab row, every content block and the footer have the same left and right edges ('+L0+'..'+R0+')',same(g.title)&&same(g.nav)&&g.body.every(same)&&same(g.foot)&&g.obseg.every(e=>Math.abs(e[0]-L0)<=1&&e[1]-e[0]<=441),g);
+      ok('1280 '+label+' / '+t+': banner, tab row, every content block and the footer have the same left and right edges, title centred between them (sync-step1) ('+L0+'..'+R0+')',(g.title&&Math.abs((g.title[0]+g.title[1])/2-(L0+R0)/2)<=2&&g.title[0]>=L0-1&&g.title[1]<=R0+1)&&same(g.nav)&&g.body.every(same)&&same(g.foot)&&g.obseg.every(e=>Math.abs(e[0]-L0)<=1&&e[1]-e[0]<=441),g);
       ok('1280 '+label+' / '+t+': tab row is ONE row, no scrolling, first pill at the left edge and last pill at the right edge of the tab row, page has no sideways scroll',g.rows===1&&!g.scroll&&!g.over&&Math.abs(g.pills[0]-g.nav[0])<=12&&Math.abs(g.pills[1]-g.nav[1])<=12,g);
       if(t==='redraft')ok('the Redraft tab reads exactly "Redraft"',g.redraft==='Redraft',g.redraft)}
     await D.page.close();

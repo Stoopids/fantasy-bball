@@ -17,15 +17,24 @@ Files changed: league.html (+css/sync-step1.css, last), js/leaguehome.js (Games/
 - All teams filter ported (#gTeamSel: owned schools in the current list, alphabetical; checked 126 -> 12 cards).
 - Page tests run (out/tests.log vs untouched baseline out/tests-baseline.log, same mock setup): e2e_lsite 3/8 (baseline 3/8), e2e_games_s28c 21/30 (baseline 21/30), e2e_header_s26c14 27/39 (baseline 27/39), e2e_alignment 3/8 (baseline -1/8). No new failures; the failing checks are stale specs (old tab list with Rosters/Share/Draft, 4-in-a-row controls, #live row, 140..1140 edges).
 
+## Done in session 3 (4 Nov, ~09:20–10:05 WIB)
+- Tab list: League = STOOPIDS's 8 minus **Archive** (League has no archive data/tab yet: meta.archive is never written). Phone: 7 tabs as 2 rows of 4 slots, row 2 (Recap, Rules, Profile) centred (8-col grid, span 2). Rosters is not a League tab any more (rosters live in All teams/Standings).
+- Banner = tab bar = content = 1080px at 1280 on League, and the same rule added to /workspace/mockreal (mock.css + inline MOCK style; v=B) so both read 100..1180.
+- All teams: STOOPIDS-style compact owner pills (no "Owner" label), one-line owner, compact rows, 12px bold numbers. Rules/Profile already matched the frame (League keeps its own rules text and profile fields). Headings (.gday, .rcroom) aligned to the content edge.
+- Phone ≤360px: Refresh Live Games wraps to the right instead of overflowing.
+- Tests rewritten to the new look (tests/tabs_exp.js, e2e_lsite, e2e_games_s28c, e2e_header_s26c14, e2e_alignment) – all pass: 53/53, 30/30, 39/39, 54/54 (mock store on 8850/8851). Changed thresholds, stated in the specs: tabs ≥40px phone / ≥32px laptop, Refresh ≥30px (STOOPIDS sizes, below the old 44px rule); title checked as centred, not full width.
+
 ## Not done / unverified
-- League has 7 tabs (no Archive), so phone row 2 has an empty slot; header content width (1000) vs tab bar (1080) follows STOOPIDS but the content then aligns to the tab bar, not the banner.
-- Tests: update the stale specs (e2e_lsite tab list, e2e_games_s28c row-of-4, e2e_header #live row now hidden: Refresh moved into the toggle row, e2e_alignment edge numbers) to the new agreed look.
+- Recap tab: still League's power-rankings layout (2-col cards with chips); STOOPIDS shows 'Weekly write-ups' + 4-col draft-grade cards with letter circle and More. Needs a markup port in power-render.js, not just CSS.
+- All teams: STOOPIDS prints ranks as '#16'; League prints '16' (markup change, not done). Profile: small copy/layout differences (Notifications 'Coming soon' line) left as is.
+- Archive tab: not added (no data); decide whether League gets an empty Archive tab.
+- Only these 4 page specs were re-run; the rest of the suite (e2e_league, bets, recap…) not run this session.
 - tests/node_modules is a local symlink to /workspace/audit/s29d/node_modules (excluded via .git/info/exclude).
 - Rosters/Recap/Rules/Profile/redraft.html/recap.html not touched; e2e tests not run.
 - "Updated X min ago" uses LV.lastOk or D.meta.updated; shows "just now" when unknown.
 
 ## Next
-0. Rewrite the 4 stale test specs to the new look, re-run, then Rosters/Recap/Rules/Profile parity.
+0. Recap markup port (draft-grade cards), '#' ranks in All teams, run the full suite (run_suite_private.sh).
 1. Seed a non-demo league with a manager identity (localStorage) to verify Quick bet stack, outline, Bets form.
 2. Header frame parity, then run tests/e2e_lsite.js + e2e_games_s28c.js on the mock.
 3. Port "All teams" filter if wanted; decide 8th tab.
