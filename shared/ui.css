@@ -1,4 +1,4 @@
-/* shared/ui.css v1.9.0: design CSS used by BOTH sites (moved verbatim from SYNC7..SYNC14). Edit here only; synced to the other repo by PR. */
+/* shared/ui.css v1.10.0: design CSS used by BOTH sites (moved verbatim from SYNC7..SYNC14). Edit here only; synced to the other repo by PR. */
 /*<SYNC7>*/ /* design fixes 4 Nov (same CSS on STOOPIDS and League) */
 /* 1. Standings, laptop: the old live row layout (rank | manager + points | 2x4 pills on the right) with ALL CAPS names, centred Points, trophies inline */
 @media (min-width:700px){
@@ -256,3 +256,13 @@ html body .lgref .card.tap td.to .tnr{display:block;font-size:10px;opacity:.7;ov
 .s27-pop{display:block;margin:6px 0 4px;padding:8px 10px;max-width:340px;border-radius:10px;background:#d8ecff;color:#0b2540;font-size:13px;font-weight:500;line-height:1.35;box-shadow:0 4px 14px rgba(0,0,0,.35)}
 .s27-pop a{color:#0b4fa0;font-weight:700;white-space:nowrap}
 /*</STEP6-TIPS>*/
+
+/*<STEP7-RECAP> STOOPIDS weekly write-ups look for League (#recapweekly only; STOOPIDS keeps its inline rules) */
+#recapweekly.rcw{margin-top:18px}
+#recapweekly.rcw h2{margin:.4em 0}
+#recapweekly .rcl{display:grid;gap:8px}
+#recapweekly .rci{min-width:0}
+#recapweekly .rci small{opacity:.7}
+#recapweekly .rci p{overflow-wrap:anywhere;white-space:pre-line}
+#recapweekly .rcnone{text-align:center;opacity:.7;font-style:italic;padding:20px}
+/*</STEP7-RECAP>*/

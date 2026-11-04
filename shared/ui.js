@@ -1,10 +1,10 @@
-/* shared/ui.js v1.16.0: ONE table of input limits and shared wording, loaded by BOTH sites.
+/* shared/ui.js v1.17.0: ONE table of input limits and shared wording, loaded by BOTH sites.
    Edit here only, copy to the other repo by hand, and run scripts/check_shared.sh.
    Each site keeps its old values as fallbacks, so the pages still work if this file fails to load. */
 (function(g){var LIMITS={team:15,stoopName:12,leagueName:24,chat:200,betText:140,paste:300,payouts:120,stake:20,item:40,odds:9};
 var STRINGS={maxLen:'Keep it to {n} characters or fewer.',nameTooLong:'Keep the name to {n} characters or fewer.',teamTooLong:'Keep the team name to {n} characters or fewer.',checkedNow:'checked just now',online:'Who\u2019s online'};
 function t(k,n){var s=STRINGS[k];return s==null?'':String(s).replace('{n}',n)}
-g.SHARED_UI={version:'1.16.0',LIMITS:LIMITS,STRINGS:STRINGS,t:t};})(typeof window!=='undefined'?window:globalThis);
+g.SHARED_UI={version:'1.17.0',LIMITS:LIMITS,STRINGS:STRINGS,t:t};})(typeof window!=='undefined'?window:globalThis);
 
 /* ---- shared modules (step 4). Source of truth: stoopids/stoopids shared/; copy to fantasy-bball and run scripts/check_shared.sh ---- */
 /* sortCmp(a,b,kind,dir): kind 's' = text A-Z (case-insensitive), 'r' = rank (null/'–' always last), 'n' = number. Used by the All teams table on both sites. */
@@ -110,4 +110,9 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
   SHARED_UI.tallyPeople=function(rows,o){var f=o.fmt;
     return '<div class="card sc"><table'+o.tblAttr+'><tr><th>Person</th><th class="n">Lost</th><th class="n">Won</th><th class="n">Net +/-</th><th class="n">Bets</th><th class="n">Fines</th></tr>'+rows.map(function(r){var n=r.net;
       return '<tr '+o.rowKey+'="'+o.e(r.id)+'"><td'+(r.tdAttr||'')+'>'+r.nameHtml+'</td><td class="n">'+f(r.lost)+'</td><td class="n">'+f(r.won)+'</td><td class="n"><b class="'+(n>0?'good':n<0?'bad':'')+'">'+(n>0?'+':n<0?'-':'')+f(Math.abs(n))+'</b></td><td class="n">'+r.bets+'</td><td class="n">'+(r.fines?f(r.fines):o.zero)+'</td></tr>'}).join('')+'</table></div>'};
+
+  /* STEP7-RECAP: Recap "Weekly write-ups" section (newest first; empty note), both sites. items: [{kind,date,title,body}] */
+  SHARED_UI.weeklySection=function(items,o){var e=o.e;var L=(items||[]).filter(function(x){return x&&x.title}).slice().sort(function(a,b){return String(b.date||'').localeCompare(String(a.date||''))});
+    var list=L.length?'<div class="rcl">'+L.map(function(x){return '<article class="card rci"><small>'+e(x.kind==='special'?'Special':'Weekly')+(x.date?' · '+e(o.fmtDate(String(x.date).slice(0,10))):'')+'</small><h3>'+e(x.title)+'</h3><p>'+e(x.body||'')+'</p></article>'}).join('')+'</div>':'<div class="card note rcnone"'+(o.emptyAttr||'')+'>No weekly write-ups yet. The first one comes after opening week.</div>';
+    return '<section class="rcw"'+(o.secAttr||'')+'><h2>📰 Weekly write-ups</h2>'+list+'</section>'};
 })(typeof window!=='undefined'?window:globalThis);
