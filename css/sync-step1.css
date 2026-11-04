@@ -66,7 +66,7 @@ body.lsite #tag{margin-top:0!important;line-height:17px!important}
 /* All teams = STOOPIDS: small owner pills, one-line owner, compact rows */
 #atfilter{justify-content:center;gap:4px!important;margin:6px 0 10px!important}
 #atfilter .atfl{display:none!important}
-#atfilter .atf{min-height:20px!important;height:20px;padding:0 8px!important;font-size:11px!important;border-radius:99px!important;line-height:20px}
+#atfilter .atf{min-height:36px!important;height:36px;padding:0 8px!important;font-size:11px!important;border-radius:99px!important;line-height:20px}
 #allteams .obh{font-size:10px!important;padding-top:8px!important;padding-bottom:8px!important}
 #allteams .obr{min-height:34px!important;padding-top:4px!important;padding-bottom:4px!important}
 #allteams .ato small{display:none!important}
@@ -210,12 +210,10 @@ main,#main{padding-top:6px!important}
 .d27h{display:grid!important;grid-template-columns:40px 14px minmax(0,1fr);column-gap:6px;align-items:center}
 .d27h>.d27g{grid-column:1;justify-self:center}
 .d27h>div{grid-column:3;min-width:0}
-.obk.atk .obl>.n{text-align:right!important;justify-self:end;min-width:44px;font-variant-numeric:tabular-nums}
 #main table td.n,#main table th.n{text-align:right!important;width:56px;font-variant-numeric:tabular-nums}
 @media (max-width:640px){
  #main button:not(.accsw),#main select,#main a.chip,#main .btn,#lbody button,#lbody select,#lbody a.chip,#lbody .btn{min-height:36px!important}
- #main a.chip,#lbody a.chip{box-sizing:border-box;display:inline-flex;align-items:center}
  .card.oc .chip{display:grid!important}
 }
 /*</SYNC4>*/
-.atf{min-height:36px!important;min-width:36px!important}
+.atf{min-height:36px!important;height:auto!important;min-width:36px!important}
