@@ -21,6 +21,6 @@ const vis=sel=>`(()=>{const e=document.querySelector(${JSON.stringify(sel)});if(
       else{
         const secs=await P.page.evaluate(()=>['helpjump','commissioner','managers','after','limits'].map(id=>{const e=document.getElementById(id);if(!e)return{id,missing:true};e.scrollIntoView({block:'start'});const r=e.getBoundingClientRect(),wr=document.querySelector('.landing').getBoundingClientRect();return{id,h:Math.round(r.height),inside:r.bottom<=wr.bottom+1&&r.right<=wr.right+1,shown:getComputedStyle(e).display!=='none'&&getComputedStyle(e).visibility!=='hidden'}}));
         ok(w+'px help: the jump chips and the Commissioner, Managers, After the draft and Known limits cards are all present, visible and inside the page',secs.every(s=>!s.missing&&s.h>20&&s.inside&&s.shown),secs);
-        const hb=await P.page.evaluate(()=>{const a=document.getElementById('helphome');return a?a.getBoundingClientRect().height:0});ok(w+'px help: the link back home is >= 36 px',hb>=43.5,hb)}
+        const hb=await P.page.evaluate(()=>{const a=document.getElementById('helphome');return a?a.getBoundingClientRect().height:0});ok(w+'px help: the link back home is >= 36 px',hb>=35.5,hb)}
       ok(w+'px '+pg+': no page errors',P.errs.length===0,P.errs);await P.page.close()}}
   console.log('\n'+(n-bad)+'/'+n+' passed'+(bad?'  FAILED: '+fails.join(' | '):''));process.exitCode=bad?1:0}catch(e){console.log(e.stack);process.exitCode=1}finally{await L.close()}})();

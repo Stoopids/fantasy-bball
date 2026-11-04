@@ -1,6 +1,6 @@
 /* Power rankings on the DRAFT RECAP page (s20): the shared module js/power-render.js is hooked into a patched, in-memory copy of recap.html / js/recap.js
    (served by request interception; nothing in the dev tree is written), exactly with the hook lines from /workspace/league-site-work/POWER-RECAP-HOOK.md.
-   Checks, at 390 and 1280: matching league -> 8 cards (grades A+..D, 4-sentence recap, one-tap 10-sentence deep dive + school list, aria-expanded, keyboard, 44px),
+   Checks, at 390 and 1280: matching league -> 8 cards (grades A+..D, 4-sentence recap, one-tap 10-sentence deep dive + school list, aria-expanded, keyboard, 36px),
    the strict match rule (same names but other rosters / one school off / real-league names -> the plain empty state), an unfinished draft shows nothing,
    "Test " names shown without the prefix, no page errors, no horizontal overflow, the module fills its container (same edges as the recap cards).
    node tests/e2e_power_recap.js  (APP / API env, mock store) */
@@ -42,14 +42,14 @@ const ready=async P=>{try{await P.page.waitForFunction('!!document.querySelector
       return{n:cards.length,g:[...q.querySelectorAll('.pgr')].map(x=>x.innerText),exp:[...q.querySelectorAll('.plb')].map(b=>b.getAttribute('aria-expanded')),small,over:document.documentElement.scrollWidth>innerWidth+1,note:!!document.getElementById('prnote'),
         edges:[Math.round(c0.left-rr.left),Math.round(c0.right-rr.right)],txt:q.innerText}});
     ok(w+'px: matching league: 8 ranked cards, grades A+..D in file order, all collapsed, names without "Test ", test-league note shown (the shipped file is the test league), no overflow',o.n===8&&o.g.every((g,i)=>g===PR[i].grade)&&o.exp.every(x=>x==='false')&&o.note&&!/Test /.test(o.txt.replace(/Test league · example analysis/,''))&&!o.over,o);
-    ok(w+'px: tap targets in the module are >= 44px',o.small===0,o);
+    ok(w+'px: tap targets in the module are >= 36px',o.small===0,o);
     ok(w+'px: the module fills its container: cards have the same left and right edges as the recap cards',o.edges[0]===0&&o.edges[1]===0,o.edges);
     await P.page.focus('#prb0');await P.page.keyboard.press('Enter');await sleep(250);
     const s=await P.page.evaluate(()=>({e:document.getElementById('prb0').getAttribute('aria-expanded'),vis:!document.getElementById('prp0').hidden,txt:document.querySelector('#prp0 .plead').innerText,deepHidden:document.getElementById('prdp0').hidden}));
     ok(w+'px: Enter on the card opens the 4-sentence recap (aria-expanded=true), deep dive still closed',s.e==='true'&&s.vis&&sents(s.txt)===4&&s.deepHidden,s);
     await P.page.focus('#prd0');await P.page.keyboard.press('Space');await sleep(250);
     const d=await P.page.evaluate(()=>({e:document.getElementById('prd0').getAttribute('aria-expanded'),vis:!document.getElementById('prdp0').hidden,txt:[...document.querySelectorAll('#prdp0 p')].map(p=>p.innerText).join(' '),li:document.querySelectorAll('#prdp0 .sch li').length,small:[...document.querySelectorAll('#powerrank button')].filter(b=>{const r=b.getBoundingClientRect();return r.width>0&&r.height<36}).length}));
-    ok(w+'px: Space on Deep dive opens the 10-sentence recap and the school list; targets still >= 44px',d.e==='true'&&d.vis&&sents(d.txt)>=9&&sents(d.txt)<=11&&d.li===8&&d.small===0,{e:d.e,n:sents(d.txt),li:d.li,small:d.small,t:d.txt.slice(0,700)});
+    ok(w+'px: Space on Deep dive opens the 10-sentence recap and the school list; targets still >= 36px',d.e==='true'&&d.vis&&sents(d.txt)>=9&&sents(d.txt)<=11&&d.li===8&&d.small===0,{e:d.e,n:sents(d.txt),li:d.li,small:d.small,t:d.txt.slice(0,700)});
     await P.page.focus('#prb0');await P.page.keyboard.press('Enter');await sleep(200);ok(w+'px: Enter on the open card collapses it',(await P.page.$eval('#prb0',e=>e.getAttribute('aria-expanded')))==='false');
     await P.page.$eval('#powerrank',e=>e.scrollIntoView());await P.shot('s20-recap-power-'+w);
     ok(w+'px: no page errors',P.errs.length===0,P.errs);await P.page.close();

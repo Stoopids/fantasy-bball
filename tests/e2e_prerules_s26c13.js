@@ -1,6 +1,6 @@
 /* s26c13: Rules before the draft. league.html?l=<code>#rules (Draft Room lobby 'League Rules' button) renders the league rules (settings + scoring + house rules)
    with no rosters: live draft with 0 picks and with 10 picks. Rules tab current, hash kept, identity (fbn.me.<code>) kept, no page errors, no 'Available after
-   the draft', no 'Test ' prefix, no money words, no overflow, taps >= 44px at 320/390/1280. SHOTS=dir -> rules-pre-<w>.png (390, 1280) */
+   the draft', no 'Test ' prefix, no money words, no overflow, taps >= 36px at 320/390/1280. SHOTS=dir -> rules-pre-<w>.png (390, 1280) */
 const L=require('./lib.js');const {seed}=require('./seed_league.js');const path=require('path');
 let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,500):''))}}
 const MONEY=/\$|\b(money|cash|dollars?|wager|betting|gambl\w*|odds|payout|stake)\b/i;
@@ -19,7 +19,7 @@ const MONEY=/\$|\b(money|cash|dollars?|wager|betting|gambl\w*|odds|payout|stake)
     ok(tag+': league settings + scoring table + house rules shown (no rosters needed)',/Managers: 8/.test(r.set)&&/Rounds:/.test(r.set)&&/Pick clock: 60 s/.test(r.set)&&/Redraft: January 20, 2027/.test(r.set)&&r.sc>=9&&/House interpretations/.test(r.txt)&&/League rules/.test(r.txt),{set:r.set,sc:r.sc});
     ok(tag+': no "Available after the draft", no "Test " prefix, no money words',!/Available after the draft/.test(r.txt)&&!/\bTest Hoops\b/.test(r.txt)&&!MONEY.test(r.txt));
     ok(tag+': identity kept (fbn.me.<code>)',!!r.me&&JSON.parse(r.me).mid===info.managers[1].id);
-    ok(tag+': no overflow, taps >= 44px',r.sw<=r.iw&&!r.small.length,{sw:r.sw,iw:r.iw,small:r.small});
+    ok(tag+': no overflow, taps >= 36px',r.sw<=r.iw&&!r.small.length,{sw:r.sw,iw:r.iw,small:r.small});
     ok(tag+': no page errors',!P.errs.length,P.errs);
     if(process.env.SHOTS&&pm===10&&w!==320)await P.page.screenshot({path:path.join(process.env.SHOTS,'rules-pre-'+w+'.png'),fullPage:true});
     await P.page.evaluate(()=>document.querySelector('#ltabs a[data-v=draft]').click());await P.page.waitForSelector('#godraft',{timeout:5000}).catch(()=>{});

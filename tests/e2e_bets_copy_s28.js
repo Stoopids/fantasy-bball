@@ -75,7 +75,7 @@ const tap=async(P,sel)=>{await P.page.click(sel);await sleep(250)};
   /* ---- widths ---- */
   for(const W of [320,390,1280])for(const mode of ['bet','pool','tally']){const P=await open(id,info,0,{w:W});if(mode==='pool')await tap(P,'#b27KindPool');if(mode==='tally')await tap(P,'#b27Ob_tally');
     const r=await P.page.evaluate(()=>{const small=[...document.querySelectorAll('#lbody button,#lbody select,#lbody input,#lbody textarea')].filter(e=>{const b=e.getBoundingClientRect();return b.width&&b.height&&!e.closest('.b27-rx')&&!e.closest('[hidden]')&&(b.height<36||b.width<36)}).map(e=>(e.id||e.dataset.lb||e.className)+':'+Math.round(e.getBoundingClientRect().width)+'x'+Math.round(e.getBoundingClientRect().height));return{ov:document.documentElement.scrollWidth-innerWidth,small}});
-    ok(W+'px '+mode+': no horizontal overflow, every tap target at least 44px',r.ov<=0&&!r.small.length,r);
+    ok(W+'px '+mode+': no horizontal overflow, every tap target at least 36px',r.ov<=0&&!r.small.length,r);
     /* s28b regression: every opponent / person chip and Tally row shows the TEAM name on top, the real name under it (hidden when equal) */
     const co=await P.page.evaluate(()=>{const vis=e=>{const b=e&&e.getBoundingClientRect();return b&&b.width>0&&b.height>0?b:null};const out=[];
       document.querySelectorAll('#lbody .b27-opps .b27-chip.op').forEach(c=>{const t=[...c.querySelectorAll('.nm .tl > *')].map(vis).find(Boolean),r=vis(c.querySelector('.nm .tnr'));out.push({k:'chip',mid:c.dataset.mid,t:!!t,r:!!r,ok:!!t&&(!r||t.top<r.top),cb:c.getBoundingClientRect().bottom,rb:r?r.bottom:0})});

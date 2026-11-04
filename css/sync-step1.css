@@ -206,3 +206,16 @@ main,#main{padding-top:6px!important}
 /*<SYNC3-AT>*/ /* All teams numbers/ranks = STOOPIDS size (14px) on laptop and phone */
 .obk.atk .obl>.n,.obk.atk .obl>.n.ats{font-size:14px!important}
 /*</SYNC3-AT>*/
+/*<SYNC4>*/ /* ranked grid on Recap (grade | movement slot | name) and All teams (fixed right-aligned number columns); phone taps >= 36px */
+.d27h{display:grid!important;grid-template-columns:40px 14px minmax(0,1fr);column-gap:6px;align-items:center}
+.d27h>.d27g{grid-column:1;justify-self:center}
+.d27h>div{grid-column:3;min-width:0}
+.obk.atk .obl>.n{text-align:right!important;justify-self:end;min-width:44px;font-variant-numeric:tabular-nums}
+#main table td.n,#main table th.n{text-align:right!important;width:56px;font-variant-numeric:tabular-nums}
+@media (max-width:640px){
+ #main button:not(.accsw),#main select,#main a.chip,#main .btn,#lbody button,#lbody select,#lbody a.chip,#lbody .btn{min-height:36px!important}
+ #main a.chip,#lbody a.chip{box-sizing:border-box;display:inline-flex;align-items:center}
+ .card.oc .chip{display:grid!important}
+}
+/*</SYNC4>*/
+.atf{min-height:36px!important;min-width:36px!important}

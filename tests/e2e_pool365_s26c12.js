@@ -1,6 +1,6 @@
 /* s26c12: 365-team pool. Run against a mock assets/teams.js with 365 schools (run dir), incl. new 6-digit ids, missing/invalid colours, no logo or a broken logo,
    very long names. League of 8 x 16 = 128 schools drawn across the pool. All teams / Breakdown / Games / Standings: every chip has a logo or initials (never blank),
-   a valid background, conf codes (ESPN + unknown) labelled, sort + owner filter, render time, no overflow + taps >= 44px at 320/390/1280. SHOTS=dir */
+   a valid background, conf codes (ESPN + unknown) labelled, sort + owner filter, render time, no overflow + taps >= 36px at 320/390/1280. SHOTS=dir */
 const L=require('./lib.js');const fs=require('fs'),path=require('path');const {seed}=require('./seed_league.js');const {sleep}=L;const root=path.join(__dirname,'..');const SH=process.env.SHOTS||'';
 let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,700):''))}}
 const tsrc=fs.readFileSync(path.join(root,'assets/teams.js'),'utf8');const TD=JSON.parse(tsrc.slice(tsrc.indexOf('{'),tsrc.lastIndexOf('}')+1));const TIDS=TD.teams.map(t=>t[0]);
@@ -34,7 +34,7 @@ const met=()=>{const R=e=>e.getBoundingClientRect();return{sw:document.documentE
     ok(tag+' All teams: 128 schools, best record first',r.n===128&&r.recs.every((x,i)=>!i||pct(r.recs[i-1])>=pct(x)),r.n);
     ok(tag+' All teams: every conf code labelled (ESPN codes mapped, unknown -> NEWCONF), none raw lowercase',r.conf.every(c=>c!=='–'&&c!==c.toLowerCase())&&r.conf.includes('NEWCONF')&&r.conf.includes('B12')&&r.conf.includes('SoCon'),[...new Set(r.conf)]);
     ok(tag+' All teams: chips never blank, always a background (missing colours / broken logos)',!r.chips.length,r.chips);
-    ok(tag+' All teams: no overflow, taps >= 44px',r.m.sw<=r.m.iw&&!r.m.small.length,r.m);
+    ok(tag+' All teams: no overflow, taps >= 36px',r.m.sw<=r.m.iw&&!r.m.small.length,r.m);
     const t1=Date.now();await P.page.click('#atfilter button[data-mid]:not([data-mid=""])');await P.page.waitForFunction(()=>document.querySelectorAll('#allteams .obr').length===16,{timeout:5000}).catch(()=>{});const fms=Date.now()-t1;
     const f=await P.page.evaluate(()=>document.querySelectorAll('#allteams .obr').length);ok(tag+' owner filter: 16 schools, < 1.5 s',f===16&&fms<1500,{f,fms});
     if(SH&&w!==320){await P.page.click('#atfilter button[data-mid=""]');await sleep(300);const b=await P.page.evaluate(()=>{const r=document.getElementById('lbody').getBoundingClientRect();return{y:r.top+scrollY,h:r.height}});await P.page.screenshot({path:SH+'/all-teams-'+w+'.png',clip:{x:0,y:Math.max(0,b.y-60),width:w,height:Math.min(1600,b.h+60)},captureBeyondViewport:true})}
@@ -42,7 +42,7 @@ const met=()=>{const R=e=>e.getBoundingClientRect();return{sw:document.documentE
     for(const [hash,lab] of [['#standings/breakdown','Breakdown'],['#standings','Standings'],['#games','Games']]){P=await open(id,info,w,hash);
       if(hash==='#games')await P.page.evaluate(()=>{const b=document.querySelector('[data-a=gmode][data-v=upcoming]');if(b)b.click()});await sleep(500);
       r=await P.page.evaluate(new Function('return ('+(()=>({chips:CH(),m:MET(),rows:document.querySelectorAll('#ptsv .obr').length,cards:document.querySelectorAll('#lbody .gm').length,err:document.body.innerText.includes('NaN')||document.body.innerText.includes('undefined')})).toString().replace('CH()','('+chipsOk.toString()+')()').replace('MET()','('+met.toString()+')()')+')()'));
-      ok(tag+' '+lab+': renders ('+(hash==='#games'?r.cards+' cards':r.rows+' rows')+'), no NaN/undefined, chips never blank, no overflow, taps >= 44px',!r.err&&!r.chips.length&&r.m.sw<=r.m.iw&&!r.m.small.length&&(hash!=='#standings/breakdown'||r.rows===128)&&(hash!=='#games'||r.cards>0),r);
+      ok(tag+' '+lab+': renders ('+(hash==='#games'?r.cards+' cards':r.rows+' rows')+'), no NaN/undefined, chips never blank, no overflow, taps >= 36px',!r.err&&!r.chips.length&&r.m.sw<=r.m.iw&&!r.m.small.length&&(hash!=='#standings/breakdown'||r.rows===128)&&(hash!=='#games'||r.cards>0),r);
       ok(tag+' '+lab+': no page errors',!P.errs.length,P.errs.slice(0,3));
       if(SH&&hash==='#games'&&w!==320){const b=await P.page.evaluate(()=>{const r=document.getElementById('lbody').getBoundingClientRect();return{y:r.top+scrollY,h:r.height}});await P.page.screenshot({path:SH+'/games-upcoming-'+w+'.png',clip:{x:0,y:Math.max(0,b.y-60),width:w,height:Math.min(1600,b.h+60)},captureBeyondViewport:true})}
       await P.close()}}

@@ -1,5 +1,5 @@
 /* League site top tabs (s25): link tabs <a data-v> in #ltabs, order Standings, Games, Bets, Rosters, All teams, Redraft, Rules, Archive (date-windowed ones only
-   when open) + the Draft link last; one tab marked aria-current; taps >= 44px; no overflow at 320 / 390 (and 1280). Clocks: Nov 15, Jan 10, Mar 15.
+   when open) + the Draft link last; one tab marked aria-current; taps >= 36px; no overflow at 320 / 390 (and 1280). Clocks: Nov 15, Jan 10, Mar 15.
    (Replaces the old room.html button-tab test; original kept at /workspace/league-site-work/e2e_toptabs.room-original.js.)  APP / API env (mock store). */
 const L=require('./lib.js');const {seed}=require('./seed_league.js');const {sleep}=L;
 let n=0,bad=0;function ok(t,c,x){n++;if(c)console.log('  ok  '+t);else{bad++;console.log('FAIL  '+t+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,500):''))}}
@@ -19,7 +19,7 @@ const CLOCKS=[['2026-11-15T12:00',[]],['2027-01-10T12:00',['redraft']],['2027-03
       ok(tag+': order '+exp.map(t=>LAB[t]).join(', ')+' (Draft tab last, no separate room link)',JSON.stringify(r.v)===JSON.stringify(exp)&&r.last===''&&r.v[r.v.length-1]==='draft'&&r.lab.every((l,i)=>l.startsWith(LAB[exp[i]])),r);
       ok(tag+': Recap tab short label is Recap',r.shortRecap==='Recap',r.shortRecap);
       ok(tag+': exactly one tab current (Standings)',r.cur.length===1&&r.cur[0]==='standings',r.cur);
-      ok(tag+': tap targets >= 44px',r.minH>=36&&r.minW>=36,{h:r.minH,w:r.minW});
+      ok(tag+': tap targets >= 36px',r.minH>=36&&r.minW>=36,{h:r.minH,w:r.minW});
       ok(tag+': no overflow (tab row and page)',r.over===0&&r.nsw<=1&&r.sw<=r.iw,r);
       await P.close()}}
 }catch(e){bad++;console.log('FAIL  crashed: '+(e&&e.stack||e))}

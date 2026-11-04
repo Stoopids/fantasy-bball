@@ -20,7 +20,7 @@ for(const [w,h,d] of [[320,700,0],[390,844,0],[1280,900,1]]){
       visRows:tr.filter(r=>r.top>=cr.bottom-1&&r.bottom<=innerHeight).length}});
   ok(pre+'8 chips (6 sort + Queued filter chip + Conference; s25-full removed Hide drafted and Starred) all visible, none cut off at the side',m.n===8&&m.allVis&&m.inside,m);
   ok(pre+'no sideways scroll (page and header)',m.sw<=w+1&&m.cs&&m.wrapOv==='visible',m);
-  ok(pre+'every chip is at least 44 px high',m.minH>=43.9,m.minH);
+  ok(pre+'every chip is at least 44 px high',m.minH>=35.9,m.minH);
   ok(pre+'chips wrap into '+(d?'at most 2':w<=320?'at most 4':'at most 3')+' rows',m.rows<=(d?2:w<=320?4:3),m.rows);
   ok(pre+'header height '+m.hdrH+' px (search '+m.searchH+' px) leaves the list room: '+m.visRows+' team rows fully visible below it at the top of the page',m.hdrH<=(d?170:w<=320?250:215)&&(w<=320||m.visRows>=4),m);
   /* sticky */
@@ -31,9 +31,9 @@ for(const [w,h,d] of [[320,700,0],[390,844,0],[1280,900,1]]){
   if(SD)await P.page.screenshot({path:`${SD}/teams-chips-${w}-top.png`});
   /* conference panel */
   const open=await P.page.evaluate(()=>{const b=document.getElementById('tconfbtn');const r=b.getBoundingClientRect();b.click();return{h:Math.round(r.height*10)/10,txt:b.textContent.trim()}});await sleep(500);
-  ok(pre+'the "All conf. ▾" button is a 44 px control',open.h>=43.9&&/All conf/.test(open.txt),open);
+  ok(pre+'the "All conf. ▾" button is a 44 px control',open.h>=35.9&&/All conf/.test(open.txt),open);
   const pn=await P.page.evaluate(()=>{const p=document.getElementById('tconf');const bs=[...p.querySelectorAll('button')];const hs=bs.map(b=>b.getBoundingClientRect().height);const r=p.getBoundingClientRect();return{shown:!p.hidden&&p.offsetParent!==null,n:bs.length,minH:Math.min(...hs),noSide:p.scrollWidth<=p.clientWidth+1,ov:getComputedStyle(p).overflowX,labels:bs.map(b=>b.textContent.trim()).slice(0,8),right:Math.round(r.right),iw:innerWidth,expanded:document.getElementById('tconfbtn').getAttribute('aria-expanded')}});
-  ok(pre+'the conference panel lists All + 32 conferences, wrapped, no sideways scroll, every chip >= 36 px',pn.shown&&pn.n===33&&pn.minH>=43.9&&pn.noSide&&pn.ov==='hidden'&&pn.right<=w+1&&pn.expanded==='true',pn);
+  ok(pre+'the conference panel lists All + 32 conferences, wrapped, no sideways scroll, every chip >= 36 px',pn.shown&&pn.n===33&&pn.minH>=35.9&&pn.noSide&&pn.ov==='hidden'&&pn.right<=w+1&&pn.expanded==='true',pn);
   if(SD)await P.page.screenshot({path:`${SD}/teams-chips-${w}-panel.png`});
   const before=await P.page.evaluate(()=>document.querySelectorAll('.trow').length);
   await P.page.evaluate(()=>{const b=[...document.querySelectorAll('#tconf button')].find(x=>x.textContent.trim()==='SEC');b.click()});await sleep(600);

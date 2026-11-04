@@ -1,6 +1,6 @@
 /* s26c3 OWNER BREAKDOWN (Rosters tab, "Tap an owner for the full breakdown"): compact rows + per-category points.
    At 320/390/1280: no sideways scroll; each school's category chips sum to its Total (and Total = W x win points + NCAA pts);
-   by default only non-zero chips show; "Show all categories" lists all 10 (zeros too; s26c5: no Losses category, conference titles score) and the sum still matches; taps >= 44px; no "Test " prefix, no money words.
+   by default only non-zero chips show; "Show all categories" lists all 10 (zeros too; s26c5: no Losses category, conference titles score) and the sum still matches; taps >= 36px; no "Test " prefix, no money words.
    APP=http://localhost:8793 API=http://localhost:8794/api/data/ node tests/e2e_ownerbreak_s26c3.js */
 const L=require('./lib.js'),path=require('path');const {seed}=require('./seed_league.js');const root=path.join(__dirname,'..');
 const fx=require('./fixture_s26c3.js')(root);const open=require('./open_s26c3.js');
@@ -21,7 +21,7 @@ const read=P=>P.page.evaluate(()=>{const k=document.querySelector('.obk');if(!k)
     if(r.rows.some(x=>x.ps.length>=10))ok(w+'px no Losses chip',r.rows.every(x=>!x.ps.some(c=>c.k==='losses')));
     ok(w+'px default: only non-zero chips',r.rows.every(x=>x.ps.every(c=>c.pts!==0)),r.rows.map(x=>x.ps));
     ok(w+'px real non-zero points present (a negative too)',r.rows.some(x=>x.total>20)&&r.rows.some(x=>x.total<0),r.rows.map(x=>x.total));
-    ok(w+'px taps >= 44px (row, chip hit area, toggle)',r.rows.every(x=>x.lh>=36&&x.chipH>=36)&&r.tg.h>=36&&r.tg.w>=36,{rows:r.rows.map(x=>[x.lh,x.chipH]),tg:r.tg});
+    ok(w+'px taps >= 36px (row, chip hit area, toggle)',r.rows.every(x=>x.lh>=36&&x.chipH>=36)&&r.tg.h>=36&&r.tg.w>=36,{rows:r.rows.map(x=>[x.lh,x.chipH]),tg:r.tg});
     ok(w+'px no "Test " prefix in the header, no money words',!/\bTest /.test(r.hdr)&&!/\b(money|cash|dollars?|\$\d|bucks|pay|paid|owes? money)\b/i.test(r.txt.replace(/💵 Bets|💰 Tally/g,'')),r.hdr);
     const h0=r.rows.map(x=>x.lh);
     await P.page.click('[data-a=oball]');await L.sleep(300);r=await read(P);

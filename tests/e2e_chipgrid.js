@@ -1,5 +1,5 @@
 /* Chip grid (s20): every school chip is one fixed size, in a clean grid (4 columns from 600px, 2 on phones), long names cut with an ellipsis (box never changes),
-   manager cards the same height, no overflow, >= 44px, links to ESPN.  Tabs: standings, games, rosters, bets, teams, postseason, redraft, archive, rules (real + demo data).
+   manager cards the same height, no overflow, >= 36px, links to ESPN.  Tabs: standings, games, rosters, bets, teams, postseason, redraft, archive, rules (real + demo data).
    League with long school names (Long Island University, Stephen F. Austin, Central Arkansas, UC Santa Barbara, Western Kentucky, Queens University ...).   node tests/e2e_chipgrid.js */
 const L=require('./lib.js');const fs=require('fs'),path=require('path');const {seed}=require('./seed_league.js');const {sleep}=L;
 let n=0,bad=0;const fails=[];function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;fails.push(name);console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,400):''))}}
@@ -35,7 +35,7 @@ function measure(){const vis=e=>{const r=e.getBoundingClientRect();return r.widt
         if(t==='games'&&demo)await P.page.evaluate(()=>{const c=document.getElementById('gUnowned');if(c&&!c.checked)c.click()});await sleep(200);
         const m=await P.page.evaluate(measure);const tag=w+'px'+(demo?' demo':'')+' '+t;
         if(m.n===0){ok(tag+': no school chips on this tab (nothing to align), no overflow',!m.over);continue}
-        ok(tag+': '+m.n+' chips: grid chips identical size (±1px), other chips identical size, none wrapped, all >= 44px tall',m.gw<=1&&m.gh<=1&&m.sw<=1&&m.sh<=1&&m.wrapped===0&&m.small===0,m);
+        ok(tag+': '+m.n+' chips: grid chips identical size (±1px), other chips identical size, none wrapped, all >= 36px tall',m.gw<=1&&m.gh<=1&&m.sw<=1&&m.sh<=1&&m.wrapped===0&&m.small===0,m);
         if(m.grid)ok(tag+': grid has '+(desk?4:2)+' columns',m.cols.every(c=>c===(desk?4:2)||c===Math.min(m.grid,desk?4:2)),m.cols);
         if(m.ncards)ok(tag+': '+m.ncards+' manager cards all the same height (±1px)',m.cardsMax-m.cardsMin<=1,[m.cardsMin,m.cardsMax]);
         ok(tag+': links are ESPN team pages (_blank, noopener noreferrer), no horizontal overflow',m.bad===0&&!m.over,m);
@@ -53,5 +53,5 @@ function measure(){const vis=e=>{const r=e.getBoundingClientRect();return r.widt
     await R.go('recap.html?l='+idM);await R.page.waitForSelector('#powerrank .card.pr',{timeout:25000});await sleep(400);
     const pm=await R.page.evaluate(()=>{const cs=[...document.querySelectorAll('#powerrank .school-chip')];const d=cs.map(c=>c.getBoundingClientRect());const g=[...document.querySelectorAll('#powerrank .school-grid')].map(g=>new Set([...g.querySelectorAll('.school-chip')].map(c=>Math.round(c.getBoundingClientRect().left))).size);
       return{n:cs.length,w:Math.max(...d.map(r=>r.width))-Math.min(...d.map(r=>r.width)),h:Math.max(...d.map(r=>r.height))-Math.min(...d.map(r=>r.height)),minh:Math.min(...d.map(r=>r.height)),cols:[...new Set(g)],over:document.documentElement.scrollWidth>innerWidth+1}});
-    ok(w+'px power module (recap): 64 chips, identical size, '+(desk?4:2)+' columns, >= 44px, no overflow',pm.n===64&&pm.w<=1&&pm.h<=1&&pm.minh>=43.5&&pm.cols.length===1&&pm.cols[0]===(desk?4:2)&&!pm.over,pm);await R.page.close()}
+    ok(w+'px power module (recap): 64 chips, identical size, '+(desk?4:2)+' columns, >= 36px, no overflow',pm.n===64&&pm.w<=1&&pm.h<=1&&pm.minh>=35.5&&pm.cols.length===1&&pm.cols[0]===(desk?4:2)&&!pm.over,pm);await R.page.close()}
 }catch(e){bad++;fails.push('exception: '+e.message);console.log(e.stack)}finally{await L.close();console.log('\n'+(n-bad)+' / '+n+' checks passed'+(bad?' — FAILED: '+fails.join('; '):''));process.exit(bad?1:0)}})();

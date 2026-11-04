@@ -1,6 +1,6 @@
 /* s26c11: Games > Upcoming cards. Both sides: pill row + one fixed-height, one-line owner row (muted – when nobody owns the school) so the sides line up;
    owner and team names on one line (ellipsis), both team pills the same width and wider than before (>= 110px at 320), cards in one grid row the same height,
-   no 'Test ' names, no overflow, taps >= 44px at 320/390/1280. APP / API env (mock store). SHOTS=dir -> games-upcoming-<w>.png */
+   no 'Test ' names, no overflow, taps >= 36px at 320/390/1280. APP / API env (mock store). SHOTS=dir -> games-upcoming-<w>.png */
 const L=require('./lib.js');const fs=require('fs'),path=require('path');const {seed}=require('./seed_league.js');const {sleep}=L;const root=path.join(__dirname,'..');const SH=process.env.SHOTS||'';
 let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,700):''))}}
 const tsrc=fs.readFileSync(path.join(root,'assets/teams.js'),'utf8');const TD=JSON.parse(tsrc.slice(tsrc.indexOf('{'),tsrc.lastIndexOf('}')+1));
@@ -37,7 +37,7 @@ async function open(id,info,w){const P=await L.phone('gc'+Math.random().toString
     {const rows={};r.cs.forEach(c=>{(rows[c.top]=rows[c.top]||[]).push(c.h)});ok(tag+': cards in one row the same height',Object.values(rows).every(h=>Math.max(...h)-Math.min(...h)<=1),rows)}
     ok(tag+': no "Test " names, no money words',!/\bTest (Bartholomew|Ben|Cy|Dee|Eli|Fay|Gus|Hal)\b/.test(r.txt)&&!/\b(cash|money|dollars?|prize|payout|wager)\b|\$\d/i.test(r.txt));
     ok(tag+': no overflow',r.sw<=r.iw,{sw:r.sw,iw:r.iw});
-    ok(tag+': taps >= 44px',!r.small.length,r.small);
+    ok(tag+': taps >= 36px',!r.small.length,r.small);
     if(SH){const b=await P.page.evaluate(()=>{const r=document.getElementById('lbody').getBoundingClientRect();return{y:r.top+scrollY,h:r.height}});await P.page.screenshot({path:SH+'/games-upcoming-'+w+'.png',clip:{x:0,y:Math.max(0,b.y-60),width:w,height:Math.min(1500,b.h+60)},captureBeyondViewport:true})}
     await P.close()}
 }catch(e){bad++;console.log('FAIL  crashed',e)}await L.close();console.log('\n'+(n-bad)+'/'+n+' passed');process.exit(bad?1:0)})();

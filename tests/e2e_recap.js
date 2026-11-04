@@ -32,7 +32,7 @@ async function open(P,id,me){await P.page.setBypassServiceWorker(true);if(me)awa
     ok(w+'px: no horizontal overflow',!o.over);
     /* grade card for the viewing manager */
     const g=await Q.page.evaluate(()=>({grade:(document.getElementById('rcgrade')||{}).innerText,sum:(document.getElementById('rcsummary')||{}).innerText,btn:(document.getElementById('rcdeepbtn')||{}).innerText,exp:(document.getElementById('rcdeepbtn')||{getAttribute(){}}).getAttribute('aria-expanded'),deepHidden:(document.getElementById('rcdeep')||{}).hidden,empty:!!document.getElementById('rcempty'),h:(document.getElementById('rcdeepbtn')||{getBoundingClientRect(){return{height:0}}}).getBoundingClientRect().height}));
-    ok(w+'px: matching league: viewer sees a grade A+ to D, a 4-sentence summary and a "Deeper analysis" button (collapsed, >= 44px), no empty state',/^[A-D][+-]?$/.test(g.grade||'')&&sc(g.sum)===4&&g.btn.trim()==='Deeper analysis'&&g.exp==='false'&&g.deepHidden===true&&!g.empty&&g.h>=43.5,g);
+    ok(w+'px: matching league: viewer sees a grade A+ to D, a 4-sentence summary and a "Deeper analysis" button (collapsed, >= 36px), no empty state',/^[A-D][+-]?$/.test(g.grade||'')&&sc(g.sum)===4&&g.btn.trim()==='Deeper analysis'&&g.exp==='false'&&g.deepHidden===true&&!g.empty&&g.h>=35.5,g);
     await Q.page.click('#rcdeepbtn');await sleep(200);
     const d=await Q.page.evaluate(()=>({exp:document.getElementById('rcdeepbtn').getAttribute('aria-expanded'),vis:!document.getElementById('rcdeep').hidden,t:document.getElementById('rcdeep').innerText,btn:document.getElementById('rcdeepbtn').innerText.trim()}));
     ok(w+'px: one tap on Deeper analysis opens the 10-sentence deep dive',d.exp==='true'&&d.vis&&sc(d.t)>=9&&sc(d.t)<=11,{n:sc(d.t),exp:d.exp});

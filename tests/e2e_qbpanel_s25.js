@@ -1,4 +1,4 @@
-/* s25 Quick bet panel: every chip / pick button >= 44x44, nothing overflows at 320/360/390/1280. SHOTS=dir for s25_qbpanel_320/390/1280.png */
+/* s25 Quick bet panel: every chip / pick button >= 36x36, nothing overflows at 320/360/390/1280. SHOTS=dir for s25_qbpanel_320/390/1280.png */
 const L=require('./lib.js');const F=require('../js/core.js');const fs=require('fs'),path=require('path');const {seed}=require('./seed_league.js');const {sleep}=L;const root=path.join(__dirname,'..');
 const TZ=process.env.TZ||'Asia/Jakarta';const SH=process.env.SHOTS||'';
 let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  ['+TZ+'] '+name);else{bad++;console.log('FAIL  ['+TZ+'] '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,700):''))}}

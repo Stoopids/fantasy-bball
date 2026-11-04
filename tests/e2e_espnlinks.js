@@ -1,5 +1,5 @@
 /* Every school chip / name on the League site (and the power-rankings module on the recap page) links to that school's ESPN team page:
-   https://www.espn.com/mens-college-basketball/team/_/id/<id>  target=_blank  rel="noopener noreferrer", >= 44px tall at 390, a school without an id is plain text,
+   https://www.espn.com/mens-college-basketball/team/_/id/<id>  target=_blank  rel="noopener noreferrer", >= 36px tall at 390, a school without an id is plain text,
    and no ESPN page/image request is made just for the links (outbound links only).  node tests/e2e_espnlinks.js  (APP / API env, mock store) */
 const L=require('./lib.js');const fs=require('fs'),path=require('path');const {seed}=require('./seed_league.js');const {sleep}=L;
 let n=0,bad=0;const fails=[];function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;fails.push(name);console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,400):''))}}
@@ -24,7 +24,7 @@ async function audit(P,w,label){return P.page.evaluate(()=>{const A=[...document
       await P.go('league.html?l='+id+(demo?'&demo=1':''));await ready(P);await sleep(500);let total=0;
       for(const t of TABS){await P.page.evaluate(t=>document.querySelector('#ltabs [data-v='+t+']').click(),t);await sleep(350);const a=await audit(P,w,t);total+=a.n;
         ok(w+'px'+(demo?' demo':'')+' '+t+': '+a.n+' school links, all correct ESPN team URL, target=_blank, rel noopener noreferrer',a.bad.length===0&&(a.n>0||/^(bets|redraft|rules|archive)$/.test(t)||(!demo&&/^(games|postseason)$/.test(t))),a.bad);
-        if(w===390)ok(w+'px'+(demo?' demo':'')+' '+t+': school links are >= 44px tall, no overflow',a.ns===0&&!a.over,{small:a.small,over:a.over});else ok(w+'px'+(demo?' demo':'')+' '+t+': no overflow',!a.over)}
+        if(w===390)ok(w+'px'+(demo?' demo':'')+' '+t+': school links are >= 36px tall, no overflow',a.ns===0&&!a.over,{small:a.small,over:a.over});else ok(w+'px'+(demo?' demo':'')+' '+t+': no overflow',!a.over)}
       ok(w+'px'+(demo?' demo':'')+': links found on the tabs',total>20,total);
       ok(w+'px'+(demo?' demo':'')+': no ESPN page or image is requested by the links themselves (only the existing a.espncdn.com logos and ESPN scoreboard data)',!img.some(x=>/espn\.com\/mens-college/.test(x)&&!/script|xhr|fetch/.test(x)),img.filter(x=>/espn\.com\/mens/.test(x)).slice(0,3));
       ok(w+'px: no page errors',P.errs.length===0,P.errs);await P.page.close()}
@@ -44,6 +44,6 @@ async function audit(P,w,label){return P.page.evaluate(()=>{const A=[...document
     await R.page.evaluate(()=>{document.getElementById('prb0').click()});await sleep(200);await R.page.evaluate(()=>{document.getElementById('prd0').click()});await sleep(250);
     const pr=await R.page.evaluate(()=>{const A=[...document.querySelectorAll('#powerrank a[href*="espn.com"]')];const re=/^https:\/\/www\.espn\.com\/mens-college-basketball\/team\/_\/id\/\d+$/;
       return{n:A.length,chips:document.querySelectorAll('#powerrank a.pchip').length,names:document.querySelectorAll('#powerrank a.tl').length,bad:A.filter(a=>!re.test(a.href)||a.target!=='_blank'||!/noopener/.test(a.rel)||!/noreferrer/.test(a.rel)).length,small:A.filter(a=>{const r=a.getBoundingClientRect();return r.width>0&&r.height<43.5}).map(a=>a.className+':'+Math.round(a.getBoundingClientRect().height)),over:document.documentElement.scrollWidth>innerWidth+1}});
-    ok(w+'px power module: 64 school chips + 64 deep-dive names are ESPN links with target/rel, >= 44px, no overflow',pr.chips===64&&pr.names===64&&pr.bad===0&&pr.small.length===0&&!pr.over,pr);
+    ok(w+'px power module: 64 school chips + 64 deep-dive names are ESPN links with target/rel, >= 36px, no overflow',pr.chips===64&&pr.names===64&&pr.bad===0&&pr.small.length===0&&!pr.over,pr);
     ok(w+'px power module: no page errors',R.errs.length===0,R.errs);await R.page.close()}
 }catch(e){bad++;fails.push('exception: '+e.message);console.log(e.stack)}finally{await L.close();console.log('\n'+(n-bad)+' / '+n+' checks passed'+(bad?' — FAILED: '+fails.join('; '):''));process.exit(bad?1:0)}})();

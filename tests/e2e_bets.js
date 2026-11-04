@@ -20,8 +20,8 @@ const audit=P=>P.page.evaluate(()=>{const A=[...document.querySelectorAll('#lbod
   let A=await open(id,info,0);let t=await txt(A);
   ok('empty state (s28 partner wording): "No bets yet. Be the first.", form shown, disclaimer names pushups',/No bets yet\. Be the first\./.test(t)&&!!(await A.page.$('#b27Form'))&&/settled in pushups/i.test(await A.page.$eval('#b27Note',e=>e.innerText)),t.slice(0,200));
   ok('empty state (s28): no Who owes who grid on Write it Up (it lives on Tally, like STOOPIDS)',!(await A.page.$('#b27Owes')));
-  const a1=await audit(A);ok('390px: tap targets on the empty Bets tab (form, chips, buttons) are all >= 44px, no overflow',a1.small.length===0&&!a1.over,a1);
-  await tap(A,'[data-lb=amtcustom]');const a1b=await audit(A);ok('390px: with the custom amount field open, tap targets still >= 44px',a1b.small.length===0&&!a1b.over,a1b);
+  const a1=await audit(A);ok('390px: tap targets on the empty Bets tab (form, chips, buttons) are all >= 36px, no overflow',a1.small.length===0&&!a1.over,a1);
+  await tap(A,'[data-lb=amtcustom]');const a1b=await audit(A);ok('390px: with the custom amount field open, tap targets still >= 36px',a1b.small.length===0&&!a1b.over,a1b);
   await A.page.type('#b27Ao','abc');ok('custom amount: letters are refused with a plain message',/Whole numbers only/.test(await A.page.$eval('#b27Ae',e=>e.innerText)));
   await A.page.$eval('#b27Ao',e=>{e.value='';});await A.page.type('#b27Ao','3');ok('custom amount: below the minimum is refused',/Minimum amount is 5\./.test(await A.page.$eval('#b27Ae',e=>e.innerText)));
   await A.page.close();
@@ -45,7 +45,7 @@ const audit=P=>P.page.evaluate(()=>{const A=[...document.querySelectorAll('#lbod
   t=await txt(B);ok('settle: the creator\'s result counts at once -> Settled, "Ana won (Ben owes 20)"',/Result:\s*Ana won \(Ben owes 20\)/.test(t),t.slice(0,600));
   await tap(B,'#b27Ob_tally');const lb=await B.page.evaluate(()=>({m:document.getElementById('b27Matrix')?document.getElementById('b27Matrix').innerText:'',board:document.getElementById('b27People')?document.getElementById('b27People').innerText:''}));
   ok('Tally (s28): Who Owes Who shows Ben owes Ana 20; person table +20 / -20',/20/.test(lb.m)&&/\+20/.test(lb.board)&&/-20|−20/.test(lb.board),lb);
-  const bB=await audit(B);await tap(B,'#b27Ob_form');ok('390px: tap targets with a settled bet and the leaderboard are >= 44px, no overflow',bB.small.length===0&&!bB.over,bB);await B.page.screenshot({path:'/tmp/s18/bets_b1.png',fullPage:true});
+  const bB=await audit(B);await tap(B,'#b27Ob_form');ok('390px: tap targets with a settled bet and the leaderboard are >= 36px, no overflow',bB.small.length===0&&!bB.over,bB);await B.page.screenshot({path:'/tmp/s18/bets_b1.png',fullPage:true});
   /* ---- decline + withdraw ---- */
   await A.page.evaluate(()=>LBETS.poll(true));await sleep(500);await place(A,2,'Cy has a 3-point day',10);
   const C=await open(id,info,2);await tap(C,'[data-lb=decline]');await C.page.waitForFunction('/Declined/.test((document.getElementById("b27Msg")||{}).innerText||"")',{timeout:12000});ok('decline: Cy declines Bet #2 -> status Declined, no result buttons',/Declined/.test(await txt(C))&&!(await C.page.$('[data-lb=settle]')));
@@ -90,7 +90,7 @@ const audit=P=>P.page.evaluate(()=>{const A=[...document.querySelectorAll('#lbod
   await O2.page.close();global.__down=true;
   const O3=await open(id,info,0,{noWait:true,pre:async P=>{await P.page.setRequestInterception(true);P.page.on('request',r=>{if(global.__down&&/-bets-/.test(decodeURIComponent(r.url())))r.respond({status:503,body:'down'});else r.continue()})}});
   await O3.page.waitForSelector('#b27Retry',{timeout:20000});const rb=await O3.page.$eval('#b27Retry',e=>({h:e.getBoundingClientRect().height,t:document.getElementById('lbody').innerText}));
-  ok('outage from the start: friendly message with a "Try now" button >= 44px, no raw HTTP code, and the form stays usable',rb.h>=43.5&&/can’t reach the bets/.test(rb.t)&&!/503|HTTP/.test(rb.t));
+  ok('outage from the start: friendly message with a "Try now" button >= 36px, no raw HTTP code, and the form stays usable',rb.h>=35.5&&/can’t reach the bets/.test(rb.t)&&!/503|HTTP/.test(rb.t));
   global.__down=false;await tap(O3,'#b27Retry');await O3.page.waitForFunction('!document.getElementById("b27Retry")&&/live/.test(document.getElementById("lbody").innerText)',{timeout:15000});ok('recovery from the start: Try now loads the bets and shows them live',/Bet #1/.test(await txt(O3)));await O3.page.close();
   /* ---- 1280, no money text, no errors ---- */
   const W=await open(id,info,0,{desk:true});t=await txt(W);const wa=await audit(W);

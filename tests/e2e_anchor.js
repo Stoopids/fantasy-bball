@@ -18,7 +18,7 @@ for(const w of [390,1280]){const pre=w+'px ';const P=await L.phone('a'+w,w===128
   await P.go('room.html?l='+id+'#as='+me.id+'&k='+me.k);await waitFor(()=>P.page.evaluate(()=>!!document.querySelector('#tabs [data-t]')),20000);await sleep(800);
   const g=await P.page.evaluate(()=>[...document.querySelectorAll('#tabs [data-t]')].map(a=>({tag:a.tagName,href:a.getAttribute('href'),role:a.getAttribute('role'),sel:a.getAttribute('aria-selected'),h:a.getBoundingClientRect().height,w:a.getBoundingClientRect().width,t:a.dataset.t})));
   ok(pre+'room: every tab is <a href="#tab=name"> with role=tab',g.length===6&&g.every(a=>a.tag==='A'&&a.href==='#tab='+a.t&&a.role==='tab'),g);
-  ok(pre+'room: tab targets >= 44px',g.every(a=>a.h>=36&&a.w>=36),g.map(a=>[a.h,a.w]));
+  ok(pre+'room: tab targets >= 36px',g.every(a=>a.h>=36&&a.w>=36),g.map(a=>[a.h,a.w]));
   ok(pre+'room: exactly one aria-selected=true',g.filter(a=>a.sel==='true').length===1,g.map(a=>a.sel));
   const url0=P.page.url();
   for(const [lab,init,type] of [['Ctrl-click',{ctrlKey:true,button:0},'click'],['Cmd-click',{metaKey:true,button:0},'click'],['Shift-click',{shiftKey:true,button:0},'click'],['middle-click',{button:1},'auxclick'],['middle-click (click event)',{button:1},'click'],['right-click menu',{button:2},'contextmenu']]){
@@ -38,7 +38,7 @@ for(const w of [390,1280]){const pre=w+'px ';const P=await L.phone('a'+w,w===128
   await P.go('recap.html?l='+id);await waitFor(()=>P.page.evaluate(()=>!!document.querySelector('#rcnav a[data-rt]')),20000);await sleep(600);
   const rg=await P.page.evaluate(()=>[...document.querySelectorAll('#rcnav a[data-rt]')].map(a=>({href:a.getAttribute('href'),t:a.dataset.rt,h:a.getBoundingClientRect().height})));
   ok(pre+'recap: section links are <a href="#tab=name">',rg.length>0&&rg.every(a=>a.href==='#tab='+a.t),rg);
-  ok(pre+'recap: section links >= 44px tall',rg.every(a=>a.h>=36),rg.map(a=>a.h));
+  ok(pre+'recap: section links >= 36px tall',rg.every(a=>a.h>=36),rg.map(a=>a.h));
   const last=rg[rg.length-1]&&rg[rg.length-1].t;
   for(const [lab,init,type] of [['Ctrl-click',{ctrlKey:true,button:0},'click'],['Shift-click',{shiftKey:true,button:0},'click'],['middle-click',{button:1},'auxclick'],['right-click menu',{button:2},'contextmenu']]){
     const r=await synth(P,'#rcnav_'+last,init,type);ok(pre+'recap: '+lab+' is not prevented',r.prevented===false,r)}

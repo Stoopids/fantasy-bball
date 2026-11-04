@@ -1,5 +1,5 @@
 /* s26c5: League header banner is short (centered cover crop): at 390x844 and 1280x800 the first Standings card's top is inside the viewport on first open;
-   320x640 reported too. The commissioner change-photo control stays visible and >= 44px.  APP / API env.  SHOTS=dir SHOTNAME=prefix (e.g. header_after) for top-of-page shots. Also: the header buttons never overlap the site title / league name. */
+   320x640 reported too. The commissioner change-photo control stays visible and >= 36px.  APP / API env.  SHOTS=dir SHOTNAME=prefix (e.g. header_after) for top-of-page shots. Also: the header buttons never overlap the site title / league name. */
 const L=require('./lib.js');const {seed}=require('./seed_league.js');
 let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,400):''))}}
 (async()=>{try{const id=await seed(null,{});const info=seed.info;
@@ -16,7 +16,7 @@ let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad
     if(must)ok(tag+': first card top inside the viewport on first open',r.cardTop!=null&&r.y<2&&r.cardTop>=0&&r.cardTop<r.vh-40,r);
     else ok(tag+': (info) first card position recorded',r.cardTop!=null,r);
     ok(tag+': banner uses a centered cover crop',/cover/.test(r.bgSize)&&/50%/.test(r.bgPos),{s:r.bgSize,p:r.bgPos});
-    ok(tag+': commissioner change-photo control shown, >= 44px and not covered (tappable)',r.ctl.length>0&&r.ctl.every(b=>b.h>=36&&b.w>=36&&b.free),r.ctl);
+    ok(tag+': commissioner change-photo control shown, >= 36px and not covered (tappable)',r.ctl.length>0&&r.ctl.every(b=>b.h>=36&&b.w>=36&&b.free),r.ctl);
     ok(tag+': header buttons do not overlap the site title or league name',r.ttl>=2&&r.hits.length===0,r.hits);
     ok(tag+': no horizontal overflow',r.sw<=r.iw,{sw:r.sw,iw:r.iw});
     if(process.env.SHOTS)await P.page.screenshot({path:process.env.SHOTS+'/'+(process.env.SHOTNAME||'banner_after')+'_'+w+'.png'});

@@ -57,7 +57,7 @@ const mode=async(P,m)=>{await P.page.evaluate(m=>{const b=document.querySelector
   /* ---- 320 / 360 / 390 / 1280: no overflow, 36px taps with the picker open ---- */
   for(const [w,desk] of [[320,false],[360,false],[390,false],[1280,true]]){const X=await open(id,info,2,{w,desk});   /* Cy: owns C1, plays D1 (Dee) -> one side is mine; picker rows + sides */
     await X.page.evaluate(()=>{const b=document.querySelector('.qb-btn');if(b){b.scrollIntoView({block:'center'});b.click()}});await sleep(300);const a=await audit(X,'.qbw button,.qb-pick button');const e=await X.page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
-    ok(w+'px: pill + open picker: every tap target >= 44px, no horizontal overflow ('+a.n+' buttons)',a.n>=6&&a.small.length===0&&!e,a);
+    ok(w+'px: pill + open picker: every tap target >= 36px, no horizontal overflow ('+a.n+' buttons)',a.n>=6&&a.small.length===0&&!e,a);
     await X.page.keyboard.press('Tab');const foc=await X.page.evaluate(()=>document.activeElement&&document.activeElement.tagName);ok(w+'px: keyboard Tab moves focus between picker buttons',foc==='BUTTON');
     ok(w+'px: no page errors',X.errs.filter(x=>/pageerror/.test(x)).length===0,X.errs);await X.page.close()}
   /* ---- placed together: undo all ---- */
@@ -76,6 +76,6 @@ const mode=async(P,m)=>{await P.page.evaluate(m=>{const b=document.querySelector
     ok('sending writes the message to the league chat key (same store as the draft room) and shows it, escaped',/Hello <b>league<\/b>/.test(raw.replace(/\\u003c/g,'<'))&&/Hello <b>league<\/b>/.test(lst.t)&&!/<b>league/.test(lst.html),{raw:raw.slice(0,160),t:lst.t});
     await C.page.keyboard.press('Escape');await sleep(250);ok('Escape closes the panel',await C.page.$eval('#chatpanel',e=>e.hidden));
     const W=await open(id,info,null);await click(W,'#chatbar');ok('spectator: panel shows the message, no message box, "Watching only"',await W.page.evaluate(()=>!document.getElementById('chatform')&&/Watching only/.test(document.getElementById('chatwatch').innerText)&&/Hello/.test(document.getElementById('chatlist').innerText)));
-    const a=await audit(C,'#chat button, #chat a, #chat input');await C.page.click('#chatbar').catch(()=>{});await sleep(300);const a2=await audit(C,'#chat button, #chat a, #chat input');ok('chat bar + panel: taps >= 44px, no overflow',a2.small.length===0&&!a2.over,a2);
+    const a=await audit(C,'#chat button, #chat a, #chat input');await C.page.click('#chatbar').catch(()=>{});await sleep(300);const a2=await audit(C,'#chat button, #chat a, #chat input');ok('chat bar + panel: taps >= 36px, no overflow',a2.small.length===0&&!a2.over,a2);
     ok('no page errors',C.errs.filter(x=>/pageerror/.test(x)).length===0,C.errs);await C.page.close();await W.page.close()}
 }catch(e){bad++;fails.push('exception: '+e.message);console.log(e.stack)}finally{await L.close();console.log('\n'+(n-bad)+' / '+n+' checks passed'+(bad?' — FAILED: '+fails.join('; '):''));process.exit(bad?1:0)}})();

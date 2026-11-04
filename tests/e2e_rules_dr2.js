@@ -16,7 +16,7 @@ const BANNED=/\b(bet|bets|betting|wager|money|cash|\$|dollars?|stake|STOOPIDS)\b
    const P=await L.phone(c.tag+w,opt);await P.go('room.html?l='+id+'#as='+me.id+'&k='+me.k);
    const sel=c.live?'#tab_rules':'#rulesbtn_lobby';/* s26c14: Rules tab replaces the header button */const b=await waitFor(()=>P.page.$(sel),25000);await sleep(800);
    const bb=b&&await P.page.evaluate(s=>{const r=document.querySelector(s).getBoundingClientRect();return{w:r.width,h:r.height,x:r.right,iw:innerWidth}},sel);
-   ok(`${c.tag} ${w}px: Rules button present (${sel}), tap target >= 44px`,!!(bb&&bb.w>=36&&bb.h>=36),bb);
+   ok(`${c.tag} ${w}px: Rules button present (${sel}), tap target >= 36px`,!!(bb&&bb.w>=36&&bb.h>=36),bb);
    if(!c.live&&bb){const pos=await P.page.evaluate(()=>{const c=document.getElementById('lobbycard').getBoundingClientRect(),r=(document.getElementById('rulesbtn_lobby').closest('.lrbtns')||document.getElementById('rulesbtn_lobby')).getBoundingClientRect()/* s26c9: Draft Rules + League Rules pair */;return{right:c.right-r.right,top:r.top-c.top}});ok(`${c.tag} ${w}px: button in the top-right of the lobby card`,pos.right>=0&&pos.right<24&&pos.top>=0&&pos.top<24,pos)}
    await P.page.evaluate(()=>{const t=document.getElementById('toast');if(t)t.style.display='none'});if(OUT&&w)await P.page.screenshot({path:`${OUT}/${c.tag}_button_${w}.png`});
    if(b){await P.page.evaluate(s=>document.querySelector(s).click(),sel);const pg=await waitFor(()=>P.page.$('#rulespage2'),5000);ok(`${c.tag} ${w}px: Rules page opens`,!!pg);

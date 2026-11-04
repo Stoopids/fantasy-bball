@@ -35,7 +35,7 @@ const shot=async(P,sel,f)=>{await P.page.evaluate(s=>{const e=document.querySele
   ok('after Edit the New bet form is prefilled: opponent Ben, text, custom 30 pushups, odds 3-1',f.t==='Kansas beats Duke'&&f.aw&&f.ao==='30'&&f.opp.length===1&&f.opp[0]===M[1]&&f.od[0]==='3-1'&&/Bet #1/.test(f.hint)&&/owes Ana 90\./.test(f.live),f);
   ok('old bet now shows Withdrawn',/Withdrawn/.test(await A.page.$eval('[data-bet]',e=>e.innerText)));
   await shot(A,'#b27Form','s24_2_prefilled_after_edit_390.png');
-  const ae=await audit(A);ok('390px: tap targets >= 44px and no overflow with the prefilled form',ae.small.length===0&&!ae.over,ae);
+  const ae=await audit(A);ok('390px: tap targets >= 36px and no overflow with the prefilled form',ae.small.length===0&&!ae.over,ae);
   await A.page.$eval('#b27Text',e=>{e.value=''});await A.page.type('#b27Text','Kansas beats Duke by 5');await tap(A,'#b27Place');await tap(A,'[data-lb=confirm]');await msg(A,'Placed');
   ok('placing the edited bet creates Bet #2 and clears the edit hint',/Bet #2/.test(await txt(A))&&!(await A.page.$('#b27EdHint')));
   /* ---- settle Bet #2: Ana won (Ben owes 90) ---- */
@@ -58,7 +58,7 @@ const shot=async(P,sel,f)=>{await P.page.evaluate(s=>{const e=document.querySele
   t=await txt(A);ok('Ana sees "Ben asks to change the result from Ana won to Ben won" with Confirm and Keep',/Ben asks to change the result from Ana won to Ben won/.test(t)&&!!(await A.page.$('[data-lb=fixno]')),t.slice(0,900));
   const W=await open(id,info,3);t=await txt(W);ok('other managers see the pending request read-only (no Confirm / Fix buttons)',/Ben asked to change the result to Ben won/.test(t)&&!(await W.page.$('[data-lb=fixok]'))&&!(await W.page.$('[data-lb=fixopen]')),t.slice(0,600));await W.page.close();
   await shot(A,'[data-fixhist]','s24_3_fix_request_pending_390.png');
-  const af=await audit(A);ok('390px: tap targets >= 44px, no overflow with a pending fix request',af.small.length===0&&!af.over,af);
+  const af=await audit(A);ok('390px: tap targets >= 36px, no overflow with a pending fix request',af.small.length===0&&!af.over,af);
   await tap(A,'[data-lb=fixok]');await tap(A,'[data-lb=fixok]');await msg(A,'Confirmed');
   t=await txt(A);const bd=await board(A);
   ok('after Ana confirms: result is Ben won (Ana owes 30), marked Corrected',/Result:\s*Ben won \(Ana owes 30\)/.test(t)&&/Corrected/.test(t),t.slice(0,900));
@@ -90,7 +90,7 @@ const shot=async(P,sel,f)=>{await P.page.evaluate(s=>{const e=document.querySele
   ok('reduce: asking for the result that already stands is ignored',R.same.res==='b'&&R.same.st.length===0,R.same);
   ok('reduce: fix events before the bet is settled are ignored',R.early.res==='b'&&R.early.st.length===0,R.early);
   /* ---- widths + wording ---- */
-  for(const w of [320,360,390,1280]){const P=await open(id,info,0,{w});const a=await audit(P);const tt=await txt(P);ok(w+'px: no overflow, tap targets >= 44px on Bets with history',!a.over&&a.small.length===0,a);
+  for(const w of [320,360,390,1280]){const P=await open(id,info,0,{w});const a=await audit(P);const tt=await txt(P);ok(w+'px: no overflow, tap targets >= 36px on Bets with history',!a.over&&a.small.length===0,a);
     if(w===1280)ok('no money words on the Bets tab, pushups present',!MONEY.test(tt)&&/pushups/.test(tt),tt.match(MONEY));ok(w+'px: no page errors',P.errs.length===0,P.errs);await P.page.close()}
   /* ---- s24b QA: Edit when the other side already answered (Ana's page has not polled yet) ---- */
   {const kd=encodeURIComponent(key(3));let stale=true;const snap=await get(key(3));await A.page.setRequestInterception(true);

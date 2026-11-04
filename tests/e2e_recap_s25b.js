@@ -1,4 +1,4 @@
-/* s25b recap layout (real + mock), coaching tips checked against the pick log, tab bars, 44px targets, word rules. Shots (full page) -> SHOTS. APP / API env. */
+/* s25b recap layout (real + mock), coaching tips checked against the pick log, tab bars, 36px targets, word rules. Shots (full page) -> SHOTS. APP / API env. */
 const L=require('./lib.js');const F=require('../js/core.js');const {seedRecap}=require('./recap_seed.js');const {sleep,API}=L;const fs=require('fs'),path=require('path');
 const OUT=process.env.SHOTS||'/workspace/draftroom-notes/s25-setup';
 const TD=(()=>{const t=fs.readFileSync(path.join(__dirname,'../assets/teams.js'),'utf8');return JSON.parse(t.slice(t.indexOf('{'),t.lastIndexOf('}')+1))})();
@@ -33,7 +33,7 @@ const post=(k,v)=>fetch(API+encodeURIComponent(k),{method:'POST',headers:{'Conte
    const bad1=o.coach.filter(c=>{const mp=mlog.find(x=>x.n===c.n);const taken=mlog.find(x=>x.tid===c.alt);return !mp||mp.tid!==c.mine||mp.owner!==me.id||(taken&&taken.n<c.n)||RANK(c.alt)!==c.r||!(c.r<(RANK(c.mine)||999))});
    ok(pre+o.coach.length+' "better pick" lines (2-3 expected when any exist), each checked against the pick log',o.coach.length<=3&&bad1.length===0,{coach:o.coach,bad:bad1});
    console.log('   coach:',o.take,'|',o.coach.map(c=>c.t).join(' || '),'|',o.tip||'')}
-  ok(pre+'tab bar never scrolls sideways, page fits',o.over===false&&!o.docOver,o);ok(pre+'tap targets >= 44px',o.small.length===0,o.small);
+  ok(pre+'tab bar never scrolls sideways, page fits',o.over===false&&!o.docOver,o);ok(pre+'tap targets >= 36px',o.small.length===0,o.small);
   ok(pre+'word rules (no money / prize / payout / STOOPIDS)',!/\b(money|prize|payout|cash|wager|jackpot)\b|stoopid/i.test(o.txt));
   ok(pre+'no page errors',P.errs.length===0,P.errs);
   await P.page.evaluate(()=>scrollTo(0,0));await P.page.screenshot({path:OUT+'/s25b_'+w+'_recap_'+kind+'_full.png',fullPage:true});

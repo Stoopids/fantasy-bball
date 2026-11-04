@@ -104,7 +104,7 @@ if(TABS.includes('redraft')){  const NT=await P.ctx.newPage();await NT.setViewpo
   const sh=await SP.page.evaluate(()=>window.__shared);ok('when navigator.share exists the button says Share and shares the clean view-only link',/Share/.test(lab)&&sh[0]===exp+'&view=1#teams'&&secretFree(sh[0],info),{lab,sh});await SP.page.close();
   /* ---- widths, labels, wording ---- */
   for(const w of [320,360,390,1280])for(const t of ['bets','games','standings']){const W=await phone(id,info,0,{w});await W.go('league.html?l='+id+'#'+t);await ready(W);if(t==='bets')await W.page.waitForSelector('[data-bet]',{timeout:15000});await sleep(300);const a=await audit(W);
-    ok(w+'px #'+t+': no overflow; Copy link / card link / tab buttons >= 44px',!a.over&&!a.small.length&&a.n>0,a);
+    ok(w+'px #'+t+': no overflow; Copy link / card link / tab buttons >= 36px',!a.over&&!a.small.length&&a.n>0,a);
     if(t==='games'&&w===390&&TABS.includes('redraft')){const bt=await W.page.$eval('body',e=>e.innerText);ok('Redraft tab label capitalized, no "Jan 20", no money words',(await W.page.$eval('#ltabs [data-v=redraft]',e=>e.innerText)).includes('Redraft')&&!/Jan\.? 20\b/.test(bt)&&!MONEY.test(bt),bt.match(MONEY))}
     await W.page.close()}
 }catch(e){bad++;fails.push('exception: '+e.message);console.log(e.stack)}finally{await L.close();console.log('\n'+(n-bad)+' / '+n+' checks passed'+(bad?' — FAILED: '+fails.join('; '):''));process.exit(bad?1:0)}})();

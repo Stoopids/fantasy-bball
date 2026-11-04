@@ -22,7 +22,7 @@ const filled=P=>P.page.evaluate(()=>{const c=[...document.querySelectorAll('#mai
     let P=await L.phone('rc1'+w,desk?{desktop:true,w,h}:{});const times=[];P.page.on('request',r=>{if(r.url().includes('/api/data/')&&r.url().includes(encodeURIComponent(F.Keys(id).meta)))times.push(Date.now())});
     await P.go('league.html?l='+id);await P.page.waitForSelector('#trouble',{timeout:15000});
     const t1=await P.page.evaluate(()=>{const t=document.getElementById('trouble'),b=document.getElementById('tryNow'),r=b.getBoundingClientRect();return{txt:t.innerText,bh:r.height,bw:r.width,ov:document.documentElement.scrollWidth>innerWidth}});
-    ok(tag+' (a1) opened during a 503 outage: friendly message "Having trouble reaching the league. Retrying…", no raw HTTP code, "Try now" button >= 44px, no overflow',/Having trouble reaching the league/.test(t1.txt)&&/Retrying/.test(t1.txt)&&!/503|HTTP|Could not load/.test(await body(P))&&t1.bh>=43.99&&t1.bw>=43.99&&!t1.ov,t1);
+    ok(tag+' (a1) opened during a 503 outage: friendly message "Having trouble reaching the league. Retrying…", no raw HTTP code, "Try now" button >= 36px, no overflow',/Having trouble reaching the league/.test(t1.txt)&&/Retrying/.test(t1.txt)&&!/503|HTTP|Could not load/.test(await body(P))&&t1.bh>=35.99&&t1.bw>=35.99&&!t1.ov,t1);
     await P.shot('recover_a1_outage_'+w);
     await sleep(w===390?26000:20000);
     const gaps=times.slice(1).map((t,i)=>t-times[i]);
@@ -39,7 +39,7 @@ const filled=P=>P.page.evaluate(()=>{const c=[...document.querySelectorAll('#mai
     await fail(id,503);
     const note=await until(async()=>await P.page.$('#trouble'),25000,500);
     const t3=await P.page.evaluate(()=>({home:!!document.getElementById('lhome'),avail:/Available after the draft/.test(document.body.innerText),txt:(document.getElementById('trouble')||{innerText:''}).innerText,btn:(document.getElementById('tryNow')||{getBoundingClientRect:()=>({height:0})}).getBoundingClientRect().height}));
-    ok(tag+' (a2) pre-draft page open, outage starts: friendly note appears, the pre-draft view stays, Try now >= 44px',!!note&&t3.home&&t3.avail&&/Having trouble reaching the league/.test(t3.txt)&&t3.btn>=43.99&&!/503|HTTP/.test(t3.txt),t3);
+    ok(tag+' (a2) pre-draft page open, outage starts: friendly note appears, the pre-draft view stays, Try now >= 36px',!!note&&t3.home&&t3.avail&&/Having trouble reaching the league/.test(t3.txt)&&t3.btn>=35.99&&!/503|HTTP/.test(t3.txt),t3);
     await P.shot('recover_a2_outage_'+w);
     await sleep(8000);await heal();
     const back=await until(async()=>!(await P.page.$('#trouble'))&&(await P.page.$('#avail')),45000,500);

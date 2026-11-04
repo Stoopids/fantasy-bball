@@ -10,11 +10,11 @@ let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad
     await P.page.evaluate(()=>{const b=document.createElement('button');b.dataset.a='yourlinks';document.getElementById('lhdr').appendChild(b);b.click()});await sleep(500);ok(who+': a forced tap opens nothing',!(await P.page.$('#lcard')));await P.page.close()}
   for(const w of [320,360,390,1280]){const P=await open(w,'cm');
     const b=await P.page.evaluate(()=>{const e=document.getElementById('yourlinks');if(!e)return null;const r=e.getBoundingClientRect();return{w:r.width,h:r.height,r:r.right,t:e.innerText}});
-    ok(w+'px commissioner: "Your links" button, >= 44px, in view',b&&/Your links/.test(b.t)&&b.w>=36&&b.h>=36&&b.r<=w,b);
+    ok(w+'px commissioner: "Your links" button, >= 36px, in view',b&&/Your links/.test(b.t)&&b.w>=36&&b.h>=36&&b.r<=w,b);
     await P.page.click('#yourlinks');await P.page.waitForSelector('#lcard',{timeout:5000});await sleep(300);
     const s=await P.page.evaluate(()=>{const bs=[...document.querySelectorAll('#lcard .btn, #sheetwrap [data-a=sheetbg].btn')];const sb=document.querySelector('#sheetwrap .sheetbg'),sh=document.querySelector('#sheetwrap .sheet').getBoundingClientRect();return{fx:sb&&getComputedStyle(sb).position,inview:sh.top>=0&&sh.bottom<=innerHeight+1&&sh.left>=0&&sh.right<=innerWidth+0.5,h2:(document.querySelector('#sheetwrap h2')||{}).innerText,small:bs.filter(e=>{const r=e.getBoundingClientRect();return r.height<36||r.width<36}).length,n:bs.length,sw:document.documentElement.scrollWidth,
       out:bs.filter(e=>e.getBoundingClientRect().right>innerWidth+0.5).length,mail:decodeURIComponent((document.getElementById('lc_email')||{}).href||'')}});
-    ok(w+'px: sheet "Save these links" shown as a fixed overlay in view, every button >= 44px, no overflow',s.fx==='fixed'&&s.inview&&s.h2==='Save these links'&&s.n>=4&&s.small===0&&s.out===0&&s.sw<=w,s);
+    ok(w+'px: sheet "Save these links" shown as a fixed overlay in view, every button >= 36px, no overflow',s.fx==='fixed'&&s.inview&&s.h2==='Save these links'&&s.n>=4&&s.small===0&&s.out===0&&s.sw<=w,s);
     if(w===390){const m=s.mail;const urls=m.match(/https?:\/\/[^\s]+/g)||[];
       const pub=urls.filter(u=>!u.includes('#'));ok('links keep the league code (?l='+id+') on every link',urls.length>=3&&urls.every(u=>u.includes('l='+id)),urls);
       ok('public links (invite / room / watch) carry no identity: no secret, no #',pub.length>=3&&pub.every(u=>!u.includes(info.cmSecret)&&!u.includes(info.managers[0].k)),pub);

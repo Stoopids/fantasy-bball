@@ -27,7 +27,7 @@ const shot=async(P,name)=>{if(!SH)return;const f=path.join(SH,name);await P.page
     await P.page.select('#s29shSel','games');await sleep(120);await P.page.evaluate(()=>{try{Object.defineProperty(navigator,'share',{value:undefined,configurable:true})}catch(e){}});await P.page.click('#s29shBtn');await sleep(300);const cp=await P.page.evaluate(()=>window.__cp.slice(-1)[0]);const cpl=await P.page.$eval('#s29shBtn',e=>e.textContent);
     ok(w+'px: Share (no native share) copies the picked link (games, view=1) and shows Copied',cp===urls.games&&cpl==='Copied',{cp,cpl});
     const small=await P.page.$$eval('#sharecard button,#sharecard select',e=>e.filter(x=>x.getBoundingClientRect().height<43.5).length);const sw=await P.page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth);
-    ok(w+'px: Share tab no overflow, 44px controls',small===0&&sw);await P.page.select('#s29shSel','');await sleep(100);await shot(P,'share_tab_'+w+'.png');
+    ok(w+'px: Share tab no overflow, 36px controls',small===0&&sw);await P.page.select('#s29shSel','');await sleep(100);await shot(P,'share_tab_'+w+'.png');
     for(const t of ['standings','games','bets','teams','recap','rules']){await P.go('league.html?l='+id+'#'+t);await P.page.waitForSelector('#lapp[data-ready]',{timeout:25000});await sleep(t==='bets'?1500:500);
       const x=await P.page.evaluate(()=>({btn:document.querySelectorAll('#lbody [data-a=cptab],#lbody [data-a=cplink],#lbody [data-a=shareleague],#lbody .s27-share').length,txt:/Copy link/.test(document.querySelector('#lbody').innerText)}));
       ok(w+'px #'+t+': no Share / Copy link buttons (Share tab only)',x.btn===0&&!x.txt,x)}
@@ -41,7 +41,7 @@ const shot=async(P,name)=>{if(!SH)return;const f=path.join(SH,name);await P.page
     const g=await P.page.evaluate(()=>({badge:!!document.getElementById('vobadge'),qb:[...document.querySelectorAll('.qb-btn')].filter(e=>e.getBoundingClientRect().width>0).length}));ok(w+'px view mode stays on in this tab (games): badge, no Quick bet',g.badge&&g.qb===0,g);
     await shot(P,'viewonly_games_'+w+'.png');await P.close()}
   /* ---- per-card copy as text ---- */
-  {const P=await open(id,info,390,{hash:'games'});const b=await P.page.$('[data-gid=s1] .cpt');ok('game card has the Copy button (.s27-copy, 44px)',!!b&&await P.page.$eval('[data-gid=s1] .cpt',e=>e.textContent==='Copy'&&e.classList.contains('s27-copy')&&e.getBoundingClientRect().height>=36));
+  {const P=await open(id,info,390,{hash:'games'});const b=await P.page.$('[data-gid=s1] .cpt');ok('game card has the Copy button (.s27-copy, 36px)',!!b&&await P.page.$eval('[data-gid=s1] .cpt',e=>e.textContent==='Copy'&&e.classList.contains('s27-copy')&&e.getBoundingClientRect().height>=36));
     const vis=await P.page.$eval('[data-gid=s1] .gtm',e=>e.innerText.trim());await P.page.click('[data-gid=s1] .cpt');await sleep(300);
     const t=await P.page.evaluate(()=>window.__cp.slice(-1)[0]||'');const lbl=await P.page.$eval('[data-gid=s1] .cpt',e=>e.textContent);
     console.log('--- copied game text ---\n'+t+'\n---');

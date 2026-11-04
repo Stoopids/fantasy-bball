@@ -58,7 +58,7 @@ const audit=P=>P.page.evaluate(()=>{const A=[...document.querySelectorAll('#lbod
     ok(w+'px: '+c+' column(s)',g&&g.cols===c,g&&g.cols);
     if([390,1280,1600].includes(w)){const multi=g.rows.filter(r=>r.length>1),all=g.rows.flat(),q=all.filter(x=>x.qb);
       if(c>1)ok(w+'px: cards in a row have equal heights',multi.length>=1&&multi.every(r=>Math.max(...r.map(x=>x.h))-Math.min(...r.map(x=>x.h))<=1),g.rows);
-      ok(w+'px: Quick bet is a normal button (not full width), >= 44px, #FFD400 on #111, label kept',q.length>=5&&q.every(x=>x.qb.w<x.qb.inner-40&&x.qb.h>=36&&x.qb.bg==='rgb(255, 212, 0)'&&x.qb.fg==='rgb(17, 17, 17)'&&/Quick bet/.test(x.qb.txt)),q.map(x=>x.qb));
+      ok(w+'px: Quick bet is a normal button (not full width), >= 36px, #FFD400 on #111, label kept',q.length>=5&&q.every(x=>x.qb.w<x.qb.inner-40&&x.qb.h>=36&&x.qb.bg==='rgb(255, 212, 0)'&&x.qb.fg==='rgb(17, 17, 17)'&&/Quick bet/.test(x.qb.txt)),q.map(x=>x.qb));
       ok(w+'px: Quick bet spec: inline-flex (computed flex inside the flex row), padding 8px 16px, .9em, weight 700, radius 10px',q.every(x=>(x.qb.disp==='inline-flex'||x.qb.disp==='flex')&&x.qb.pad==='8px 16px'&&x.qb.fw==='700'&&x.qb.rad==='10px'&&Math.abs(x.qb.fs-0.9*x.qb.pfs)<0.2),q.map(x=>x.qb));
       ok(w+'px: the spread / over-under line stays visible in cards that have one',await P.page.evaluate(()=>{const c=document.querySelector('[data-gid=t1]');return !!c&&/Spread .+ -3\.5/.test(c.innerText)&&[...c.querySelectorAll('*')].some(e=>/Spread/.test(e.textContent)&&e.children.length===0&&e.getBoundingClientRect().width>0)}));ok(w+'px: Quick bet sits bottom-right (right edge = card content edge)',q.every(x=>Math.abs(x.qb.rgap)<=1),q.map(x=>x.qb.rgap));
       ok(w+'px: Quick bet pinned to the bottom of every card (same gap)',q.every(x=>Math.abs(x.qb.pb-q[0].qb.pb)<=1),q.map(x=>x.qb.pb));
@@ -70,7 +70,7 @@ const audit=P=>P.page.evaluate(()=>{const A=[...document.querySelectorAll('#lbod
   /* ---- finished rows ---- */
   await mode(P,'scores');
   const st=()=>P.page.evaluate(()=>{const b=document.querySelector('[data-gid=f1] .gfr'),x=document.getElementById(b.getAttribute('aria-controls')),r=b.getBoundingClientRect();return{tag:b.tagName,ae:b.getAttribute('aria-expanded'),hid:x.hidden,txt:b.innerText.replace(/\s+/g,' ').trim(),h:Math.round(r.height),w:Math.round(r.width),focus:document.activeElement===b,rows:[...document.querySelectorAll('#lbody .gm.gfin')].map(c=>Math.round(c.getBoundingClientRect().height))}});
-  let s=await st();ok('finished games are one-line rows (teams, final score, Final), collapsed, 44px button',s.tag==='BUTTON'&&s.ae==='false'&&s.hid&&/64.*70.*Final/.test(s.txt)&&s.h>=36&&s.rows.every(h=>h<=50),s);
+  let s=await st();ok('finished games are one-line rows (teams, final score, Final), collapsed, 36px button',s.tag==='BUTTON'&&s.ae==='false'&&s.hid&&/64.*70.*Final/.test(s.txt)&&s.h>=36&&s.rows.every(h=>h<=50),s);
   await P.page.$eval('[data-gid=f1] .gfr',e=>e.scrollIntoView({block:'center'}));/* s28c: shorter Games header; keep the row clear of the fixed chat bar */await P.page.click('[data-gid=f1] .gfr');await sleep(200);s=await st();ok('tap expands it (aria-expanded=true, details shown)',s.ae==='true'&&!s.hid,s);
   await P.page.click('[data-gid=f1] .gfr');await sleep(200);s=await st();ok('tap again collapses it',s.ae==='false'&&s.hid,s);
   await P.page.focus('[data-gid=f1] .gfr');await P.page.keyboard.press('Enter');await sleep(200);s=await st();ok('keyboard Enter expands',s.ae==='true'&&!s.hid&&s.focus,s);
@@ -79,7 +79,7 @@ const audit=P=>P.page.evaluate(()=>{const A=[...document.querySelectorAll('#lbod
   await P.close();
   /* ---- overflow + taps ---- */
   for(const w of [320,360,390,1280]){P=await open(id,info,w);for(const m of ['upcoming','scores']){await mode(P,m);if(m==='scores')await P.page.evaluate(()=>document.querySelectorAll('.gfr').forEach(b=>b.click()));await sleep(250);
-      const a=await audit(P);ok(w+'px '+m+': no horizontal overflow, every button >= 44px',a.n>0&&a.sw<=a.iw&&a.wide===0&&!a.small.length,a)}await P.close()}
+      const a=await audit(P);ok(w+'px '+m+': no horizontal overflow, every button >= 36px',a.n>0&&a.sw<=a.iw&&a.wide===0&&!a.small.length,a)}await P.close()}
   /* ---- screenshots: upcoming (top) + finished (below), stacked into one image ---- */
   if(SH){for(const w of [390,1280,1600]){P=await open(id,info,w,{h:w===390?1500:1000});const clip=async()=>{const r=await P.page.evaluate(()=>{const a=document.querySelector('#lbody .card'),e=[...document.querySelectorAll('#lbody .ggrid')].pop();const t=a.getBoundingClientRect().top+scrollY,b=e.getBoundingClientRect().bottom+scrollY;return{y:Math.max(0,t-8),h:Math.min(b-t+16,3000)}});const H2=await P.page.evaluate(()=>document.documentElement.scrollHeight);await P.page.setViewport({width:w,height:Math.min(H2,4000),isMobile:w<760,hasTouch:w<760});await sleep(300);return{x:0,y:r.y,width:w,height:r.h}};
     await P.page.screenshot({path:'/tmp/gs_up_'+w+'.png',clip:await clip()});await mode(P,'scores');await P.page.click('#lbody .gfr');await sleep(250);

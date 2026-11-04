@@ -1,5 +1,5 @@
 /* s26c5: Standings > Breakdown (per manager, per school, per category; sums) + All teams (Team, Owner, Record, AP, NET; best record first).
-   #postseason and #standings/breakdown and #standings/points (alias) open Standings with Breakdown on. 320/390/1280: no overflow, taps >= 44px, no "Test " prefix.
+   #postseason and #standings/breakdown and #standings/points (alias) open Standings with Breakdown on. 320/390/1280: no overflow, taps >= 36px, no "Test " prefix.
    APP / API env (mock store). SHOTS=dir to save shots. */
 const L=require('./lib.js'),path=require('path');const {seed}=require('./seed_league.js');const root=path.join(__dirname,'..');const fx=require('./fixture_s26c3.js')(root);
 let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,600):''))}}
@@ -29,7 +29,7 @@ const small=()=>[...document.querySelectorAll('#lbody a,#lbody button,#lbody [ro
     ok(tag+': real points: wins, conf season +4, conf tourney +4, NCAA entry/wins/F4/champ present',['wins','entry','ncaa_wins','final4','champ'].every(has)&&all.some(p=>p.k==='conf_season'&&p.pts===4)&&all.some(p=>p.k==='conf_tourney'&&p.pts===4),['wins','conf_season','conf_tourney','entry','ncaa_wins','upsets','final4','champ','missed','playin'].filter(has));
     ok(tag+': no overflow',r.sw<=r.iw&&r.cards.every(c=>!c.out),{sw:r.sw,iw:r.iw});
     ok(tag+': s26c11 one row per school (pill, categories, total on one line), same-width pills',r.cards.every(c=>c.rows.every(x=>x.one))&&new Set(r.cards.flatMap(c=>c.rows.map(x=>x.cw))).size===1,r.cards[0].rows.map(x=>[x.one,x.cw]));
-    ok(tag+': taps >= 44px',r.small.length===0,r.small);
+    ok(tag+': taps >= 36px',r.small.length===0,r.small);
     ok(tag+': no "Test " prefix, no money words',!/\bTest (Sasha|Ben|Cy|Dee|Eli|Fay|Gus|Hal)\b/.test(r.txt)&&!/\b(cash|money|dollars?|prize|payout|wager)\b|\$\d/i.test(r.txt));
     if(SH&&hash==='#postseason'){{const b=await P.page.evaluate(()=>{const r=document.getElementById('lbody').getBoundingClientRect();return{y:r.top+scrollY,h:r.height}});await P.page.screenshot({path:SH+'/standings-breakdown-'+w+'.png',clip:{x:0,y:b.y-60,width:w,height:Math.min(1500,b.h+60)},captureBeyondViewport:true})}}
     await P.close()}
@@ -43,7 +43,7 @@ const small=()=>[...document.querySelectorAll('#lbody a,#lbody button,#lbody [ro
     ok(tag+': record shows W-L',r.rows.every(x=>x.rec===x.w+'-'+x.l));
     ok(tag+': AP and NET from the rankings data (– when unranked), 6 AP ranks shown',r.rows.every(x=>x.ap===(x.apx?'#'+x.apx:'–')&&x.net===(x.netx?'#'+x.netx:'–'))&&r.rows.filter(x=>x.ap!=='–').length===6,r.rows.filter(x=>x.ap!=='–'||x.net!=='–').slice(0,4));
     ok(tag+': no overflow',r.sw<=r.iw&&!r.out,{sw:r.sw,iw:r.iw});
-    ok(tag+': taps >= 44px',r.small.length===0,r.small);
+    ok(tag+': taps >= 36px',r.small.length===0,r.small);
     ok(tag+': owner names without "Test "',!/\bTest /.test(r.txt));
     if(SH){const b=await P.page.evaluate(()=>{const r=document.getElementById('lbody').getBoundingClientRect();return{y:r.top+scrollY,h:r.height}});await P.page.screenshot({path:SH+'/all-teams-'+w+'.png',clip:{x:0,y:b.y-60,width:w,height:Math.min(1500,b.h+60)},captureBeyondViewport:true})};await P.close()}
 }catch(e){bad++;console.log('FAIL  crashed',e)}await L.close();console.log('\n'+(n-bad)+'/'+n+' passed');process.exit(bad?1:0)})();

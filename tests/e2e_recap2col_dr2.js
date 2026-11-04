@@ -39,14 +39,14 @@ const info=P=>P.page.evaluate(()=>{const r=id=>{const e=document.getElementById(
   await P.close()}
 
 
- /* What's next row: Back to Draft (room, same tab) + Go to <League> League + Share my grade, all >= 44px, no overflow */
+ /* What's next row: Back to Draft (room, same tab) + Go to <League> League + Share my grade, all >= 36px, no overflow */
  for(const w of [1280,390]){const P=await open(process.env.APP,lg,w);const pre=w+'px buttons: ';
   const b=await P.page.evaluate(()=>{const q=id=>{const e=document.getElementById(id);if(!e)return null;const r=e.getBoundingClientRect();return{t:e.innerText.trim(),href:e.getAttribute('href'),target:e.getAttribute('target'),rel:e.getAttribute('rel'),h:Math.round(r.height),r:Math.round(r.right),top:Math.round(r.top),hidden:e.hidden}};
    return{d:q('rcdraft'),l:q('rcsite'),s:q('rcsharegrade'),iw:innerWidth,sw:document.documentElement.scrollWidth,row:document.querySelector('#rc_site .rcrow').scrollWidth<=document.querySelector('#rc_site .rcrow').clientWidth}});
   ok(pre+'"Back to Draft" present, room route, same tab',b.d&&b.d.t==='Back to Draft'&&/room\.html\?l=/i.test(b.d.href)&&b.d.href.indexOf(lg.id)>=0&&b.d.target==null,b.d);
   ok(pre+'"Go to <League> League" present, league route, '+(w>=900?'new tab':'same tab'),b.l&&/^Go to .+ League$/.test(b.l.t)&&/league\.html\?l=/.test(b.l.href)&&(w>=900?b.l.target==='_blank'&&/noopener/.test(b.l.rel):b.l.target==null),b.l);
   ok(pre+'"Share my grade" still present and visible',b.s&&b.s.t==='Share my grade'&&!b.s.hidden,b.s);
-  ok(pre+'all three >= 44px tall, one row at >= 900px (may wrap below), inside the page, no sideways scroll',[b.d,b.l,b.s].every(x=>x&&x.h>=36&&x.r<=b.iw)&&(w<900||new Set([b.d.top,b.l.top,b.s.top]).size===1)&&b.sw<=b.iw&&b.row,b);
+  ok(pre+'all three >= 36px tall, one row at >= 900px (may wrap below), inside the page, no sideways scroll',[b.d,b.l,b.s].every(x=>x&&x.h>=36&&x.r<=b.iw)&&(w<900||new Set([b.d.top,b.l.top,b.s.top]).size===1)&&b.sw<=b.iw&&b.row,b);
   if(w===390){const v=await P.page.evaluate(()=>{const a=document.getElementById('rcsite'),s=a.querySelector('.dr2lbl');return{t:a.innerText.trim(),asw:a.scrollWidth,acw:a.clientWidth,ssw:s.scrollWidth,scw:s.clientWidth,ell:getComputedStyle(s).textOverflow,sw:document.documentElement.scrollWidth,iw:innerWidth}});
    ok(pre+'full label "Go to Ball Don\'t Lie League" visible, not clipped (scrollWidth <= clientWidth)',v.t==="Go to Ball Don't Lie League"&&v.asw<=v.acw&&v.ssw<=v.scw&&v.ell!=='ellipsis',v);
    ok(pre+'no horizontal scroll',v.sw<=v.iw,v)}
@@ -66,7 +66,7 @@ const info=P=>P.page.evaluate(()=>{const r=id=>{const e=document.getElementById(
   const v=await P.page.evaluate(()=>{const a=document.getElementById('rcsite'),s=a.querySelector('.dr2lbl'),cs=getComputedStyle(a),ss=getComputedStyle(s),r=a.getBoundingClientRect(),sr=s.getBoundingClientRect();
    return{t:a.innerText.trim(),tt:cs.textTransform+'/'+ss.textTransform,ws:ss.whiteSpace,ell:ss.textOverflow+'/'+cs.textOverflow,asw:a.scrollWidth,acw:a.clientWidth,ash:a.scrollHeight,ach:a.clientHeight,ssw:s.scrollWidth,scw:s.clientWidth,in:sr.left>=r.left-0.5&&sr.right<=r.right+0.5&&sr.top>=r.top-0.5&&sr.bottom<=r.bottom+0.5,h:Math.round(r.height),lines:Math.round(sr.height/parseFloat(ss.lineHeight||'16')),sw:document.documentElement.scrollWidth,iw:innerWidth}});
   ok(pre+'title case "Go to Ball Don\'t Lie League", no uppercase transform',v.t==="Go to Ball Don't Lie League"&&!/uppercase/.test(v.tt),v);
-  ok(pre+'text fits: white-space normal, no ellipsis, nothing clipped (scroll <= client), label inside the button, >= 44px',v.ws==='normal'&&!/ellipsis/.test(v.ell)&&v.asw<=v.acw&&v.ash<=v.ach&&v.ssw<=v.scw&&v.in&&v.h>=36,v);
+  ok(pre+'text fits: white-space normal, no ellipsis, nothing clipped (scroll <= client), label inside the button, >= 36px',v.ws==='normal'&&!/ellipsis/.test(v.ell)&&v.asw<=v.acw&&v.ash<=v.ach&&v.ssw<=v.scw&&v.in&&v.h>=36,v);
   ok(pre+'no horizontal scroll',v.sw<=v.iw,v);
   if(SHOT){await P.page.evaluate(()=>scrollTo(0,0));await P.page.screenshot({path:path.join(SHOT,'after-'+w+'-buttons.png')})}
   await P.close()}

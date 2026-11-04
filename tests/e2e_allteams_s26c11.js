@@ -1,6 +1,6 @@
-/* s26c11: All teams like STOOPIDS (compact). Columns Team, Owner, Rec, Pts, Conf, AP, NET (STOOPIDS s26p); owner filter (All + each manager, 44px); best record first, then NET (unranked last); Rec/AP/NET bold, tabular-nums,
+/* s26c11: All teams like STOOPIDS (compact). Columns Team, Owner, Rec, Pts, Conf, AP, NET (STOOPIDS s26p); owner filter (All + each manager, 36px); best record first, then NET (unranked last); Rec/AP/NET bold, tabular-nums,
    ~1.1x (>=15px desktop); card capped (<=720px) and centered on desktop, number columns side by side; owner column narrow with ellipsis; no 'Test ' names;
-   dark STOOPIDS colours; 320/390/1280 no overflow, taps >= 44px. APP / API env (mock store). SHOTS=dir -> all-teams-<w>.png */
+   dark STOOPIDS colours; 320/390/1280 no overflow, taps >= 36px. APP / API env (mock store). SHOTS=dir -> all-teams-<w>.png */
 const L=require('./lib.js'),path=require('path');const {seed}=require('./seed_league.js');const root=path.join(__dirname,'..');const fx=require('./fixture_s26c3.js')(root);
 let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,600):''))}}
 /* s26c11 conf codes: scores.json conf as tools/refresh_data.py writes it (ESPN standings abbreviations, s26c11-conf test fixture codes) + net.json ranks[].conf fallback */
@@ -48,7 +48,7 @@ async function open(w,id,info){const P=await L.phone('at'+Math.random().toString
     ok(tag+': owner filter: All (on) then each manager, no Test prefix',r.fl.length===r.own.length+1&&r.fl[0].t==='All'&&r.fl[0].on==='true'&&r.fl.slice(1).every((f,i)=>f.mid===r.own[i].mid&&f.t===r.own[i].name&&!/^Test /.test(f.t)&&f.on==='false'),r.fl);
     {const o=r.own[2];await P.page.click('#atfilter button[data-mid="'+o.mid+'"]');await L.sleep(400);
       const f=await P.page.evaluate(()=>{const R=e=>e.getBoundingClientRect();return{rows:[...document.querySelectorAll('#allteams .obr')].map(r=>({tid:r.dataset.tid,o:r.querySelector('.ato .tnr')?r.querySelector('.ato .tnr').textContent:r.querySelector('.ato').textContent,pts:+r.dataset.pts})),on:[...document.querySelectorAll('#atfilter button[aria-pressed=true]')].map(b=>b.textContent),small:[...document.querySelectorAll('#atfilter button')].filter(b=>R(b).height<36||R(b).width<36).length,sw:document.documentElement.scrollWidth,iw:innerWidth}});
-      ok(tag+': filter to one owner: only their 8 schools, pressed, sum = their total, taps >= 44px, no overflow',f.rows.length===8&&f.rows.every(x=>!!x.o&&o.tids.includes(x.tid))&&f.on.length===1&&f.rows.reduce((a,x)=>a+x.pts,0)===o.total&&!f.small&&f.sw<=f.iw,f);
+      ok(tag+': filter to one owner: only their 8 schools, pressed, sum = their total, taps >= 36px, no overflow',f.rows.length===8&&f.rows.every(x=>!!x.o&&o.tids.includes(x.tid))&&f.on.length===1&&f.rows.reduce((a,x)=>a+x.pts,0)===o.total&&!f.small&&f.sw<=f.iw,f);
       if(SH){const b=await P.page.evaluate(()=>{const r=document.getElementById('lbody').getBoundingClientRect();return{y:r.top+scrollY,h:r.height}});await P.page.screenshot({path:SH+'/all-teams-owner-'+w+'.png',clip:{x:0,y:Math.max(0,b.y-60),width:w,height:Math.min(1500,b.h+60)},captureBeyondViewport:true})}
       await P.page.click('#atfilter button[data-mid=""]');await L.sleep(300);ok(tag+': All restores 64 rows',await P.page.evaluate(()=>document.querySelectorAll('#allteams .obr').length)===64)}
     ok(tag+': owner column narrow with ellipsis',r.rows.every(x=>x.ownEl.tov==='ellipsis'&&x.ownEl.ws==='nowrap'&&(w<=480||x.ownEl.w<=160)),r.rows[0].ownEl);   /* phones: owner sits under the team (s26c4 stacked layout) */
@@ -57,7 +57,7 @@ async function open(w,id,info){const P=await L.phone('at'+Math.random().toString
     if(w>=760){ok(tag+': compact: card <= 720px and centered',r.kw<=720&&Math.abs(r.kl-r.kr)<=40,{kw:r.kw,kl:r.kl,kr:r.kr});
       ok(tag+': Rec+Pts and AP+NET side by side (gaps <= 24px, Conf between <= 110px), owner close to team (<= 40px)',r.rows.every(x=>x.gaps[0]<=24&&x.gaps[2]<=24&&x.gaps[1]<=110&&x.ownEl.team2own<=40),[r.rows[0].gaps,r.rows[0].ownEl.team2own])}
     ok(tag+': no overflow',r.sw<=r.iw&&!r.out,{sw:r.sw,iw:r.iw});
-    ok(tag+': taps >= 44px',r.small.length===0,r.small);
+    ok(tag+': taps >= 36px',r.small.length===0,r.small);
     if(SH){const b=await P.page.evaluate(()=>{const r=document.getElementById('lbody').getBoundingClientRect();return{y:r.top+scrollY,h:r.height}});await P.page.screenshot({path:SH+'/all-teams-'+w+'.png',clip:{x:0,y:Math.max(0,b.y-60),width:w,height:Math.min(1500,b.h+60)},captureBeyondViewport:true})}
     await P.close()}
 }catch(e){bad++;console.log('FAIL  crashed',e)}await L.close();console.log('\n'+(n-bad)+'/'+n+' passed');process.exit(bad?1:0)})();

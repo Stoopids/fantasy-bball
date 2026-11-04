@@ -1,4 +1,4 @@
-/* s25 tab bar: wraps into rows (no sideways scroll), all tabs in view, taps >= 44px, labels not cut, active state kept. node tests/e2e_tabs_s25.js (APP / API env) */
+/* s25 tab bar: wraps into rows (no sideways scroll), all tabs in view, taps >= 36px, labels not cut, active state kept. node tests/e2e_tabs_s25.js (APP / API env) */
 const L=require('./lib.js');const {seed}=require('./seed_league.js');const {sleep}=L;
 const SH=process.env.SHOTS||'/workspace/league-site-work/compare-s25';
 let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,500):''))}}

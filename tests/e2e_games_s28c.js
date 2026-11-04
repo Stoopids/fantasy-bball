@@ -1,6 +1,6 @@
 /* s28c Games tab (STOOPIDS design, Paul via NCAA): one full-width row of 4 equal controls = Upcoming | Past games (.rkseg/.rkseg-b toggle, .on = active)
    + owners <select> + months <select> (no month buttons, no day select); no counts, no emoji on the toggles; no 'Times in your time zone' / favorite-underdog
-   note and no 'Betting lines posted so far' note; 'Owner vs owner' compact under the row. Month filter works. 320/390/1280: no overflow, taps >= 44px tall.
+   note and no 'Betting lines posted so far' note; 'Owner vs owner' compact under the row. Month filter works. 320/390/1280: no overflow, taps >= 36px tall.
    TZ=Asia/Jakarta APP=... API=... node tests/e2e_games_s28c.js   (SHOTS=dir, SHOTTAG=before|after for screenshots only) */
 const L=require('./lib.js');const fs=require('fs'),path=require('path');const {seed}=require('./seed_league.js');const {sleep}=L;const root=path.join(__dirname,'..');
 const TZ=process.env.TZ||'Asia/Jakarta';const SH=process.env.SHOTS||'',TAG=process.env.SHOTTAG||'after';
@@ -37,7 +37,7 @@ const shot=async(P,w)=>{if(!SH)return;const c=await P.page.evaluate(()=>{const e
     ok(w+'px: no month buttons (months are a dropdown); All-days select in row 2',r&&r.monthBtns===0&&r.day,r);
     ok(w+'px: no time-zone/favorite note and no Betting lines note',r&&!/Times in your time zone|betting favorite|underdog|Betting lines posted/i.test(r.text));
     ok(w+'px: filters (owner, month, day, Pool vs Pool, All teams) sit compact under the row',r&&r.h2h&&r.h2h.inF&&r.h2h.team&&r.h2h.txt==='Pool vs Pool'&&r.h2h.below&&r.h2h.gap<=12,r&&r.h2h);
-    ok(w+'px: no horizontal overflow; toggles >= 44px tall (filters/Refresh use the smaller STOOPIDS size)',r&&r.sw<=r.iw&&r.kids.slice(0,2).every(k=>k.h>=36),r&&{sw:r.sw,iw:r.iw,h:r.kids.map(k=>k.h),small:r.small});
+    ok(w+'px: no horizontal overflow; toggles >= 36px tall (filters/Refresh use the smaller STOOPIDS size)',r&&r.sw<=r.iw&&r.kids.slice(0,2).every(k=>k.h>=36),r&&{sw:r.sw,iw:r.iw,h:r.kids.map(k=>k.h),small:r.small});
     if(w===390){const mo=await P.page.$$eval('#gMonthSel option',o=>o.map(x=>[x.value,x.text,x.disabled]));const want=new Set(GAMES.filter(g=>g.status!=='final').map(g=>mk(Date.parse(g.start)).slice(5)));
       ok('months select (s29b): Month + Nov..Apr, months without games disabled',mo[0][0]===''&&mo[0][1]==='Month'&&mo.slice(1).map(x=>x[1]).join()==='Nov,Dec,Jan,Feb,Mar,Apr'&&mo.slice(1).filter(x=>!x[2]).length===want.size,mo);
       const last=mo.filter(x=>x[0]).pop();await P.page.select('#gMonthSel',last[0]);await sleep(400);const ids=await P.page.$$eval('#lbody .gm',e=>e.map(x=>x.dataset.gid));

@@ -1,8 +1,8 @@
 /* s27 (rewritten from s26c10): no Draft tab once the draft is done; the pick board lives in Recap.
-   Post-draft: #draft and #picks open #recap; Recap order = weekly recaps -> draft grades -> pick board (only when complete) -> quiet 'Draft room →' link (league code, >= 44px).
+   Post-draft: #draft and #picks open #recap; Recap order = weekly recaps -> draft grades -> pick board (only when complete) -> quiet 'Draft room →' link (league code, >= 36px).
    Completion both ways: completed_at/endedAt set (seed, 8 rounds) and all picks made with no completed time (live seed, 6 rounds x 8 = 48 picks).
    Pre-draft (live, 10 picks): the go-to-draft-room state: #draft/#picks show one 'Go to draft room' link to room.html?l=<code>, no board; #recap has the weekly placeholder + room link, no board.
-   Old routes #power/#draftrecap open Recap; footer link opens the Recap tab. No 'Test ' prefix, no money words, no overflow, taps >= 44px at 320/390/1280. APP / API env. SHOTS=dir optional. */
+   Old routes #power/#draftrecap open Recap; footer link opens the Recap tab. No 'Test ' prefix, no money words, no overflow, taps >= 36px at 320/390/1280. APP / API env. SHOTS=dir optional. */
 const L=require('./lib.js');const {seed}=require('./seed_league.js');const path=require('path');
 let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,500):''))}}
 const MONEY={re:/\$|\b(money|cash|dollars?|wager|betting|gambl\w*|odds|payout|stake)\b/i,ok:/Bets here are just for fun and are settled in pushups, not money\. Betting is Stoopid, and we don't endorse or facilitate gambling for money\./g,test(x){return this.re.test(String(x).replace(this.ok,''))},[Symbol.match](x){return String(x).replace(this.ok,'').match(this.re)}};   /* s28: the Bets page disclaimer (partner wording) is the one allowed money sentence */
@@ -27,7 +27,7 @@ const POSTOK=(w,lab,id,r,rounds)=>{
   ok(w+' '+lab+': order draft grades -> weekly recaps -> pick board -> room link (s28)',r.has.every(Boolean)&&r.o1&&r.o2&&r.o3,{has:r.has,o:[r.o1,r.o2,r.o3]});
   ok(w+' '+lab+': weekly placeholder text',r.wk==='First recap coming after opening week',r.wk);
   ok(w+' '+lab+': board '+rounds+' rounds x 8 picks, each with manager + school, no big button',r.rounds===rounds&&r.per.every(x=>x===8)&&r.empty===0&&!r.go,{rounds:r.rounds,per:r.per,empty:r.empty,go:r.go});
-  ok(w+' '+lab+': quiet "Draft room →" link last, league code, >= 44px',r.rl&&r.rl.t==='Draft room →'&&/room\.html$/.test(r.rl.p)&&r.rl.l===id&&r.rl.h>=36&&r.rl.w>=36&&r.rl.last,r.rl)};
+  ok(w+' '+lab+': quiet "Draft room →" link last, league code, >= 36px',r.rl&&r.rl.t==='Draft room →'&&/room\.html$/.test(r.rl.p)&&r.rl.l===id&&r.rl.h>=36&&r.rl.w>=36&&r.rl.last,r.rl)};
 (async()=>{try{
   const pre=await seed(null,{live:true,picksMade:10,name:'Test Hoops'});const preI=seed.info;
   const post=await seed(null,{rounds:8,name:'Test Hoops'});const postI=seed.info;
@@ -37,19 +37,19 @@ const POSTOK=(w,lab,id,r,rounds)=>{
       const P=await open(w,pre,preI,h);await P.page.waitForSelector('#godraft',{timeout:25000}).catch(()=>{});await L.sleep(500);
       const r=await P.page.evaluate(()=>{const a=document.getElementById('godraft');let u={};try{u=new URL(a.href)}catch(e){}return{t:a&&a.textContent.trim(),path:u.pathname,l:u.searchParams&&u.searchParams.get('l'),n:document.querySelectorAll('#godraft').length,board:!!document.querySelector('.dround,#dboard')}});Object.assign(r,await P.page.evaluate(metr));
       ok(w+' pre '+h+': go-to-draft-room state (one "Go to draft room" link, league code, no board)',r.n===1&&r.t==='Go to draft room'&&/room\.html$/.test(r.path)&&r.l===pre&&!r.board,{t:r.t,path:r.path,l:r.l,n:r.n,board:r.board});
-      ok(w+' pre '+h+': no overflow, taps >= 44px',r.sw<=r.iw&&!r.small.length,{sw:r.sw,iw:r.iw,small:r.small});
+      ok(w+' pre '+h+': no overflow, taps >= 36px',r.sw<=r.iw&&!r.small.length,{sw:r.sw,iw:r.iw,small:r.small});
       if(h==='#draft'&&w!==320)await shot(P,'pre-draft-'+w);ok(w+' pre '+h+': no page errors',!P.errs.length,P.errs);await P.close()}
     {const P=await open(w,pre,preI,'#recap');await P.page.waitForSelector('#weeklyempty',{timeout:25000}).catch(()=>{});await L.sleep(800);
       const r=await P.page.evaluate(ORDER);Object.assign(r,await P.page.evaluate(metr));
-      ok(w+' pre #recap: weekly placeholder, no pick board, room link last with league code, >= 44px',r.h==='#recap'&&r.wk==='First recap coming after opening week'&&!r.rounds&&!r.has[2]&&r.rl&&r.rl.t==='Draft room →'&&r.rl.l===pre&&r.rl.h>=36&&r.rl.last,{h:r.h,wk:r.wk,rounds:r.rounds,rl:r.rl});
-      ok(w+' pre #recap: no overflow, taps >= 44px',r.sw<=r.iw&&!r.small.length,{small:r.small});ok(w+' pre #recap: no page errors',!P.errs.length,P.errs);await P.close()}
+      ok(w+' pre #recap: weekly placeholder, no pick board, room link last with league code, >= 36px',r.h==='#recap'&&r.wk==='First recap coming after opening week'&&!r.rounds&&!r.has[2]&&r.rl&&r.rl.t==='Draft room →'&&r.rl.l===pre&&r.rl.h>=36&&r.rl.last,{h:r.h,wk:r.wk,rounds:r.rounds,rl:r.rl});
+      ok(w+' pre #recap: no overflow, taps >= 36px',r.sw<=r.iw&&!r.small.length,{small:r.small});ok(w+' pre #recap: no page errors',!P.errs.length,P.errs);await P.close()}
     for(const [lab,id,info,rounds] of [['completed_at/endedAt',post,postI,8],['all picks made, no completed time',noAt,noAtI,6]])
       for(const h of ['#draft','#picks','#recap']){
         const P=await open(w,id,info,h);await P.page.waitForSelector('#lapp[data-ready]',{timeout:25000});await P.page.waitForSelector('.dround',{timeout:8000}).catch(()=>{});await L.sleep(1000);
         const r=await P.page.evaluate(ORDER);Object.assign(r,await P.page.evaluate(metr));POSTOK(w,lab+' '+h,id,r,rounds);
         if(h==='#recap'){ok(w+' '+lab+': grade cards (A+ to D) for 8 managers',r.grades>=8,r.grades);ok(w+' '+lab+': phone label Recap',r.short==='Recap',r.short)}
         ok(w+' '+lab+' '+h+': no "Test " prefix, no money words',!/\bTest\s/.test(r.txt)&&!MONEY.test(r.txt.replace(/Bets/g,'')),r.txt.match(MONEY)||r.txt.match(/\bTest\s\S+/g));
-        ok(w+' '+lab+' '+h+': no overflow, taps >= 44px',r.sw<=r.iw&&!r.small.length,{sw:r.sw,iw:r.iw,small:r.small});
+        ok(w+' '+lab+' '+h+': no overflow, taps >= 36px',r.sw<=r.iw&&!r.small.length,{sw:r.sw,iw:r.iw,small:r.small});
         if(h==='#recap'&&w!==320)await shot(P,'recap-'+(id===post?'endedat':'allpicks')+'-'+w);ok(w+' '+lab+' '+h+': no page errors',!P.errs.length,P.errs);await P.close()}}
   for(const h of ['#power','#draftrecap']){const P=await open(390,post,postI,h);await P.page.waitForSelector('#lapp[data-ready]',{timeout:25000});await L.sleep(500);
     const r=await P.page.evaluate(()=>({h:location.hash,wk:!!document.getElementById('weeklyempty'),board:!!document.getElementById('dboard')}));ok('old route '+h+' opens Recap (with the board)',r.wk&&r.board,r);await P.close()}

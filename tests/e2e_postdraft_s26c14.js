@@ -1,6 +1,6 @@
 /* s26c14 post-draft end-to-end check of the League site on a COMPLETED mock draft of "BALL DON'T LIE" (8 managers x 8 rounds = 64 picks,
    meta.status complete + endedAt set, real assets/teams.js, Torvik o injected from /workspace/dr2-s26c14/torvik_o.json when present).
-   Every visible tab at 320/390/1280: no page errors, no undefined/NaN/null text, no horizontal overflow, taps >= 44px, no 'Test ' prefix,
+   Every visible tab at 320/390/1280: no page errors, no undefined/NaN/null text, no horizontal overflow, taps >= 36px, no 'Test ' prefix,
    no money words (💵/💰 icons allowed), right counts (8 rosters x 8, 64 All teams rows, 64-pick board, 8 grade cards), room links keep ?l=<code>.
    Part 2 (timing): live draft with 63 picks, League page open, pick 64 written to the store -> time until the page shows 8 full rosters,
    with and without reload, plus whether Draft tab board / Recap grades flip.  APP / API env (mock store). SHOTS=dir. SKIP_TIMING=1 to skip part 2. */
@@ -34,7 +34,7 @@ const SCAN=()=>{const b=document.getElementById('lbody')||document.body;const tx
       ok(tag+': no JS errors',P.errs.filter(e=>/pageerror/.test(e)).length===0,P.errs);
       ok(tag+': no undefined/NaN/null/[object] text',!/\bundefined\b|\bNaN\b|\bnull\b|\[object/.test(r.full),(r.full.match(/.{0,40}(undefined|NaN|null|\[object).{0,40}/)||[])[0]);
       ok(tag+': no horizontal overflow',r.sw<=r.iw&&!r.wide.length,{sw:r.sw,iw:r.iw,wide:r.wide});
-      ok(tag+': taps >= 44px',r.small.length===0,r.small);
+      ok(tag+': taps >= 36px',r.small.length===0,r.small);
       ok(tag+': no "Test " prefix shown',!/\bTest [A-Z]/.test(r.full),(r.full.match(/.{0,30}Test [A-Z].{0,30}/)||[])[0]);
       ok(tag+': no money words'+(t==='bets'?' (s28: Bets copies the partner wording; skipped on #bets)':''),t==='bets'||!/\b(cash|money|dollars?|prize|payout|wager\w*|jackpot|lotter\w*|gambl\w*|pot)\b|\$\s?\d/i.test(r.full.replace(/[💵💰]/gu,'')),(r.full.match(/.{0,30}\b(cash|money|dollars?|prize|payout|wager\w*|jackpot|pot)\b.{0,30}/i)||[])[0]);
       ok(tag+': room links keep league code',r.room.every(h=>h.includes('l='+id)),r.room);

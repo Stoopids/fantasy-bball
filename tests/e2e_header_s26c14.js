@@ -1,5 +1,5 @@
 /* s26c14 STOOPIDS header/footer parity: header = banner + title (centred) + tagline right under it, no 'Standings updated' line and no
-   Refresh Live Games row; the Refresh Live Games button + 'Last updated <time>' sit at the top of the Games tab only (button >= 44px, ESPN poll still runs);
+   Refresh Live Games row; the Refresh Live Games button + 'Last updated <time>' sit at the top of the Games tab only (button >= 36px, ESPN poll still runs);
    the footer reads 'Standings last updated <time>'. 320/390/1280, no overflow. Mock ESPN (no live calls). APP / API env. SHOTS=dir. */
 const L=require('./lib.js'),path=require('path');const {seed}=require('./seed_league.js');const root=path.join(__dirname,'..');const fx=require('./fixture_s26c3.js')(root);
 let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,400):''))}}
