@@ -1,4 +1,4 @@
-/* shared/ui.css v1.2.0: design CSS used by BOTH sites (moved verbatim from SYNC7..SYNC14). Edit here only; synced to the other repo by PR. */
+/* shared/ui.css v1.3.0: design CSS used by BOTH sites (moved verbatim from SYNC7..SYNC14). Edit here only; synced to the other repo by PR. */
 /*<SYNC7>*/ /* design fixes 4 Nov (same CSS on STOOPIDS and League) */
 /* 1. Standings, laptop: the old live row layout (rank | manager + points | 2x4 pills on the right) with ALL CAPS names, centred Points, trophies inline */
 @media (min-width:700px){
@@ -157,3 +157,16 @@ html body #nav>a .nl,html body #nav>button .nl,html body #ltabs>a .nl,html body 
 html body #nav>a .ni,html body #nav>button .ni,html body #ltabs>a .ni,html body #ltabs>button .ni{font-size:17px!important}}
 @media (max-width:700px){html body #nav>a,html body #nav>button,html body #ltabs>a,html body #ltabs>button{min-height:44px!important;height:44px!important;box-sizing:border-box!important}
 html body #nav>a .nl,html body #ltabs>a .nl{font-size:14px!important;font-weight:700!important}html body #nav>a .ni,html body #ltabs>a .ni{font-size:15px!important}}/*</TABS-TALL>*/
+
+/*<SIZES-DOWN> Paul 2026-11-04: smaller, even controls. Overrides TABS-TALL and the 180x64 pills above. */
+@media (min-width:701px){html body #nav>a,html body #nav>button,html body #ltabs>a,html body #ltabs>button{min-height:38px!important;height:38px!important;font-size:14px!important}
+html body #nav>a .nl,html body #nav>button .nl,html body #ltabs>a .nl,html body #ltabs>button .nl{font-size:14px!important}
+html body #nav>a .ni,html body #nav>button .ni,html body #ltabs>a .ni,html body #ltabs>button .ni{font-size:15px!important}
+html body .gfrow .rkseg .rkseg-b{width:130px!important;height:44px!important;min-height:44px!important;font-size:15px!important}
+html body .gf3 select.gf2-s,html body .gf3 .gf2-b,html body .gf3 input.gf2-s,html body .s24fb .row2>select,html body .s24fb .row2>input,html body .b27-fr>select,html body .b27-fr>input{width:150px!important;height:40px!important;min-height:40px!important;font-size:14px!important;padding:0 12px!important;flex:none!important}
+html body .gf3 input.gf2-s,html body .s24fb .row2>input[type=search],html body .b27-fr>input[type=search]{width:180px!important}
+html body .gf3,html body .gf3 .gf2{justify-content:flex-start!important}}
+html body .rkseg .rkseg-b,html body .segv .seg{height:40px!important;min-height:40px!important;box-sizing:border-box!important}
+@media (max-width:700px){html body .gfrow .rkseg .rkseg-b{height:44px!important;min-height:44px!important;font-size:15px!important}
+html body .gf3 select.gf2-s,html body .gf3 .gf2-b,html body .gf3 input.gf2-s{height:40px!important;min-height:40px!important;font-size:14px!important}}
+/*</SIZES-DOWN>*/
