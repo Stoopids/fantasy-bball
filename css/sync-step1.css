@@ -93,3 +93,45 @@ body.lsite #lbody>.gday,body.lsite #lbody>.rcroom{margin-left:0!important;margin
 .gm .chip.big .mkrec{white-space:nowrap}
 .gteam{display:inline-flex;gap:4px;align-items:center}.gteamq{width:9em}
 .gm .chip.big .ghome{margin-left:auto}.gm .chip.big .ghome+.mkrec{margin-left:4px}
+
+/*<SYNC2>*/
+nav a.nt.on,#ltabs a.on,.rkseg-b.on,.gf2-b.on{background:var(--pill,#FFD400)!important;color:var(--pill-ink,#111)!important;border-color:var(--pill,#FFD400)!important}
+.golive{position:relative;box-shadow:0 0 0 2px #22c55e!important}
+.golive::before{content:'';position:absolute;top:4px;right:5px;width:7px;height:7px;border-radius:50%;background:#22c55e;animation:golp 1.4s ease-in-out infinite;pointer-events:none}
+@keyframes golp{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.5)}}
+@media (prefers-reduced-motion:reduce){.golive::before{animation:none}}
+.accpick{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
+.accsw{width:30px;height:30px;border-radius:50%;background:var(--sw);border:2px solid #333;padding:0;cursor:pointer}
+.accsw[aria-checked="true"]{outline:2px solid #fff;outline-offset:2px}
+.b27-ao{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.b27-ao-c{min-width:0}
+.b27-ao .b27-amts,.b27-ao .b27-chips{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.b27-ao .b27-amt,.b27-ao .b27-chip{min-width:0;width:100%;height:36px;min-height:36px;padding:0 1px;font-size:13px;font-weight:700;border-radius:8px;box-sizing:border-box;white-space:nowrap;overflow:hidden;text-overflow:clip}
+.b27-ao .cu{font-size:11px;letter-spacing:-.02em}
+@media (max-width:640px){.b27-ao{gap:6px}.b27-ao .b27-amts,.b27-ao .b27-chips{gap:2px}.b27-ao .b27-amt,.b27-ao .b27-chip{font-size:10.5px;height:34px;min-height:34px;border-radius:6px}.b27-ao .cu{font-size:7.5px;letter-spacing:-.03em}}
+/*</SYNC2>*/
+/*<SYNC2-GH>*/ /* Copy + Quick bet side by side, right-aligned on the time row (no extra empty row) */
+.gm .gh{padding-right:0!important;min-height:30px!important;align-items:center!important}
+.gm .gbtns,.gm .mkbtns{position:static!important;flex-direction:row!important;align-items:center!important;gap:6px!important;margin-left:auto!important;order:99}
+.gm .gbtns>button,.gm .mkbtns>button,.gm .mkbtns .qb-btn{width:88px!important;height:30px!important;min-height:30px!important}
+@media (max-width:640px){.gm .gbtns>button,.gm .mkbtns>button,.gm .mkbtns .qb-btn{width:80px!important}}
+/*</SYNC2-GH>*/
+/*<SYNC2-BOX>*/
+.gbx{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line,#2d3548);font-size:12.5px;display:grid;gap:6px}
+.gbx-t{border-collapse:collapse;width:auto}.gbx-t th,.gbx-t td{padding:2px 8px;text-align:center;font-variant-numeric:tabular-nums}.gbx-t th:first-child{text-align:left;padding-left:0}
+.gbx-ld div{display:flex;flex-wrap:wrap;gap:4px 10px}.gbx-ld span{color:var(--mut,#9aa6bd)}
+.gbx-bets{font-weight:600}.gbx-lk{color:var(--acc,#ffd23f);font-weight:700;text-decoration:none}
+/*</SYNC2-BOX>*/
+/*<SYNC2-ST2>*/ .card.oc .who .nm,.card.oc .who>b{text-transform:uppercase;letter-spacing:.02em}
+.card.oc .chip .cab,.card.oc .chip .mkab{white-space:nowrap!important;word-break:keep-all!important;overflow-wrap:normal!important;font-size:min(1em,11px);min-width:0}
+@media (max-width:640px){.card.oc .chip .cab,.card.oc .chip .mkab{font-size:10px;letter-spacing:0}}
+/*</SYNC2-ST2>*/
+/*<SYNC2-ST3>*/ .who small .gold{display:inline!important;margin-left:4px;font-size:inherit;letter-spacing:1px} /* trophies inline after the manager name */
+@media (max-width:640px){.b27-ao .b27-amt,.b27-ao .b27-chip{font-size:10px;padding:0;letter-spacing:-.03em}.b27-ao .cu{font-size:7px}}
+@media (max-width:640px){.card.oc .chip .cab,.card.oc .chip .mkab{font-size:9px!important;letter-spacing:-.02em!important}}
+/*<SYNC2-GF>*/ /* Games filters: one row of equal pills (laptop), 2x2 grid (phone); Pool vs Pool is a toggle pill */
+.gf2{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px!important;width:100%;box-sizing:border-box;margin:0 0 10px!important;padding:0!important}
+.gf2>.gf2-s,.gf2>.gf2-b{width:100%!important;min-width:0!important;max-width:none!important;height:36px!important;min-height:36px!important;margin:0!important;padding:0 12px!important;font-size:13px!important;font-weight:600;line-height:34px;border-radius:999px!important;box-sizing:border-box;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
+.gf2>.gf2-b{text-align:center;justify-content:center}
+@media (max-width:640px){.gf2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/*</SYNC2-GF>*/
