@@ -75,3 +75,16 @@ body.lsite #tag{margin-top:0!important;line-height:17px!important}
 #allteams .atp{color:inherit!important}
 @media (max-width:360px){.mkrow{flex-wrap:wrap}.mkrow .mkref{margin-left:auto}}
 body.lsite #lbody>.gday,body.lsite #lbody>.rcroom{margin-left:0!important;margin-right:0!important;padding-left:0!important;padding-right:0!important}
+/* Recap = STOOPIDS S27-RECAP cards (.d27*) */
+#recapweekly h2,#recapgradescol h2{margin:.4em 0 .4em;font-size:1.2em}
+.d27empty{text-align:center;padding:14px!important}
+.d27cs{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(250px,100%),1fr));gap:8px}
+@media (min-width:900px){.d27cs{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.d27c{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;min-width:0}
+.d27c p{margin:.5em 0 0;font-size:.92em;overflow-wrap:anywhere}
+.d27h{display:flex;gap:10px;align-items:center}
+.d27h small{display:block;opacity:.7}
+.d27g{flex:none;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.25em;background:#f5c518;color:#111}
+.d27g.tbd{background:rgba(255,255,255,.15);color:inherit}
+.d27soon{opacity:.65;font-style:italic}
+.d27c details summary{cursor:pointer;margin-top:.4em;opacity:.8}
