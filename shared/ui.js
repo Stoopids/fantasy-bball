@@ -1,10 +1,10 @@
-/* shared/ui.js v1.10.0: ONE table of input limits and shared wording, loaded by BOTH sites.
+/* shared/ui.js v1.11.0: ONE table of input limits and shared wording, loaded by BOTH sites.
    Edit here only, copy to the other repo by hand, and run scripts/check_shared.sh.
    Each site keeps its old values as fallbacks, so the pages still work if this file fails to load. */
 (function(g){var LIMITS={team:15,stoopName:12,leagueName:24,chat:200,betText:140,paste:300,payouts:120,stake:20,item:40,odds:9};
 var STRINGS={maxLen:'Keep it to {n} characters or fewer.',nameTooLong:'Keep the name to {n} characters or fewer.',teamTooLong:'Keep the team name to {n} characters or fewer.',checkedNow:'checked just now',online:'Who\u2019s online'};
 function t(k,n){var s=STRINGS[k];return s==null?'':String(s).replace('{n}',n)}
-g.SHARED_UI={version:'1.10.0',LIMITS:LIMITS,STRINGS:STRINGS,t:t};})(typeof window!=='undefined'?window:globalThis);
+g.SHARED_UI={version:'1.11.0',LIMITS:LIMITS,STRINGS:STRINGS,t:t};})(typeof window!=='undefined'?window:globalThis);
 
 /* ---- shared modules (step 4). Source of truth: stoopids/stoopids shared/; copy to fantasy-bball and run scripts/check_shared.sh ---- */
 /* sortCmp(a,b,kind,dir): kind 's' = text A-Z (case-insensitive), 'r' = rank (null/'–' always last), 'n' = number. Used by the All teams table on both sites. */
@@ -81,4 +81,7 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
   SHARED_UI.gradeCard=function(c,e){var gr=c.grade?String(c.grade).trim().slice(0,3):'';
     return '<div class="d27c"'+(c.mid!=null?' data-mid="'+e(c.mid)+'"':'')+'><div class="d27h"><span class="d27g'+(gr?'':' tbd')+'">'+(gr?e(gr):'?')+'</span><div><b>'+e(c.team)+'</b><small>'+e(c.person)+' · slot '+c.slot+'</small></div></div>'+
       (c.has?(c.short?'<p>'+e(c.short)+'</p>':'')+(c.deep?'<details><summary>More</summary><p>'+e(c.deep)+'</p></details>':''):'<p class="d27soon">'+c.soon+'</p>')+'</div>'};
+
+  /* STEP5-TEAMS: All-teams sort note start, both sites (the tables themselves differ: STOOPIDS <table>, League div grid). */
+  SHARED_UI.sortedBy=function(k){var L={tm:'Team',ow:'Stoop',rec:'Rec',pts:'Pts',cf:'Conf',ap:'AP',net:'NET',sr:'STOOPID',kp:'KenPom'};return k?'Sorted by '+(L[k]||'')+' (tap the header again to flip).':'Sorted by best record. Tap any header to sort by it.'};
 })(typeof window!=='undefined'?window:globalThis);
