@@ -23,7 +23,7 @@ const VIEWS={
  you(){return `<h1 class="q">Name your league</h1><p class="sub">Everyone will see these. You can change them later.</p>
   <label class="f" for="f_name">League name</label><input type="text" id="f_name" maxlength="40" autocomplete="off" placeholder="Friday Night Hoops" value="${esc(W.name)}">${err('name')}
   <div class="row nw" style="margin-top:12px;align-items:flex-start"><div class="grow"><label class="f" for="f_mgr">Your name</label><input type="text" id="f_mgr" maxlength="30" autocomplete="off" value="${esc(W.mgrName)}">${err('mgrName')}</div>
-  <div class="grow"><label class="f" for="f_team">Your team name</label><input type="text" id="f_team" maxlength="30" autocomplete="off" value="${esc(W.teamName)}">${err('teamName')}</div></div>
+  <div class="grow"><label class="f" for="f_team">Your team name</label><input type="text" id="f_team" maxlength="15" autocomplete="off" value="${esc(W.teamName)}">${err('teamName')}</div></div>
   <p class="hint">You are the commissioner and also manager #1. <b id="fixed8">Every league has 8 managers</b>: you and 7 more. You can add a team photo after the league is created.</p>
   <div class="lphoto" id="lphoto"><label class="f" for="f_lphoto">League photo <span class="mut" style="font-weight:600">(optional)</span></label>
   <div class="row nw" style="align-items:center;gap:12px">${W.photo?`<img id="lphotoprev" class="lpprev" src="${esc(W.photo)}" alt="League photo preview">`:'<div class="lpprev lpnone" id="lphotoprev" aria-hidden="true">🏀</div>'}

@@ -737,7 +737,7 @@ function renderMySettings(){const mid=myMid();const m=mg(mid);const ov=(M.over||
   UI.openSheet(`<div id="mysheet"><h2 style="margin:0 0 2px">My settings</h2><div class="small mut" style="margin-bottom:10px">How you appear on the board, in chat and on the league site.</div>
   <div class="card myhead" id="mspreview" style="margin:0 0 12px"><div class="row nw"><span id="msav">${UI.avatar(msAvatar(),56)}</span><div class="grow" style="min-width:0"><h3 class="mhteam" style="margin:0" id="msteamprev">${esc(F.clean(MS.team)||'Team name')}</h3><div class="mut small">${esc(m.name)}</div></div></div></div>
   <div class="stack">
-   <div><label class="f" for="ms_team">Team name <span class="mut" style="font-weight:600">(top name)</span></label><input type="text" id="ms_team" maxlength="30" autocomplete="off" value="${esc(MS.team)}"><div class="err" id="msteamerr" role="alert"></div></div>
+   <div><label class="f" for="ms_team">Team name <span class="mut" style="font-weight:600">(top name)</span></label><input type="text" id="ms_team" maxlength="15" autocomplete="off" value="${esc(MS.team)}"><div class="err" id="msteamerr" role="alert"></div></div>
    <div id="msnamebox"><label class="f" for="ms_name">Your name <span class="mut" style="font-weight:600">(bottom name)</span></label><input type="text" id="ms_name" value="${esc(m.name)}" readonly aria-readonly="true" tabindex="-1" style="opacity:.65;cursor:not-allowed"><div class="hint" id="msnamenote">🔒 Only the commissioner can change this.</div></div>
    <div id="msavbox"><label class="f">${ALLOW_PHOTO?'Photo or emoji':'Emoji'}</label>
     ${ALLOW_PHOTO?`<div class="photo-prev"><div class="crop" aria-label="Photo preview"><canvas id="mscv" width="264" height="264"></canvas></div>
@@ -762,7 +762,7 @@ document.addEventListener('change',async e=>{if(e.target.id!=='ms_photo')return;
     MS.zoom=1;MS.emoji='';$('mszoomrow').classList.remove('hide');$('mszoom').value=1;document.querySelectorAll('#mysheet .emojis button').forEach(b=>b.classList.remove('on'));msDraw();$('mspinfo').textContent='Shrinking…';await msShrink();$('mspick').textContent='Choose another'}catch(err){$('msperr').textContent='That file is not an image we can read.'}});
 document.addEventListener('input',e=>{if(e.target.id==='ms_team'){MS.team=e.target.value;{const te=$('msteamerr');if(te)te.textContent=''}msPreview();if(!MS.img&&!MS.photo)msDraw()}if(e.target.id==='mszoom'){MS.zoom=+e.target.value;msDraw();clearTimeout(msT);msT=setTimeout(msShrink,200)}});
 async function saveMySettings(){if(MS.busy)return;const mid=myMid();if(!mid)return;const t=F.clean(MS.team);const er=$('mserr');
-  if(!t){er.textContent='Enter a team name.';return}if(t.length>30){er.textContent='Keep the team name under 31 characters.';return}
+  if(!t){er.textContent='Enter a team name.';return}if(t.length>15){er.textContent='Keep the team name to 15 characters or fewer.';return}
   {const te=$('msteamerr');if(te)te.textContent='';const others=MG.filter(x=>x.mid!==mid).map(x=>x.team);if(F.teamTaken(t,others)){if(te)te.textContent='Another manager already uses “'+t+'”. Pick a different team name.';const ti=$('ms_team');if(ti)ti.focus({preventScroll:true});return}}
   MS.busy=true;const b=$('mssave');if(b){b.disabled=true;b.textContent='Saving…'}
   try{const p=PROF[mid]||{};const c=CL[MG.find(x=>x.mid===mid).i]||{};
@@ -774,7 +774,7 @@ async function saveMySettings(){if(MS.busy)return;const mid=myMid();if(!mid)retu
 function openMgr(mid){const m=mg(mid);const st=S.status;if(st!=='complete')readPref(mid).then(()=>{const el=document.getElementById('phq');if(el)el.innerHTML=phQueueHTML(mid)}).catch(()=>{});
   UI.openSheet(`<h2>${esc(m.name)}</h2><div class="small mut" style="margin-bottom:8px">${esc(m.team)}</div>
    <div class="stack">${st!=='complete'?`<div id="phq">${phQueueHTML(mid)}</div>`:''}<div class="row nw"><input type="text" id="rn_name" maxlength="30" value="${esc(m.name)}" aria-label="Manager name"><button class="btn sm" data-a="rename" data-m="${esc(mid)}" data-f="name">Rename</button></div>
-   <div class="row nw"><input type="text" id="rn_team" maxlength="30" value="${esc(m.team)}" aria-label="Team name"><button class="btn sm" data-a="rename" data-m="${esc(mid)}" data-f="team">Rename</button></div>
+   <div class="row nw"><input type="text" id="rn_team" maxlength="15" value="${esc(m.team)}" aria-label="Team name"><button class="btn sm" data-a="rename" data-m="${esc(mid)}" data-f="team">Rename</button></div>
    ${st!=='complete'?`<button class="btn block" data-a="${m.away?'unaway':'away'}" data-m="${esc(mid)}" id="awaybtn">${m.away?'Mark back (stop auto-pick)':'Mark away — auto-pick covers them'}</button>
    <button class="btn bad block" data-a="removemgr" data-m="${esc(mid)}" id="removebtn">${st==='lobby'?'Remove from league':'Remove (auto-pick makes their remaining picks)'}</button>`:''}
    <button class="btn block" data-a="reissue" data-m="${esc(mid)}" id="reissuebtn">Re-issue private link…</button>
