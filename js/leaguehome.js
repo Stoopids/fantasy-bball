@@ -468,7 +468,8 @@ function vDraft(){const st=L.state||{},m=L.meta||{};if(!draftComplete(m,st))retu
 function vRecap(){/* sync-step1 = STOOPIDS S27-RECAP: Weekly write-ups first, then Draft grades as 4-across cards (grade circle, team, manager · slot, 4-sentence recap, More = deep dive), then the draft board */const st=L.state||{},m=L.meta||{};
   return `<section class="d27w0" id="recapweekly"><h2>📰 Weekly write-ups</h2><div class="card d27empty" id="weeklyempty"><span class="d27soon">No weekly write-ups yet. The first one comes after opening week.</span></div></section><section class="d27" id="recapgradescol"><h2 class="d27r">🎓 Draft grades</h2><div class="d27cs" id="recapgrades">${d27Cards(null)}</div></section>${draftComplete(m,st)?vDraft():''}${recapRoomLink()}`}
 function d27Cards(rows){const by={};(rows||[]).forEach(r=>{const k=r._m&&r._m.mid||r._mid;if(k)by[k]=r});
-  return (MG||[]).map((mg,i)=>{const r=by[mg.mid],gr=r&&r.grade?String(r.grade).trim().slice(0,3):'';
+  const ord=(L&&L.meta&&Array.isArray(L.meta.order))?L.meta.order:[],oi=m=>{const k=ord.indexOf(m.mid);return k<0?999:k};   /* slot = draft order (meta.order) */
+  return (MG||[]).slice().sort((a,b)=>oi(a)-oi(b)).map((mg,i)=>{const r=by[mg.mid],gr=r&&r.grade?String(r.grade).trim().slice(0,3):'';
     return `<div class="d27c" data-mid="${esc(mg.mid)}"><div class="d27h"><span class="d27g${gr?'':' tbd'}">${gr?esc(gr):'?'}</span><div><b>${esc(mg.team||mg.name||'')}</b><small>${esc(mg.name||'')} · slot ${i+1}</small></div></div>`+
      (r?(r.short?`<p>${esc(r.short)}</p>`:'')+(r.recap?`<details><summary>More</summary><p>${esc(r.recap)}</p></details>`:''):`<p class="d27soon">${rows===undefined?'Grades coming soon.':'Loading grades…'}</p>`)+'</div>'}).join('')}
 const recapRoomLink=()=>`<p class="rcroom"><a class="rcrl" id="recaproom" href="${esc(U.roomHref(id))}">Draft room →</a></p>`;
