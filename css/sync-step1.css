@@ -54,7 +54,22 @@ body.lsite footer{padding-bottom:12px!important;margin-top:0!important}
 .gm .gow .opill{font-size:14px!important;font-weight:700}
 @media (min-width:641px){.gm .chip.big{width:208px}}
 /* header frame = STOOPIDS: banner 1000px on laptop, tagline flush under the title (17px line) */
-@media (min-width:641px){body.lsite header#lhdr{max-width:1000px!important;margin-left:auto!important;margin-right:auto!important}body.lsite #herow,body.lsite #hero{max-width:1000px!important}}
+@media (min-width:641px){body.lsite header#lhdr,body.lsite #herow,body.lsite #hero{max-width:var(--nav-max)!important;margin-left:auto!important;margin-right:auto!important}}   /* banner = tab bar = content (1080) */
 body.lsite #tag{margin-top:0!important;line-height:17px!important}
 @media (min-width:641px) and (max-width:899px){body.lsite .ggrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 #b27Live:empty{display:none!important}
+
+/* phone tabs: 7 tabs (League has no Archive) = 2 rows of 4 slots, row 2 centred: 8-col grid, each tab spans 2, 5th starts at col 2 */
+@media (max-width:640px){nav#ltabs:has(>a.tb:nth-child(7)):not(:has(>a.tb:nth-child(8))){grid-template-columns:repeat(8,minmax(0,1fr))!important}
+ nav#ltabs:has(>a.tb:nth-child(7)):not(:has(>a.tb:nth-child(8)))>a.tb{grid-column:span 2!important}
+ nav#ltabs:has(>a.tb:nth-child(7)):not(:has(>a.tb:nth-child(8)))>a.tb:nth-child(5){grid-column:2/span 2!important}}
+/* All teams = STOOPIDS: small owner pills, one-line owner, compact rows */
+#atfilter{justify-content:center;gap:4px!important;margin:6px 0 10px!important}
+#atfilter .atfl{display:none!important}
+#atfilter .atf{min-height:20px!important;height:20px;padding:0 8px!important;font-size:11px!important;border-radius:99px!important;line-height:20px}
+#allteams .obh{font-size:10px!important;padding-top:8px!important;padding-bottom:8px!important}
+#allteams .obr{min-height:34px!important;padding-top:4px!important;padding-bottom:4px!important}
+#allteams .ato small{display:none!important}
+#allteams .ato,#allteams .ato b{font-weight:400!important;font-size:12px!important}
+#allteams .n{font-size:12px!important;font-weight:800}
+#allteams .atp{color:inherit!important}
