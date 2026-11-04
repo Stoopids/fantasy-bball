@@ -376,11 +376,9 @@ html body #atfilter .atf{font-size:20px!important;height:auto!important;min-heig
 @media (min-width:700px){html body #allteams{max-width:820px!important;margin-left:auto!important;margin-right:auto!important}html body #allteams+.note{max-width:820px;margin-left:auto;margin-right:auto}}
 html body #allteams .obt>:not(:first-child):not(:nth-child(2)),html body #allteams .obh>:not(:first-child):not(:nth-child(2)){text-align:center!important;justify-content:center!important}
 /*</SYNC12-L>*/
-/*<SYNC14>*/ /* Standings: online Stoops glow green */
-.card.oc.isonl .who>b{display:inline-flex!important;align-items:center;gap:8px;padding:2px 10px;margin-left:-10px;border-radius:999px;outline:2px solid #22c55e;box-shadow:0 0 10px 2px rgba(34,197,94,.65);animation:onlglow 1.6s ease-in-out infinite;max-width:100%}
-.onlb{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:900;letter-spacing:.06em;color:#22c55e;text-transform:uppercase;flex:none}
-.onlb::before{content:"";width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e}
-@keyframes onlglow{0%,100%{box-shadow:0 0 6px 1px rgba(34,197,94,.5)}50%{box-shadow:0 0 16px 4px rgba(34,197,94,.9)}}
+/*<SYNC14>*/ /* Standings: online Stoops = pulsing green outline + small green dot after the name; no layout shift (outline + absolute dot take no space) */
+.card.oc.isonl .who>b{position:relative;outline:2px solid #22c55e;outline-offset:3px;border-radius:6px;animation:onlglow 1.6s ease-in-out infinite}
+.card.oc .who>b .onlb{position:absolute;right:-13px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;font-size:0;overflow:hidden}
+@keyframes onlglow{0%,100%{box-shadow:0 0 4px 1px rgba(34,197,94,.45)}50%{box-shadow:0 0 12px 3px rgba(34,197,94,.85)}}
 @media (prefers-reduced-motion:reduce){.card.oc.isonl .who>b{animation:none}}
-@media (max-width:640px){.card.oc.isonl .who>b{padding:1px 7px;margin-left:-7px;gap:5px}.onlb{font-size:9px}}
 /*</SYNC14>*/
