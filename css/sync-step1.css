@@ -45,3 +45,11 @@
 /* 6 tight bottom gap */
 body.lsite main,body.lsite #main{padding-bottom:8px!important}
 body.lsite footer{padding-bottom:12px!important;margin-top:0!important}
+/* games grid = mockreal: 2 equal columns on laptop, 16px gap */
+@media (min-width:641px){body.lsite .ggrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important}}
+/* games pill = mockreal: one line, name 14-15px, record right-aligned inside the pill */
+.gm .chip.big{display:flex!important;flex-direction:row!important;align-items:center!important;gap:6px;width:200px;max-width:calc(100% - 34px);box-sizing:border-box;padding-right:10px!important}
+.gm .chip.big .cn{flex:1 1 auto;min-width:0;font-size:15px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;grid-column:auto!important;grid-row:auto!important}
+.gm .chip.big .mkrec{position:static!important;margin-left:auto;flex:none;grid-column:auto!important;grid-row:auto!important}
+.gm .gow .opill{font-size:14px!important;font-weight:700}
+@media (min-width:641px){.gm .chip.big{width:208px}}
