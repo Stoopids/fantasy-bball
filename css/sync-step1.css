@@ -1,0 +1,47 @@
+/* sync-step1: League post-draft pages = STOOPIDS mockreal look (mock.css port). Loaded last on league.html only (draft room untouched). */
+/* 1 tab bar: small tabs, one row on laptop; content aligned to the tab bar */
+@media (min-width:641px){
+ nav#ltabs{display:flex!important;gap:4px!important;padding:5px 0!important;flex-wrap:nowrap!important;overflow:visible!important;max-width:var(--nav-max)}
+ nav#ltabs>a.tb,nav#ltabs>a.nd,nav#ltabs>button{flex:1 1 0!important;flex-direction:row!important;gap:5px!important;min-height:32px!important;height:32px;padding:0 6px!important;font-size:12px!important;border-radius:8px!important}
+ nav#ltabs>a.tb .nl{font-size:12px!important}
+ nav#ltabs>a.tb .ni{font-size:13px!important}
+ body.lsite main,body.lsite #main{max-width:var(--nav-max)!important;padding-left:0!important;padding-right:0!important}
+ body.lsite footer{max-width:var(--nav-max)!important}
+}
+/* 2 phone: 2 rows of 4 */
+@media (max-width:640px){
+ nav#ltabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:4px!important;padding:5px 6px!important}
+ nav#ltabs>a.tb,nav#ltabs>a.nd,nav#ltabs>button{min-height:40px!important;padding:3px 2px!important;flex-direction:column!important;gap:0!important;border-radius:8px!important}
+}
+/* 3 games */
+.mkrec{display:inline-block;margin-left:6px;font-size:.8em;font-weight:600;opacity:.85;font-variant-numeric:tabular-nums}
+.gm .gow .opill{font-size:14px!important;line-height:20px!important;padding:0 9px}
+.ggrid .gow{height:24px!important}
+.gm .gh{position:relative;padding-right:104px;min-height:28px}
+.mkbtns{position:absolute;top:0;right:0;display:flex;flex-direction:column;gap:6px;align-items:stretch;z-index:2}
+.mkbtns .qbw{margin:0!important;padding:0!important;display:block}
+.mkbtns>button,.mkbtns .s27-copy,.mkbtns .qb-btn{position:static!important;width:96px!important;height:30px!important;min-height:30px!important;margin:0!important;padding:0 8px!important;font-size:12px!important;font-weight:700!important;border-radius:8px!important;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap}
+.mkbtns .qb-btn{background:#FFD400!important;color:#111!important;border:0!important}
+.gm .gside .nm{max-width:calc(100% - 100px)}
+.gm.mkbet{border-color:#22c55e!important;box-shadow:0 0 0 1px #22c55e inset!important}
+.mkrow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:nowrap;margin:0 0 10px}
+.mkrow>.rkseg,.mkrow>.segw{margin:0!important}
+.mkrow .mkref{border:1px solid #444;background:#222;color:#ddd;white-space:nowrap;border-radius:99px;padding:8px 14px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.mkupd{display:flex;align-items:center;gap:8px;font-size:12px;white-space:nowrap}
+.mkrow .rkseg-b{white-space:nowrap}
+#live.lv{display:none!important}
+/* 4 standings: centered points; phone = 4-letter ESPN codes */
+.card.oc .pts{text-align:center!important;justify-self:center!important}
+.mkab{display:none}
+@media (max-width:640px){
+ .card.oc .chip .cn{display:none!important}
+ .card.oc .chip .mkab{display:inline!important;font-weight:800;letter-spacing:.02em}
+ .mkupd .mut{font-size:11px}
+ .mkrow .rkseg-b{padding:6px 10px;font-size:.8em}.mkrow .mkref{padding:6px 10px}
+ .gm .chip.big .cn{font-size:14px!important}
+ .gm:has(.qb-btn) .gh{min-height:64px;align-items:flex-start}
+ .mkrec{margin-left:4px}
+}
+/* 6 tight bottom gap */
+body.lsite main,body.lsite #main{padding-bottom:8px!important}
+body.lsite footer{padding-bottom:12px!important;margin-top:0!important}
