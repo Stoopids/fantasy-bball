@@ -38,8 +38,8 @@ function emojiRow(){return `<div class="emojis" role="group" aria-label="Emoji a
 function formView(mine){const edit=!!mine;const av=F.avatarSpec(form);
   shell(`${leagueCard()}<div class="card" id="jform"><h2 style="margin:0 0 10px">${edit?'Edit your profile':'Your team'}</h2>
   <div class="stack">
-   <div><label class="f" for="f_team">Team name</label><input type="text" id="f_team" maxlength="15" autocomplete="off" placeholder="Baseline Bandits" value="${esc(form.team)}"></div>
-   <div><label class="f" for="f_name">Your name</label><input type="text" id="f_name" maxlength="30" autocomplete="off" placeholder="First name or nickname" value="${esc(form.name)}"></div>
+   <div><label class="f" for="f_team">Team name</label><input maxlength="15" type="text" id="f_team" autocomplete="off" placeholder="Baseline Bandits" value="${esc(form.team)}"></div>
+   <div><label class="f" for="f_name">Your name</label><input maxlength="12" type="text" id="f_name" autocomplete="off" placeholder="First name or nickname" value="${esc(form.name)}"></div>
    <div><label class="f">Team photo <span class="mut" style="font-weight:600">(optional)</span></label>
     <div class="photo-prev"><div class="crop" id="cropbox" aria-label="Photo crop preview"><canvas id="cv" width="264" height="264"></canvas></div>
      <div class="grow"><label class="btn block" for="f_photo" id="pickphoto">${form.photo||crop.img?'Choose another':'Choose a photo'}</label><input type="file" id="f_photo" accept="image/*" class="hide">
@@ -85,7 +85,7 @@ const ACT={
  copy(el){UI.copy(el.dataset.u,'Copied')},share(el){UI.share({title:meta.name,text:'My private link for '+meta.name,url:el.dataset.u})},
  join,saveme
 };
-function validate(){const n=F.clean(form.name),t=F.clean(form.team);if(!t)return'Enter a team name.';if(t.length>15)return'Keep the team name to 15 characters or fewer.';if(!n)return'Enter your name.';if(n.length>30||t.length>30)return'Keep names under 31 characters.';return''}
+function validate(){const n=F.clean(form.name),t=F.clean(form.team);if(!t)return'Enter a team name.';if(t.length>15)return'Keep the team name to 15 characters or fewer.';if(!n)return'Enter your name.';if(n.length>12)return'Keep your name to 12 characters or fewer.';return''}
 async function join(){if(busy)return;readForm();const ev=validate();const er=$('err');if(ev){er.textContent=ev;return}
   busy=true;$('joinbtn').disabled=true;$('joinbtn').textContent='Joining…';
   try{await loadAll();if(meta.status!=='lobby')return view();
