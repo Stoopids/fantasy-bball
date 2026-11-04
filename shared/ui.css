@@ -170,3 +170,4 @@ html body .rkseg .rkseg-b,html body .segv .seg{height:40px!important;min-height:
 @media (max-width:700px){html body .gfrow .rkseg .rkseg-b{height:44px!important;min-height:44px!important;font-size:15px!important}
 html body .gf3 select.gf2-s,html body .gf3 .gf2-b,html body .gf3 input.gf2-s{height:40px!important;min-height:40px!important;font-size:14px!important}}
 /*</SIZES-DOWN>*/
+/*<SORT-ARROWS> every sortable header shows its arrow, phone too */html body .s27-sort i{display:inline!important;font-size:.75em;margin-left:1px}/*</SORT-ARROWS>*/

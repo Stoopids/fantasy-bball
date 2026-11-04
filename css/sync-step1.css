@@ -232,3 +232,4 @@ html body #atfilter .atf{font-size:20px!important;height:auto!important;min-heig
 html body #allteams .obt>:not(:first-child):not(:nth-child(2)),html body #allteams .obh>:not(:first-child):not(:nth-child(2)){text-align:center!important;justify-content:center!important}
 /*</SYNC12-L>*/
 
+/*<SORT-ALL-L> League All teams header on phone: the first column is only the logo, so the header reads "Team" with its arrow (owner and conf already show under each logo) */@media (max-width:600px){html body .obk.atk .obh>.s27-sort:first-child::after{content:none!important}}/*</SORT-ALL-L>*/
