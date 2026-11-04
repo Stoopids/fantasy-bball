@@ -249,4 +249,4 @@ Cause: the installed app always launches at the manifest `start_url` (`./index.h
 Open `recap.html?import=stoopids-2026-27` (optional `&l=CODE` for the League site button). Shows 1 Congratulations, 2 "Take a look at your draft recap!" with each manager's grade, 4-sentence summary and Deeper analysis, 3 one big League site button. Data: `import/stoopids-draft-results.json` (contract v1, see `import/README.md`). Wisconsin (275) on Jake confirmed by Stoopids Site, overall 63.
 
 ## s26c2 (build 2026-10-31s26c2)
-Team names set to the league-approved names (Dirty Draymond, Stock Rising, Kurmoji, Kentut, Murfcockchalkrock, Party Paul, Nasty Peacock, En Fuego) in the JSON, card headers and text. Build bumped to 2026-10-31s26c2.
+Team names set to the league-approved names (Dirty Draymond, Stock Rising, Kurmoji, Kentut, Cockchalkrock, Party Paul, Nasty Peacock, En Fuego) in the JSON, card headers and text. Build bumped to 2026-10-31s26c2.

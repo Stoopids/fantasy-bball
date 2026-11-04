@@ -17,7 +17,7 @@ No textdb, no network beyond this same-origin file. No contract spec file existe
 
 Order: 1 Mark, 2 Jake, 3 Kurt, 4 Ken, 5 Murf, 6 Paul, 7 Jim, 8 Scotty (snake; every pick was checked against it).
 
-Team names (s26c2): the league-approved names override `team_name` from the input: Mark Dirty Draymond, Jake Stock Rising, Kurt Kurmoji, Ken Kentut, Murf Murfcockchalkrock, Paul Party Paul, Jim Nasty Peacock, Scotty En Fuego.
+Team names (s26c2): the league-approved names override `team_name` from the input: Mark Dirty Draymond, Jake Stock Rising, Kurt Kurmoji, Ken Kentut, Murf Cockchalkrock, Paul Party Paul, Jim Nasty Peacock, Scotty En Fuego.
 
 ## Source
 `/workspace/ss-s26c/picks-2026-27-final.json` (md5 6ca1fda6de3b1a917e173b91f683dbe1, picks_order_known true). Teams exactly as given.
