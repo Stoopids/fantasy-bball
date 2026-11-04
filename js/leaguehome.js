@@ -517,6 +517,7 @@ function vRecap(){/* sync-step1 = STOOPIDS S27-RECAP: Weekly write-ups first, th
 function d27Cards(rows){const by={};(rows||[]).forEach(r=>{const k=r._m&&r._m.mid||r._mid;if(k)by[k]=r});
   const ord=(L&&L.meta&&Array.isArray(L.meta.order))?L.meta.order:[],oi=m=>{const k=ord.indexOf(m.mid);return k<0?999:k};   /* slot = draft order (meta.order) */
   return (MG||[]).slice().sort((a,b)=>oi(a)-oi(b)).map((mg,i)=>{const r=by[mg.mid],gr=r&&r.grade?String(r.grade).trim().slice(0,3):'';
+    /*STEP5-RECAP*/if(typeof SHARED_UI!=='undefined'&&SHARED_UI.gradeCard)return SHARED_UI.gradeCard({mid:mg.mid,grade:r&&r.grade,team:mg.team||mg.name||'',person:mg.name||'',slot:i+1,has:!!r,short:r&&r.short,deep:r&&r.recap,soon:esc(rows===undefined?'Grades coming soon.':'Loading grades…')},esc);
     return `<div class="d27c" data-mid="${esc(mg.mid)}"><div class="d27h"><span class="d27g${gr?'':' tbd'}">${gr?esc(gr):'?'}</span><div><b>${esc(mg.team||mg.name||'')}</b><small>${esc(mg.name||'')} · slot ${i+1}</small></div></div>`+
      (r?(r.short?`<p>${esc(r.short)}</p>`:'')+(r.recap?`<details><summary>More</summary><p>${esc(r.recap)}</p></details>`:''):`<p class="d27soon">${rows===undefined?'Grades coming soon.':'Loading grades…'}</p>`)+'</div>'}).join('')}
 const recapRoomLink=()=>`<p class="rcroom"><a class="rcrl" id="recaproom" href="${esc(U.roomHref(id))}">Draft room →</a></p>`;
