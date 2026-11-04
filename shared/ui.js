@@ -1,10 +1,10 @@
-/* shared/ui.js v1.19.0: ONE table of input limits and shared wording, loaded by BOTH sites.
+/* shared/ui.js v1.20.0: ONE table of input limits and shared wording, loaded by BOTH sites.
    Edit here only, copy to the other repo by hand, and run scripts/check_shared.sh.
    Each site keeps its old values as fallbacks, so the pages still work if this file fails to load. */
 (function(g){var LIMITS={team:15,stoopName:12,leagueName:24,chat:200,betText:140,paste:300,payouts:120,stake:20,item:40,odds:9};
 var STRINGS={maxLen:'Keep it to {n} characters or fewer.',nameTooLong:'Keep the name to {n} characters or fewer.',teamTooLong:'Keep the team name to {n} characters or fewer.',checkedNow:'checked just now',online:'Who\u2019s online'};
 function t(k,n){var s=STRINGS[k];return s==null?'':String(s).replace('{n}',n)}
-g.SHARED_UI={version:'1.19.0',LIMITS:LIMITS,STRINGS:STRINGS,t:t};})(typeof window!=='undefined'?window:globalThis);
+g.SHARED_UI={version:'1.20.0',LIMITS:LIMITS,STRINGS:STRINGS,t:t};})(typeof window!=='undefined'?window:globalThis);
 
 /* ---- shared modules (step 4). Source of truth: stoopids/stoopids shared/; copy to fantasy-bball and run scripts/check_shared.sh ---- */
 /* sortCmp(a,b,kind,dir): kind 's' = text A-Z (case-insensitive), 'r' = rank (null/'–' always last), 'n' = number. Used by the All teams table on both sites. */
@@ -112,6 +112,23 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
       return '<tr '+o.rowKey+'="'+o.e(r.id)+'"><td'+(r.tdAttr||'')+'>'+r.nameHtml+'</td><td class="n">'+f(r.lost)+'</td><td class="n">'+f(r.won)+'</td><td class="n"><b class="'+(n>0?'good':n<0?'bad':'')+'">'+(n>0?'+':n<0?'-':'')+f(Math.abs(n))+'</b></td><td class="n">'+r.bets+'</td><td class="n">'+(r.fines?f(r.fines):o.zero)+'</td></tr>'}).join('')+'</table></div>'};
 
   /* STEP7-RECAP: Recap "Weekly write-ups" section (newest first; empty note), both sites. items: [{kind,date,title,body}] */
+  /* STEP7-QUICKBET: Games "Quick bet" window. qbOptions(g,{name,date}) -> [{k,t,s:[{lab,txt}]}] from the posted odds only
+     (spread each side, moneyline each side, over/under); [] when no odds are posted. qbSheet(g,list,o) -> the window markup;
+     each site wires the taps through o.pick(k,i) / o.blank() / o.close() attribute strings. Nothing is placed from here. */
+  SHARED_UI.qbOptions=function(g,o){var A=g.away,H=g.home,ln=(g.line&&typeof g.line==='object')?g.line:{},nm=o.name,d=o.date?', '+o.date:'',out=[];
+    var num=function(v){return v!=null&&v!==''&&isFinite(+v)};var sg=function(v){return (+v>0?'+':'')+(+v)};
+    var fav=String(ln.fav)===String(A.id)?A:String(ln.fav)===String(H.id)?H:null,sp=+ln.sp;
+    if(fav&&isFinite(sp)&&sp>0){var dog=fav===A?H:A;out.push({k:'sp',t:'Spread',s:[fav,dog].map(function(x){var y=x===fav?dog:fav,sx=x===fav?'-':'+',sy=y===fav?'-':'+';return{lab:nm(x)+' '+sx+sp,txt:nm(x)+' '+sx+sp+' vs '+nm(y)+' '+sy+sp+d}})})}
+    var ma=num(ln.aml)?ln.aml:num(ln.mlA)?ln.mlA:ln.ml&&num(ln.ml.away)?ln.ml.away:null,mh=num(ln.hml)?ln.hml:num(ln.mlH)?ln.mlH:ln.ml&&num(ln.ml.home)?ln.ml.home:null;
+    if(ma!=null&&mh!=null)out.push({k:'ml',t:'Moneyline',s:[[A,H,ma],[H,A,mh]].map(function(r){return{lab:nm(r[0])+' '+sg(r[2]),txt:nm(r[0])+' '+sg(r[2])+' to beat '+nm(r[1])+d}})});
+    var ou=+ln.ou;if(isFinite(ou)&&ou>0){var m=nm(A)+' v '+nm(H);out.push({k:'ou',t:'Over/under',s:[['Over','Under'],['Under','Over']].map(function(p){return{lab:p[0]+' '+ou,txt:p[0]+' '+ou+' vs '+p[1]+' '+ou+', '+m+d}})})}
+    return out};
+  SHARED_UI.qbBlankText=function(g,o){return o.name(g.away)+' vs '+o.name(g.home)+(o.date?', '+o.date:'')};
+  SHARED_UI.qbSheet=function(g,list,o){var e=o.e,t=e(o.name(g.away))+' vs '+e(o.name(g.home));
+    var h='<div class="qbs-bg" '+o.close()+'></div><div class="qbs" role="dialog" aria-modal="true" aria-label="Quick bet: '+t+'"><div class="qbs-h"><b>⚡ Quick bet</b><button type="button" class="qbs-x" aria-label="Close" '+o.close()+'>✕</button></div><div class="qbs-g note">'+t+(o.date?' · '+e(o.date):'')+'</div>';
+    if(!list.length)h+='<p class="qbs-none">No odds posted yet.</p><button type="button" class="qbs-w" '+o.blank()+'>Write it up</button>';
+    else list.forEach(function(x){h+='<div class="qbs-r"><span class="qbs-l">'+e(x.t)+'</span><span class="qbs-s">'+x.s.map(function(s,i){return '<button type="button" class="qbs-o" title="'+e(s.txt)+'" '+o.pick(x.k,i)+'>'+e(s.lab)+'</button>'}).join('')+'</span></div>'});
+    return h+(list.length?'<p class="qbs-n note">Tap a line: Write it up opens filled in. You pick the Stoop and the amount there.</p>':'')+'</div>'};
   /* STEP7-UPSETS: Rules "upset rule" card + empty state (each site passes its own wording, already safe markup) */
   SHARED_UI.upsetHead=function(note,empty){var h='<div class="card"><b>\u{1F631} The upset rule</b><div class="note">'+note+'</div></div>';return empty==null?h:h+'<div class="card">'+empty+'</div>'};
   /* STEP7-SCORING: Rules scoring table (label escaping passed in: STOOPIDS labels are trusted markup, League escapes) */

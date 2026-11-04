@@ -704,10 +704,10 @@ const ACT={
     /* s25: creator only (the button is not even drawn for anyone else; reduce() ignores a result from anyone else too) */
     if(!b||!me||b.by!==me||!LIVE(b)){S.ask=null;S.msg=b&&!LIVE(b)?'This bet is already settled.':'Only the manager who placed this bet can settle it.';S.bad=true;render(true);return}
     if(S.ask&&S.ask.id===id&&S.ask.w===w){doBet(el,'s','Saved.',{r})}else{S.ask={id,w};render(true)}},
-  qbtoggle:el=>{const g=el.dataset.g||null;S.q.g=(!g||S.q.g===g)?null:g;S.q.msg='';redraw();if(S.q.g)setTimeout(()=>{try{const b=document.querySelector('.qb-pick [data-lb=qbpick]');if(b)b.focus({preventScroll:true})}catch(_){}},20)},
+  qbtoggle:el=>{const g=el.dataset.g||null;S.q.g=(!g||S.q.g===g)?null:g;S.q.msg='';redraw();if(S.q.g)setTimeout(()=>{try{const b=document.querySelector('.qbs [data-lb=qbgo], .qb-pick [data-lb=qbpick]');if(b)b.focus({preventScroll:true})}catch(_){}},20)},
   qbamt:el=>{S.q.amt=+el.dataset.v===10?10:5;redraw()},
   qbvs:el=>{S.q.vs=el.dataset.mid;S.q.msg='';redraw()},
-  qbpick:el=>qbPickGo(el),
+  qbpick:el=>qbPickGo(el),qbgo:el=>qbGo(el),
   undogroup:el=>{const me=meMid(),gu=grpUndo(el.dataset.g,me);if(!gu.length)return;S.undoG=null;act(gu.map(b=>mkEv('w',{id:b.id})),'Undone: '+gu.length+' bets withdrawn.')},
   retry:()=>poll(true),
   fltreset:()=>{fSet('all','all',false,'');render(true)},
@@ -784,6 +784,7 @@ function qbOpts(g,ctx){const A=g.away,Hm=g.home,ln=(g.line&&typeof g.line==='obj
 function quickHtml(g,ctx){if(!qbOk(g))return'';const id=String(g.id),q=S.q,open=q.g===id;
   let h=`<div class="qbw"><button type="button" class="qb-btn" data-lb="qbtoggle" data-g="${esc(id)}" aria-expanded="${open}" aria-label="Quick bet: ${esc(qbNm(g.away,ctx))} vs ${esc(qbNm(g.home,ctx))}"><svg class="qb-bolt" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" focusable="false"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg> Quick bet</button></div>`;
   if(!open)return h;
+  /*<STEP7-QB>*/if(typeof SHARED_UI!=='undefined'&&SHARED_UI.qbSheet){const nm_=s=>qbNm(s,ctx);return h+SHARED_UI.qbSheet(g,SHARED_UI.qbOptions(g,{name:nm_,date:qbDate(g)}),{e:esc,name:nm_,date:qbDate(g),close:()=>'data-lb="qbtoggle" data-g=""',blank:()=>`data-lb="qbgo" data-g="${esc(id)}" data-k="" data-i="0"`,pick:(k,i)=>`data-lb="qbgo" data-g="${esc(id)}" data-k="${k}" data-i="${i}"`})}/*</STEP7-QB>*/
   const ma=qbOwn(g.away),mh=qbOwn(g.home),me=meMid(),need=me!==ma&&me!==mh;
   h+=`<div class="qb-pick" role="group" aria-label="Quick bet picker" data-qbp="${esc(id)}">`;
   if(need)h+=`<div class="qb-r v"><span class="qb-l">I'm betting against</span><span class="qb-g w">${[ma,mh].map(m=>`<button type="button" data-lb="qbvs" data-mid="${esc(m)}" aria-pressed="${q.vs===m}">${esc(own(m).emoji||'')} ${esc(nm(m))}</button>`).join('')}</span></div>`;
@@ -801,6 +802,13 @@ function qbPickGo(el){const g=gameById(el.dataset.g);if(!g||!qbOk(g))return;cons
   const t=clean(x.txt);S.f={opps:[opp],open:false,text:t,amt:S.q.amt,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false};S.fid=null;S.qb=t;S.msg='';S.bad=false;
   S.q.g=null;S.q.msg='';if(H.goBets)H.goBets();
   setTimeout(()=>{try{const f=document.getElementById('b27Form');if(f){f.scrollIntoView({block:'start'});const b=document.getElementById('b27Place');if(b&&!b.disabled)b.focus({preventScroll:true})}}catch(_){}},30)}
+/*<STEP7-QB>*/ /* the shared Quick bet window: a tap prefills the New bet form (game + side/total + line); the manager(s) and pushups are picked in the form */
+function qbGo(el){const g=gameById(el.dataset.g);if(!g||!qbOk(g))return;const nm_=s=>qbNm(s,QCTX);let txt;
+  if(!el.dataset.k)txt=SHARED_UI.qbBlankText(g,{name:nm_,date:qbDate(g)});else{const o=SHARED_UI.qbOptions(g,{name:nm_,date:qbDate(g)}).find(x=>x.k===el.dataset.k),x=o&&o.s[+el.dataset.i];if(!x)return;txt=x.txt}
+  const t=clean(txt);S.f={opps:[],open:false,text:t,amt:S.f&&S.f.amt||5,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false};S.fid=null;S.qb=t;S.msg='';S.bad=false;
+  S.q.g=null;S.q.msg='';if(H.goBets)H.goBets();
+  setTimeout(()=>{try{const f=document.getElementById('b27Form');if(f)f.scrollIntoView({block:'start'})}catch(_){}},30)}
+/*</STEP7-QB>*/
 function bind(){
   document.addEventListener('contextmenu',e=>{const el=e.target.closest&&e.target.closest('[data-lb=rx]');if(el&&document.getElementById('main')&&document.getElementById('main').contains(el)){e.preventDefault();rxTap(el,true)}});
 document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('[data-lb]');if(!el||!H||!document.getElementById('main')||!document.getElementById('main').contains(el))return;const f=ACT[el.dataset.lb];if(f){e.preventDefault();f(el,e)}});
