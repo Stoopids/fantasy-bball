@@ -254,7 +254,7 @@ function lvUI0(){const el=document.getElementById('live'),t=document.getElementB
 /* ---------- views ---------- */
 const rankTxt=o=>(o.tied?'T-':'')+o.rank;
 /* s28 (Paul): TEAM name on top, the manager's real name under it, everywhere; names already 'Test '-stripped in league-d.js */
-const TNm=o=>(o&&(o.team_name||o.name))||'',RNm=o=>(o&&o.team_name&&o.name&&o.team_name!==o.name)?o.name:'';const tnHtml=(o,cls)=>`<span class="tn2${cls?' '+cls:''}"><b class="tnt">${esc(TNm(o))}</b>${RNm(o)?`<small class="tnr">${esc(RNm(o))}</small>`:''}</span>`;
+const TNm=o=>{const n=(o&&(o.team_name||o.name))||'';/*<TEAMNAME-WARN>*/try{const L=(window.SHARED_UI&&SHARED_UI.LIMITS.team)||15;const W=window.__tnw||(window.__tnw={});if(o&&o.team_name&&n.length>L&&!W[n]){W[n]=1;console.warn('Team name over '+L+' chars (shown in full): '+n)}}catch(e){}/*</TEAMNAME-WARN>*/return n},RNm=o=>(o&&o.team_name&&o.name&&o.team_name!==o.name)?o.name:'';const tnHtml=(o,cls)=>`<span class="tn2${cls?' '+cls:''}"><b class="tnt">${esc(TNm(o))}</b>${RNm(o)?`<small class="tnr">${esc(RNm(o))}</small>`:''}</span>`;
 const ownerByName=n=>D.owners.find(x=>x.name===n);
 const ownerEmoji=n=>{const o=D.owners.find(x=>x.name===n);return o?o.emoji:''};
 const opills=a=>a&&a.length?a.map(n=>{const o=ownerByName(n);return `<span class="opill">${esc(ownerEmoji(n))} ${o?tnHtml(o,'tnin'):esc(n)}</span>`}).join(''):'';
