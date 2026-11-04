@@ -309,8 +309,8 @@ function gameCard(g){const fin=g.status==='final';const cls='gm'+(g.h2h||g.civil
   const id=String(g.id),op=GEXP.has(id)||SUB===id,x=gxId(g),sc=s=>`${esc(tShort(s))} ${s.score!=null?esc(String(s.score)):''}`;
   return `<div class="${esc(cls)} gfin${op?' open':''}" data-gid="${esc(id)}"><button type="button" class="gsum" data-a="gfin" data-g="${esc(id)}" aria-expanded="${op}" aria-controls="${esc(x)}"><span class="gst">FINAL</span><span class="${g.away.win?'w':''}">${sc(g.away)}</span><span class="mut">·</span><span class="${g.home.win?'w':''}">${sc(g.home)}</span>${g.upset&&g.upset.is?'<span>😱</span>':''}<span class="gch" aria-hidden="true">${op?'▾':'▸'}</span></button><div class="gbody gx" id="${esc(x)}"${op?'':' hidden'}>${gameBody(g)}</div></div>`}
 /* sync-step1: green outline when a bet on this game is in the ledger (matched by game id or both school names in the bet text) */
-function gHasBet(g){try{const st=window.LBETS&&LBETS._state,bs=st&&(st.bets||st.list||[]);if(!Array.isArray(bs)||!bs.length)return false;const a=tShort(g.away).toLowerCase(),h=tShort(g.home).toLowerCase(),id=String(g.id);
-  return bs.some(b=>b&&(String(b.gid||b.game||'')===id||(String(b.text||'').toLowerCase().includes(a)&&String(b.text||'').toLowerCase().includes(h))))}catch(e){return false}}
+function gHasBet(g){try{const bs=window.LBETS&&LBETS.bets?LBETS.bets():[];const id=String(g.id);   /* League bets: reduce() of the per-manager logs; b.g = ESPN event id of the game */
+  return bs.some(b=>b&&b.kind!=='pool'&&String(b.g||'')===id&&b.status!=='void'&&b.status!=='declined'&&b.status!=='withdrawn')}catch(e){return false}}
 /* s22: the "Quick bet" pill + picker of a Games card is built by js/league-bets.js (it knows the managers, the viewer and the form); '' when it does not apply */
 function quick(g){try{return window.LBETS&&LBETS.quickHtml?LBETS.quickHtml(g,{name:s=>{const t=T.TEAMS[s.id];return(t&&(t.short||t.name))||s.short||''}}):''}catch(e){return''}}
 /* s26c14 (partner header/footer parity): Refresh Live Games + 'Last updated <time>' sit at the top of the Games tab only (was in the header); lvUI() fills them */
