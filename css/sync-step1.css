@@ -87,3 +87,9 @@ body.lsite #lbody>.gday,body.lsite #lbody>.rcroom{margin-left:0!important;margin
 .d27g.tbd{background:rgba(255,255,255,.15);color:inherit}
 .d27soon{opacity:.65;font-style:italic}
 .d27c details summary{cursor:pointer;margin-top:.4em;opacity:.8}
+
+/* phone overlap fix (= STOOPIDS SYNC1): name ellipsizes, 🏠 and record sit outside the name */
+.gm .chip.big .ghome{flex:none;white-space:nowrap;margin-left:2px}
+.gm .chip.big .mkrec{white-space:nowrap}
+.gteam{display:inline-flex;gap:4px;align-items:center}.gteamq{width:9em}
+.gm .chip.big .ghome{margin-left:auto}.gm .chip.big .ghome+.mkrec{margin-left:4px}

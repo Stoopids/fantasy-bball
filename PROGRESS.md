@@ -45,3 +45,7 @@ Profile: small copy/layout differences (Notifications 'Coming soon' line) left a
 1. Seed a non-demo league with a manager identity (localStorage) to verify Quick bet stack, outline, Bets form.
 2. Header frame parity, then run tests/e2e_lsite.js + e2e_games_s28c.js on the mock.
 3. Port "All teams" filter if wanted; decide 8th tab.
+
+## Session 5 (4 Nov ~10:05-10:35 WIB)
+- Team dropdown: pool-owned teams across all games + Search teams box (gTeamFind), = STOOPIDS.
+- Phone overlap: 🏠 moved out of .cn into .ghome; name ellipsizes; matches STOOPIDS. Compare images in /workspace/compare/.
