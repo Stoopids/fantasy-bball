@@ -17,7 +17,7 @@ let n=0,bad=0;function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad
     ok(w+': Standings cards: TEAM on top, real name under (no Test prefix)',a.st.length===8&&a.st.every(([t,n])=>M.some(m=>t.endsWith(m.team)&&n===m.name))&&!a.st.flat().some(s=>/^Test /.test(s||'')),a.st);
     ok(w+': no horizontal overflow on Standings',a.ov<=0,a.ov);
     await P.page.click('#ltabs [data-v="teams"]');await L.sleep(700);
-    const t=await P.page.evaluate(()=>({o:[...document.querySelectorAll('#allteams .obr .ato')].slice(0,3).map(x=>[(x.querySelector('.tnt')||{}).textContent,(x.querySelector('.tnr')||{}).textContent]),
+    const t=await P.page.evaluate(()=>({o:[...document.querySelectorAll('#allteams tr[data-tid] td.to')].slice(0,3).map(x=>[(x.querySelector('.tnt')||{}).textContent,(x.querySelector('.tnr')||{}).textContent]),
       hd:[...document.querySelectorAll('#allteams .s27-sort')].map(s=>[...s.querySelectorAll('span')].filter(e=>getComputedStyle(e).display!=='none'&&e.getBoundingClientRect().width>0).map(e=>e.textContent).join('')),ov:document.documentElement.scrollWidth-innerWidth}));
     ok(w+': All teams owner cell: team on top, real name under',t.o.length===3&&t.o.every(([a,b])=>M.some(m=>m.team===a&&m.name===b)),t.o);
     ok(w+': All teams STOOPID and KenPom sort labels visible',t.hd.length===2&&/^(STOOPID|ST)$/.test(t.hd[0])&&/^(KenPom|KP)$/.test(t.hd[1]),t.hd);

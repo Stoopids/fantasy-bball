@@ -41,7 +41,7 @@ const SCAN=()=>{const b=document.getElementById('lbody')||document.body;const tx
       ok(tag+': no remote store calls',P.remote.length===0,P.remote);
       const c=await P.page.evaluate(()=>({own:document.querySelectorAll('#lbody .ocl .oc').length,chips:[...document.querySelectorAll('#lbody .ocl .oc')].map(o=>o.querySelectorAll('.chips .chip, .chips a').length),
         rost:document.querySelectorAll('#lbody .obk .obr').length,rkp:(document.querySelector('.rkp')||{}).innerText||'',ownerTabs:document.querySelectorAll('[data-a=pickowner]').length,
-        at:document.querySelectorAll('#allteams .obr').length,games:document.querySelectorAll('#lbody .gc, #lbody .game, #lbody [data-gid]').length,
+        at:document.querySelectorAll('#allteams tr[data-tid]').length,games:document.querySelectorAll('#lbody .gc, #lbody .game, #lbody [data-gid]').length,
         board:document.querySelectorAll('#dboard ~ .dround .dpick').length,godraft:!!document.getElementById('godraft'),grades:document.querySelectorAll('#powerrank article.pr').length,txt:document.getElementById('lbody').innerText.slice(0,160)}));
       if(t==='standings'){ok(tag+': 8 standings cards, 8 school chips each',c.own===8&&c.chips.every(x=>x===8),c.chips)}
       if(t==='rosters'){ok(tag+': 8 owner tabs, 8 schools in the roster',c.ownerTabs===8&&c.rost===8,{o:c.ownerTabs,r:c.rost});ok(tag+': detail shows STOOPID rank + Power rank',/STOOPID rank: (#\d+|–)/.test(c.rkp)&&/Power rank: (#\d+|–)/.test(c.rkp)&&/KenPom 2026-27 preseason ratings/.test(c.rkp),c.rkp);

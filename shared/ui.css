@@ -202,6 +202,7 @@ html body .gf3 select.gf2-s,html body .gf3 .gf2-b,html body .gf3 input.gf2-s{hei
 @media (max-width:340px){.lgref .ptab th,.lgref .ptab td{padding:3px 1px;min-width:13px;font-size:10.5px}.lgref .ptab th{font-size:8.5px;letter-spacing:-.03em}.lgref .ptab .pn,.lgref .ptab .pn .chip{width:90px;min-width:90px;max-width:90px}.lgref .ptab .pn .chip{font-size:10.5px}}
 @media (min-width:900px){.lgref .orl.q{grid-template-columns:repeat(2,minmax(0,1fr));justify-items:stretch;align-items:start;gap:10px}.lgref .orl.q .pcard{width:auto;max-width:none;min-width:0}.lgref .orl.q .ptw{overflow-x:auto}.lgref .orl.q .ptab{width:100%;font-size:13px}.lgref .orl.q .ptab th{font-size:11px}.lgref .orl.q .ptab th,.lgref .orl.q .ptab td{padding:4px 4px}.lgref .orl.q .ptab .pn,.lgref .orl.q .ptab .pn .chip{width:140px;min-width:140px;max-width:140px}.lgref .orl.q .ptab .pn .chip{font-size:12.5px}html.bd-a .lgref .orl.q{grid-template-columns:minmax(0,1fr)}html.bd-a .lgref .orl.q .ptab{font-size:15px}html.bd-a .lgref .orl.q .ptab th{font-size:12.5px}html.bd-a .lgref .orl.q .ptab th,html.bd-a .lgref .orl.q .ptab td{padding:5px 8px}html.bd-a .lgref .orl.q .ptab .pn,html.bd-a .lgref .orl.q .ptab .pn .chip{width:220px;min-width:220px;max-width:220px}html.bd-a .lgref .orl.q .ptab .pn .chip{font-size:14px}}
 .lgref .card.oc .pts,.lgref .orh .pts{text-align:center;justify-self:center}
+html body #ptsv.lgref{display:block}
 /*</STEP6-PTAB>*/
 
 /*<STEP6-TAP> STOOPIDS All-teams look for League (.lgref) */
@@ -244,4 +245,6 @@ html body .gf3 select.gf2-s,html body .gf3 .gf2-b,html body .gf3 input.gf2-s{hei
 html body .lgref .card.tap.s27-rk td:first-child .chip.school-chip{display:inline-flex;align-items:center;gap:4px;width:fit-content!important;max-width:140px!important;height:36px;padding:2px 6px 2px 2px}
 html body .lgref .tap td:first-child .chip.school-chip>.cn{flex:0 0 auto;width:auto;min-width:auto}
 @media (max-width:480px){html body .lgref .card.tap.s27-rk td:first-child .chip.school-chip{max-width:86px!important;overflow:hidden}html body .lgref .card.tap th,html body .lgref .card.tap td{padding:6px 3px}}
+html body .lgref .card.tap td.to .tnt{display:block;font-weight:400;overflow:hidden;text-overflow:ellipsis}
+html body .lgref .card.tap td.to .tnr{display:block;font-size:10px;opacity:.7;overflow:hidden;text-overflow:ellipsis}
 /*</STEP6-TAP>*/

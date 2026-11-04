@@ -18,8 +18,8 @@ const shot=async(P,name,w)=>{if(!process.env.SHOTS)return;const b=await P.page.e
     const lg=await P.page.evaluate(()=>[...document.querySelectorAll('#lbody .strow')].map(c=>({mid:c.dataset.mid,tot:+c.querySelector('.pv').innerText,rank:c.querySelector('.place').innerText.trim()})));
     await shot(P,'standings-league',w);await P.close();
     P=await open(w,id,info,'#standings/breakdown');
-    const bd=await P.page.evaluate(()=>[...document.querySelectorAll('#ptsv .pk')].map(k=>({mid:k.dataset.mid,tot:+k.dataset.total,shown:+k.querySelector('.pkt .pv').innerText,
-      conf:[...k.querySelectorAll('.obp')].filter(p=>/^conf_/.test(p.dataset.cat)).map(p=>({tid:p.closest('.obr').dataset.tid,k:p.dataset.cat,pts:+p.dataset.pts})).filter(p=>p.pts)})));
+    const bd=await P.page.evaluate(()=>[...document.querySelectorAll('#ptsv .pcard')].map(k=>({mid:k.dataset.mid,tot:+k.dataset.total,shown:+k.querySelector('.orh .pts').firstChild.textContent,
+      conf:[...k.querySelectorAll('td[data-cat]')].filter(p=>/^conf_/.test(p.dataset.cat)).map(p=>({tid:p.closest('tr.prow').dataset.tid,k:p.dataset.cat,pts:+p.dataset.pts})).filter(p=>p.pts)})));
     await shot(P,'standings-breakdown',w);await P.close();
     const tag=w+'px';const B={};bd.forEach(b=>{B[b.mid]=b});
     ok(tag+': 8 managers in both views',lg.length===8&&bd.length===8,[lg.length,bd.length]);
