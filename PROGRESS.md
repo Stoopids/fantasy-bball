@@ -24,9 +24,16 @@ Files changed: league.html (+css/sync-step1.css, last), js/leaguehome.js (Games/
 - Phone ≤360px: Refresh Live Games wraps to the right instead of overflowing.
 - Tests rewritten to the new look (tests/tabs_exp.js, e2e_lsite, e2e_games_s28c, e2e_header_s26c14, e2e_alignment) – all pass: 53/53, 30/30, 39/39, 54/54 (mock store on 8850/8851). Changed thresholds, stated in the specs: tabs ≥40px phone / ≥32px laptop, Refresh ≥30px (STOOPIDS sizes, below the old 44px rule); title checked as centred, not full width.
 
+## Done in session 4 (4 Nov, ~09:35–10:20 WIB)
+- Recap tab ported (js/leaguehome.js vRecap/d27Cards/recapMount; css .d27*): Weekly write-ups, then 4-across draft-grade cards in draft-slot order (meta.order); grades from FBNPower.resolve (same rows as recap.html). power-render.js / recap.html unchanged.
+- All teams ranks shown as '#16' (AP already, now NET, STOOPID, KenPom).
+- Wider suite (26 files) run on this branch and on an untouched copy (/tmp/lbase): out/suite.log vs out/suite-baseline.log. Many specs already fail on the untouched copy (stale tab lists, Rosters/Share tabs, money-word scan, 44px rules). Fixed specs for the new look: e2e_chipgrid (phone Standings codes), e2e_breakdown_s26c5 ('#' NET), e2e_bets_copy_s28 (no hint line). Reverted my 12px All-teams numbers (League spec wants 14–17px).
+- REVIEW.md written (side-by-side checklist + 3 decisions for Paul).
+
 ## Not done / unverified
-- Recap tab: still League's power-rankings layout (2-col cards with chips); STOOPIDS shows 'Weekly write-ups' + 4-col draft-grade cards with letter circle and More. Needs a markup port in power-render.js, not just CSS.
-- All teams: STOOPIDS prints ranks as '#16'; League prints '16' (markup change, not done). Profile: small copy/layout differences (Notifications 'Coming soon' line) left as is.
+- Remaining new-look failures: owner pills 20px < 44px tap rule (e2e_breakdown_s26c5 117/120, e2e_allteams_s26c11) – waiting on Paul (REVIEW.md #2). All other failures in out/suite.log also fail on the untouched copy (pre-existing).
+- Draft-room tests (e2e.js, e2e_toptabs, e2e_espn…) not run; room code untouched.
+Profile: small copy/layout differences (Notifications 'Coming soon' line) left as is.
 - Archive tab: not added (no data); decide whether League gets an empty Archive tab.
 - Only these 4 page specs were re-run; the rest of the suite (e2e_league, bets, recap…) not run this session.
 - tests/node_modules is a local symlink to /workspace/audit/s29d/node_modules (excluded via .git/info/exclude).
@@ -34,7 +41,7 @@ Files changed: league.html (+css/sync-step1.css, last), js/leaguehome.js (Games/
 - "Updated X min ago" uses LV.lastOk or D.meta.updated; shows "just now" when unknown.
 
 ## Next
-0. Recap markup port (draft-grade cards), '#' ranks in All teams, run the full suite (run_suite_private.sh).
+0. Paul's decisions in REVIEW.md; then refresh the pre-existing stale specs (tab lists in e2e_league, e2e_deeplink_s24, e2e_sitelink, test_labels).
 1. Seed a non-demo league with a manager identity (localStorage) to verify Quick bet stack, outline, Bets form.
 2. Header frame parity, then run tests/e2e_lsite.js + e2e_games_s28c.js on the mock.
 3. Port "All teams" filter if wanted; decide 8th tab.

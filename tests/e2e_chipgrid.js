@@ -39,7 +39,7 @@ function measure(){const vis=e=>{const r=e.getBoundingClientRect();return r.widt
         if(m.grid)ok(tag+': grid has '+(desk?4:2)+' columns',m.cols.every(c=>c===(desk?4:2)||c===Math.min(m.grid,desk?4:2)),m.cols);
         if(m.ncards)ok(tag+': '+m.ncards+' manager cards all the same height (±1px)',m.cardsMax-m.cardsMin<=1,[m.cardsMin,m.cardsMax]);
         ok(tag+': links are ESPN team pages (_blank, noopener noreferrer), no horizontal overflow',m.bad===0&&!m.over,m);
-        if(t==='teams'||t==='standings'||t==='archive'){if(!demo)ok(tag+': a 70-character name is cut with an ellipsis on one line and the chip box stays the same size ('+m.cutN+' real names cut)',(m.cutN>=1||true)&&m.forced&&m.forced.same&&m.forced.cut&&m.forced.ell&&m.forced.h,m)}}
+        if(t==='teams'||(t==='standings'&&w>640)||t==='archive'){if(!demo)ok(tag+': a 70-character name is cut with an ellipsis on one line and the chip box stays the same size ('+m.cutN+' real names cut; sync-step1: phone Standings chips show the 4-letter ESPN code instead, = STOOPIDS)',(m.cutN>=1||true)&&m.forced&&m.forced.same&&m.forced.cut&&m.forced.ell&&m.forced.h,m)}}
       ok(w+'px'+(demo?' demo':'')+': no page errors',P.errs.length===0,P.errs);await P.page.close()}
     /* pre-draft state has no chips and no overflow; power module chips on the recap page */
     const live=await seed(null,{picksMade:10,live:true});const Q=await L.phone('cq'+w,desk?{desktop:true,w,h}:{});await Q.go('league.html?l='+live);await Q.page.waitForSelector('#lhome',{timeout:20000});await sleep(500);

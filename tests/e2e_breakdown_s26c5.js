@@ -41,7 +41,7 @@ const small=()=>[...document.querySelectorAll('#lbody a,#lbody button,#lbody [ro
     ok(tag+': columns Team, Owner, Rec, Pts, Conf, AP, NET, then s27 STOOPID + KenPom sort columns',r.hd.some(x=>/^stoopid/.test(x))&&r.hd.some(x=>/^kenpom/.test(x))&&JSON.stringify(r.hd.filter(x=>!/stoopid|kenpom|^st$|^kp$/.test(x)))===JSON.stringify(['team','owner','rec','pts','conf','ap','net']),r.hd);
     ok(tag+': 64 schools, best record first',r.rows.length===64&&r.rows.every((x,i)=>!i||pct(r.rows[i-1])>pct(x)||(pct(r.rows[i-1])===pct(x)&&r.rows[i-1].w>=x.w)),r.rows.slice(0,6).map(x=>x.rec));
     ok(tag+': record shows W-L',r.rows.every(x=>x.rec===x.w+'-'+x.l));
-    ok(tag+': AP and NET from the rankings data (– when unranked), 6 AP ranks shown',r.rows.every(x=>x.ap===(x.apx?'#'+x.apx:'–')&&x.net===(x.netx?String(x.netx):'–'))&&r.rows.filter(x=>x.ap!=='–').length===6,r.rows.filter(x=>x.ap!=='–'||x.net!=='–').slice(0,4));
+    ok(tag+': AP and NET from the rankings data (– when unranked), 6 AP ranks shown',r.rows.every(x=>x.ap===(x.apx?'#'+x.apx:'–')&&x.net===(x.netx?'#'+x.netx:'–'))&&r.rows.filter(x=>x.ap!=='–').length===6,r.rows.filter(x=>x.ap!=='–'||x.net!=='–').slice(0,4));
     ok(tag+': no overflow',r.sw<=r.iw&&!r.out,{sw:r.sw,iw:r.iw});
     ok(tag+': taps >= 44px',r.small.length===0,r.small);
     ok(tag+': owner names without "Test "',!/\bTest /.test(r.txt));
