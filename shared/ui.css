@@ -1,4 +1,4 @@
-/* shared/ui.css v1.3.0: design CSS used by BOTH sites (moved verbatim from SYNC7..SYNC14). Edit here only; synced to the other repo by PR. */
+/* shared/ui.css v1.4.0: design CSS used by BOTH sites (moved verbatim from SYNC7..SYNC14). Edit here only; synced to the other repo by PR. */
 /*<SYNC7>*/ /* design fixes 4 Nov (same CSS on STOOPIDS and League) */
 /* 1. Standings, laptop: the old live row layout (rank | manager + points | 2x4 pills on the right) with ALL CAPS names, centred Points, trophies inline */
 @media (min-width:700px){
