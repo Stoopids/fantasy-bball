@@ -78,13 +78,17 @@ function boxBets(g){const ln=g.line||{},A=g.away,H=g.home,as=+A.score,hs=+H.scor
   if(fav&&sp>0){const dog=fav===H?A:H,m=(+fav.score)-(+dog.score)-sp,nm=s=>esc(s.short||s.name||s.id);out.push(m>0?`${nm(fav)} covered -${sp}`:m<0?`${nm(dog)} covered +${sp}`:`Push on ${sp}`)}
   const ou=+ln.ou;if(ou>0){const t=as+hs;out.push(t>ou?`Over ${ou} (total ${t})`:t<ou?`Under ${ou} (total ${t})`:`Push on ${ou}`)}
   return out.length?`<div class="gbx-bets">${out.map(x=>`<span>${x}</span>`).join('<span class="mut"> · </span>')}</div>`:''}
+/*<HS-INLINE> 1H/2H/OT + total on each team row (live + final). Linescore from the live ESPN overlay, else the game data (ls), else the box score once opened */
+function hsLs(g,s){const L=g._lv&&g._lv.ls;if(L){const a=s===g.away?L.a:L.h;if(a&&a.length)return a}if(Array.isArray(s.ls)&&s.ls.length)return s.ls;try{const b=BOX[String(g.id)];if(b&&b.teams){const t=b.teams.find(t=>String(t.id)===String(s.id));if(t&&t.ls&&t.ls.length)return t.ls}}catch(e){}return null}
+function hsHtml(g,s,first){const tot=s.score!=null?esc(String(s.score)):'';const A=hsLs(g,g.away),H=hsLs(g,g.home);if(!A&&!H)return tot;const n=Math.max(2,(A||[]).length,(H||[]).length),me=(s===g.away?A:H)||[],lab=i=>i<2?(i+1)+'H':(n>3?'OT'+(i-1):'OT');let h='';for(let i=0;i<n;i++){const v=me[i];h+='<span class="hsq"'+(first?' data-h="'+lab(i)+'"':'')+'>'+'<i>'+(v!=null&&v!==''?esc(String(v)):'&nbsp;')+'</i>'+'</span>'}return '<span class="hsg">'+h+'<span class="hst"'+(first?' data-h="T"':'')+'>'+tot+'</span></span>'}
+/*</HS-INLINE>*/
 function boxHtml(g){const id=String(g.id),b=BOX[id],lk=`<a class="gbx-lk" href="${boxLink(id)}" target="_blank" rel="noopener">ESPN box score ↗</a>`;
   if(!b||b.loading)return `<div class="mut">Loading box score…</div>${boxBets(g)}${lk}`;
   if(b.err||!b.teams.length)return `<div class="mut">Box score not available right now.</div>${boxBets(g)}${lk}`;
   const n=Math.max(...b.teams.map(t=>t.ls.length)),hd=Array.from({length:n},(_,i)=>i<2?(i+1)+'H':(n>3?'OT'+(i-1):'OT'));
   const tbl=`<table class="gbx-t"><tr><th></th>${hd.map(h=>`<th>${h}</th>`).join('')}<th>T</th></tr>${b.teams.map(t=>`<tr><th>${esc(t.ab)}</th>${hd.map((_,i)=>`<td>${esc(String(t.ls[i]!=null?t.ls[i]:''))}</td>`).join('')}<td><b>${esc(String(t.sc||''))}</b></td></tr>`).join('')}</table>`;
   const ld=`<div class="gbx-ld">${b.teams.map(t=>`<div><b>${esc(t.ab)}</b> ${[['points','PTS'],['rebounds','REB'],['assists','AST']].map(([k,l])=>t.ld[k]?`<span>${l} ${esc(t.ld[k].n)} ${esc(t.ld[k].v)}</span>`:'').join(' ')}</div>`).join('')}</div>`;
-  return tbl+ld+boxBets(g)+lk}
+  return ld+boxBets(g)+lk}/* HS-INLINE: the 1H/2H/T table now sits on the team rows */
 const boxSlot=g=>g&&g.status==='final'?`<div class="gbx" data-box="${esc(String(g.id))}">${boxHtml(g)}</div>`:'';
 function boxFill(games){document.querySelectorAll('.gbx[data-box]').forEach(el=>{if(el.closest('[hidden]'))return;const id=el.dataset.box,g=(games||[]).find(x=>String(x.id)===id);if(!g)return;
   if(BOX[id]){if(!BOX[id].loading)el.innerHTML=boxHtml(g);return}
@@ -334,7 +338,7 @@ function lineTxt(g,fin){const ln=g.line&&typeof g.line==='object'?g.line:null;if
 function gameBody(g){const fin=g.status==='final',live=g.status==='live';const ln=g.line&&typeof g.line==='object'?g.line:null;
   const dog=ln?(ln.dog!=null?ln.dog:(String(ln.fav)===String(g.home.id)?g.away.id:String(ln.fav)===String(g.away.id)?g.home.id:null)):null;
   const row=(s,side)=>{const lose=fin&&!s.win;const isH=side==='H'&&!g.neutral;const tag=ln&&isFinite(ln.sp)&&ln.sp>0?(String(dog)===String(s.id)?' <span title="betting underdog">🐶</span>':(String(ln.fav)===String(s.id)?' <span title="betting favorite">⭐</span>':'')):'';
-    return `<div class="gside${lose?' lose':''}"><div class="nm">${chip(s.id,{big:1,name:s.short}).replace(/<\/(a|span)>$/,(m0,tg)=>(isH?'<span class="ghome" title="Home">🏠</span>':'')+'<span class="mkrec" title="Season record (W-L)">'+rec(s.id)+'</span></'+tg+'>')}${s.seed?`<span class="seed">(${esc(s.seed)})</span>`:''}${tag}</div><div class="sc2">${(fin||live)&&s.score!=null?esc(String(s.score)):''}</div></div><div class="gow"${s.owners&&s.owners.length?'':' aria-hidden="true"'}>${gpills(s.owners)||'&nbsp;'}</div>`};
+    return `<div class="gside${lose?' lose':''}${(fin||live)&&s===g.away&&(hsLs(g,g.away)||hsLs(g,g.home))?' hs1':''}"><div class="nm">${chip(s.id,{big:1,name:s.short}).replace(/<\/(a|span)>$/,(m0,tg)=>(isH?'<span class="ghome" title="Home">🏠</span>':'')+'<span class="mkrec" title="Season record (W-L)">'+rec(s.id)+'</span></'+tg+'>')}${s.seed?`<span class="seed">(${esc(s.seed)})</span>`:''}${tag}</div><div class="sc2">${(fin||live)?hsHtml(g,s,s===g.away):''}</div></div><div class="gow"${s.owners&&s.owners.length?'':' aria-hidden="true"'}>${gpills(s.owners)||'&nbsp;'}</div>`};
   let head=`<span class="gtm">${fin?'FINAL':live?'<b class="good">LIVE</b>'+(g._lv&&g._lv.detail?' <span class="mut">'+esc(g._lv.detail)+'</span>':''):'<b>'+esc(etTime(g))+'</b>'}</span>`;
   if(g.round)head+=`<span>· ${esc(g.round)}</span>`;else if(g.kind==='conf')head+='<span>· Conf tournament</span>';
   const on=a=>(a||[]).map(n=>{const o=ownerByName(n);return o?TNm(o):n}).join('/');
@@ -342,7 +346,7 @@ function gameBody(g){const fin=g.status==='final',live=g.status==='live';const l
   if(g.civil)head+=`<span class="h2b">🙃 SAME OWNER (${esc(on(g.away.owners))} wins either way)</span>`;
   let foot=lineTxt(g,fin)||(fin?'<span class="mut">No betting line on file for this game.</span>':'<span class="mut">📭 line not posted yet</span>');
   if(fin&&g.upset){const u=g.upset;if(g.kind==='ncaa'){if(u.is)foot+=` <span class="up">😱 UPSET +${esc(D.meta.points.upset)}</span>`;else if(u.is===false)foot+=' <span class="mut">· no upset</span>'}else if(u.is)foot+=' <span class="up ns">🐶 Underdog win</span>'}
-  foot+=lvNote(g);/*<HALF-SCORES>*/try{const L=g._lv&&g._lv.ls;if(g.status==='live'&&L&&(L.a.length||L.h.length)){const n=Math.max(L.a.length,L.h.length),lab=i=>i<2?(i+1)+'H':'OT'+(i>2?i-1:'');let t=[];for(let i=0;i<n;i++)t.push('<span class="hsc"><b>'+lab(i)+'</b> '+esc(String(L.a[i]!=null?L.a[i]:'–'))+'–'+esc(String(L.h[i]!=null?L.h[i]:'–'))+'</span>');foot+='<div class="hscs" title="Score by half (away–home)">'+t.join('')+'</div>'}}catch(e){}/*</HALF-SCORES>*/
+  foot+=lvNote(g);/* HALF-SCORES footer line replaced by HS-INLINE */
   return `<div class="gh">${head}<div class="mkbtns">${cpBtn(gameText(g),'game')}${g._qbBtn||''}</div></div>${row(g.away)}${row(g.home,'H')}<div class="gl">${foot}</div>`}
 function gameCard(g){const fin=g.status==='final';const cls='gm'+(g.h2h||g.civil?' h2h':'')+(gHasBet(g)?' mkbet':'');
   if(!fin){const q=quick(g),cut=q.indexOf('</div>')+6,qb=q.startsWith('<div class="qbw">')?q.slice(0,cut):'';const gg=Object.assign({},g,{_qbBtn:qb});return `<div class="${esc(cls)}" data-gid="${esc(String(g.id))}">${gameBody(gg)}<div class="gsp" aria-hidden="true"></div>${qb?q.slice(cut):q}</div>`}

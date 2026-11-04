@@ -65,7 +65,7 @@ A.build=function(a){
   const ownersOf=tid=>own[String(tid)]!=null?[nameOf[own[String(tid)]]||'']:[];
   const games=games0.filter(g=>g&&g.home&&g.away&&(own[String(g.home.id)]!=null||own[String(g.away.id)]!=null)).map(g=>{
     const f=S.isFinal(g),w=f?S.winnerSide(g):null;
-    const side=s=>({id:String(s.id),short:shortOf(String(s.id),s.short),score:num(s.score),win:!!(w&&w===s),seed:num(s.seed),owners:ownersOf(s.id)});
+    const side=s=>({id:String(s.id),short:shortOf(String(s.id),s.short),score:num(s.score),win:!!(w&&w===s),seed:num(s.seed),owners:ownersOf(s.id),...(Array.isArray(s.ls)&&s.ls.length?{ls:s.ls}:{})});/* HS-INLINE: keep per-half points */
     const home=side(g.home),away=side(g.away);
     const o={id:String(g.id),day:g.day||'',start:g.start||null,status:g.status||'scheduled',kind:g.kind||'reg',round:g.round||'',neutral:!!g.neutral,home,away};if(g.line&&typeof g.line==='object')o.line={fav:String(g.line.fav),sp:Number(g.line.sp),ou:Number(g.line.ou)};if(g.line&&typeof g.line==="object"){const L0=g.line,nf=v=>v!=null&&v!==''&&isFinite(+v)?+v:null;if(L0.dog!=null)o.line.dog=String(L0.dog);const am=nf(L0.aml!=null?L0.aml:L0.mlA),hm=nf(L0.hml!=null?L0.hml:L0.mlH);if(am!=null)o.line.aml=am;if(hm!=null)o.line.hml=hm;const pv=L0.p||L0.src||L0.provider;if(pv)o.line.p=String(pv).slice(0,40);if(L0.type==='close')o.line.type='close'}   /* s28j item 13: + dog, moneylines, book, closing flag for the the reference site card line */   /* s25: a posted line (when the data has one) for the Games card spread */
     o.h2h=!!(home.owners.length&&away.owners.length&&home.owners[0]!==away.owners[0]);

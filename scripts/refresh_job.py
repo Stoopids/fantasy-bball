@@ -125,6 +125,19 @@ def _espn_game(e, day):
                 g["line"] = ln
         except Exception as ex:
             log("line parse failed", e.get("id"), ex)
+        try:  # HS-INLINE: per-half (and OT) points for the game card rows
+            for x in e["competitions"][0].get("competitors") or []:
+                k = "home" if x.get("homeAway") == "home" else "away"
+                ls = []
+                for l in x.get("linescores") or []:
+                    try:
+                        ls.append(int(float(l.get("value") if l.get("value") is not None else l.get("displayValue"))))
+                    except Exception:
+                        ls.append(None)
+                if ls and isinstance(g.get(k), dict):
+                    g[k]["ls"] = ls
+        except Exception as ex:
+            log("linescore parse failed", e.get("id"), ex)
     return g
 
 
