@@ -497,7 +497,7 @@ function vRules(){const P=D.meta.points;
    <li><b>Postseason</b> points are separate: they come from the NCAA Tournament (table below). Ties there: more upsets, then more wins.</li>
    <li>Times are shown in your own time zone. Scores are loaded from the official game feeds; live scores are marked unofficial until the data updates.</li>
    <li>The <b>Redraft</b> tab describes the January 20, 2027 Redraft.</li></ul></div>
-  ${(typeof SHARED_UI!=='undefined'&&SHARED_UI.scoringTable)?SHARED_UI.scoringTable(rows,{e:esc,sign}):`<div class="card sc"><table><tr><th>Scoring</th><th class="n">Pts</th></tr>${rows.map(r=>`<tr><td>${esc(r[0])}</td><td class="n">${sign(r[1])}</td></tr>`).join('')}</table></div>`}
+  ${(typeof SHARED_UI!=='undefined'&&SHARED_UI.scoringTable)?SHARED_UI.scoringTable(rows,{e:esc,sign:n=>n>0?'+'+n:String(n)}):`<div class="card sc"><table><tr><th>Scoring</th><th class="n">Pts</th></tr>${rows.map(r=>`<tr><td>${esc(r[0])}</td><td class="n">${sign(r[1])}</td></tr>`).join('')}</table></div>`}
   ${vUpsets()}
   <div class="card"><b>House interpretations</b><ul class="it">
    <li>Upset bonus applies to NCAA tournament games only. Equal seeds = no upset. First Four games are not judged for upsets.</li>
