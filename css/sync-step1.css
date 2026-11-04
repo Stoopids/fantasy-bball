@@ -217,3 +217,9 @@ main,#main{padding-top:6px!important}
 }
 /*</SYNC4>*/
 .atf{min-height:36px!important;height:auto!important;min-width:36px!important}
+/*<SYNC5>*/ /* chip sizing: All teams pills fill their cell (same size, long names ellipsize); game pills one height */
+.obk.atk .obt{min-width:0;display:block}
+.obk.atk .obt>.chip{min-height:36px!important;width:100%!important;max-width:100%!important;box-sizing:border-box;min-width:0}
+.obk.atk .obt>.chip .cn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gm .chip.big{height:40px!important;min-height:40px!important;box-sizing:border-box}
+/*</SYNC5>*/

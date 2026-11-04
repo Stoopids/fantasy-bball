@@ -29,14 +29,14 @@ const shot=async(P,w)=>{if(!SH)return;const c=await P.page.evaluate(()=>{const e
 (async()=>{try{const id=await seed(null,{names:NAMES,rosters:rosters(),rounds:8});const info=seed.info;
   if(SH&&TAG==='before'){for(const w of [390,1280]){const P=await open(id,info,w);await shot(P,w);await P.close()}await L.close();process.exit(0)}
   for(const w of [320,390,1280]){const P=await open(id,info,w);let r=await row(P);
-    ok(w+'px: one row: Upcoming, Past games, Refresh Live Games (sync-step1; under 361px Refresh wraps to the right)',r&&r.kids.length===3&&r.kids[0].txt==='Upcoming'&&/^Past( games)?$/.test(r.kids[1].txt)&&/Refresh/.test(r.kids[2].txt)&&(w<361||r.kids.every(k=>Math.abs((k.top+k.h/2)-(r.kids[0].top+r.kids[0].h/2))<=8)),r&&r.kids);
+    ok(w+'px: one row: Upcoming, Past games, round ↻ Refresh (sync-step3; under 361px Refresh wraps to the right)',r&&r.kids.length===3&&r.kids[0].txt==='Upcoming'&&/^Past( games)?$/.test(r.kids[1].txt)&&/Refresh|↻/.test(r.kids[2].txt)&&(w<361||r.kids.every(k=>Math.abs((k.top+k.h/2)-(r.kids[0].top+r.kids[0].h/2))<=8)),r&&r.kids);
     ok(w+'px: row is full width (of its card), Refresh at the far right',r&&Math.abs(r.rw-r.bw)<=1,r&&{rw:r.rw,bw:r.bw,w:r.kids.map(k=>k.w)});
     ok(w+'px: toggles + Refresh use .rkseg-b, .on + aria-pressed on the active one',r&&r.kids.every(k=>/\brkseg-b\b/.test(k.cls))&&r.kids[0].on&&r.kids[0].ap==='true'&&!r.kids[1].on&&r.kids[1].ap==='false',r&&r.kids);
     ok(w+'px: same look on both toggles (radius, font size, weight)',r&&r.kids.slice(0,2).every(k=>k.rad===r.kids[0].rad&&k.fs===r.kids[0].fs&&k.fw===r.kids[0].fw),r&&r.kids);
     ok(w+'px: no counts, no emoji on the toggles',r&&!/[()\d]|\p{Extended_Pictographic}/u.test(r.kids[0].txt+r.kids[1].txt),r&&[r.kids[0].txt,r.kids[1].txt]);
     ok(w+'px: no month buttons (months are a dropdown); All-days select in row 2',r&&r.monthBtns===0&&r.day,r);
     ok(w+'px: no time-zone/favorite note and no Betting lines note',r&&!/Times in your time zone|betting favorite|underdog|Betting lines posted/i.test(r.text));
-    ok(w+'px: filters (owner, month, day, Pool vs Pool, All teams) sit compact under the row',r&&r.h2h&&r.h2h.inF&&r.h2h.team&&r.h2h.txt==='Pool vs Pool'&&r.h2h.below&&r.h2h.gap<=12,r&&r.h2h);
+    ok(w+'px: filters (owner, Pool vs Pool, More; no Team dropdown) sit compact under the row',r&&r.h2h&&r.h2h.inF&&!r.h2h.team&&r.h2h.txt==='Pool vs Pool'&&r.h2h.below&&r.h2h.gap<=12,r&&r.h2h);
     ok(w+'px: no horizontal overflow; toggles >= 36px tall (filters/Refresh use the smaller STOOPIDS size)',r&&r.sw<=r.iw&&r.kids.slice(0,2).every(k=>k.h>=36),r&&{sw:r.sw,iw:r.iw,h:r.kids.map(k=>k.h),small:r.small});
     if(w===390){const mo=await P.page.$$eval('#gMonthSel option',o=>o.map(x=>[x.value,x.text,x.disabled]));const want=new Set(GAMES.filter(g=>g.status!=='final').map(g=>mk(Date.parse(g.start)).slice(5)));
       ok('months select (s29b): Month + Nov..Apr, months without games disabled',mo[0][0]===''&&mo[0][1]==='Month'&&mo.slice(1).map(x=>x[1]).join()==='Nov,Dec,Jan,Feb,Mar,Apr'&&mo.slice(1).filter(x=>!x[2]).length===want.size,mo);

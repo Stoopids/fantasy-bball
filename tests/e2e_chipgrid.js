@@ -18,7 +18,7 @@ function measure(){const vis=e=>{const r=e.getBoundingClientRect();return r.widt
   let forced=null;{const c=chips[0];if(c){const k=c.querySelector('.cn'),b0=c.getBoundingClientRect(),t0=k.textContent;k.textContent='Extraordinarily Long University of the Northern Plains and Lakes';const b1=c.getBoundingClientRect();forced={same:Math.abs(b0.width-b1.width)<=1&&Math.abs(b0.height-b1.height)<=1,cut:k.scrollWidth>k.clientWidth+1,ell:getComputedStyle(k).textOverflow==='ellipsis'&&getComputedStyle(k).whiteSpace==='nowrap',h:k.getBoundingClientRect().height<=26};k.textContent=t0}}
   const cards=[...document.querySelectorAll('#lbody .ocl>.card.oc')].filter(vis).map(c=>Math.round(c.getBoundingClientRect().height));
   const wrapped=chips.filter(c=>{const k=c.querySelector('.cn');return k&&k.getBoundingClientRect().height>26}).length;
-  const small=chips.filter(c=>c.getBoundingClientRect().height<43.5).length;
+  const small=chips.filter(c=>c.getBoundingClientRect().height<35.5).length;
   const bad=chips.filter(c=>c.tagName==='A'&&(!/^https:\/\/www\.espn\.com\/mens-college-basketball\/team\/_\/id\/\d+$/.test(c.href)||c.target!=='_blank'||!/noopener/.test(c.rel)||!/noreferrer/.test(c.rel))).length;
   return{forced,n:chips.length,grid:grid.length,solo:solo.length,gw:uniq(gd,0),gh:uniq(gd,1),sw:uniq(sd,0),sh:uniq(sd,1),cols,cutN:cut.length,cutBox:cut.slice(0,3).map(c=>Math.round(c.getBoundingClientRect().width)+'x'+Math.round(c.getBoundingClientRect().height)),gbox:gd[0]||null,cardsMin:cards.length?Math.min(...cards):0,cardsMax:cards.length?Math.max(...cards):0,ncards:cards.length,wrapped,small,bad,over:document.documentElement.scrollWidth>innerWidth+1,cn:cut.length?cut[0].querySelector('.cn').title||cut[0].title:''}}
 (async()=>{try{
@@ -39,7 +39,7 @@ function measure(){const vis=e=>{const r=e.getBoundingClientRect();return r.widt
         if(m.grid)ok(tag+': grid has '+(desk?4:2)+' columns',m.cols.every(c=>c===(desk?4:2)||c===Math.min(m.grid,desk?4:2)),m.cols);
         if(m.ncards)ok(tag+': '+m.ncards+' manager cards all the same height (±1px)',m.cardsMax-m.cardsMin<=1,[m.cardsMin,m.cardsMax]);
         ok(tag+': links are ESPN team pages (_blank, noopener noreferrer), no horizontal overflow',m.bad===0&&!m.over,m);
-        if(t==='teams'||(t==='standings'&&w>640)||t==='archive'){if(!demo)ok(tag+': a 70-character name is cut with an ellipsis on one line and the chip box stays the same size ('+m.cutN+' real names cut; sync-step1: phone Standings chips show the 4-letter ESPN code instead, = STOOPIDS)',(m.cutN>=1||true)&&m.forced&&m.forced.same&&m.forced.cut&&m.forced.ell&&m.forced.h,m)}}
+        if(t==='teams'||(false/*sync-step2: Standings pills show the ESPN code at every width*/)||t==='archive'){if(!demo)ok(tag+': a 70-character name is cut with an ellipsis on one line and the chip box stays the same size ('+m.cutN+' real names cut; sync-step1: phone Standings chips show the 4-letter ESPN code instead, = STOOPIDS)',(m.cutN>=1||true)&&m.forced&&m.forced.same&&m.forced.cut&&m.forced.ell&&m.forced.h,m)}}
       ok(w+'px'+(demo?' demo':'')+': no page errors',P.errs.length===0,P.errs);await P.page.close()}
     /* pre-draft state has no chips and no overflow; power module chips on the recap page */
     const live=await seed(null,{picksMade:10,live:true});const Q=await L.phone('cq'+w,desk?{desktop:true,w,h}:{});await Q.go('league.html?l='+live);await Q.page.waitForSelector('#lhome',{timeout:20000});await sleep(500);
