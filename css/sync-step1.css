@@ -12,6 +12,8 @@
 @media (max-width:640px){
  nav#ltabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:4px!important;padding:5px 6px!important}
  nav#ltabs>a.tb,nav#ltabs>a.nd,nav#ltabs>button{min-height:40px!important;padding:3px 2px!important;flex-direction:column!important;gap:0!important;border-radius:8px!important}
+ /* NAV-MORE owns the phone layout once active (.nm5): 5 across incl. More */
+ nav#ltabs.nm5{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:4px!important;padding:5px 6px!important}
 }
 /* 3 games */
 .mkrec{display:inline-block;margin-left:6px;font-size:.8em;font-weight:600;opacity:.85;font-variant-numeric:tabular-nums}
@@ -59,10 +61,10 @@ body.lsite #tag{margin-top:0!important;line-height:17px!important}
 @media (min-width:641px) and (max-width:899px){body.lsite .ggrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 #b27Live:empty{display:none!important}
 
-/* phone tabs: 7 tabs (League has no Archive) = 2 rows of 4 slots, row 2 centred: 8-col grid, each tab spans 2, 5th starts at col 2 */
-@media (max-width:640px){nav#ltabs:has(>a.tb:nth-child(7)):not(:has(>a.tb:nth-child(8))){grid-template-columns:repeat(8,minmax(0,1fr))!important}
- nav#ltabs:has(>a.tb:nth-child(7)):not(:has(>a.tb:nth-child(8)))>a.tb{grid-column:span 2!important}
- nav#ltabs:has(>a.tb:nth-child(7)):not(:has(>a.tb:nth-child(8)))>a.tb:nth-child(5){grid-column:2/span 2!important}}
+/* phone tabs (only without NAV-MORE .nm5): 7 tabs (League has no Archive) = 2 rows of 4 slots, row 2 centred: 8-col grid, each tab spans 2, 5th starts at col 2 */
+@media (max-width:640px){nav#ltabs:not(.nm5):has(>a.tb:nth-child(7)):not(:has(>a.tb:nth-child(8))){grid-template-columns:repeat(8,minmax(0,1fr))!important}
+ nav#ltabs:not(.nm5):has(>a.tb:nth-child(7)):not(:has(>a.tb:nth-child(8)))>a.tb{grid-column:span 2!important}
+ nav#ltabs:not(.nm5):has(>a.tb:nth-child(7)):not(:has(>a.tb:nth-child(8)))>a.tb:nth-child(5){grid-column:2/span 2!important}}
 /* All teams = STOOPIDS: small owner pills, one-line owner, compact rows */
 #atfilter{justify-content:center;gap:4px!important;margin:6px 0 10px!important}
 #atfilter .atfl{display:none!important}

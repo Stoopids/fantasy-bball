@@ -1,4 +1,4 @@
-/* shared/ui.js v1.22.0: ONE table of input limits and shared wording, loaded by BOTH sites.
+/* shared/ui.js v1.23.0: ONE table of input limits and shared wording, loaded by BOTH sites.
    Edit here only, copy to the other repo by hand, and run scripts/check_shared.sh.
    Each site keeps its old values as fallbacks, so the pages still work if this file fails to load. */
 (function(g){var LIMITS={team:15,stoopName:12,leagueName:24,chat:200,betText:140,paste:300,payouts:120,stake:20,item:40,odds:9};
@@ -314,7 +314,7 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
 /* NAV-MORE: phones (<600px) show 5 main tabs across: Standings, Games, Bets, Teams + More. More opens a scrollable sheet with every other nav item
    (taps forward to the hidden original link, so each site's own click handlers run). Laptop/desktop unchanged. Works on #nav (STOOPIDS) and #ltabs (League). */
 (function(root){if(typeof document==='undefined')return;var KEEP=['standings','games','bets','bets27','teams'],MQ='(max-width:599px)';
-  var css='@media '+MQ+'{nav.nm5{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;flex-wrap:nowrap!important;overflow:visible!important}nav.nm5>.nm-x{display:none!important}nav.nm5>.nm-b{display:flex}}'+
+  var css='@media '+MQ+'{nav#nav.nm5,nav#ltabs.nm5{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;flex-wrap:nowrap!important;overflow:visible!important}nav#nav.nm5>.nm-x,nav#ltabs.nm5>.nm-x{display:none!important}nav#nav.nm5>.nm-b,nav#ltabs.nm5>.nm-b{display:flex}}'+
    '.nm-b{display:none;position:relative;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;min-height:46px;padding:4px;background:var(--card,#1b2030);color:var(--tx,#eee);border:1px solid var(--line,#333);border-radius:10px;font:inherit;font-size:12px;font-weight:800;cursor:pointer}'+
    '.nm-b .ni{font-size:15px;line-height:1}.nm-b.on,.nm-b[aria-expanded=true]{background:var(--pill,#FFD400);color:var(--pill-ink,#111);border-color:var(--pill,#FFD400)}'+
    '.nm-bd{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}.nm-bd[hidden]{display:none}'+
