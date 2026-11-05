@@ -361,3 +361,8 @@ html body .tabs.ob-seg>button{min-width:0;width:100%;white-space:normal;line-hei
 /*<LIVE-NODOT>*/ html body .golive::before{display:none!important} /* live marker = outline only, both sites */
 /* STEP10: Request a bet question 1 + Select all / Clear on one line */
 .rq-qrow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.rq-qrow .b27-q{margin:0;flex:1 1 auto;min-width:0}.rq-qrow .b27-selbar{margin:0 0 0 auto;flex:0 0 auto;display:flex;flex-direction:row;gap:6px;width:auto}.rq-qrow .b27-selbar .s27-selb{width:auto;min-height:32px}
+/* STEP10: Request a bet 5 (how many) + 6 (expires) on one row; compact unit select */
+.rq-56{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:flex-start}.rq-56c{flex:1 1 150px;min-width:0}.rq-56 .rq-spots{flex-wrap:wrap;gap:6px}.rq-56 .rq-spots .note{flex-basis:100%}
+.rq-56 .rq-exp{display:flex;gap:6px;align-items:center;flex-wrap:nowrap}.rq-56 .rq-exp .rq-num{width:52px;min-width:0;flex:0 0 52px;text-align:center}.rq-56 .rq-exp .rq-unit{width:auto;flex:0 0 auto;max-width:130px;min-height:34px;padding:4px 8px;font-size:14px}
+@media (max-width:520px){.rq-56{gap:8px 10px}.rq-56c{flex:1 1 0}.rq-56 .rq-spots .btn{min-width:34px;min-height:34px;padding:2px 8px}.rq-56 .rq-exp .rq-num{width:40px;flex-basis:40px}.rq-56 .rq-exp .rq-unit{max-width:92px;padding:4px 4px}.rq-56 .b27-q{font-size:14px}}
+@media (max-width:520px){.rq-56c:first-child{flex:1.5 1 0}.rq-56 .rq-spots{gap:4px}.rq-56 .rq-spots .btn{min-width:30px;padding:2px 6px}}
