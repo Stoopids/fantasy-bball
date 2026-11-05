@@ -331,3 +331,12 @@ html body .gside>.gow .opill{min-width:0;max-width:100%;overflow:hidden;text-ove
 @media (max-width:600px){.qbd .qbs-l{flex-basis:100%}}
 .rq-spots{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.rq-spots .btn{min-width:44px;min-height:40px}
 /*</QB-INLINE>*/
+/*<QB-SAME>*/ /* Quick bet drop-down: identical rows on both sites (beats site styles) */
+html body .qbd{text-align:left!important}
+html body .qbd .qbs-r{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;text-align:left!important;gap:8px!important;margin:6px 0!important;flex-wrap:wrap!important}
+html body .qbd .qbs-l{flex:0 0 92px!important;text-align:left!important;margin:0!important}
+html body .qbd .qbs-s{display:flex!important;flex:1 1 0!important;justify-content:flex-start!important;gap:6px!important;flex-wrap:wrap!important;margin:0!important}
+html body .qbd .qbs-s .qbs-o{flex:1 1 0!important;min-height:44px}
+html body .qbd-h{text-align:left!important}
+@media (max-width:600px){html body .qbd .qbs-l{flex-basis:100%!important}}
+/*</QB-SAME>*/

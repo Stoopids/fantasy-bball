@@ -260,6 +260,8 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
     var ou=+ln.ou;if(isFinite(ou)&&ou>0){var m=nm(A)+' v '+nm(H);out.push({k:'ou',t:'Over/under',s:[['Over','Under'],['Under','Over']].map(function(p){return{lab:p[0]+' '+ou,txt:p[0]+' '+ou+' vs '+p[1]+' '+ou+', '+m+d}})})}
     return out};
   SHARED_UI.qbBlankText=function(g,o){return o.name(g.away)+' vs '+o.name(g.home)+(o.date?', '+o.date:'')};
+  /* GAME-ROW: one team row of a game card, same markup on both sites: pill · seed · ⭐/🐶 · owner chip · 1H/2H/T. o={chip,seed,tag,owners,scores,lose,hs1} (already safe markup; seed is escaped here) */
+  SHARED_UI.gameRow=function(o,e){return '<div class="gside'+(o.lose?' lose':'')+(o.hs1?' hs1':'')+'"><div class="nm">'+o.chip+(o.seed?'<span class="seed">('+e(String(o.seed))+')</span>':'')+(o.tag||'')+'</div><div class="gow"'+(o.owners?'':' aria-hidden="true"')+'>'+(o.owners||'&nbsp;')+'</div><div class="sc2">'+(o.scores||'')+'</div></div>'};
   SHARED_UI.qbSheet=function(g,list,o){var e=o.e,t=e(o.name(g.away))+' vs '+e(o.name(g.home));list=(list||[]).filter(function(x){return x.k!=='win'});
     /* inline drop-down under the game card (no modal): spread each side, moneyline, over/under when posted, plus a plain Request a bet. Every choice opens Request a bet prefilled */
     var h='<div class="qbd" role="region" aria-label="Quick bet: '+t+'"><div class="qbd-h"><b>\u26A1 Quick bet</b><button type="button" class="qbd-x" aria-label="Close" '+o.close()+'>\u2715</button></div>';
