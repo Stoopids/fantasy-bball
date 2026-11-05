@@ -371,3 +371,7 @@ html body .tabs.ob-seg>button{min-width:0;width:100%;white-space:normal;line-hei
 /* STEP10: Open tab = 3 request cards across on laptop, 2 on tablets, 1 on phones */
 .rq-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:stretch}.rq-grid>.rq-card{margin:0;min-width:0;display:flex;flex-direction:column}.rq-grid>.rq-card>.rq-act:last-child{margin-top:auto;padding-top:8px}
 @media (max-width:900px){.rq-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:560px){.rq-grid{grid-template-columns:1fr}}
+/* STEP10: half page and narrower: Stoop buttons (Request "Who is it open to?", Write it Up opponents, pool people) stack as 2 rows of 4 */
+@media (max-width:899px){html body .b27-opps{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}html body .b27-opps .b27-chip{min-height:52px;font-size:12.5px}html body .b27-chip.op .nm .xs{display:none}html body .b27-chip.op .nm .sh{display:inline}}
+/* STEP10: Request "1. Who is it open to?" + All/Clear: always one row, buttons side by side (never stacked) */
+html body .rq-qrow{flex-wrap:nowrap!important}html body .rq-qrow>.s27-sel,html body .rq-qrow>.b27-selbar{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;grid-template-rows:none!important;grid-auto-flow:column!important;align-items:center;gap:6px!important;margin:0 0 0 auto!important;flex:none!important;width:auto!important}html body .rq-qrow .s27-selb{width:auto!important;min-height:32px}
