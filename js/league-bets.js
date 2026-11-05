@@ -316,7 +316,7 @@ function stampHtml(b){const t=stampText(b);return t?`<div class="b27-stamp">${es
 /* ---------- s24 list filters: Person (Me / Everyone / each manager) x Status (All / Waiting on me / Open / Settled / Wash) ----------
    kept per device per league in localStorage fbn.x.<league>.betf as {p,s,q}; p = 'all' | 'me' | position 1-8 in the league (never a manager id); q = search terms
    (bet text + manager names, case-insensitive, live); also in the URL as #bets/f=<p>-<s> or #bets/f=<p>-<s>/q=<terms> */
-const FS={all:'Any status',open:'Open',settled:'Settled',wash:'Wash',waiting:'Waiting on me'};
+const FS={all:'Any status',open:'Open',settled:'Settled',wash:'Wash',waiting:'Waiting on me',req:'Requested'};
 const fKey=()=>'fbn.x.'+(H&&H.id)+'.betf';
 const fOk=(p,s)=>/^(all|me|[1-8])$/.test(p)&&s in FS;
 const qClean=q=>clean(q,60);
@@ -330,7 +330,7 @@ function waitsOn(b,me){if(!me)return false;if(!AF()&&b.kind!=='pool')return fals
   if(b.status==='reported')return party&&!b.reps[me];
   if(b.status==='disputed')return party;
   if(b.status==='settled')return party&&!!b.fix&&b.fix.by!==me;return false}
-function fMatch(b,me){fLoad();const e=fEff(me);
+function fMatch(b,me){fLoad();const e=fEff(me);if(e.s==='req')return false;/*STEP8-REQUEST*/
   if(e.p!=='all'){const pm=e.p==='me'?me:fPm(me);if(!pm||!(b.by===pm||b.acc===pm||(b.status==='pending'&&b.to===pm)||(b.kind==='pool'&&b.parts.includes(pm))))return false}
   if(S.fq){const q=S.fq.toLowerCase(),hay=[b.text,nm(b.by),b.acc?nm(b.acc):'',b.to&&b.to!=='*'?nm(b.to):'',...(b.parts||[]).map(nm)].join(' ').toLowerCase();if(!q.split(/\s+/).every(w=>hay.includes(w)))return false}
   if(b.kind==='pool'){if(e.s==='waiting')return waitsOn(b,me);if(e.s==='open')return b.status==='open'&&!b.back;if(e.s==='settled')return b.status==='open'&&!!b.back;return e.s!=='wash'}
@@ -499,9 +499,9 @@ function poolSettle(b,back){const me=meMid();if(!me||b.by!==me){S.msg=POOL_TXT.o
   if(!(S.ask&&S.ask.id===b.id&&S.ask.w==='pool')){S.poolErr[b.id]='';S.ask={id:b.id,w:'pool'};render(true);return}
   act([mkEv('pb',{id:b.id,back})],PT('saved')).then(ok=>{if(ok){S.poolTxt[b.id]='';S.placeWho[b.id]=[]}})}
 /* ----- Tally (partner vTally): person table (only people with bets or amounts), then Who Owes Who (all 8, gross, rows owe columns), then netted settle lines ----- */
-const OB_LABELS={form:'\u270F\uFE0F Write it Up',tally:'\u{1F4B0} Tally'};
-function obSeg(){const v=S.ob==='tally'?'tally':'form',sg=k=>`<button type="button" class="${v===k?'on':''}" aria-pressed="${v===k}" data-lb="obview" data-v="${k}" id="b27Ob_${k}">${OB_LABELS[k]}</button>`;
-  return `<div class="tabs ob-seg" role="group" aria-label="Bets" id="b27Seg">${sg('form')}${sg('tally')}</div>`}
+const OB_LABELS={form:'\u270F\uFE0F Write it Up',tally:'\u{1F4B0} Tally',request:'\u{1F4E8} Request a bet'};
+function obSeg(){const v=S.ob==='tally'?'tally':S.ob==='request'?'request':'form',sg=k=>`<button type="button" class="${v===k?'on':''}" aria-pressed="${v===k}" data-lb="obview" data-v="${k}" id="b27Ob_${k}">${OB_LABELS[k]}</button>`;
+  return `<div class="tabs ob-seg" role="group" aria-label="Bets" id="b27Seg">${sg('form')}${sg('tally')}${RQ()?sg('request'):''}</div>`}
 function tallyHtml(T){const ow=owners(),per=m=>T.per[m]||{net:0,bets:0},Lo=m=>T.lost[m]||0,Wo=m=>T.won[m]||0,M=(a,b)=>(T.M[a]&&T.M[a][b])||0;
   const ids=ow.filter(o=>per(o.mid).bets>0||Lo(o.mid)||Wo(o.mid));
   let h=`<div class="card" id="b27Tally"><b>🧮 Tally · 2026-27</b><div class="note">From the 2026-27 shared ledger only. Rows owe columns.</div></div>`;
@@ -524,7 +524,8 @@ function view(){if(!H)return'';
   const intro=`<div class="card b27-intro" id="b27Intro"><div class="note b27-note" id="b27Note">${esc(DISCLAIMER)}</div><div class="note" style="margin-top:6px">This page just <b>records</b> who bet what and who owes whom.</div><div class="note b27-top" id="b27Head" style="margin-top:6px"><span id="b27Top">${top}</span></div></div>`;
   const seg=`<div class="s26w-row" id="b27SegRow">${obSeg()}</div>`;
   if(S.ob==='tally'&&S.state!=='init')return seg+tallyHtml(T);
-  let h=seg;
+  /*<STEP8-REQUEST>*/if(S.ob==='request'&&RQ())return seg+RQ().view();/*</STEP8-REQUEST>*/
+  let h=seg;/*<STEP8-REQUEST>*/if(RQ()){fLoad();h+=RQ().pinned(S.fs==='req')}/*</STEP8-REQUEST>*/
   if(S.msg)h+=`<div class="card ${S.bad?'b27-bad':'b27-ok'}" role="status" id="b27Msg">${esc(S.msg)}${(()=>{const gu=me&&S.undoG?grpUndo(S.undoG,me):[];return gu.length>1?`<div class="b27-act"><button type="button" class="btn sec b27-b" data-lb="undogroup" data-g="${esc(S.undoG)}"${S.busy?' disabled':''}>↩ Undo all ${gu.length} bets (30 s)</button></div>`:''})()}</div>`;
   if(!me)h+=`<div class="card" id="b27Watch"><b>👀 Watching only</b><div class="note">You can read every bet here. To place or answer a bet, open this page from your own manager link (the League site button in the draft room).</div><p style="margin:8px 0 0"><a class="btn b27-b" id="b27Room" href="${esc(H.roomHref())}">Open the draft room</a></p></div>`;
   else if(S.kind==='pool'&&!S.edited){const cf=S.p.confirm?poolConfirmHtml():'';if(S.p.confirm&&!cf)S.p.confirm=false;h+=cf?modal(cf):poolFormHtml(me)}
@@ -673,7 +674,7 @@ const ACT={
     const back={};b.places.forEach((a,i)=>{back[sel[i]]=(back[sel[i]]||0)+a});b.parts.forEach(p=>{if(!(p in back))back[p]=0});poolSettle(b,back)},
   poolgo:el=>{const id=el.dataset.id,b=compute().find(x=>x.id===id);if(!b)return;const r=poolParse(b,S.poolTxt[id]||'');if(!r.ok||!r.back){S.poolErr[id]=r.ok?PT('eEmptyPay'):r.err;S.ask=null;render(true);return}poolSettle(b,r.back)},
   poolvoid:el=>{const b=compute().find(x=>x.id===el.dataset.id),me=meMid();if(!b||!me||b.by!==me||b.status!=='open')return;act([mkEv('w',{id:b.id})],'Saved.')},
-  obview:el=>{const v=el.dataset.v==='tally'?'tally':'form';if(S.ob===v)return;S.ob=v;render(true);window.scrollTo(0,0)},   /* partner obView(): a sub-tab tap opens it at the top */
+  obview:el=>{const v=el.dataset.v==='tally'?'tally':el.dataset.v==='request'?'request':'form';if(S.ob===v)return;S.ob=v;render(true);window.scrollTo(0,0)},   /* partner obView(): a sub-tab tap opens it at the top */
   opp:el=>{const f=S.f,m=el.dataset.mid;f.open=false;S.f.forMid=null;if(S.pz){S.pz.a=S.pz.b=null;S.pz.read=false}const k=f.opps.indexOf(m);if(k>=0)f.opps.splice(k,1);else{f.opps.push(m);const o=others().map(x=>x.mid);f.opps.sort((x,y)=>o.indexOf(x)-o.indexOf(y))}sync()},
   oppall:()=>{S.f.open=false;S.f.forMid=null;if(S.pz){S.pz.a=S.pz.b=null;S.pz.read=false}S.f.opps=others().map(o=>o.mid);sync()},
   oppclear:()=>{S.f.open=false;S.f.forMid=null;if(S.pz){S.pz.a=S.pz.b=null;S.pz.read=false}S.f.opps=[];sync()},
@@ -803,12 +804,25 @@ function qbPickGo(el){const g=gameById(el.dataset.g);if(!g||!qbOk(g))return;cons
   S.q.g=null;S.q.msg='';if(H.goBets)H.goBets();
   setTimeout(()=>{try{const f=document.getElementById('b27Form');if(f){f.scrollIntoView({block:'start'});const b=document.getElementById('b27Place');if(b&&!b.disabled)b.focus({preventScroll:true})}}catch(_){}},30)}
 /*<STEP7-QB>*/ /* the shared Quick bet window: a tap prefills the New bet form (game + side/total + line); the manager(s) and pushups are picked in the form */
-function qbGo(el){const g=gameById(el.dataset.g);if(!g||!qbOk(g))return;const nm_=s=>qbNm(s,QCTX);let txt;
+function qbGo(el){const g=gameById(el.dataset.g);if(!g||!qbOk(g))return;
+  /*<STEP8-REQUEST>*/if(RQ()){RQ().prefill(g.id,el.dataset.k||'',+el.dataset.i||0);S.q.g=null;S.q.msg='';S.ob='request';if(H.goBets)H.goBets();setTimeout(()=>{try{const f=document.getElementById('rqForm');if(f)f.scrollIntoView({block:'start'})}catch(_){}},30);return}/*</STEP8-REQUEST>*/const nm_=s=>qbNm(s,QCTX);let txt;
   if(!el.dataset.k)txt=SHARED_UI.qbBlankText(g,{name:nm_,date:qbDate(g)});else{const o=SHARED_UI.qbOptions(g,{name:nm_,date:qbDate(g)}).find(x=>x.k===el.dataset.k),x=o&&o.s[+el.dataset.i];if(!x)return;txt=x.txt}
   const t=clean(txt);S.f={opps:[],open:false,text:t,amt:S.f&&S.f.amt||5,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false};S.fid=null;S.qb=t;S.msg='';S.bad=false;
   S.q.g=null;S.q.msg='';if(H.goBets)H.goBets();
   setTimeout(()=>{try{const f=document.getElementById('b27Form');if(f)f.scrollIntoView({block:'start'})}catch(_){}},30)}
 /*</STEP7-QB>*/
+/*<STEP8-REQUEST>*/ /* Request a bet: shared module (shared/ui.js SHARED_UI.Requests). Requests live in their OWN record per league (<base>-requests), not in the bet logs.
+   Accepting writes a normal 'p' event in the ACCEPTER's log, posted FOR the requester (for = requester, to = accepter), same format as Write it Up. */
+let RQ_=null;
+function RQ(){if(RQ_||!H||H.demo||typeof SHARED_UI==='undefined'||!SHARED_UI.Requests)return RQ_;const nick_=o=>(o&&(o.team_name||o.name))||'';
+  RQ_=SHARED_UI.Requests({e:esc,me:()=>meMid(),others:()=>owners().filter(o=>o.mid!==meMid()).map(o=>({id:o.mid,emoji:o.emoji||'',nick:nick_(o)})),nick:m=>nick_(own(m))||'?',real:m=>(own(m).name||nick_(own(m))||'?'),
+    canWrite:()=>!!meMid()&&!window.LVIEW&&!(H&&H.demo),amounts:C.amounts,
+    games:()=>((H&&H.games&&H.games())||[]).filter(g=>g&&g.home&&g.away).map(g=>({id:String(g.id),g,start:g.start,status:g.status,period:g.period||null,label:qbNm(g.away,QCTX)+' vs '+qbNm(g.home,QCTX)+' · '+qbDate(g)})),
+    tname:s=>qbNm(s,QCTX),dateET:g=>qbDate(g),link:()=>location.href.split('#')[0]+'#bets',goRequest:()=>{S.ob='request'},navEl:()=>document.querySelector('#ltabs a[data-v="bets"]'),
+    get:()=>Store.get(FBN.Keys(H.id).base+'-requests'),set:txt=>Store.set(FBN.Keys(H.id).base+'-requests',txt),
+    placeBet:async(r,me)=>{const ts=Date.now(),text=clean(r.txt);const c=readBet(text);await append([Object.assign({k:'p',u:rid(),ts,v:SV,id:rid(),to:me,for:r.by,amt:r.amt,a:(r.odds||[1,1])[0],b:(r.odds||[1,1])[1],text,postedBy:me,postedAt:ts,req:r.id},c?{c}:{})]);redraw()},
+    render:()=>{if(S.ob==='request')redraw()}});return RQ_}
+/*</STEP8-REQUEST>*/
 function bind(){
   document.addEventListener('contextmenu',e=>{const el=e.target.closest&&e.target.closest('[data-lb=rx]');if(el&&document.getElementById('main')&&document.getElementById('main').contains(el)){e.preventDefault();rxTap(el,true)}});
 document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('[data-lb]');if(!el||!H||!document.getElementById('main')||!document.getElementById('main').contains(el))return;const f=ACT[el.dataset.lb];if(f){e.preventDefault();f(el,e)}});
@@ -820,7 +834,7 @@ document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closes
     if(e.key==='Enter'&&e.target&&/^b27(Text|Ao|Co)$/.test(e.target.id)&&!(S.kind==='pool'&&!S.edited)){e.preventDefault();ACT.place()}});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.started)poll(false)});
   window.addEventListener('online',()=>{if(S.started)poll(true)})}
-function init(h){H=h;if(!S.started){S.started=true;bind()}}
+function init(h){H=h;if(!S.started){S.started=true;bind();/*<STEP8-REQUEST>*/setTimeout(()=>{try{RQ()}catch(e){}},0)/*</STEP8-REQUEST>*/}}
 function start(){if(!H||H.demo)return;poll(false)}
 let modalWas=false;
 function afterRender(){try{mountRx()}catch(e){}try{const m=document.querySelector('.s26k-m');document.body.classList.toggle('s26k-lock',!!m);if(m&&!modalWas){const b=m.querySelector('.b27-act .btn');if(b)b.focus({preventScroll:true})}modalWas=!!m}catch(e){}}
