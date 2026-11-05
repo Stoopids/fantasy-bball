@@ -506,9 +506,9 @@ function poolSettle(b,back){const me=meMid();if(!me||b.by!==me){S.msg=POOL_TXT.o
   if(!(S.ask&&S.ask.id===b.id&&S.ask.w==='pool')){S.poolErr[b.id]='';S.ask={id:b.id,w:'pool'};render(true);return}
   act([mkEv('pb',{id:b.id,back})],PT('saved')).then(ok=>{if(ok){S.poolTxt[b.id]='';S.placeWho[b.id]=[]}})}
 /* ----- Tally (partner vTally): person table (only people with bets or amounts), then Who Owes Who (all 8, gross, rows owe columns), then netted settle lines ----- */
-const OB_LABELS={form:'\u270F\uFE0F Write it Up',tally:'\u{1F4B0} Tally',request:'\u{1F4E8} Request',open:'\u{1F4CC} Open'};   /* STEP10 order: Write it Up, Request, Open, Tally */
-function obSeg(){const v=S.ob==='tally'?'tally':S.ob==='request'?'request':S.ob==='open'?'open':'form',sg=k=>`<button type="button" class="${v===k?'on':''}" aria-pressed="${v===k}" data-lb="obview" data-v="${k}" id="b27Ob_${k}">${OB_LABELS[k]}</button>`;
-  return `<div class="tabs ob-seg" role="group" aria-label="Bets" id="b27Seg">${sg('form')}${RQ()?sg('request')+sg('open'):''}${sg('tally')}</div>`}
+const OB_LABELS={form:'\u270F\uFE0F Write it Up',all:'\u{1F4CB} All bets',tally:'\u{1F4B0} Tally',request:'\u{1F4E8} Request',open:'\u{1F4CC} Open'};   /* ALL-BETS order: Write it Up, Request, Open, All bets, Tally */
+function obSeg(){const v=S.ob==='tally'?'tally':S.ob==='request'?'request':S.ob==='open'?'open':S.ob==='all'?'all':'form',sg=k=>`<button type="button" class="${v===k?'on':''}" aria-pressed="${v===k}" data-lb="obview" data-v="${k}" id="b27Ob_${k}">${OB_LABELS[k]}</button>`;
+  return `<div class="tabs ob-seg" role="group" aria-label="Bets" id="b27Seg">${sg('form')}${RQ()?sg('request')+sg('open'):''}${sg('all')}${sg('tally')}</div>`}
 function tallyHtml(T){const ow=owners(),per=m=>T.per[m]||{net:0,bets:0},Lo=m=>T.lost[m]||0,Wo=m=>T.won[m]||0,M=(a,b)=>(T.M[a]&&T.M[a][b])||0;
   const ids=ow.filter(o=>per(o.mid).bets>0||Lo(o.mid)||Wo(o.mid));
   let h=`<div class="card" id="b27Tally"><b>🧮 Tally · 2026-27</b><div class="note">From the 2026-27 shared ledger only. Rows owe columns.</div></div>`;
@@ -534,14 +534,15 @@ function view(){if(!H)return'';
   const seg=`<div class="s26w-row" id="b27SegRow">${obSeg()}</div>`;
   if(S.ob==='tally'&&S.state!=='init')return seg+tallyHtml(T);
   /*<STEP8-REQUEST>*/if(S.ob==='request'&&RQ())return seg+RQ().view();if(S.ob==='open'&&RQ())return seg+RQ().view('open');/*</STEP8-REQUEST>*/
-  let h=seg;/*<STEP8-REQUEST>*/if(RQ()){fLoad();if(S.fs==='req')h+=RQ().pinned(true)}/*STEP10: no pinned strip on Write it Up*//*</STEP8-REQUEST>*/
+  let h=seg;/*<STEP8-REQUEST>*/if(RQ()){fLoad();if(S.ob==='all'&&S.fs==='req')h+=RQ().pinned(true)}/*STEP10: no pinned strip on Write it Up*//*</STEP8-REQUEST>*/
   if(S.msg)h+=`<div class="card ${S.bad?'b27-bad':'b27-ok'}" role="status" id="b27Msg">${esc(S.msg)}${(()=>{const gu=me&&S.undoG?grpUndo(S.undoG,me):[];return gu.length>1?`<div class="b27-act"><button type="button" class="btn sec b27-b" data-lb="undogroup" data-g="${esc(S.undoG)}"${S.busy?' disabled':''}>↩ Undo all ${gu.length} bets (30 s)</button></div>`:''})()}</div>`;
-  if(!me)h+=`<div class="card" id="b27Watch"><b>👀 Watching only</b><div class="note">You can read every bet here. To place or answer a bet, open this page from your own manager link (the League site button in the draft room).</div><p style="margin:8px 0 0"><a class="btn b27-b" id="b27Room" href="${esc(H.roomHref())}">Open the draft room</a></p></div>`;
+  /*<ALL-BETS>*/if(S.ob==='all'){}/*list only*/else/*</ALL-BETS>*/ if(!me)h+=`<div class="card" id="b27Watch"><b>👀 Watching only</b><div class="note">You can read every bet here. To place or answer a bet, open this page from your own manager link (the League site button in the draft room).</div><p style="margin:8px 0 0"><a class="btn b27-b" id="b27Room" href="${esc(H.roomHref())}">Open the draft room</a></p></div>`;
   else if(S.kind==='pool'&&!S.edited){const cf=S.p.confirm?poolConfirmHtml():'';if(S.p.confirm&&!cf)S.p.confirm=false;h+=cf?modal(cf):poolFormHtml(me)}
   else if(S.f.confirm){const e=formOK(),t=clean(S.f.text);h+=modal(`<div class="card b27-confirm" id="b27Confirm"><b>Check it, then confirm</b>${t?`<div class="s26terms">${esc(t)}</div>`:''}<div class="b27-sum">${esc(summary())}</div>${readAsHtml()}<div id="b27Live">${liveHtml()}</div><div class="b27-act"><button type="button" class="btn b27-big" data-lb="confirm"${S.busy||e?' disabled':''}>${S.busy?'Saving…':'✅ Yes, place it'}</button><button type="button" class="btn sec b27-big" data-lb="edit"${S.busy?' disabled':''}>← Change</button></div></div>`)}
   else h+=formHtml(me);
   /* still loading the bets: the shared loader instead of an empty list */
   if(S.state==='init'&&window.LLOADER)return h+LLOADER()+intro;
+  /*<ALL-BETS>*/if(S.ob!=='all')return h+intro;/*Write it Up = form only; list on All bets*//*</ALL-BETS>*/
   const fa=fActive(me),FL=fa?bets.filter(b=>fMatch(b,me)):bets;
   h+=`<h2 id="b27ListH">Bets (<span id="b27FCount">${fa?num(FL.length)+' of '+num(bets.length):num(bets.length)}</span>)${sndBtn()}</h2>`;
   if(bets.length)h+=fBar(me,bets);
@@ -685,7 +686,7 @@ const ACT={
     const back={};b.places.forEach((a,i)=>{back[sel[i]]=(back[sel[i]]||0)+a});b.parts.forEach(p=>{if(!(p in back))back[p]=0});poolSettle(b,back)},
   poolgo:el=>{const id=el.dataset.id,b=compute().find(x=>x.id===id);if(!b)return;const r=poolParse(b,S.poolTxt[id]||'');if(!r.ok||!r.back){S.poolErr[id]=r.ok?PT('eEmptyPay'):r.err;S.ask=null;render(true);return}poolSettle(b,r.back)},
   poolvoid:el=>{const b=compute().find(x=>x.id===el.dataset.id),me=meMid();if(!b||!me||b.by!==me||b.status!=='open')return;act([mkEv('w',{id:b.id})],'Saved.')},
-  obview:el=>{const v=el.dataset.v==='tally'?'tally':el.dataset.v==='request'?'request':el.dataset.v==='open'?'open':'form';if(S.ob===v)return;S.ob=v;render(true);window.scrollTo(0,0)},   /* partner obView(): a sub-tab tap opens it at the top */
+  obview:el=>{const v=el.dataset.v==='tally'?'tally':el.dataset.v==='request'?'request':el.dataset.v==='open'?'open':el.dataset.v==='all'?'all':'form';if(S.ob===v)return;S.ob=v;render(true);window.scrollTo(0,0)},   /* partner obView(): a sub-tab tap opens it at the top */
   opp:el=>{const f=S.f,m=el.dataset.mid;f.open=false;S.f.forMid=null;if(S.pz){S.pz.a=S.pz.b=null;S.pz.read=false}const k=f.opps.indexOf(m);if(k>=0)f.opps.splice(k,1);else{f.opps.push(m);const o=others().map(x=>x.mid);f.opps.sort((x,y)=>o.indexOf(x)-o.indexOf(y))}sync()},
   oppall:()=>{S.f.open=false;S.f.forMid=null;if(S.pz){S.pz.a=S.pz.b=null;S.pz.read=false}S.f.opps=others().map(o=>o.mid);sync()},
   oppclear:()=>{S.f.open=false;S.f.forMid=null;if(S.pz){S.pz.a=S.pz.b=null;S.pz.read=false}S.f.opps=[];sync()},
