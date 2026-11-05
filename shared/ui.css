@@ -359,3 +359,5 @@ html body .tabs.ob-seg{display:grid!important;grid-auto-flow:column;grid-auto-co
 html body .tabs.ob-seg>button{min-width:0;width:100%;white-space:normal;line-height:1.15;text-align:center;overflow:visible;padding-left:6px!important;padding-right:6px!important;margin:0!important}
 /*</OB-ONE-ROW>*/
 /*<LIVE-NODOT>*/ html body .golive::before{display:none!important} /* live marker = outline only, both sites */
+/* STEP10: Request a bet question 1 + Select all / Clear on one line */
+.rq-qrow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.rq-qrow .b27-q{margin:0;flex:1 1 auto;min-width:0}.rq-qrow .b27-selbar{margin:0 0 0 auto;flex:0 0 auto;display:flex;flex-direction:row;gap:6px;width:auto}.rq-qrow .b27-selbar .s27-selb{width:auto;min-height:32px}

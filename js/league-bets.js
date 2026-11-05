@@ -316,7 +316,7 @@ function stampHtml(b){const t=stampText(b);return t?`<div class="b27-stamp">${es
 /* ---------- s24 list filters: Person (Me / Everyone / each manager) x Status (All / Waiting on me / Open / Settled / Wash) ----------
    kept per device per league in localStorage fbn.x.<league>.betf as {p,s,q}; p = 'all' | 'me' | position 1-8 in the league (never a manager id); q = search terms
    (bet text + manager names, case-insensitive, live); also in the URL as #bets/f=<p>-<s> or #bets/f=<p>-<s>/q=<terms> */
-const FS={all:'Any status',open:'Open',settled:'Settled',wash:'Wash',waiting:'Waiting on me',req:'Requested'};
+const FS={all:'Any status',open:'Open',settled:'Settled',wash:'Wash',waiting:'Waiting on me',stoops:'Waiting on stoops',req:'Requested'};
 const fKey=()=>'fbn.x.'+(H&&H.id)+'.betf';
 const fOk=(p,s)=>/^(all|me|[1-8])$/.test(p)&&s in FS;
 const qClean=q=>clean(q,60);
@@ -324,24 +324,31 @@ function fLoad(){if(S.fl)return;S.fl=1;S.fp=S.fp||'all';S.fs=S.fs||'all';S.fq=S.
 function fSave(){try{if(S.fp==='all'&&S.fs==='all'&&!S.fq)localStorage.removeItem(fKey());else localStorage.setItem(fKey(),JSON.stringify(S.fq?{p:S.fp,s:S.fs,q:S.fq}:{p:S.fp,s:S.fs}))}catch(e){}}
 function fSet(p,s,quiet,q){if(!fOk(p,s))return false;S.fl=1;S.fp=p;S.fs=s;if(q!==undefined)S.fq=qClean(q);fSave();if(!quiet&&H&&H.onFilter)H.onFilter();return true}
 const fPm=me=>S.fp==='me'?me:S.fp==='all'?null:((owners()[+S.fp-1]||{}).mid||null);
-const fEff=me=>({p:(S.fp==='me'&&!me)?'all':S.fp,s:(S.fs==='waiting'&&(!me||!AF()))?'all':S.fs});   /* a watcher has no "me": those choices fall back */
-function waitsOn(b,me){if(!me)return false;if(!AF()&&b.kind!=='pool')return false;if(b.kind==='pool')return b.status==='open'&&!b.back&&b.by!==me&&b.parts.includes(me);const party=b.by===me||b.acc===me;
-  if(b.status==='pending')return b.by!==me&&(b.to===me||b.to==='*');
+const fEff=me=>({p:(S.fp==='me'&&!me)?'all':S.fp,s:((S.fs==='waiting'||S.fs==='stoops')&&(!me||!AF()))?'all':S.fs});   /* a watcher has no "me": those choices fall back */
+/* STEP10: waitsOn = "Waiting on me": ONLY bets where I can tap something (Accept/Decline, the placer enters the result / Confirm, answer a Fix, settle my pool).
+   waitsStoops = "Waiting on stoops": live bets I'm in that only another Stoop can move. */
+function waitsOn(b,me){if(!me)return false;if(!AF()&&b.kind!=='pool')return false;if(b.kind==='pool')return b.status==='open'&&!b.back&&b.by===me;const party=b.by===me||b.acc===me;
+  if(b.status==='pending'){if(b.tp)return (me===b.by&&!b.ackA)||(me===b.to&&!b.acc);return b.by!==me&&(b.to===me||b.to==='*')}
+  if(b.status==='open')return b.by===me;
   if(b.status==='reported')return party&&!b.reps[me];
   if(b.status==='disputed')return party;
   if(b.status==='settled')return party&&!!b.fix&&b.fix.by!==me;return false}
+function waitsStoops(b,me){if(!me||waitsOn(b,me))return false;if(!AF()&&b.kind!=='pool')return false;if(b.kind==='pool')return b.status==='open'&&!b.back&&b.by!==me&&b.parts.includes(me);const party=b.by===me||b.acc===me;
+  if(b.status==='pending')return b.tp?(me===b.by||me===b.to||me===b.postedBy):(b.by===me);
+  if(b.status==='open'||b.status==='reported')return party;
+  if(b.status==='settled')return party&&!!b.fix&&b.fix.by===me;return false}
 function fMatch(b,me){fLoad();const e=fEff(me);if(e.s==='req')return false;/*STEP8-REQUEST*/
   if(e.p!=='all'){const pm=e.p==='me'?me:fPm(me);if(!pm||!(b.by===pm||b.acc===pm||(b.status==='pending'&&b.to===pm)||(b.kind==='pool'&&b.parts.includes(pm))))return false}
   if(S.fq){const q=S.fq.toLowerCase(),hay=[b.text,nm(b.by),b.acc?nm(b.acc):'',b.to&&b.to!=='*'?nm(b.to):'',...(b.parts||[]).map(nm)].join(' ').toLowerCase();if(!q.split(/\s+/).every(w=>hay.includes(w)))return false}
-  if(b.kind==='pool'){if(e.s==='waiting')return waitsOn(b,me);if(e.s==='open')return b.status==='open'&&!b.back;if(e.s==='settled')return b.status==='open'&&!!b.back;return e.s!=='wash'}
-  if(e.s==='waiting')return waitsOn(b,me);if(e.s==='open')return['pending','open','reported','disputed'].includes(b.status);
+  if(b.kind==='pool'){if(e.s==='waiting')return waitsOn(b,me);if(e.s==='stoops')return waitsStoops(b,me);if(e.s==='open')return b.status==='open'&&!b.back;if(e.s==='settled')return b.status==='open'&&!!b.back;return e.s!=='wash'}
+  if(e.s==='waiting')return waitsOn(b,me);if(e.s==='stoops')return waitsStoops(b,me);if(e.s==='open')return['pending','open','reported','disputed'].includes(b.status);
   if(e.s==='settled')return b.status==='settled';if(e.s==='wash')return b.status==='settled'&&b.res==='p';return true}
 const fActive=me=>{fLoad();const e=fEff(me);return e.p!=='all'||e.s!=='all'||!!S.fq};
 function fEmpty(me){return 'No bets match this filter.'}
-function fBar(me,bets){fLoad();const e=fEff(me),oth=owners(),wn=me?bets.filter(b=>waitsOn(b,me)).length:0;
+function fBar(me,bets){fLoad();const e=fEff(me),oth=owners(),wn=me?bets.filter(b=>waitsOn(b,me)).length:0,wn2=me?bets.filter(b=>waitsStoops(b,me)).length:0;
   const po=`<option value="all"${e.p==='all'?' selected':''}>Everyone</option>`+(me?`<option value="me"${S.fp==='me'?' selected':''}>Me</option>`:'')+oth.map((o,i)=>`<option value="${i+1}"${S.fp===String(i+1)?' selected':''}>${esc(bRNm(o)?o.team_name+' · '+bRNm(o):(o.team_name||o.name))}</option>`).join('');
-  const so=Object.keys(FS).filter(k=>k!=='waiting'||(me&&AF())).map(k=>`<option value="${k}"${e.s===k?' selected':''}>${esc(FS[k])}${k==='waiting'&&wn?' ('+wn+')':''}</option>`).join('');
-  const lost=!me&&(S.fp==='me'||S.fs==='waiting')?'<div class="note" id="b27FltNote">“Me” and “Waiting on me” need your own manager link, so this shows everyone.</div>':'';
+  const so=Object.keys(FS).filter(k=>(k!=='waiting'&&k!=='stoops')||(me&&AF())).map(k=>`<option value="${k}"${e.s===k?' selected':''}>${esc(FS[k])}${k==='waiting'&&wn?' ('+wn+')':k==='stoops'&&wn2?' ('+wn2+')':''}</option>`).join('');
+  const lost=!me&&(S.fp==='me'||S.fs==='waiting'||S.fs==='stoops')?'<div class="note" id="b27FltNote">“Me”, “Waiting on me” and “Waiting on stoops” need your own manager link, so this shows everyone.</div>':'';
   return`<div class="card s24fb b27-flt" id="b27Flt" role="search" aria-label="Filter bets"><div class="b27-fr"><select id="b27FP" aria-label="Person">${po}</select><select id="b27FS" aria-label="Status">${so}</select><input id="b27FQ" type="search" class="b27-fq" placeholder="search terms…" aria-label="Search bets" autocomplete="off" maxlength="60" enterkeyhint="search" value="${esc(S.fq)}"></div>${lost}</div>`}
 function fHashOut(){fLoad();return S.fp==='all'&&S.fs==='all'&&!S.fq?'':'f='+S.fp+'-'+S.fs+(S.fq?'/q='+encodeURIComponent(S.fq):'')}
 function fFromHash(f,q){const m=/^(all|me|[1-8])-(all|waiting|open|settled|wash)$/.exec(String(f||''));if(m)fSet(m[1],m[2],true,q==null?'':q)}
