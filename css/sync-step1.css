@@ -265,14 +265,25 @@ html body .gf2.gmorep{padding:6px!important;border-radius:16px;background:rgba(1
 html body .gmore.dot::after{top:4px;right:6px;width:6px;height:6px}
 @media (max-width:640px){html body .gf2.gmorep{grid-template-columns:repeat(2,minmax(0,1fr))!important}html body .gf2.gmorep>.gq{grid-column:1/-1}html body .gf2>.gf2-s,html body .gf2>.gf2-b{font-size:11.5px!important}}
 /*</S31-GCLEAN>*/
-/*<S32-GPILL3>*/ /* Paul: Games Upcoming smaller pills, 3 per row */
-html body .gfrow .rkseg-b{height:24px!important;min-height:24px!important;line-height:22px!important;font-size:11px!important;padding:0 8px!important}
-html body .gfrow .segrow .gref{width:26px!important;height:26px!important;min-width:26px!important;min-height:26px!important;font-size:13px!important;flex:0 0 26px}
-html body .gf2,html body .gf2.gf2r,html body .gf2.gmorep{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:4px!important}
-html body .gf2>.gf2-s,html body .gf2>.gf2-b,html body #lbody .gf2>.gf2-s,html body #lbody .gf2>.gf2-b{height:24px!important;min-height:24px!important;line-height:22px!important;font-size:11px!important;border-radius:12px!important;min-width:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-html body .gf2>.gf2-s{padding:0 16px 0 8px!important;background-position:right 5px center!important}
-html body .gf2>.gf2-b{padding:0 6px!important}
-html body .gf2>.gq{height:24px!important;min-height:24px!important;font-size:11px!important;grid-column:1/-1}
-html body .gf3{gap:4px!important}
-@media (max-width:640px){html body .gf2.gmorep{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+/*<S32-GPILL3>*/ /* Paul: Games Upcoming smaller pills, 3 per row (v2: equal grid, readable labels) */
+html body .gfrow .rkseg-b{height:26px!important;min-height:26px!important;line-height:24px!important;font-size:11.5px!important;padding:0 8px!important}
+html body .gfrow .segrow .gref{width:28px!important;height:28px!important;min-width:28px!important;min-height:28px!important;font-size:13px!important;flex:0 0 28px}
+html body .gf2,html body #lbody .gf2{display:grid!important;width:100%!important;box-sizing:border-box!important;gap:4px!important}
+html body .gf2.gf2r{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+html body .gf2.gmorep{grid-template-columns:repeat(3,minmax(0,1fr))!important;padding:4px!important}
+html body .gf2.gmorep[hidden]{display:none!important}
+html body .gf2>.gf2-s,html body .gf2>.gf2-b,html body #lbody .gf2>.gf2-s,html body #lbody .gf2>.gf2-b{display:block!important;width:100%!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;height:26px!important;min-height:26px!important;line-height:normal!important;font-size:11.5px!important;letter-spacing:-.1px;border-radius:13px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0!important}
+html body .gf2>.gf2-s{padding:0 14px 0 8px!important;text-align:left;background-position:right 5px center!important}
+html body .gf2>.gf2-b{padding:0 4px!important;text-align:center!important}
+html body .gf2>.gq,html body .gf2.gmorep>.gq{grid-column:auto!important;padding:0 8px!important}
+html body .gf3,html body #lbody .gf3{display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;align-items:stretch!important;gap:4px!important;margin:0 0 8px!important}
+html body .gf3>.gf2.gf2r,html body .gf3>.gf2.gmorep{display:grid!important}
+html body .gf3>.gf2.gmorep[hidden]{display:none!important}
+html body .gf3 .gf2>select.gf2-s,html body .gf3 .gf2>input.gf2-s,html body .gf3 .gf2>.gf2-b{flex:none!important;width:100%!important;max-width:none!important;height:26px!important;min-height:26px!important;font-size:11.5px!important;border-radius:13px!important}
+html body .gf3 .gf2>select.gf2-s{padding:0 14px 0 8px!important}
+html body .gf3 .gf2>.gf2-b{padding:0 4px!important}
+html body .gf3 .gf2>input.gf2-s{padding:0 10px!important}
+html body .gf3 .gf2>.gmore{display:block!important}
+html body #main .gf3 .gf2>select,html body #main .gf3 .gf2>button,html body #main .gf3 .gf2>input,html body #lbody .gf3 .gf2>select,html body #lbody .gf3 .gf2>button,html body #lbody .gf3 .gf2>input{height:26px!important;min-height:26px!important}
+html body #main .gf3 .gf2>select.gf2-s,html body #lbody .gf3 .gf2>select.gf2-s{padding:0 14px 0 7px!important;-webkit-appearance:none!important;appearance:none!important;text-overflow:clip!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23aab'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 5px center!important;background-size:8px 5px!important}
 /*</S32-GPILL3>*/
