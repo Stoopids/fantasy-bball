@@ -233,3 +233,13 @@ html body #allteams .obt>:not(:first-child):not(:nth-child(2)),html body #alltea
 /*</SYNC12-L>*/
 
 /*<SORT-ALL-L> League All teams header on phone: the first column is only the logo, so the header reads "Team" with its arrow (owner and conf already show under each logo) */@media (max-width:600px){html body .obk.atk .obh>.s27-sort:first-child::after{content:none!important}}/*</SORT-ALL-L>*/
+
+/*<STEP12-HSHARE>*/ /* whole-site Share button beside the title (same rules both sites) */
+.s12-hd{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:nowrap;max-width:100%}
+.s12-hd h1{min-width:0}
+.s12-share{flex:none;display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--card2);color:var(--tx,#eef1f7);font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.s12-share:hover{border-color:var(--acc)}
+.s12-share.on{background:var(--acc);color:#111;border-color:var(--acc)}
+@media (max-width:480px){.s12-hd{gap:6px}.s12-share{min-height:36px;padding:0 9px;font-size:12px}}
+/*</STEP12-HSHARE>*/
+/*<STEP12-TIPS>*/ .b27-lb{flex-wrap:wrap}.b27-lb>.s27-pop{flex-basis:100%;margin:2px 0 0} /*</STEP12-TIPS>*/

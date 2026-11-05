@@ -346,6 +346,9 @@ html body table.tt td.n,html body table.tt th.n{text-align:right}
 html body table.tt tbody tr:nth-child(even) td,html body table.tt tbody tr:nth-child(even) th{background:rgba(255,255,255,.035)}
 html body table.tt .tt-p{position:sticky;left:0;z-index:1;text-align:left;background:var(--card,#141a26);font-weight:700}
 html body table.tt tbody tr:nth-child(even) .tt-p{background:var(--card2,#1c2230)}
+/*<STEP12-TALLY-GAP> name column only as wide as the longest name; spare width goes to the number columns */
+html body table.tt .tt-p{width:1%;padding-right:10px}
+/*</STEP12-TALLY-GAP>*/
 html body table.tt td.bad{color:var(--bad,#ef4444);font-weight:700}
 html body table.tt .good{color:var(--good,#22c55e)}html body table.tt b.bad{color:var(--bad,#ef4444)}
 html body table.tt .tz{opacity:.35}

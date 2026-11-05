@@ -125,7 +125,9 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
       o.rows.map(function(r){return '<tr'+(r.attr||'')+'>'+r.cells.map(function(c){return '<td'+(c[0]?' class="'+c[0]+'"':'')+(c[1]||'')+'>'+c[2]+'</td>'}).join('')+'</tr>'}).join('')+'</table></div>'};
 
   /* STEP6-BETS: New bet question tips (STOOPIDS wording), both sites */
-  SHARED_UI.TIPS={who:'Tap one or more managers. Several = one bet, one result.',text:'Write it as you say it: "Kansas -4 beats Duke".',amt:function(min){return 'Minimum '+min},odds:'If you’re right, they owe amount × first ÷ second. Even = 1-1.'};
+  SHARED_UI.TIPS={who:'Tap one or more managers. Several = one bet, one result.',text:'Write it as you say it: "Kansas -4 beats Duke".',amt:function(min){return 'Minimum '+min},odds:'If you’re right, they owe amount × first ÷ second. Even = 1-1.',
+    /* STEP12-TIPS: Pool form question tips (the old grey notes under each Pool step) */
+    pterms:'Say what the pool is, e.g. “STOOPIDS season-long tournament pool”.',ppl:'You’re in automatically. Tap everyone else who’s in.',buy:function(min){return 'Buy-in per person, minimum '+min+'. The pot is buy-in × people in.'},pay:'Amounts only; you pick who finished where when you settle it. They must add up to the pot. Optional: leave blank to fill in when it’s over.'};
 
   /* STEP7-TALLY: Bets > Tally header card, empty note and per-person table, both sites */
   SHARED_UI.tallyTop=function(attr,emptyAttr,empty){return '<div class="card"'+(attr||'')+'><b>🧮 Tally · 2026-27</b><div class="note">From the 2026-27 shared ledger only. Rows owe columns.</div></div>'+(empty?'<div class="card note"'+emptyAttr+'>No 2026-27 bets with amounts yet.</div>':'')};

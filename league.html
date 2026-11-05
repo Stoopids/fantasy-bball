@@ -6,7 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://a.espncdn.com; connect-src 'self' https://textdb.dev https://site.api.espn.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10131a">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="manifest-league.webmanifest"><!-- STEP12-SHORTCUT: no start_url, so Add to Home screen / Install opens the page (league + tab) it was saved from -->
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="css/league-app.css">
 <link rel="stylesheet" href="css/power.css">
 <link rel="stylesheet" href="css/sync-step1.css">
-<link rel="stylesheet" href="shared/ui.css?v=1.22.0">
+<link rel="stylesheet" href="shared/ui.css?v=1.23.0">
 <style>/* s25 LINKS-HOOK: the sheet + .lcbtns rules from css/app.css (that sheet is not loaded on this page) */.sheetbg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:40;display:flex;align-items:flex-end;justify-content:center}.sheet{background:var(--card);border-top:3px solid var(--acc);border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));width:100%;max-width:520px;max-height:90vh;max-height:90dvh;overflow:auto;box-sizing:border-box}.sheet h2{margin:0 0 8px;font-size:20px}.sheet .btn.block{display:block;width:100%;margin-top:12px;min-height:44px}#lcard .hint{color:var(--mut);font-size:13px;margin:6px 0 0}.lcbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}.lcbtns .btn{width:100%;text-align:center;padding:12px;min-height:44px;box-sizing:border-box}@media(min-width:700px){.lcbtns{grid-template-columns:repeat(4,1fr)}}</style>
 <title>League site · NCAA Fantasy Basketball · Season + Tournament</title>
 </head>
@@ -26,7 +26,7 @@
 <div id="app"></div>
 <script src="js/version.js"></script>
 <script src="js/qr.min.js"></script>
-<script src="shared/ui.js?v=1.30.0"></script>
+<script src="shared/ui.js?v=1.31.0"></script>
 <script src="js/core.js"></script>
 <script src="js/scoring.js"></script>
 <script src="js/league-d.js"></script>
