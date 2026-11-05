@@ -169,7 +169,7 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
       catch(x){}S.loading=false;A.render()}
     function chips(f){return '<div class="b27-opps rq-to" role="group" aria-label="Open to" style="--n:'+A.others().length+'">'+A.others().map(function(o){var on=f.to.indexOf(o.id)>=0;return '<button type="button" class="b27-chip op" data-rq="to" data-v="'+e(o.id)+'" aria-pressed="'+on+'" aria-label="'+e(o.nick)+'"><span class="ck" aria-hidden="true">✓</span><span class="em" aria-hidden="true">'+e(o.emoji||'')+'</span><span class="nm" aria-hidden="true"><span class="f">'+e(o.nick)+'</span><span class="sh">'+e(SHARED_UI.shortName(o.nick))+'</span><span class="xs">'+e(SHARED_UI.tinyName(o.nick))+'</span></span></button>'}).join('')+'</div>'}
     function card(r,now){var me=A.me(),inv=r.to.indexOf(me)>=0,dec=(r.dec||[]).indexOf(me)>=0,n=r.to.length,w=Math.min(r.exp,winStart(r,game(r.gid)));
-      var nt=tk(r).length,mine=tk(r).indexOf(me)>=0;var who=n===1?'Open to '+e(A.nick(r.to[0])):n>=A.others().length?'Open to all '+n+' stoops':'Open to '+n+' stoops';
+      var nt=tk(r).length,mine=tk(r).indexOf(me)>=0;var sn=slots(r),who=n===1?'Open to '+e(A.nick(r.to[0])):sn<n?'Open to '+sn+' of '+n+' stoops':n>=A.others().length?'Open to all '+n+' stoops':'Open to '+n+' stoops';   /* STEP13-SLOTS */
       var h='<div class="card rq-card" data-rq-id="'+e(r.id)+'"><div class="rq-top"><b>📨 '+e(A.nick(r.by))+'</b> <span class="note">'+who+(nt?' · '+nt+' of '+slots(r)+' taken':'')+' · expires '+expTxt(r,now)+'</span></div>'
         +'<div class="rq-body"><span class="rq-amt">'+e(r.amt)+'</span> <span class="rq-side">'+e(r.lab)+'</span>'+' <span class="note">at '+oddsTxt(r.odds)+' odds</span>'+(r.cov==='2h'?' <span class="pill">2nd half</span>':'')+(r.game?'<div class="note">'+e(r.game)+' · '+e(r.date||'')+'</div>':'')+'</div>'+explain(r);
       if(mine)h+='<div class="note good">You accepted: it is your bet now.</div>';
@@ -205,12 +205,12 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
     function explain(r){var o=r.odds||[1,1],rn=(A.real||A.nick)(r.by),win2=Math.round(r.amt*o[0]/o[1]*100)/100,ot=r.k==='ou'?r.other:String(r.other||'').replace(/\s[+-]?\d+(\.\d+)?$/,'');
       return '<div class="rq-ex note">'+e(ifTxt(r,r.lab))+', '+e(rn)+' wins '+e(r.amt)+'$ from whoever accepts.<br>'+e(ifTxt(r,ot))+', the Stoop who accepts wins '+e(win2)+'$'+(+o[0]===+o[1]?'':' ('+e(oddsTxt(o))+')')+' from '+e(rn)+'.</div>'}
     function whoTxt(r){var n=r.to.length;return n>=A.others().length?'all stoops':n<=2?r.to.map(A.nick).join(' & '):n+' stoops'}
-    function waText(r,kind){var w=Math.min(r.exp,winStart(r,game(r.gid))),rn=(A.real||A.nick)(r.by),n0=r.to.length,wt=n0===1?A.nick(r.to[0]):n0+' stoops';   /* Paul's exact format, nothing else. STEP10: always the open-to count ("7 stoops") or the one Stoop's nickname */
+    function waText(r,kind){var w=Math.min(r.exp,winStart(r,game(r.gid))),rn=(A.real||A.nick)(r.by),n0=slots(r),wt=n0===1&&r.to.length===1?A.nick(r.to[0]):n0+' stoops',ol='Open to '+(n0===1&&r.to.length===1?A.nick(r.to[0]):n0===1?'1 stoop':n0+' stoops');   /* STEP13-SLOTS: open-to count = slots, own line above Expires */   /* Paul's exact format, nothing else. STEP10: always the open-to count ("7 stoops") or the one Stoop's nickname */
       var ot=String(r.other||'').replace(/\s[+-]?\d+(\.\d+)?$/,'');
       var l2=(r.cov==='2h'?'2nd half: ':'')+r.lab+' ('+rn+') v '+(ot?ot+' ('+wt+')':wt)+' at '+oddsTxt(r.odds);
-      if(kind==='del')return ['Bet Request Deleted: '+r.amt+'$',l2].join('\n');
-      if(kind==='close')return ['Bet Request Closed: '+r.amt+'$',l2,tk(r).length+' stoops in'].join('\n');
-      return [(kind===true||kind==='upd'?'Bet Updated: ':'Bet Requested: ')+r.amt+'$',l2,'Expires '+expTxt(r,Date.now())].join('\n')}
+      if(kind==='del')return ['Bet Request Deleted: '+r.amt+'$',l2,ol].join('\n');
+      if(kind==='close')return ['Bet Request Closed: '+r.amt+'$',l2,ol,tk(r).length+' stoops in'].join('\n');
+      return [(kind===true||kind==='upd'?'Bet Updated: ':'Bet Requested: ')+r.amt+'$',l2,ol,'Expires '+expTxt(r,Date.now())].join('\n')}
     function toast(ok){return (S.base||'Request posted')+(ok===true?' \u00b7 message copied, paste in WhatsApp, Stoopid':ok===false?'. Copy the message below for WhatsApp.':'.')}
     function say(txt,base){S.copied=null;S.fb=null;S.posted=false;S.base=base;copy(txt)}
     function copy(t,done){var fin=function(ok){S.copied=ok;S.fb=ok?null:t;if(S.posted)S.msg=toast(ok);if(done)done(ok);A.render()};var fb=function(){var ok=false;try{var ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();ok=!!document.execCommand('copy');ta.remove()}catch(x){}fin(ok)};
