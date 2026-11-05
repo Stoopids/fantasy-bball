@@ -320,3 +320,14 @@ html body .gside>.nm>.chip{width:auto!important;max-width:100%!important;min-wid
 @media (max-width:640px){html body .gside .chip{width:auto!important;max-width:100%!important}html body .gside{gap:6px}}
 html body .gside>.gow .opill{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
 /*</GAMECARD-COMPACT>*/
+/*<QB-INLINE>*/ /* Quick bet: inline drop-down under the game card */
+.qbd{margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03)}
+.qbd-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.qbd-x{min-width:40px;min-height:40px;background:none;border:0;color:inherit;font-size:16px;cursor:pointer}
+.qbd .qbs-r{display:flex;align-items:center;gap:8px;margin:6px 0;flex-wrap:wrap}
+.qbd .qbs-l{flex:0 0 92px;font-size:12.5px;opacity:.75;font-weight:700}
+.qbd .qbs-s{display:flex;gap:6px;flex:1;flex-wrap:wrap}.qbd .qbs-s .qbs-o{flex:1 1 0}
+.qbd .qbd-req{display:block;width:100%;margin-top:8px}
+@media (max-width:600px){.qbd .qbs-l{flex-basis:100%}}
+.rq-spots{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.rq-spots .btn{min-width:44px;min-height:40px}
+/*</QB-INLINE>*/
