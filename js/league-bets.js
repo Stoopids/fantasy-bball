@@ -159,7 +159,7 @@ const owners=()=>(H&&H.owners())||[];
 const own=mid=>owners().find(o=>o.mid===mid)||{mid,name:'Manager',emoji:''};
 const nm=mid=>own(mid).name;
 /* s28 (Paul): team name on top / first, the manager's real name under it (cards, tally); sentences keep the real name */
-const tmH=mid=>{const o=own(mid);return o.team_name&&o.team_name!==o.name?`<span class="tn2 tnin"><b class="tnt">${esc(o.team_name)}</b><small class="tnr">${esc(o.name)}</small></span>`:`<b>${esc(o.name)}</b>`};
+const tmH=mid=>{const o=own(mid);return false?`<span class="tn2 tnin"><b class="tnt">${esc(o.team_name)}</b><small class="tnr">${esc(o.name)}</small></span>`:`<b>${esc(o.name)}</b>`};
 const mids=()=>owners().map(o=>o.mid);
 const meMid=()=>H&&H.me&&H.me();
 const compute=()=>reduce(S.logs,mids(),Date.now());
@@ -339,7 +339,7 @@ function fMatch(b,me){fLoad();const e=fEff(me);
 const fActive=me=>{fLoad();const e=fEff(me);return e.p!=='all'||e.s!=='all'||!!S.fq};
 function fEmpty(me){return 'No bets match this filter.'}
 function fBar(me,bets){fLoad();const e=fEff(me),oth=owners(),wn=me?bets.filter(b=>waitsOn(b,me)).length:0;
-  const po=`<option value="all"${e.p==='all'?' selected':''}>Everyone</option>`+(me?`<option value="me"${S.fp==='me'?' selected':''}>Me</option>`:'')+oth.map((o,i)=>`<option value="${i+1}"${S.fp===String(i+1)?' selected':''}>${esc(bRNm(o)?o.team_name+' · '+bRNm(o):(o.team_name||o.name))}</option>`).join('');
+  const po=`<option value="all"${e.p==='all'?' selected':''}>Everyone</option>`+(me?`<option value="me"${S.fp==='me'?' selected':''}>Me</option>`:'')+oth.map((o,i)=>`<option value="${i+1}"${S.fp===String(i+1)?' selected':''}>${esc(bRNm(o)?o.team_name+' · '+bRNm(o):(o.name||o.team_name))}</option>`).join('');
   const so=Object.keys(FS).filter(k=>k!=='waiting'||(me&&AF())).map(k=>`<option value="${k}"${e.s===k?' selected':''}>${esc(FS[k])}${k==='waiting'&&wn?' ('+wn+')':''}</option>`).join('');
   const lost=!me&&(S.fp==='me'||S.fs==='waiting')?'<div class="note" id="b27FltNote">“Me” and “Waiting on me” need your own manager link, so this shows everyone.</div>':'';
   return`<div class="card s24fb b27-flt" id="b27Flt" role="search" aria-label="Filter bets"><div class="b27-fr"><select id="b27FP" aria-label="Person">${po}</select><select id="b27FS" aria-label="Status">${so}</select><input id="b27FQ" type="search" class="b27-fq" placeholder="search terms…" aria-label="Search bets" autocomplete="off" maxlength="60" enterkeyhint="search" value="${esc(S.fq)}"></div>${lost}</div>`}
@@ -349,14 +349,14 @@ function reveal(id){const me=meMid(),b=compute().find(x=>x.id===id);if(!b||!fAct
 let CUR=[];const UNDO_MS=30000;
 const undoable=(b,me)=>!!me&&(b.kind==='pool'?b.status==='open'&&b.by===me:AF()?b.status==='pending'&&b.by===me:b.status==='open'&&(b.postedBy||b.by)===me&&!Object.keys(b.reps||{}).length)&&Date.now()-b.ts<UNDO_MS;
 const grpUndo=(g,me)=>g?CUR.filter(x=>x.g===g&&undoable(x,me)):[];
-const nmHtml=mid=>{const o0=own(mid),o=Object.assign({},o0,{name:o0.team_name||o0.name}),sh=shortName(o.name);return`<span class="oqn${sh!==o.name?' hs':''}" data-em="${esc(o.emoji||'')}" data-e1="${esc(first(o.emoji))}"><span class="f">${esc(o.name)}</span>${sh!==o.name?`<span class="s">${esc(sh)}</span>`:''}</span>`};
+const nmHtml=mid=>{const o0=own(mid),o=Object.assign({},o0,{name:o0.name||o0.team_name}),sh=shortName(o.name);return`<span class="oqn${sh!==o.name?' hs':''}" data-em="${esc(o.emoji||'')}" data-e1="${esc(first(o.emoji))}"><span class="f">${esc(o.name)}</span>${sh!==o.name?`<span class="s">${esc(sh)}</span>`:''}</span>`};
 const first=e=>{e=String(e||'');try{return new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(e)[Symbol.iterator]().next().value.segment}catch(_){return Array.from(e)[0]||''}};
 /* s25k: the owes grid and the net list show each manager's TEAM NICKNAME in caps (display only; from the league data, "Test " stripped; full name in the tooltip) */
-const nick=o=>{o=o||{};const t=String(o.team_name||o.team||'').replace(/^\s*Test\s+/i,'').trim();return (t||String(o.name||'Manager').replace(/^\s*Test\s+/i,'').trim()).toUpperCase()};
+const nick=o=>{o=o||{};/*<STEP7-REAL>*/const t=String(o.name||'').replace(/^\s*Test\s+/i,'').trim();return (t||String(o.team_name||o.team||'Manager').replace(/^\s*Test\s+/i,'').trim()).toUpperCase()};
 /* ---------- s28: the partner's Bets page (vB27 / b27PoolForm / b27PoolCard / vTally), on the League bet store ---------- */
 /* s28b: chips = TEAM name on top (.tl), the real name under it (.tnr); real name hidden when it equals the team name (same rule as RNm() in leaguehome.js), 'Test ' stripped in league-d.js (test league only); the Tally keeps its own 'Test ' strip */
-const bTst=x=>String(x==null?'':x).replace(/^\s*Test\s+/i,'').trim(),bRNm=(o,st)=>{const f=st?bTst:(x=>String(x==null?'':x).trim()),t=f(o&&o.team_name),r=f(o&&o.name);return t&&r&&t!==r?r:''};
-const chip=(o,k,on)=>`<button type="button" class="b27-chip op" data-lb="${k}" data-mid="${esc(o.mid)}" aria-label="${esc(o.team_name?o.team_name+' ('+o.name+')':o.name)}" aria-pressed="${on}"><span class="ck" aria-hidden="true">✓</span><span class="em" aria-hidden="true">${esc(o.emoji||'')}</span><span class="nm" aria-hidden="true"><span class="tl"><span class="f">${esc(o.team_name||o.name)}</span><span class="sh">${esc(shortName(o.team_name||o.name))}</span><span class="xs">${esc(tinyName(o.team_name||o.name))}</span></span>${bRNm(o)?`<small class="tnr">${esc(bRNm(o))}</small>`:''}</span></button>`;
+const bTst=x=>String(x==null?'':x).replace(/^\s*Test\s+/i,'').trim(),bRNm=(o,st)=>{return '';/*STEP7-REAL: real name is the main label now*/const f=st?bTst:(x=>String(x==null?'':x).trim()),t=f(o&&o.team_name),r=f(o&&o.name);return t&&r&&t!==r?r:''};
+const chip=(o,k,on)=>`<button type="button" class="b27-chip op" data-lb="${k}" data-mid="${esc(o.mid)}" aria-label="${esc(o.team_name?o.team_name+' ('+o.name+')':o.name)}" aria-pressed="${on}"><span class="ck" aria-hidden="true">✓</span><span class="em" aria-hidden="true">${esc(o.emoji||'')}</span><span class="nm" aria-hidden="true"><span class="tl"><span class="f">${esc(o.name||o.team_name)}</span><span class="sh">${esc(shortName(o.name||o.team_name))}</span><span class="xs">${esc(tinyName(o.name||o.team_name))}</span></span>${bRNm(o)?`<small class="tnr">${esc(bRNm(o))}</small>`:''}</span></button>`;
 /*<SYNC7-BF>*/// bet-type toggle (left) + Select all / Clear (right) on one line; sel = the select buttons of the open form/*</SYNC7-BF>*/
 const kindTabs=(sel='')=>`<div class="b27-kindrow">${S.edited?'':`<div class="tabs b27-kind" role="group" aria-label="Bet type"><button type="button" class="${S.kind!=='pool'?'on':''}" aria-pressed="${S.kind!=='pool'}" data-lb="kind" data-v="bet" id="b27KindBet"><span class="kf">${esc(POOL_TXT.toggleBet)}</span><span class="ks">1 vs 1</span></button><button type="button" class="${S.kind==='pool'?'on':''}" aria-pressed="${S.kind==='pool'}" data-lb="kind" data-v="pool" id="b27KindPool"><span class="kf">${esc(POOL_TXT.toggle)}</span><span class="ks">Pool</span></button></div>`}${sel}</div>`;
 /* ---------- s28j 'Paste a bet' (Paul via NCAA; spec /workspace/s28j-paste-bet-spec.md): a WhatsApp-style line such as 'ken v paul 2-1 odds, duke +4 v Virginia'
@@ -770,7 +770,7 @@ function badge(){try{if(!H||H.demo||S.state!=='ok'||S.stale)return 0;const raw=l
    Tapping a side only PREFILLS the New bet form (opponent, text, pushups, Even odds) and switches to the Bets tab. Nothing is saved until Place bet and then Yes, place it. The other manager still has to accept. */
 const qbOwn=s=>{const n=s&&s.owners&&s.owners[0];const o=n==null?null:owners().find(x=>x.name===n);return o?o.mid:null};
 const qbNm=(s,ctx)=>String((ctx&&ctx.name?ctx.name(s):'')||s.short||s.name||s.id);
-function qbDate(g){try{if(g.start&&!isNaN(Date.parse(g.start)))return LTIME.dayDate(LTIME.dayKey(g.start));return /^\d{4}-\d{2}-\d{2}$/.test(g.day||'')?LTIME.dayDate(g.day):''}catch(e){return''}}   /* local date of the tip (Sat Nov 7) */
+function qbDate(g){/*<STEP7-ET>*/try{if(g.start&&!isNaN(Date.parse(g.start)))return new Date(g.start).toLocaleDateString('en-US',{timeZone:'America/New_York',weekday:'short',month:'short',day:'numeric'}).replace(/,/g,'')}catch(e){}/*</STEP7-ET>*/try{if(g.start&&!isNaN(Date.parse(g.start)))return LTIME.dayDate(LTIME.dayKey(g.start));return /^\d{4}-\d{2}-\d{2}$/.test(g.day||'')?LTIME.dayDate(g.day):''}catch(e){return''}}   /* local date of the tip (Sat Nov 7) */
 function qbOk(g){if(!H||H.demo||!g||g.status!=='scheduled'||!g.home||!g.away||!meMid())return false;
   const a=g.away.owners||[],h=g.home.owners||[];if(!a.length||!h.length||a.some(n=>h.includes(n)))return false;
   if(!qbOwn(g.away)||!qbOwn(g.home))return false;const t=Date.parse(g.start);if(!isNaN(t)&&t<=Date.now())return false;return true}
