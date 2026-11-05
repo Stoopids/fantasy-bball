@@ -71,6 +71,10 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
     var sc=function(s){return e(s.name)+' '+(s.score!=null?e(String(s.score)):'')};var op=!!o.open;
     return '<div class="'+o.cls+' gfin'+(op?' open':'')+(o.cls2||'')+'"'+(o.attr||'')+'><button type="button" class="gsum" '+o.btnAttr+' aria-expanded="'+op+'"'+(o.btnAttr2||'')+'><span class="gst">FINAL</span><span class="'+(o.away.win?'w':'')+'">'+sc(o.away)+'</span><span class="mut">·</span><span class="'+(o.home.win?'w':'')+'">'+sc(o.home)+'</span>'+(o.upset?'<span>😱</span>':'')+'<span class="gch" aria-hidden="true">'+(op?'▾':'▸')+'</span></button><div class="'+(o.bodyCls||'gbody')+'"'+(o.bodyAttr||'')+(op?'':' hidden')+'>'+o.body+'</div></div>'};
 
+  /* STEP9-AUTOSETTLE: suggestion only, never writes. o={e, live:bool, who:'Paul'|'' (''=tied/wash), sc:'score text', btn:'<button…>' (final only), note} */
+  SHARED_UI.autoLine=function(o){var e=o.e,w=o.who?e(o.who)+(o.live?' leads':' wins'):(o.live?'Tied':'Wash');
+    return '<div class="s29-auto au-'+(o.live?'live':'fin')+'" data-au="'+(o.live?'live':'final')+'">Auto-settle: <b>'+w+'</b>'+(o.sc?' <span class="note">('+e(o.sc)+')</span>':'')+(o.btn?' \u00b7 '+o.btn:'')+(o.note?'<div class="note">'+e(o.note)+'</div>':'')+'</div>'};
+  SHARED_UI.AUTO_NOTE='Auto-settle: after the final we suggest the winner; it settles only when someone taps Confirm.';
   /* REFRESH-NOW: on-demand refresh, both sites. sel = the Refresh button selector (looked up again after re-render); tasks = functions returning promises
      (data reload with cache bypass, ESPN check), run in parallel, each capped at 8 s so it never hangs; then done() re-renders; read-only. */
   SHARED_UI.refreshNow=function(sel,tasks,done){var q=function(){return document.querySelector(sel)},b=q();if(SHARED_UI._rfBusy)return;SHARED_UI._rfBusy=true;

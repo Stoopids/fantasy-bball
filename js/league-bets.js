@@ -132,7 +132,7 @@ function reduce(logs,mids,now){const set=new Set(mids),all=[];
   return out}
 /* a lone report settles by itself 48 h later (also checked at the moment a fix event arrives, so an auto-settled bet can be fixed too) */
 const LIVE=b=>b.status==='open'||b.status==='reported'||b.status==='disputed';
-function autoS(b,t){if(b.status==='reported'){const x=Object.keys(b.reps)[0];if(t-b.reps[x].ts>=C.autoMs){b.status='settled';b.res=b.reps[x].r;b.auto=true;b.settledTs=b.reps[x].ts+C.autoMs}}}
+function autoS(b,t){/*STEP9: auto-settling is OFF (Paul 2026-11-05); a report waits for a tap*/return;if(b.status==='reported'){const x=Object.keys(b.reps)[0];if(t-b.reps[x].ts>=C.autoMs){b.status='settled';b.res=b.reps[x].r;b.auto=true;b.settledTs=b.reps[x].ts+C.autoMs}}}
 const payFor=b=>({right:win(b.amt,b.a,b.b),wrong:b.amt});
 /* s28 Tally = the partner's tallyJS: M[from][to] gross (both directions kept), lost / won = gross sums, net = won - lost; settle lines net each pair.
    A pool with payouts counts like the partner's buildEntries pool: each loser (got back less than the buy-in) pays each winner in proportion. */
@@ -595,17 +595,19 @@ async function propose(b){const P=S.prop[b.id];if(P&&(P.busy||Date.now()-P.at<AS
   try{const now=Date.now();let found=null;
     for(let i=0;i<AS.days;i++){const t=b.ts-AS.early+i*864e5;if(t>now+864e5)break;const ev=await feedDay(etDay(t));
       const g=ev.find(e=>e.start>=b.ts-AS.early&&e.t.some(x=>x.id===b.c.a)&&e.t.some(x=>x.id===b.c.b));if(g){found=g;break}}
-    if(found){if(!found.fin)out={st:'wait'};else{const sa=found.t.find(x=>x.id===b.c.a).sc,sb=found.t.find(x=>x.id===b.c.b).sc;
+    if(found){if(!found.fin){const la=found.t.find(x=>x.id===b.c.a),lb=found.t.find(x=>x.id===b.c.b),sa=la&&la.sc,sb=lb&&lb.sc;out=(isFinite(sa)&&isFinite(sb)&&(sa>0||sb>0))?{st:'live',r:judge(b.c,sa,sb),sa,sb}:{st:'wait'}}else{const sa=found.t.find(x=>x.id===b.c.a).sc,sb=found.t.find(x=>x.id===b.c.b).sc;
       out=isFinite(sa)&&isFinite(sb)?{st:'final',r:judge(b.c,sa,sb),sa,sb,g:found.id}:{st:'down'}}}}
   catch(e){out={st:'down'}}
   S.prop[b.id]=Object.assign(out,{at:Date.now(),busy:false});if(H&&H.active())render()}
 function scoreText(b,P){return tName(b.c.a)+' '+P.sa+', '+tName(b.c.b)+' '+P.sb}
 function autoHtml(b,me,btn,ask){if(!b.c)return'';const rk=x=>{try{return window.LRANK?LRANK.badge(x):''}catch(e){return''}};const read=`<div class="note b27-read">Read as: ${rk(b.c.a)}${rk(b.c.b)}${esc(claimText(b.c))}</div>`+((b.status==='pending'||LIVE(b))&&autoGame(b.c,false)?autoNoteHtml():'');if(!LIVE(b))return read;
-  const P=S.prop[b.id];const cr=me&&me===b.by;if(cr&&(!P||(!P.busy&&Date.now()-P.at>=AS.ttl)))setTimeout(()=>propose(b),0);
+  const P=S.prop[b.id];const cr=me&&me===b.by;if(me&&(!P||(!P.busy&&Date.now()-P.at>=AS.ttl)))setTimeout(()=>propose(b),0);
   if(!P||P.st==='look')return read+`<div class="note b27-prop">Checking the final score…</div>`;
+  /*STEP9-AUTOSETTLE live leader*/if(P.st==='live'&&window.SHARED_UI&&SHARED_UI.autoLine)return read+SHARED_UI.autoLine({e:esc,live:true,who:P.r==='b'?nm(b.by):P.r==='o'?nm(b.acc):'',sc:scoreText(b,P)});
   if(P.st==='wait')return read+`<div class="note b27-prop">No final score yet. ${cr?'Settle it by hand any time, or come back after the game.':''}</div>`;
   if(P.st==='none'||P.st==='down')return read+`<div class="note b27-prop">${P.st==='down'?'Scores can’t be read right now':'No matching game found yet'}: settle it by hand.</div>`;
   const lab={b:nm(b.by)+' won',o:nm(b.acc)+' won',p:'Wash'}[P.r];
+  /*STEP9-AUTOSETTLE*/if(window.SHARED_UI&&SHARED_UI.autoLine){const cb=cr&&!S.autoFix[b.id];return read+'<div class="card b27-propc" id="b27Prop-'+esc(b.id)+'">'+SHARED_UI.autoLine({e:esc,live:false,who:P.r==='b'?nm(b.by):P.r==='o'?nm(b.acc):'',sc:scoreText(b,P),btn:cb?btn('autook','✅ Confirm','pri',P.r)+' '+btn('autofix','✏️ Fix'):'',note:cb?'Nothing is settled until someone taps Confirm.':(!cr?'Only '+nm(b.by)+' (who placed it) can confirm or fix this.':'')})+'</div>'}
   let h=read+`<div class="card b27-propc" id="b27Prop-${esc(b.id)}"><div><b>Final:</b> ${esc(scoreText(b,P))}</div><div>Proposed result: <b>${esc(lab)}</b></div>`;
   if(cr&&!S.autoFix[b.id])h+=`<div class="b27-act">${btn('autook','✅ Confirm','pri',P.r)}${btn('autofix','✏️ Fix')}</div><div class="note">Nothing is settled until you confirm.</div>`;
   else if(!cr)h+=`<div class="note">Only ${esc(nm(b.by))} (who placed it) can confirm or fix this.</div>`;
@@ -744,7 +746,7 @@ function applyAmt(t,quiet){const f=S.f;f.amtTxt=t;const r=parseAmt(t);if(r.ok){f
 function applyOdds(t,quiet){const f=S.f;f.customTxt=t;const r=parseOdds(t);if(r.ok){f.odds=[r.a,r.b];f.oddsErr=''}else{f.odds=null;f.oddsErr=quiet&&!t?'':r.err}}
 /* s28g: 'This will be auto-settled after completion.' = the existing auto-settle path applies: readBet() reads a clear claim (team, spread or total) AND the League schedule
    (H.games()) has a game between those two teams (not final yet for the form; any for a live placed card). Same readBet/propose logic, no new parser. */
-const AUTO_NOTE='This will be auto-settled after completion.';
+const AUTO_NOTE=(window.SHARED_UI&&SHARED_UI.AUTO_NOTE)||'This will be auto-settled after completion.';
 function autoGame(c,upcoming){if(!c)return null;return((H&&H.games&&H.games())||[]).find(g=>g&&g.home&&g.away&&(!upcoming||g.status!=='final')&&[String(g.home.id),String(g.away.id)].includes(String(c.a))&&[String(g.home.id),String(g.away.id)].includes(String(c.b)))||null}
 const autoNoteHtml=()=>`<div class="s29-auto" data-s29-auto="1">${AUTO_NOTE}</div>`;   /* = STOOPIDS s29d S29D-AUTO markup/class */
 let AUTOT=0;function autoSoon(){clearTimeout(AUTOT);AUTOT=setTimeout(()=>{const e=document.getElementById('b27AutoN');if(e)e.innerHTML=autoNoteForm()},250)}   /* = STOOPIDS s29AutoSoon: live while typing, 250 ms debounce */
