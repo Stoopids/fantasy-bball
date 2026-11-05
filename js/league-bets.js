@@ -534,7 +534,7 @@ function view(){if(!H)return'';
   const seg=`<div class="s26w-row" id="b27SegRow">${obSeg()}</div>`;
   if(S.ob==='tally'&&S.state!=='init')return seg+tallyHtml(T);
   /*<STEP8-REQUEST>*/if(S.ob==='request'&&RQ())return seg+RQ().view();if(S.ob==='open'&&RQ())return seg+RQ().view('open');/*</STEP8-REQUEST>*/
-  let h=seg;/*<STEP8-REQUEST>*/if(RQ()){fLoad();h+=RQ().pinned(S.fs==='req')}/*</STEP8-REQUEST>*/
+  let h=seg;/*<STEP8-REQUEST>*/if(RQ()){fLoad();if(S.fs==='req')h+=RQ().pinned(true)}/*STEP10: no pinned strip on Write it Up*//*</STEP8-REQUEST>*/
   if(S.msg)h+=`<div class="card ${S.bad?'b27-bad':'b27-ok'}" role="status" id="b27Msg">${esc(S.msg)}${(()=>{const gu=me&&S.undoG?grpUndo(S.undoG,me):[];return gu.length>1?`<div class="b27-act"><button type="button" class="btn sec b27-b" data-lb="undogroup" data-g="${esc(S.undoG)}"${S.busy?' disabled':''}>↩ Undo all ${gu.length} bets (30 s)</button></div>`:''})()}</div>`;
   if(!me)h+=`<div class="card" id="b27Watch"><b>👀 Watching only</b><div class="note">You can read every bet here. To place or answer a bet, open this page from your own manager link (the League site button in the draft room).</div><p style="margin:8px 0 0"><a class="btn b27-b" id="b27Room" href="${esc(H.roomHref())}">Open the draft room</a></p></div>`;
   else if(S.kind==='pool'&&!S.edited){const cf=S.p.confirm?poolConfirmHtml():'';if(S.p.confirm&&!cf)S.p.confirm=false;h+=cf?modal(cf):poolFormHtml(me)}
