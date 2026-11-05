@@ -71,6 +71,10 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
     var sc=function(s){return e(s.name)+' '+(s.score!=null?e(String(s.score)):'')};var op=!!o.open;
     return '<div class="'+o.cls+' gfin'+(op?' open':'')+(o.cls2||'')+'"'+(o.attr||'')+'><button type="button" class="gsum" '+o.btnAttr+' aria-expanded="'+op+'"'+(o.btnAttr2||'')+'><span class="gst">FINAL</span><span class="'+(o.away.win?'w':'')+'">'+sc(o.away)+'</span><span class="mut">·</span><span class="'+(o.home.win?'w':'')+'">'+sc(o.home)+'</span>'+(o.upset?'<span>😱</span>':'')+'<span class="gch" aria-hidden="true">'+(op?'▾':'▸')+'</span></button><div class="'+(o.bodyCls||'gbody')+'"'+(o.bodyAttr||'')+(op?'':' hidden')+'>'+o.body+'</div></div>'};
 
+  /* STEP9-AUTOSETTLE: suggestion only, never writes. o={e, live:bool, who:'Paul'|'' (''=tied/wash), sc:'score text', btn:'<button…>' (final only), note} */
+  SHARED_UI.autoLine=function(o){var e=o.e,w=o.who?e(o.who)+(o.live?' leads':' wins'):(o.live?'Tied':'Wash');
+    return '<div class="s29-auto au-'+(o.live?'live':'fin')+'" data-au="'+(o.live?'live':'final')+'">Auto-settle: <b>'+w+'</b>'+(o.sc?' <span class="note">('+e(o.sc)+')</span>':'')+(o.btn?' \u00b7 '+o.btn:'')+(o.note?'<div class="note">'+e(o.note)+'</div>':'')+'</div>'};
+  SHARED_UI.AUTO_NOTE='Auto-settle: after the final we suggest the winner; it settles only when someone taps Confirm.';
   /* REFRESH-NOW: on-demand refresh, both sites. sel = the Refresh button selector (looked up again after re-render); tasks = functions returning promises
      (data reload with cache bypass, ESPN check), run in parallel, each capped at 8 s so it never hangs; then done() re-renders; read-only. */
   SHARED_UI.refreshNow=function(sel,tasks,done){var q=function(){return document.querySelector(sel)},b=q();if(SHARED_UI._rfBusy)return;SHARED_UI._rfBusy=true;
@@ -253,8 +257,12 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
     function prefill(gid,k,i){S.f=nf();S.f.gid=String(gid);if(k){S.f.side=k+':'+i;var gq=game(gid),pq=gq&&pick(gq.g,{side:S.f.side,cov:'game'});if(pq)S.f.text=pq.lab};S.msg='';var g=game(gid);}
     /* Requests badge: open requests waiting for ME (invited, not declined, not mine, still live) on the Bets tab; refreshed by a light GET every 60 s */
     function count(){var me=A.me(),now=Date.now();if(!me)return 0;return S.list.filter(function(r){return live(r,now)&&r.by!==me&&r.to.indexOf(me)>=0&&(r.dec||[]).indexOf(me)<0&&tk(r).indexOf(me)<0}).length}
-    function paint(){try{var a=A.navEl&&A.navEl();if(!a)return;var n=count(),b=a.querySelector('.rq-nb');if(!n){if(b)b.remove();return}
-      if(!b){b=document.createElement('b');b.className='rq-nb';a.appendChild(b)}var s=String(Math.min(99,n));if(b.textContent!==s)b.textContent=s;b.setAttribute('aria-label',n+' bet request'+(n===1?'':'s')+' waiting')}catch(x){}}
+    /* STEP9-BADGES: Bets tab = requests waiting for me + bets waiting on my action (A.waiting); Request a bet segment = requests only */
+    function nb(el,n,lab){if(!el)return;var b=el.querySelector('.rq-nb');if(!n){if(b)b.remove();return}if(!b){b=document.createElement('b');b.className='rq-nb';el.appendChild(b)}var s=String(Math.min(99,n));if(b.textContent!==s)b.textContent=s;b.setAttribute('aria-label',lab)}
+    function paint(){try{var rq=count(),w=0;try{w=A.waiting?(+A.waiting()||0):0}catch(x){}
+      nb(document.querySelector('#b27Ob_request,[data-ob="request"]'),rq,rq+' bet request'+(rq===1?'':'s')+' waiting');
+      var a=A.navEl&&A.navEl();if(!a)return;var n=rq+w,b=a.querySelector('.rq-nb');if(!n){if(b)b.remove();return}
+      if(!b){b=document.createElement('b');b.className='rq-nb';a.appendChild(b)}var s=String(Math.min(99,n));if(b.textContent!==s)b.textContent=s;b.setAttribute('aria-label',n+' waiting for you ('+rq+' request'+(rq===1?'':'s')+', '+w+' bet'+(w===1?'':'s')+')')}catch(x){}}
     if(typeof window!=='undefined'&&typeof setInterval!=='undefined'){setTimeout(function(){if(A.me())load()},3000);setInterval(function(){if(A.me()&&!S.busy)load()},60000);setInterval(paint,2000)}
     if(typeof document!=='undefined'){document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.target.closest('[data-rq]');if(!t)return;ev.preventDefault();act(t.dataset.rq,t.dataset.v)});
       document.addEventListener('change',function(ev){var t=ev.target;if(t&&t.dataset&&t.dataset.rqIn)input(t.dataset.rqIn,t.value)});
