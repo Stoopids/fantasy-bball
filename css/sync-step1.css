@@ -269,7 +269,7 @@ html body .gmore.dot::after{top:4px;right:6px;width:6px;height:6px}
 html body .gfrow .rkseg-b{height:26px!important;min-height:26px!important;line-height:24px!important;font-size:11.5px!important;padding:0 8px!important}
 html body .gfrow .segrow .gref{width:28px!important;height:28px!important;min-width:28px!important;min-height:28px!important;font-size:13px!important;flex:0 0 28px}
 html body .gf2,html body #lbody .gf2{display:grid!important;width:100%!important;box-sizing:border-box!important;gap:4px!important}
-html body .gf2.gf2r{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+html body .gf2.gf2r{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 html body .gf2.gmorep{grid-template-columns:repeat(3,minmax(0,1fr))!important;padding:4px!important}
 html body .gf2.gmorep[hidden]{display:none!important}
 html body .gf2>.gf2-s,html body .gf2>.gf2-b,html body #lbody .gf2>.gf2-s,html body #lbody .gf2>.gf2-b{display:block!important;width:100%!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;height:26px!important;min-height:26px!important;line-height:normal!important;font-size:11.5px!important;letter-spacing:-.1px;border-radius:13px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0!important}
@@ -278,12 +278,12 @@ html body .gf2>.gf2-b{padding:0 4px!important;text-align:center!important}
 html body .gf2>.gq,html body .gf2.gmorep>.gq{grid-column:auto!important;padding:0 8px!important}
 html body .gf3,html body #lbody .gf3{display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;align-items:stretch!important;gap:4px!important;margin:0 0 8px!important}
 html body .gf3>.gf2.gf2r,html body .gf3>.gf2.gmorep{display:grid!important}
-html body .gf3>.gf2.gmorep[hidden]{display:none!important}
+html body .gf3>.gf2.gmorep,html body .gf3>.gf2.gmorep[hidden]{display:grid!important;padding:0!important;background:none!important;border:0!important}
 html body .gf3 .gf2>select.gf2-s,html body .gf3 .gf2>input.gf2-s,html body .gf3 .gf2>.gf2-b{flex:none!important;width:100%!important;max-width:none!important;height:26px!important;min-height:26px!important;font-size:11.5px!important;border-radius:13px!important}
 html body .gf3 .gf2>select.gf2-s{padding:0 14px 0 8px!important}
 html body .gf3 .gf2>.gf2-b{padding:0 4px!important}
 html body .gf3 .gf2>input.gf2-s{padding:0 10px!important}
-html body .gf3 .gf2>.gmore{display:block!important}
+html body .gf3 .gf2>.gmore,html body #main .gf3 .gf2>.gmore,html body #lbody .gf3 .gf2>.gmore{display:none!important}
 html body #main .gf3 .gf2>select,html body #main .gf3 .gf2>button,html body #main .gf3 .gf2>input,html body #lbody .gf3 .gf2>select,html body #lbody .gf3 .gf2>button,html body #lbody .gf3 .gf2>input{height:26px!important;min-height:26px!important}
 html body #main .gf3 .gf2>select.gf2-s,html body #lbody .gf3 .gf2>select.gf2-s{padding:0 14px 0 7px!important;-webkit-appearance:none!important;appearance:none!important;text-overflow:clip!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23aab'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 5px center!important;background-size:8px 5px!important}
 /*</S32-GPILL3>*/
