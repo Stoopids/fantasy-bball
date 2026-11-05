@@ -174,7 +174,7 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
       else if(me&&inv&&!dec&&r.by!==me&&A.canWrite())h+='<div class="rq-act"><button type="button" class="btn rq-yes" data-rq="acc" data-v="'+e(r.id)+'"'+(S.busy?' disabled':'')+'>Accept</button><button type="button" class="btn sec rq-no" data-rq="dec" data-v="'+e(r.id)+'"'+(S.busy?' disabled':'')+'>Decline</button></div>';
       else if(dec)h+='<div class="note">You declined.</div>';
       else if(me&&r.by===me&&A.canWrite()&&nt)h+='<div class="rq-act rq-spots"><span class="note">Spots</span><button type="button" class="btn sec" data-rq="slot-" data-v="'+e(r.id)+'"'+(S.busy||slots(r)<=nt+0?' disabled':'')+' aria-label="One spot less">\u2212</button><b>'+slots(r)+'</b><button type="button" class="btn sec" data-rq="slot+" data-v="'+e(r.id)+'"'+(S.busy||slots(r)>=r.to.length?' disabled':'')+' aria-label="One spot more">+</button><button type="button" class="btn sec rq-no" data-rq="close" data-v="'+e(r.id)+'"'+(S.busy?' disabled':'')+'>Close to others</button></div>';
-      else if(me&&r.by===me&&A.canWrite()&&!nt)h+='<div class="rq-act"><button type="button" class="btn sec" data-rq="edit" data-v="'+e(r.id)+'"'+(S.busy?' disabled':'')+'>Edit</button><button type="button" class="btn sec rq-no" data-rq="cancel" data-v="'+e(r.id)+'"'+(S.busy?' disabled':'')+'>Delete</button></div>';
+      else if(me&&r.by===me&&A.canWrite()&&!nt)h+='<div class="rq-act rq-own"><button type="button" class="btn sec" data-rq="edit" data-v="'+e(r.id)+'"'+(S.busy?' disabled':'')+'>Edit</button><button type="button" class="btn sec rq-no" data-rq="cancel" data-v="'+e(r.id)+'"'+(S.busy?' disabled':'')+'>Delete</button></div>';
       return h+'</div>'}
     function form(){var f=S.f,now0=Date.now(),G=games().filter(function(x){var st=Date.parse(x.start)||0,ws=f.cov==='2h'?st+HALF_MS:st;if(String(x.id)===String(f.gid))return true;if(x.status==='final'||st>=now0+7*86400000)return false;if(f.cov==='2h')return !(x.period&&+x.period>=2)&&now0<ws;return x.status==='scheduled'&&now0<ws}),g=game(f.gid),me=A.me(),nOth=A.others().length;
       /* same template as the Write it Up "New bet" form: header · you are X (change), Select all / Clear row, numbered questions, Amount + Odds side by side with Custom, summary, big button */
@@ -203,9 +203,9 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
     function explain(r){var o=r.odds||[1,1],rn=(A.real||A.nick)(r.by),win2=Math.round(r.amt*o[0]/o[1]*100)/100,ot=r.k==='ou'?r.other:String(r.other||'').replace(/\s[+-]?\d+(\.\d+)?$/,'');
       return '<div class="rq-ex note">'+e(ifTxt(r,r.lab))+', '+e(rn)+' wins '+e(r.amt)+'$ from whoever accepts.<br>'+e(ifTxt(r,ot))+', the Stoop who accepts wins '+e(win2)+'$'+(+o[0]===+o[1]?'':' ('+e(oddsTxt(o))+')')+' from '+e(rn)+'.</div>'}
     function whoTxt(r){var n=r.to.length;return n>=A.others().length?'all stoops':n<=2?r.to.map(A.nick).join(' & '):n+' stoops'}
-    function waText(r,kind){var w=Math.min(r.exp,winStart(r,game(r.gid))),rn=(A.real||A.nick)(r.by),wt=whoTxt(r);   /* Paul's exact format, nothing else */
-      var ot=String(r.other||'the other side').replace(/\s[+-]?\d+(\.\d+)?$/,'');
-      var l2=(r.cov==='2h'?'2nd half: ':'')+r.lab+' ('+rn+') v '+ot+' ('+wt+') at '+oddsTxt(r.odds);
+    function waText(r,kind){var w=Math.min(r.exp,winStart(r,game(r.gid))),rn=(A.real||A.nick)(r.by),n0=r.to.length,wt=n0===1?A.nick(r.to[0]):n0+' stoops';   /* Paul's exact format, nothing else. STEP10: always the open-to count ("7 stoops") or the one Stoop's nickname */
+      var ot=String(r.other||'').replace(/\s[+-]?\d+(\.\d+)?$/,'');
+      var l2=(r.cov==='2h'?'2nd half: ':'')+r.lab+' ('+rn+') v '+(ot?ot+' ('+wt+')':wt)+' at '+oddsTxt(r.odds);
       if(kind==='del')return ['Bet Request Deleted: '+r.amt+'$',l2].join('\n');
       if(kind==='close')return ['Bet Request Closed: '+r.amt+'$',l2,tk(r).length+' stoops in'].join('\n');
       return [(kind===true||kind==='upd'?'Bet Updated: ':'Bet Requested: ')+r.amt+'$',l2,'Expires '+expTxt(r,Date.now())].join('\n')}

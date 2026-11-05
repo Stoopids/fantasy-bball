@@ -366,3 +366,5 @@ html body .tabs.ob-seg>button{min-width:0;width:100%;white-space:normal;line-hei
 .rq-56 .rq-exp{display:flex;gap:6px;align-items:center;flex-wrap:nowrap}.rq-56 .rq-exp .rq-num{width:52px;min-width:0;flex:0 0 52px;text-align:center}.rq-56 .rq-exp .rq-unit{width:auto;flex:0 0 auto;max-width:130px;min-height:34px;padding:4px 8px;font-size:14px}
 @media (max-width:520px){.rq-56{gap:8px 10px}.rq-56c{flex:1 1 0}.rq-56 .rq-spots .btn{min-width:34px;min-height:34px;padding:2px 8px}.rq-56 .rq-exp .rq-num{width:40px;flex-basis:40px}.rq-56 .rq-exp .rq-unit{max-width:92px;padding:4px 4px}.rq-56 .b27-q{font-size:14px}}
 @media (max-width:520px){.rq-56c:first-child{flex:1.5 1 0}.rq-56 .rq-spots{gap:4px}.rq-56 .rq-spots .btn{min-width:30px;padding:2px 6px}}
+/* STEP10: compact Edit / Delete on my own open request */
+.rq-act.rq-own{justify-content:flex-end;gap:6px}.rq-act.rq-own .btn{flex:0 0 auto;width:auto;min-height:30px;padding:3px 12px;font-size:13px}
