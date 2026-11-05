@@ -158,7 +158,7 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
     function expAt(f,now,ws){if(f.mode==='start')return ws||null;var x;if(f.mode==='at'){x=Date.parse(f.at);if(isNaN(x))return null}else{var n=+f.n;if(!(n>0))return null;x=now+n*({m:60000,h:3600000,d:86400000,w:604800000,mo:2592000000}[f.mode]||3600000)}return x>now+YEAR?null:x}
     function sides(g){var o=SHARED_UI.qbOptions(g,{name:A.tname,date:A.dateET(g)});if(o.length)return o;
       var d=A.dateET(g);return [{k:'win',t:'Winner (no odds posted)',s:[[g.away,g.home],[g.home,g.away]].map(function(p){return{lab:A.tname(p[0])+' to win',txt:A.tname(p[0])+' beats '+A.tname(p[1])+(d?', '+d:'')}})}]}
-    function pick(g,f){var tt=String(f.text||'').trim().slice(0,A.maxText||140);if(!g)return tt?{k:'txt',si:0,lab:tt,other:'',txt:tt}:null;if(tt&&!(f.side&&(function(){var q=f.side.split(':'),oo=sides(g).find(function(x){return x.k===q[0]});return oo&&oo.s[+q[1]]&&oo.s[+q[1]].lab===tt})()))return {k:'txt',si:0,lab:tt,other:'',txt:tt+' ('+A.tname(g.away)+' vs '+A.tname(g.home)+', '+A.dateET(g)+')'};if(!f.side)return null;var p=f.side.split(':'),o=sides(g).find(function(x){return x.k===p[0]}),s=o&&o.s[+p[1]];var ot=o.s[1-(+p[1])];return s?{k:p[0],si:+p[1],lab:s.lab,other:ot?ot.lab:'',txt:(f.cov==='2h'?'2nd half: ':'')+s.txt}:null}
+    function pick(g,f){var tt=String(f.text||'').trim().slice(0,A.maxText||140);if(!g)return tt?{k:'txt',si:0,lab:tt,other:'',txt:tt}:null;if(tt&&!(f.side&&(function(){var q=f.side.split(':'),oo=sides(g).find(function(x){return x.k===q[0]});return oo&&oo.s[+q[1]]&&(oo.s[+q[1]].lab===tt||oo.s[+q[1]].txt===tt)})()))return {k:'txt',si:0,lab:tt,other:'',txt:tt+' ('+A.tname(g.away)+' vs '+A.tname(g.home)+', '+A.dateET(g)+')'};if(!f.side)return null;var p=f.side.split(':'),o=sides(g).find(function(x){return x.k===p[0]}),s=o&&o.s[+p[1]];var ot=o.s[1-(+p[1])];return s?{k:p[0],si:+p[1],lab:s.lab,other:ot?ot.lab:'',txt:(f.cov==='2h'?'2nd half: ':'')+s.txt}:null}
     async function write(mut,ok){for(var k=0;k<3;k++){var cur=parse(await A.get());if(!ok(cur)){await A.set(JSON.stringify({v:1,reqs:mut(cur)}))}
         await new Promise(function(r){setTimeout(r,350+Math.random()*400)});var back=parse(await A.get());if(ok(back)){S.list=back;S.at=Date.now();return back}}throw new Error('conflict')}
     async function load(){if(S.loading)return;S.loading=true;S.at=Date.now();try{S.list=parse(await A.get());S.at=Date.now();paint();
@@ -174,22 +174,26 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
       else if(me&&inv&&!dec&&r.by!==me&&A.canWrite())h+='<div class="rq-act"><button type="button" class="btn rq-yes" data-rq="acc" data-v="'+e(r.id)+'"'+(S.busy?' disabled':'')+'>Accept</button><button type="button" class="btn sec rq-no" data-rq="dec" data-v="'+e(r.id)+'"'+(S.busy?' disabled':'')+'>Decline</button></div>';
       else if(dec)h+='<div class="note">You declined.</div>';
       else if(me&&r.by===me&&A.canWrite()&&nt)h+='<div class="rq-act rq-spots"><span class="note">Spots</span><button type="button" class="btn sec" data-rq="slot-" data-v="'+e(r.id)+'"'+(S.busy||slots(r)<=nt+0?' disabled':'')+' aria-label="One spot less">\u2212</button><b>'+slots(r)+'</b><button type="button" class="btn sec" data-rq="slot+" data-v="'+e(r.id)+'"'+(S.busy||slots(r)>=r.to.length?' disabled':'')+' aria-label="One spot more">+</button><button type="button" class="btn sec rq-no" data-rq="close" data-v="'+e(r.id)+'"'+(S.busy?' disabled':'')+'>Close to others</button></div>';
-      else if(me&&r.by===me&&A.canWrite()&&!nt)h+='<div class="rq-act"><button type="button" class="btn sec" data-rq="edit" data-v="'+e(r.id)+'"'+(S.busy?' disabled':'')+'>Edit</button><button type="button" class="btn sec rq-no" data-rq="cancel" data-v="'+e(r.id)+'"'+(S.busy?' disabled':'')+'>Delete</button></div>';
+      else if(me&&r.by===me&&A.canWrite()&&!nt)h+='<div class="rq-act rq-own"><button type="button" class="btn sec" data-rq="edit" data-v="'+e(r.id)+'"'+(S.busy?' disabled':'')+'>Edit</button><button type="button" class="btn sec rq-no" data-rq="cancel" data-v="'+e(r.id)+'"'+(S.busy?' disabled':'')+'>Delete</button></div>';
       return h+'</div>'}
     function form(){var f=S.f,now0=Date.now(),G=games().filter(function(x){var st=Date.parse(x.start)||0,ws=f.cov==='2h'?st+HALF_MS:st;if(String(x.id)===String(f.gid))return true;if(x.status==='final'||st>=now0+7*86400000)return false;if(f.cov==='2h')return !(x.period&&+x.period>=2)&&now0<ws;return x.status==='scheduled'&&now0<ws}),g=game(f.gid),me=A.me(),nOth=A.others().length;
       /* same template as the Write it Up "New bet" form: header · you are X (change), Select all / Clear row, numbered questions, Amount + Odds side by side with Custom, summary, big button */
       var h='<div class="card b27-form rq-form" id="rqForm"><b>'+(S.edit?'Edit request':'Request a bet')+'</b> <span class="note">· you are <b>'+e(me?(A.real||A.nick)(me):'?')+'</b>'+(A.change?' <a href="#" onclick="'+e(A.change)+'">(change)</a>':'')+'</span>';
-      h+='<div class="b27-kindrow"><div class="s27-sel b27-selbar"><button type="button" class="s27-selb" data-rq="all"><span class="f">Select all</span><span class="s">All</span></button><button type="button" class="s27-selb" data-rq="clear">Clear</button></div></div>';
-      h+='<div class="b27-q">1. Who is it open to?</div>'+chips(f);
+      /* STEP10: Select all / Clear sit right-aligned on the same line as question 1; the Stoop buttons stay on the next row */
+      h+='<div class="rq-qrow"><div class="b27-q">1. Who is it open to?</div><div class="s27-sel b27-selbar"><button type="button" class="s27-selb" data-rq="all"><span class="f">Select all</span><span class="s">All</span></button><button type="button" class="s27-selb" data-rq="clear">Clear</button></div></div>'+chips(f);
       h+='<div class="b27-q">2. What\u2019s the bet?</div><input class="sb-in b27-in rq-in" data-rq-in="text" maxlength="'+(A.maxText||140)+'" autocomplete="off" placeholder="e.g. Virginia -3" value="'+e(f.text||'')+'" aria-label="What\u2019s the bet?">';
       var oc=!![[1,1],[2,1],[3,1],[4,1],[5,1]].every(function(o){return !(+f.odds[0]===o[0]&&+f.odds[1]===o[1])})||f.oddC;
       h+='<div class="b27-ao"><div class="b27-ao-c"><div class="b27-q">3. Amount</div><div class="b27-amts" role="group" aria-label="Amount">'+A.amounts.map(function(a){return '<button type="button" class="b27-amt" data-rq="amt" data-v="'+a+'" aria-pressed="'+(!f.amtC&&f.amt===a)+'">'+a+'</button>'}).join('')+'<button type="button" class="b27-amt cu" data-rq="amtc" aria-pressed="'+!!f.amtC+'">Custom</button></div>'+(f.amtC?'<div class="b27-cw"><input class="sb-in b27-in rq-in" data-rq-in="amtTxt" inputmode="numeric" placeholder="Whole number" value="'+e(f.amtTxt)+'" aria-label="Custom amount"></div>':'')+'</div>';
       h+='<div class="b27-ao-c"><div class="b27-q">4. Odds</div><div class="b27-chips" role="group" aria-label="Odds">'+[[1,1],[2,1],[3,1],[4,1],[5,1]].map(function(o){var on=!f.oddC&&+f.odds[0]===o[0]&&+f.odds[1]===o[1];return '<button type="button" class="b27-chip" data-rq="odds" data-v="'+o[0]+'-'+o[1]+'" aria-pressed="'+on+'">'+(o[0]===1?'Even':o[0]+'-'+o[1])+'</button>'}).join('')+'<button type="button" class="b27-chip cu" data-rq="oddc" aria-pressed="'+!!oc+'">Custom</button></div>'+(oc?'<div class="b27-cw"><input class="sb-in b27-in rq-in" data-rq-in="oddTxt" placeholder="e.g. 7-2 or 10-1" value="'+e(f.oddTxt||(f.odds[0]+'-'+f.odds[1]))+'" aria-label="Custom odds"></div>':'')+'</div></div>';
-      var nTo=f.to.length,sl=f.slots?Math.min(f.slots,nTo||f.slots):nTo;
-      h+='<div class="b27-q">5. How many can accept?</div><div class="rq-spots"><button type="button" class="btn sec" data-rq="fslot-"'+(sl<=1?' disabled':'')+' aria-label="Fewer">\u2212</button><b>'+(nTo?sl+' of '+nTo:'\u2013')+'</b><button type="button" class="btn sec" data-rq="fslot+"'+(!nTo||sl>=nTo?' disabled':'')+' aria-label="More">+</button><span class="note">each acceptance is its own bet</span></div>';
-      h+='<div class="b27-q">6. Expires</div><div class="rq-exp">'+(f.mode==='start'?'':f.mode==='at'?'<input class="sb-in b27-in rq-in" type="datetime-local" data-rq-in="at" value="'+e(f.at)+'" aria-label="Expires at">':'<input class="sb-in b27-in rq-in rq-num" data-rq-in="n" inputmode="numeric" value="'+e(f.n)+'" aria-label="Expires in">')+'<select class="sb-in b27-in rq-in" data-rq-in="mode" aria-label="Unit">'+[['m','minutes'],['h','hours'],['d','days'],['w','weeks'],['mo','months'],].concat(g?[['start','at tipoff']]:[]).concat([['at','exact date/time']]).map(function(m){return '<option value="'+m[0]+'"'+(f.mode===m[0]?' selected':'')+'>'+m[1]+'</option>'}).join('')+'</select></div>'+(g?'<div class="note">It also closes by itself at tip-off.</div>':'');
+      /* STEP10: N works with no picks (empty = open to any Stoop, up to N); with picks N is clamped to the picked count */
+      var nTo=f.to.length,nOth0=A.others().length,cap=nTo||nOth0,sl=f.sAll?cap:f.slots?Math.max(1,Math.min(f.slots,cap)):(nTo||1);
+      h+='<div class="rq-56"><div class="rq-56c">';/* STEP10: sections 5 and 6 side by side */
+      h+='<div class="b27-q">5. Open to how many Stoops?</div><div class="rq-spots"><button type="button" class="btn sec" data-rq="fslot-"'+(sl<=1?' disabled':'')+' aria-label="Fewer">\u2212</button><b>'+(f.sAll?'All':nTo?sl+' of '+nTo:sl+' of any')+'</b><button type="button" class="btn sec" data-rq="fslot+"'+(sl>=cap?' disabled':'')+' aria-label="More">+</button><button type="button" class="btn sec'+(f.sAll?' on':'')+'" data-rq="fslotall" aria-pressed="'+!!f.sAll+'">All</button><span class="note">each acceptance is its own bet</span></div>';
+      h+='</div><div class="rq-56c">';
+      h+='<div class="b27-q">6. Expires</div><div class="rq-exp">'+(f.mode==='start'?'':f.mode==='at'?'<input class="sb-in b27-in rq-in" type="datetime-local" data-rq-in="at" value="'+e(f.at)+'" aria-label="Expires at">':'<input class="sb-in b27-in rq-in rq-num" data-rq-in="n" inputmode="numeric" value="'+e(f.n)+'" aria-label="Expires in">')+'<select class="sb-in b27-in rq-in rq-unit" data-rq-in="mode" aria-label="Unit">'+[['m','minutes'],['h','hours'],['d','days'],['w','weeks'],['mo','months'],].concat(g?[['start','at tipoff']]:[]).concat([['at','exact date/time']]).map(function(m){return '<option value="'+m[0]+'"'+(f.mode===m[0]?' selected':'')+'>'+m[1]+'</option>'}).join('')+'</select></div>'+(g?'<div class="note">It also closes by itself at tip-off.</div>':'');
+      h+='</div></div>';
       var p=pick(g&&g.g,f),amt=f.amtC?(+f.amtTxt>0?+f.amtTxt:null):f.amt;
-      h+='<div class="b27-sum">'+(p?e(p.txt):'Write the bet')+' · '+(amt?e(amt):'?')+' · '+oddsTxt(f.odds)+' odds · '+(nTo?(nTo===1?e(A.nick(f.to[0])):nTo>=nOth?'all stoops':nTo+' stoops')+(sl<nTo?', first '+sl:''):'nobody yet')+'</div>';
+      h+='<div class="b27-sum">'+(p?e(p.txt):'Write the bet')+' · '+(amt?e(amt):'?')+' · '+oddsTxt(f.odds)+' odds · '+(nTo?(nTo===1?e(A.nick(f.to[0])):nTo>=nOth?'all stoops':nTo+' stoops')+(sl<nTo?', first '+sl:''):'any stoops'+(sl<nOth?', first '+sl:''))+'</div>';
       if(S.msg)h+='<div class="'+(S.bad?'b27-bad-t':'good')+' rq-msg" role="status">'+e(S.msg)+'</div>';
       return h+'<button type="button" class="btn b27-big rq-send" data-rq="send"'+(S.busy||!A.canWrite()?' disabled':'')+'>'+(S.edit?'Save changes':'Request bet')+'</button>'+(S.edit?'<button type="button" class="btn sec rq-send" data-rq="unedit">Stop editing</button>':'')+'</div>'}
     
@@ -199,9 +203,9 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
     function explain(r){var o=r.odds||[1,1],rn=(A.real||A.nick)(r.by),win2=Math.round(r.amt*o[0]/o[1]*100)/100,ot=r.k==='ou'?r.other:String(r.other||'').replace(/\s[+-]?\d+(\.\d+)?$/,'');
       return '<div class="rq-ex note">'+e(ifTxt(r,r.lab))+', '+e(rn)+' wins '+e(r.amt)+'$ from whoever accepts.<br>'+e(ifTxt(r,ot))+', the Stoop who accepts wins '+e(win2)+'$'+(+o[0]===+o[1]?'':' ('+e(oddsTxt(o))+')')+' from '+e(rn)+'.</div>'}
     function whoTxt(r){var n=r.to.length;return n>=A.others().length?'all stoops':n<=2?r.to.map(A.nick).join(' & '):n+' stoops'}
-    function waText(r,kind){var w=Math.min(r.exp,winStart(r,game(r.gid))),rn=(A.real||A.nick)(r.by),wt=whoTxt(r);   /* Paul's exact format, nothing else */
-      var ot=String(r.other||'the other side').replace(/\s[+-]?\d+(\.\d+)?$/,'');
-      var l2=(r.cov==='2h'?'2nd half: ':'')+r.lab+' ('+rn+') v '+ot+' ('+wt+') at '+oddsTxt(r.odds);
+    function waText(r,kind){var w=Math.min(r.exp,winStart(r,game(r.gid))),rn=(A.real||A.nick)(r.by),n0=r.to.length,wt=n0===1?A.nick(r.to[0]):n0+' stoops';   /* Paul's exact format, nothing else. STEP10: always the open-to count ("7 stoops") or the one Stoop's nickname */
+      var ot=String(r.other||'').replace(/\s[+-]?\d+(\.\d+)?$/,'');
+      var l2=(r.cov==='2h'?'2nd half: ':'')+r.lab+' ('+rn+') v '+(ot?ot+' ('+wt+')':wt)+' at '+oddsTxt(r.odds);
       if(kind==='del')return ['Bet Request Deleted: '+r.amt+'$',l2].join('\n');
       if(kind==='close')return ['Bet Request Closed: '+r.amt+'$',l2,tk(r).length+' stoops in'].join('\n');
       return [(kind===true||kind==='upd'?'Bet Updated: ':'Bet Requested: ')+r.amt+'$',l2,'Expires '+expTxt(r,Date.now())].join('\n')}
@@ -211,11 +215,12 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
       try{if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(function(){fin(true)},fb);return}}catch(x){}fb()}
     function pinned(only){var now=Date.now(),L=S.list.filter(function(r){return live(r,now)}).sort(function(a,b){return a.exp-b.exp});
       if(!L.length)return only?'<div class="card note rq-none">No open requests right now.</div>':'';return '<div class="rq-pin" id="rqPinned"><h2 class="rq-h">\u{1F4CC} Open requests</h2>'+L.map(function(r){return card(r,now)}).join('')+'</div>'}
-    function view(){var now=Date.now();if(!S.at||now-S.at>20000)setTimeout(load,0);
+    /* STEP10: view('open') = the Open tab (open request cards only); view() = the Request tab (form only) */
+    function view(mode){var now=Date.now();if(!S.at||now-S.at>20000)setTimeout(load,0);
       var L=S.list.filter(function(r){return live(r,now)}).sort(function(a,b){return a.exp-b.exp}),me=A.me();
       var h='';if(S.msg&&!S.f.gid)h+='<div class="card '+(S.bad?'b27-bad':'b27-ok')+'" role="status">'+e(S.msg)+(S.fb?'<pre class="rq-fb">'+e(S.fb)+'</pre><div class="rq-act"><button type="button" class="btn" data-rq="wa">Copy</button></div>':'')+'</div>';
-      h+=L.length?'<h2 class="rq-h">Open requests</h2>'+L.map(function(r){return card(r,now)}).join(''):'<div class="card note rq-none">No open requests right now.</div>';
-      return h+(me&&A.canWrite()?form():'')}
+      if(mode==='open')return h+(L.length?'<h2 class="rq-h">Open requests</h2><div class="rq-grid">'+L.map(function(r){return card(r,now)}).join('')+'</div>':'<div class="card note rq-none">No open requests right now.</div>');
+      return h+(me&&A.canWrite()?form():'<div class="card note rq-none">Pick who you are to request a bet.</div>')}
     async function act(k,v){var f=S.f,me=A.me(),now=Date.now();
       if(k==='wa'){if(S.fb)copy(S.fb,function(ok){if(ok){S.msg='Message copied, paste in WhatsApp.';S.bad=false}});return}
       if(k==='edit'){var re=S.list.find(function(x){return x.id===v});if(!re||re.by!==me||tk(re).length||re.status!=='open')return;var ws=winStart(re,game(re.gid)),pad=function(n){return String(n).padStart(2,'0')},dt=new Date(re.exp);
@@ -228,13 +233,13 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
       if(k==='unedit'){S.edit=null;S.f=nf();A.render();return}
       if(k==='to'){var i=f.to.indexOf(v);if(i>=0)f.to.splice(i,1);else f.to.push(v)}
       else if(k==='all')f.to=A.others().map(function(o){return o.id});else if(k==='clear')f.to=[];
-      else if(k==='side'){f.side=v;var gg=game(f.gid),pp=gg&&pick(gg.g,{side:v,cov:'game'});if(pp)f.text=pp.lab}else if(k==='cov'){f.cov=v}else if(k==='amt'){f.amt=+v;f.amtTxt='';f.amtC=false}else if(k==='amtc'){f.amtC=true;f.amt=null}else if(k==='oddc'){f.oddC=true}else if(k==='fslot-'||k==='fslot+'){var nT=f.to.length,cur=f.slots?Math.min(f.slots,nT):nT;cur+=k==='fslot+'?1:-1;f.slots=Math.max(1,Math.min(nT,cur))}else if(k==='odds'){f.odds=v.split('-').map(Number);f.oddC=false;f.oddTxt=''}
+      else if(k==='side'){f.side=v;var gg=game(f.gid),pp=gg&&pick(gg.g,{side:v,cov:'game'});if(pp)f.text=pp.txt}else if(k==='cov'){f.cov=v}else if(k==='amt'){f.amt=+v;f.amtTxt='';f.amtC=false}else if(k==='amtc'){f.amtC=true;f.amt=null}else if(k==='oddc'){f.oddC=true}else if(k==='fslotall'){f.sAll=true;f.slots=null}else if(k==='fslot-'||k==='fslot+'){var nT=f.to.length,cT=nT||A.others().length,cur=f.sAll?cT:f.slots?Math.min(f.slots,cT):(nT||1);f.sAll=false;cur+=k==='fslot+'?1:-1;f.slots=Math.max(1,Math.min(cT,cur))}else if(k==='odds'){f.odds=v.split('-').map(Number);f.oddC=false;f.oddTxt=''}
       else if(k==='send'){var g=game(f.gid),p=pick(g&&g.g,f),amt=f.amtC?(+f.amtTxt>0?Math.round(+f.amtTxt):null):f.amt,ex=expAt(f,now,g?winStart({cov:f.cov,start:g.start},g):null);
-        var err=!p?'Write the bet.':!amt?'Choose an amount.':!f.to.length?'Choose who it is open to.':!ex||ex<=now?'Choose when it expires (up to a year).':null;
+        var err=!p?'Write the bet.':!amt?'Choose an amount.':!ex||ex<=now?'Choose when it expires (up to a year).':null;
         if(!err){var r0={id:rid(),gid:g?String(g.id):'',start:g&&g.start||null};if(started(Object.assign({cov:f.cov},r0),now))err='That '+(f.cov==='2h'?'half':'game')+' has already started.'}
         if(err){S.msg=err;S.bad=true;A.render();return}
         if(S.edit)r0.id=S.edit;
-        var r=Object.assign(r0,{by:me,to:f.to.slice(),cov:f.cov,k:p.k,si:p.si,lab:p.lab,other:p.other,odds:f.odds.slice(),slots:f.slots?Math.min(f.slots,f.to.length):null,txt:p.txt,game:g?A.tname(g.g.away)+' vs '+A.tname(g.g.home):'',date:g?A.dateET(g.g):'',amt:amt,exp:ex,at:now,status:'open',dec:[]});
+        var toAll=f.to.length?f.to.slice():A.others().map(function(o){return o.id});var r=Object.assign(r0,{by:me,to:toAll,cov:f.cov,k:p.k,si:p.si,lab:p.lab,other:p.other,odds:f.odds.slice(),slots:f.sAll?null:f.slots?Math.min(f.slots,toAll.length):(f.to.length?null:1),txt:p.txt,game:g?A.tname(g.g.away)+' vs '+A.tname(g.g.home):'',date:g?A.dateET(g.g):'',amt:amt,exp:ex,at:now,status:'open',dec:[]});
         say(waText(r,S.edit?'upd':'new'),S.edit?'Request updated':'Request posted');   /* one tap: copy starts inside the tap (clipboard needs it), then the request is posted */
         S.busy=true;S.msg='Sending…';S.bad=false;A.render();
         var ed=S.edit;r.ver=rid();
@@ -254,20 +259,22 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
         catch(y){S.msg='Could not accept it. Try again.';S.bad=true}S.busy=false}
       A.render()}
     function input(k,v){var f=S.f;if(k==='gid'){f.gid=v;f.side='';f.text=''}else if(k==='text'){f.text=v;return}else if(k==='mode'){f.mode=v}else if(k==='amtTxt'){f.amtTxt=v;f.amt=null;return}else if(k==='oddTxt'){f.oddTxt=v;var mo=/^\s*(\d{1,3})\s*[-:\/]\s*(\d{1,3})\s*$/.exec(v);if(mo&&+mo[1]>0&&+mo[2]>0)f.odds=[+mo[1],+mo[2]];A.render();return}else f[k]=v;A.render()}
-    function prefill(gid,k,i){S.f=nf();S.f.gid=String(gid);if(k){S.f.side=k+':'+i;var gq=game(gid),pq=gq&&pick(gq.g,{side:S.f.side,cov:'game'});if(pq)S.f.text=pq.lab};S.msg='';var g=game(gid);}
+    function prefill(gid,k,i){S.f=nf();S.f.gid=String(gid);if(k){S.f.side=k+':'+i;var gq=game(gid),pq=gq&&pick(gq.g,{side:S.f.side,cov:'game'});if(pq)S.f.text=pq.txt};/* STEP10: the full written bet line (team vs team, spread, date), not the short chip text */S.msg='';var g=game(gid);}
     /* Requests badge: open requests waiting for ME (invited, not declined, not mine, still live) on the Bets tab; refreshed by a light GET every 60 s */
     function count(){var me=A.me(),now=Date.now();if(!me)return 0;return S.list.filter(function(r){return live(r,now)&&r.by!==me&&r.to.indexOf(me)>=0&&(r.dec||[]).indexOf(me)<0&&tk(r).indexOf(me)<0}).length}
     /* STEP9-BADGES: Bets tab = requests waiting for me + bets waiting on my action (A.waiting); Request a bet segment = requests only */
     function nb(el,n,lab){if(!el)return;var b=el.querySelector('.rq-nb');if(!n){if(b)b.remove();return}if(!b){b=document.createElement('b');b.className='rq-nb';el.appendChild(b)}var s=String(Math.min(99,n));if(b.textContent!==s)b.textContent=s;b.setAttribute('aria-label',lab)}
-    function paint(){try{var rq=count(),w=0;try{w=A.waiting?(+A.waiting()||0):0}catch(x){}
-      nb(document.querySelector('#b27Ob_request,[data-ob="request"]'),rq,rq+' bet request'+(rq===1?'':'s')+' waiting');
+    /* STEP10: Open segment badge = ALL live open requests (stays until each is closed / full / deleted; not "unseen", not only mine) */
+    function openN(){var now=Date.now();return S.list.filter(function(r){return live(r,now)}).length}
+    function paint(){try{var rq=count(),w=0,on=openN();try{w=A.waiting?(+A.waiting()||0):0}catch(x){}
+      nb(document.querySelector('#b27Ob_open,[data-ob="open"]'),on,on+' open bet request'+(on===1?'':'s'));
       var a=A.navEl&&A.navEl();if(!a)return;var n=rq+w,b=a.querySelector('.rq-nb');if(!n){if(b)b.remove();return}
       if(!b){b=document.createElement('b');b.className='rq-nb';a.appendChild(b)}var s=String(Math.min(99,n));if(b.textContent!==s)b.textContent=s;b.setAttribute('aria-label',n+' waiting for you ('+rq+' request'+(rq===1?'':'s')+', '+w+' bet'+(w===1?'':'s')+')')}catch(x){}}
     if(typeof window!=='undefined'&&typeof setInterval!=='undefined'){setTimeout(function(){if(A.me())load()},3000);setInterval(function(){if(A.me()&&!S.busy)load()},60000);setInterval(paint,2000)}
     if(typeof document!=='undefined'){document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.target.closest('[data-rq]');if(!t)return;ev.preventDefault();act(t.dataset.rq,t.dataset.v)});
       document.addEventListener('change',function(ev){var t=ev.target;if(t&&t.dataset&&t.dataset.rqIn)input(t.dataset.rqIn,t.value)});
       document.addEventListener('input',function(ev){var t=ev.target;if(t&&t.dataset&&(t.dataset.rqIn==='amtTxt'||t.dataset.rqIn==='n'||t.dataset.rqIn==='oddTxt'||t.dataset.rqIn==='text'))S.f[t.dataset.rqIn]=t.value})}
-    return {view:view,pinned:pinned,prefill:prefill,load:load,count:count,paint:paint,S:S,waText:waText,label:'\u{1F4E8} Request a bet'}};
+    return {view:view,openN:openN,pinned:pinned,prefill:prefill,load:load,count:count,paint:paint,S:S,waText:waText,label:'\u{1F4E8} Request a bet'}};
   /* STEP7-NAMES: Stoop label rule (both sites): roomy spots = emoji + team nickname; tight spots use the real name.
      shortName/tinyName = the bet-form chip's phone labels (same cut on both sites). */
   SHARED_UI.shortName=function(n){n=String(n);var w=n.split(/\s+/).filter(Boolean),l=w[w.length-1];if(w.length>1&&l.length>=4&&l.length<=9)return l;if(n.length<=9)return n;if(w.length>1&&w[0].length<=9)return w[0];return n.slice(0,8)+'\u2026'};

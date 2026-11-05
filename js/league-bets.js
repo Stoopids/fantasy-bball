@@ -316,7 +316,7 @@ function stampHtml(b){const t=stampText(b);return t?`<div class="b27-stamp">${es
 /* ---------- s24 list filters: Person (Me / Everyone / each manager) x Status (All / Waiting on me / Open / Settled / Wash) ----------
    kept per device per league in localStorage fbn.x.<league>.betf as {p,s,q}; p = 'all' | 'me' | position 1-8 in the league (never a manager id); q = search terms
    (bet text + manager names, case-insensitive, live); also in the URL as #bets/f=<p>-<s> or #bets/f=<p>-<s>/q=<terms> */
-const FS={all:'Any status',open:'Open',settled:'Settled',wash:'Wash',waiting:'Waiting on me',req:'Requested'};
+const FS={all:'Any status',open:'Open',settled:'Settled',wash:'Wash',waiting:'Waiting on me',stoops:'Waiting on stoops',req:'Requested'};
 const fKey=()=>'fbn.x.'+(H&&H.id)+'.betf';
 const fOk=(p,s)=>/^(all|me|[1-8])$/.test(p)&&s in FS;
 const qClean=q=>clean(q,60);
@@ -324,24 +324,31 @@ function fLoad(){if(S.fl)return;S.fl=1;S.fp=S.fp||'all';S.fs=S.fs||'all';S.fq=S.
 function fSave(){try{if(S.fp==='all'&&S.fs==='all'&&!S.fq)localStorage.removeItem(fKey());else localStorage.setItem(fKey(),JSON.stringify(S.fq?{p:S.fp,s:S.fs,q:S.fq}:{p:S.fp,s:S.fs}))}catch(e){}}
 function fSet(p,s,quiet,q){if(!fOk(p,s))return false;S.fl=1;S.fp=p;S.fs=s;if(q!==undefined)S.fq=qClean(q);fSave();if(!quiet&&H&&H.onFilter)H.onFilter();return true}
 const fPm=me=>S.fp==='me'?me:S.fp==='all'?null:((owners()[+S.fp-1]||{}).mid||null);
-const fEff=me=>({p:(S.fp==='me'&&!me)?'all':S.fp,s:(S.fs==='waiting'&&(!me||!AF()))?'all':S.fs});   /* a watcher has no "me": those choices fall back */
-function waitsOn(b,me){if(!me)return false;if(!AF()&&b.kind!=='pool')return false;if(b.kind==='pool')return b.status==='open'&&!b.back&&b.by!==me&&b.parts.includes(me);const party=b.by===me||b.acc===me;
-  if(b.status==='pending')return b.by!==me&&(b.to===me||b.to==='*');
+const fEff=me=>({p:(S.fp==='me'&&!me)?'all':S.fp,s:((S.fs==='waiting'||S.fs==='stoops')&&(!me||!AF()))?'all':S.fs});   /* a watcher has no "me": those choices fall back */
+/* STEP10: waitsOn = "Waiting on me": ONLY bets where I can tap something (Accept/Decline, the placer enters the result / Confirm, answer a Fix, settle my pool).
+   waitsStoops = "Waiting on stoops": live bets I'm in that only another Stoop can move. */
+function waitsOn(b,me){if(!me)return false;if(!AF()&&b.kind!=='pool')return false;if(b.kind==='pool')return b.status==='open'&&!b.back&&b.by===me;const party=b.by===me||b.acc===me;
+  if(b.status==='pending'){if(b.tp)return (me===b.by&&!b.ackA)||(me===b.to&&!b.acc);return b.by!==me&&(b.to===me||b.to==='*')}
+  if(b.status==='open')return b.by===me;
   if(b.status==='reported')return party&&!b.reps[me];
   if(b.status==='disputed')return party;
   if(b.status==='settled')return party&&!!b.fix&&b.fix.by!==me;return false}
+function waitsStoops(b,me){if(!me||waitsOn(b,me))return false;if(!AF()&&b.kind!=='pool')return false;if(b.kind==='pool')return b.status==='open'&&!b.back&&b.by!==me&&b.parts.includes(me);const party=b.by===me||b.acc===me;
+  if(b.status==='pending')return b.tp?(me===b.by||me===b.to||me===b.postedBy):(b.by===me);
+  if(b.status==='open'||b.status==='reported')return party;
+  if(b.status==='settled')return party&&!!b.fix&&b.fix.by===me;return false}
 function fMatch(b,me){fLoad();const e=fEff(me);if(e.s==='req')return false;/*STEP8-REQUEST*/
   if(e.p!=='all'){const pm=e.p==='me'?me:fPm(me);if(!pm||!(b.by===pm||b.acc===pm||(b.status==='pending'&&b.to===pm)||(b.kind==='pool'&&b.parts.includes(pm))))return false}
   if(S.fq){const q=S.fq.toLowerCase(),hay=[b.text,nm(b.by),b.acc?nm(b.acc):'',b.to&&b.to!=='*'?nm(b.to):'',...(b.parts||[]).map(nm)].join(' ').toLowerCase();if(!q.split(/\s+/).every(w=>hay.includes(w)))return false}
-  if(b.kind==='pool'){if(e.s==='waiting')return waitsOn(b,me);if(e.s==='open')return b.status==='open'&&!b.back;if(e.s==='settled')return b.status==='open'&&!!b.back;return e.s!=='wash'}
-  if(e.s==='waiting')return waitsOn(b,me);if(e.s==='open')return['pending','open','reported','disputed'].includes(b.status);
+  if(b.kind==='pool'){if(e.s==='waiting')return waitsOn(b,me);if(e.s==='stoops')return waitsStoops(b,me);if(e.s==='open')return b.status==='open'&&!b.back;if(e.s==='settled')return b.status==='open'&&!!b.back;return e.s!=='wash'}
+  if(e.s==='waiting')return waitsOn(b,me);if(e.s==='stoops')return waitsStoops(b,me);if(e.s==='open')return['pending','open','reported','disputed'].includes(b.status);
   if(e.s==='settled')return b.status==='settled';if(e.s==='wash')return b.status==='settled'&&b.res==='p';return true}
 const fActive=me=>{fLoad();const e=fEff(me);return e.p!=='all'||e.s!=='all'||!!S.fq};
 function fEmpty(me){return 'No bets match this filter.'}
-function fBar(me,bets){fLoad();const e=fEff(me),oth=owners(),wn=me?bets.filter(b=>waitsOn(b,me)).length:0;
+function fBar(me,bets){fLoad();const e=fEff(me),oth=owners(),wn=me?bets.filter(b=>waitsOn(b,me)).length:0,wn2=me?bets.filter(b=>waitsStoops(b,me)).length:0;
   const po=`<option value="all"${e.p==='all'?' selected':''}>Everyone</option>`+(me?`<option value="me"${S.fp==='me'?' selected':''}>Me</option>`:'')+oth.map((o,i)=>`<option value="${i+1}"${S.fp===String(i+1)?' selected':''}>${esc(bRNm(o)?o.team_name+' · '+bRNm(o):(o.team_name||o.name))}</option>`).join('');
-  const so=Object.keys(FS).filter(k=>k!=='waiting'||(me&&AF())).map(k=>`<option value="${k}"${e.s===k?' selected':''}>${esc(FS[k])}${k==='waiting'&&wn?' ('+wn+')':''}</option>`).join('');
-  const lost=!me&&(S.fp==='me'||S.fs==='waiting')?'<div class="note" id="b27FltNote">“Me” and “Waiting on me” need your own manager link, so this shows everyone.</div>':'';
+  const so=Object.keys(FS).filter(k=>(k!=='waiting'&&k!=='stoops')||(me&&AF())).map(k=>`<option value="${k}"${e.s===k?' selected':''}>${esc(FS[k])}${k==='waiting'&&wn?' ('+wn+')':k==='stoops'&&wn2?' ('+wn2+')':''}</option>`).join('');
+  const lost=!me&&(S.fp==='me'||S.fs==='waiting'||S.fs==='stoops')?'<div class="note" id="b27FltNote">“Me”, “Waiting on me” and “Waiting on stoops” need your own manager link, so this shows everyone.</div>':'';
   return`<div class="card s24fb b27-flt" id="b27Flt" role="search" aria-label="Filter bets"><div class="b27-fr"><select id="b27FP" aria-label="Person">${po}</select><select id="b27FS" aria-label="Status">${so}</select><input id="b27FQ" type="search" class="b27-fq" placeholder="search terms…" aria-label="Search bets" autocomplete="off" maxlength="60" enterkeyhint="search" value="${esc(S.fq)}"></div>${lost}</div>`}
 function fHashOut(){fLoad();return S.fp==='all'&&S.fs==='all'&&!S.fq?'':'f='+S.fp+'-'+S.fs+(S.fq?'/q='+encodeURIComponent(S.fq):'')}
 function fFromHash(f,q){const m=/^(all|me|[1-8])-(all|waiting|open|settled|wash)$/.exec(String(f||''));if(m)fSet(m[1],m[2],true,q==null?'':q)}
@@ -499,9 +506,9 @@ function poolSettle(b,back){const me=meMid();if(!me||b.by!==me){S.msg=POOL_TXT.o
   if(!(S.ask&&S.ask.id===b.id&&S.ask.w==='pool')){S.poolErr[b.id]='';S.ask={id:b.id,w:'pool'};render(true);return}
   act([mkEv('pb',{id:b.id,back})],PT('saved')).then(ok=>{if(ok){S.poolTxt[b.id]='';S.placeWho[b.id]=[]}})}
 /* ----- Tally (partner vTally): person table (only people with bets or amounts), then Who Owes Who (all 8, gross, rows owe columns), then netted settle lines ----- */
-const OB_LABELS={form:'\u270F\uFE0F Write it Up',tally:'\u{1F4B0} Tally',request:'\u{1F4E8} Request a bet'};
-function obSeg(){const v=S.ob==='tally'?'tally':S.ob==='request'?'request':'form',sg=k=>`<button type="button" class="${v===k?'on':''}" aria-pressed="${v===k}" data-lb="obview" data-v="${k}" id="b27Ob_${k}">${OB_LABELS[k]}</button>`;
-  return `<div class="tabs ob-seg" role="group" aria-label="Bets" id="b27Seg">${sg('form')}${sg('tally')}${RQ()?sg('request'):''}</div>`}
+const OB_LABELS={form:'\u270F\uFE0F Write it Up',tally:'\u{1F4B0} Tally',request:'\u{1F4E8} Request',open:'\u{1F4CC} Open'};   /* STEP10 order: Write it Up, Request, Open, Tally */
+function obSeg(){const v=S.ob==='tally'?'tally':S.ob==='request'?'request':S.ob==='open'?'open':'form',sg=k=>`<button type="button" class="${v===k?'on':''}" aria-pressed="${v===k}" data-lb="obview" data-v="${k}" id="b27Ob_${k}">${OB_LABELS[k]}</button>`;
+  return `<div class="tabs ob-seg" role="group" aria-label="Bets" id="b27Seg">${sg('form')}${RQ()?sg('request')+sg('open'):''}${sg('tally')}</div>`}
 function tallyHtml(T){const ow=owners(),per=m=>T.per[m]||{net:0,bets:0},Lo=m=>T.lost[m]||0,Wo=m=>T.won[m]||0,M=(a,b)=>(T.M[a]&&T.M[a][b])||0;
   const ids=ow.filter(o=>per(o.mid).bets>0||Lo(o.mid)||Wo(o.mid));
   let h=`<div class="card" id="b27Tally"><b>🧮 Tally · 2026-27</b><div class="note">From the 2026-27 shared ledger only. Rows owe columns.</div></div>`;
@@ -526,8 +533,8 @@ function view(){if(!H)return'';
   const intro=`<div class="card b27-intro" id="b27Intro"><div class="note b27-note" id="b27Note">${esc(DISCLAIMER)}</div><div class="note" style="margin-top:6px">This page just <b>records</b> who bet what and who owes whom.</div><div class="note b27-top" id="b27Head" style="margin-top:6px"><span id="b27Top">${top}</span></div></div>`;
   const seg=`<div class="s26w-row" id="b27SegRow">${obSeg()}</div>`;
   if(S.ob==='tally'&&S.state!=='init')return seg+tallyHtml(T);
-  /*<STEP8-REQUEST>*/if(S.ob==='request'&&RQ())return seg+RQ().view();/*</STEP8-REQUEST>*/
-  let h=seg;/*<STEP8-REQUEST>*/if(RQ()){fLoad();h+=RQ().pinned(S.fs==='req')}/*</STEP8-REQUEST>*/
+  /*<STEP8-REQUEST>*/if(S.ob==='request'&&RQ())return seg+RQ().view();if(S.ob==='open'&&RQ())return seg+RQ().view('open');/*</STEP8-REQUEST>*/
+  let h=seg;/*<STEP8-REQUEST>*/if(RQ()){fLoad();if(S.fs==='req')h+=RQ().pinned(true)}/*STEP10: no pinned strip on Write it Up*//*</STEP8-REQUEST>*/
   if(S.msg)h+=`<div class="card ${S.bad?'b27-bad':'b27-ok'}" role="status" id="b27Msg">${esc(S.msg)}${(()=>{const gu=me&&S.undoG?grpUndo(S.undoG,me):[];return gu.length>1?`<div class="b27-act"><button type="button" class="btn sec b27-b" data-lb="undogroup" data-g="${esc(S.undoG)}"${S.busy?' disabled':''}>↩ Undo all ${gu.length} bets (30 s)</button></div>`:''})()}</div>`;
   if(!me)h+=`<div class="card" id="b27Watch"><b>👀 Watching only</b><div class="note">You can read every bet here. To place or answer a bet, open this page from your own manager link (the League site button in the draft room).</div><p style="margin:8px 0 0"><a class="btn b27-b" id="b27Room" href="${esc(H.roomHref())}">Open the draft room</a></p></div>`;
   else if(S.kind==='pool'&&!S.edited){const cf=S.p.confirm?poolConfirmHtml():'';if(S.p.confirm&&!cf)S.p.confirm=false;h+=cf?modal(cf):poolFormHtml(me)}
@@ -678,7 +685,7 @@ const ACT={
     const back={};b.places.forEach((a,i)=>{back[sel[i]]=(back[sel[i]]||0)+a});b.parts.forEach(p=>{if(!(p in back))back[p]=0});poolSettle(b,back)},
   poolgo:el=>{const id=el.dataset.id,b=compute().find(x=>x.id===id);if(!b)return;const r=poolParse(b,S.poolTxt[id]||'');if(!r.ok||!r.back){S.poolErr[id]=r.ok?PT('eEmptyPay'):r.err;S.ask=null;render(true);return}poolSettle(b,r.back)},
   poolvoid:el=>{const b=compute().find(x=>x.id===el.dataset.id),me=meMid();if(!b||!me||b.by!==me||b.status!=='open')return;act([mkEv('w',{id:b.id})],'Saved.')},
-  obview:el=>{const v=el.dataset.v==='tally'?'tally':el.dataset.v==='request'?'request':'form';if(S.ob===v)return;S.ob=v;render(true);window.scrollTo(0,0)},   /* partner obView(): a sub-tab tap opens it at the top */
+  obview:el=>{const v=el.dataset.v==='tally'?'tally':el.dataset.v==='request'?'request':el.dataset.v==='open'?'open':'form';if(S.ob===v)return;S.ob=v;render(true);window.scrollTo(0,0)},   /* partner obView(): a sub-tab tap opens it at the top */
   opp:el=>{const f=S.f,m=el.dataset.mid;f.open=false;S.f.forMid=null;if(S.pz){S.pz.a=S.pz.b=null;S.pz.read=false}const k=f.opps.indexOf(m);if(k>=0)f.opps.splice(k,1);else{f.opps.push(m);const o=others().map(x=>x.mid);f.opps.sort((x,y)=>o.indexOf(x)-o.indexOf(y))}sync()},
   oppall:()=>{S.f.open=false;S.f.forMid=null;if(S.pz){S.pz.a=S.pz.b=null;S.pz.read=false}S.f.opps=others().map(o=>o.mid);sync()},
   oppclear:()=>{S.f.open=false;S.f.forMid=null;if(S.pz){S.pz.a=S.pz.b=null;S.pz.read=false}S.f.opps=[];sync()},
@@ -825,7 +832,7 @@ function RQ(){if(RQ_||!H||H.demo||typeof SHARED_UI==='undefined'||!SHARED_UI.Req
     tname:s=>qbNm(s,QCTX),dateET:g=>qbDate(g),link:()=>location.href.split('#')[0]+'#bets',goRequest:()=>{S.ob='request'},waiting:()=>{try{const me=meMid();return me&&S.state==='ok'?compute().filter(b=>b&&waitsOn(b,me)).length:0}catch(e){return 0}},navEl:()=>document.querySelector('#ltabs a[data-v="bets"]'),
     get:()=>Store.get(FBN.Keys(H.id).base+'-requests'),set:txt=>Store.set(FBN.Keys(H.id).base+'-requests',txt),
     placeBet:async(r,me)=>{const ts=Date.now(),text=clean(r.txt);const c=readBet(text);await append([Object.assign({k:'p',u:rid(),ts,v:SV,id:rid(),to:me,for:r.by,amt:r.amt,a:(r.odds||[1,1])[0],b:(r.odds||[1,1])[1],text,postedBy:me,postedAt:ts,req:r.id},c?{c}:{})]);redraw()},
-    render:()=>{if(S.ob==='request')redraw()}});return RQ_}
+    render:()=>{if(S.ob==='request'||S.ob==='open')redraw()}});return RQ_}
 /*</STEP8-REQUEST>*/
 function bind(){
   document.addEventListener('contextmenu',e=>{const el=e.target.closest&&e.target.closest('[data-lb=rx]');if(el&&document.getElementById('main')&&document.getElementById('main').contains(el)){e.preventDefault();rxTap(el,true)}});
