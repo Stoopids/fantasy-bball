@@ -243,3 +243,11 @@ html body #allteams .obt>:not(:first-child):not(:nth-child(2)),html body #alltea
 @media (max-width:480px){.s12-hd{gap:6px}.s12-share{min-height:36px;padding:0 9px;font-size:12px}}
 /*</STEP12-HSHARE>*/
 /*<STEP12-TIPS>*/ .b27-lb{flex-wrap:wrap}.b27-lb>.s27-pop{flex-basis:100%;margin:2px 0 0} /*</STEP12-TIPS>*/
+
+/*<S30-GCOMPACT>*/ /* Paul: Games filter bubbles + Upcoming/Past tabs compact */
+html body .gfrow .rkseg-b{min-height:28px!important;height:28px!important;padding:0 10px!important;font-size:12px!important;line-height:26px!important}
+html body .gfrow .rkseg{padding:2px!important;gap:2px!important}
+html body .gf2>.gf2-s,html body .gf2>.gf2-b,html body #lbody .gf2>.gf2-s,html body #lbody .gf2>.gf2-b{height:28px!important;min-height:28px!important;padding:0 10px!important;font-size:12px!important;line-height:26px!important}
+html body .gf2{gap:5px!important;margin:0 0 6px!important}
+html body .gfrow{margin-bottom:6px!important}
+/*</S30-GCOMPACT>*/
