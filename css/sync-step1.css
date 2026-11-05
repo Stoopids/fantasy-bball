@@ -251,3 +251,17 @@ html body .gf2>.gf2-s,html body .gf2>.gf2-b,html body #lbody .gf2>.gf2-s,html bo
 html body .gf2{gap:5px!important;margin:0 0 6px!important}
 html body .gfrow{margin-bottom:6px!important}
 /*</S30-GCOMPACT>*/
+/*<S31-GCLEAN>*/ /* Paul: Games filters clean + organized: one 28px rhythm, equal thirds, More panel aligned under row */
+html body .gfrow .segrow{display:flex!important;align-items:center!important;gap:6px!important;margin:0!important}
+html body .gfrow .segrow .rkseg{flex:1 1 auto!important;display:grid!important;grid-template-columns:1fr 1fr!important;min-width:0}
+html body .gfrow .segrow .gref{width:32px!important;height:32px!important;min-width:32px!important;min-height:32px!important;font-size:15px!important;flex:0 0 32px}
+html body .gf3{display:flex;flex-direction:column;gap:6px;margin:0 0 8px}
+html body .gf3>.gf2,html body #lbody .gf3>.gf2{margin:0!important;gap:6px!important}
+html body .gf2.gf2r,html body .gf2.gmorep{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+html body .gf2>.gf2-s{text-align:left;padding:0 22px 0 10px!important;text-overflow:ellipsis}
+html body .gf2>.gf2-b{display:inline-flex!important;align-items:center;justify-content:center}
+html body .gf2>.gq{padding:0 10px!important;line-height:normal!important}
+html body .gf2.gmorep{padding:6px!important;border-radius:16px;background:rgba(127,127,127,.08);border:1px solid var(--line,#2d3548)}
+html body .gmore.dot::after{top:4px;right:6px;width:6px;height:6px}
+@media (max-width:640px){html body .gf2.gmorep{grid-template-columns:repeat(2,minmax(0,1fr))!important}html body .gf2.gmorep>.gq{grid-column:1/-1}html body .gf2>.gf2-s,html body .gf2>.gf2-b{font-size:11.5px!important}}
+/*</S31-GCLEAN>*/
