@@ -299,7 +299,7 @@ html body .lgref .card.tap td.to .tnr{display:block;font-size:10px;opacity:.7;ov
 .rq-side{font-weight:800}
 .rq-act{display:flex;gap:8px;margin-top:8px}.rq-act .btn{flex:1;min-height:44px}
 .rq-ex{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0;line-height:1.4}
-a .rq-nb{display:inline-block;min-width:18px;height:18px;line-height:18px;padding:0 5px;margin-left:4px;border-radius:9px;background:#e5484d;color:#fff;font-size:11px;font-weight:900;text-align:center;vertical-align:top}
+a .rq-nb,button .rq-nb{display:inline-block;min-width:18px;height:18px;line-height:18px;padding:0 5px;margin-left:4px;border-radius:9px;background:#e5484d;color:#fff;font-size:11px;font-weight:900;text-align:center;vertical-align:top}
 .rq-fb{white-space:pre-wrap;font:inherit;font-size:14px;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:8px 0 0}
 .rq-spots{align-items:center}.rq-spots .btn{flex:0 0 auto;min-width:44px}.rq-spots .rq-no{flex:1}
 /*</STEP8-REQUEST>*/
@@ -354,3 +354,8 @@ html body table.tt th.tt-o{border-left:0}
 html body table.tt thead th:nth-child(6),html body table.tt tbody td:nth-child(6){border-left:2px solid var(--line)}
 @media (max-width:600px){html body table.tt{font-size:13px}html body table.tt th,html body table.tt td{padding:6px 6px}}
 /*</TALLY-ONE>*/
+/*<OB-ONE-ROW>*/ /* Bets: Write it Up · Tally · Request a bet on one row, equal widths (phone too) */
+html body .tabs.ob-seg{display:grid!important;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;flex-wrap:nowrap!important}
+html body .tabs.ob-seg>button{min-width:0;width:100%;white-space:normal;line-height:1.15;text-align:center;overflow:visible;padding-left:6px!important;padding-right:6px!important;margin:0!important}
+/*</OB-ONE-ROW>*/
+/*<LIVE-NODOT>*/ html body .golive::before{display:none!important} /* live marker = outline only, both sites */

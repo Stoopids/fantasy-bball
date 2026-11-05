@@ -820,7 +820,7 @@ function RQ(){if(RQ_||!H||H.demo||typeof SHARED_UI==='undefined'||!SHARED_UI.Req
   RQ_=SHARED_UI.Requests({maxText:(typeof C!=="undefined"&&C.maxText)||140,change:"location.href='join.html?l='+encodeURIComponent('"+String(H.id).replace(/[^A-Za-z0-9]/g,'')+"');return false",e:esc,me:()=>meMid(),others:()=>owners().filter(o=>o.mid!==meMid()).map(o=>({id:o.mid,emoji:o.emoji||'',nick:nick_(o)})),nick:m=>nick_(own(m))||'?',real:m=>(own(m).name||nick_(own(m))||'?'),
     canWrite:()=>!!meMid()&&!window.LVIEW&&!(H&&H.demo),amounts:C.amounts,
     games:()=>((H&&H.games&&H.games())||[]).filter(g=>g&&g.home&&g.away).map(g=>({id:String(g.id),g,start:g.start,status:g.status,period:g.period||null,label:qbNm(g.away,QCTX)+' vs '+qbNm(g.home,QCTX)+' · '+qbDate(g)})),
-    tname:s=>qbNm(s,QCTX),dateET:g=>qbDate(g),link:()=>location.href.split('#')[0]+'#bets',goRequest:()=>{S.ob='request'},navEl:()=>document.querySelector('#ltabs a[data-v="bets"]'),
+    tname:s=>qbNm(s,QCTX),dateET:g=>qbDate(g),link:()=>location.href.split('#')[0]+'#bets',goRequest:()=>{S.ob='request'},waiting:()=>{try{const me=meMid();return me&&S.state==='ok'?compute().filter(b=>b&&waitsOn(b,me)).length:0}catch(e){return 0}},navEl:()=>document.querySelector('#ltabs a[data-v="bets"]'),
     get:()=>Store.get(FBN.Keys(H.id).base+'-requests'),set:txt=>Store.set(FBN.Keys(H.id).base+'-requests',txt),
     placeBet:async(r,me)=>{const ts=Date.now(),text=clean(r.txt);const c=readBet(text);await append([Object.assign({k:'p',u:rid(),ts,v:SV,id:rid(),to:me,for:r.by,amt:r.amt,a:(r.odds||[1,1])[0],b:(r.odds||[1,1])[1],text,postedBy:me,postedAt:ts,req:r.id},c?{c}:{})]);redraw()},
     render:()=>{if(S.ob==='request')redraw()}});return RQ_}
