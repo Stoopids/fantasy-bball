@@ -354,7 +354,7 @@ html body table.tt .good{color:var(--good,#22c55e)}html body table.tt b.bad{colo
 html body table.tt .tz{opacity:.35}
 html body table.tt td.tt-d{background:rgba(255,255,255,.10)!important}
 html body table.tt th.tt-o{border-left:0}
-html body table.tt thead th:nth-child(6),html body table.tt tbody td:nth-child(6){border-left:2px solid var(--line)}
+html body table.tt th.tt-s1,html body table.tt td.tt-s1{border-left:2px solid var(--line)}
 @media (max-width:600px){html body table.tt{font-size:13px}html body table.tt th,html body table.tt td{padding:6px 6px}}
 /*</TALLY-ONE>*/
 /*<OB-ONE-ROW>*/ /* Bets: Write it Up · Tally · Request a bet on one row, equal widths (phone too) */
