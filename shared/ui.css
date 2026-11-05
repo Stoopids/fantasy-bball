@@ -378,3 +378,24 @@ html body .rq-qrow{flex-wrap:nowrap!important}html body .rq-qrow>.s27-sel,html b
 /* STEP10b: Select all / Clear sit tight right beside "1. Who is it open to?" (left-aligned group, one line) */
 html body .rq-qrow{justify-content:flex-start!important;gap:10px!important}html body .rq-qrow>.b27-q{flex:0 1 auto!important}html body .rq-qrow>.s27-sel,html body .rq-qrow>.b27-selbar{margin:0!important}
 html body .rq-qrow .s27-selb{padding:4px 10px!important;min-width:0}
+
+/*<NAV-MAIN-TALL>*/ /* Paul 2026-11-05: main nav (Standings/Games/Bets/…) taller + slightly bigger type than Bets sub-row (Write it Up / Request / Open / Tally) */
+html body #nav>a.nt,html body #nav>a.nd,html body #nav>button,
+html body nav#ltabs>a.tb,html body nav#ltabs>a.nd,html body nav#ltabs>button,
+html body #ltabs>a,html body #ltabs>button{
+  min-height:48px!important;height:auto!important;box-sizing:border-box!important;
+  font-size:15px!important;font-weight:700!important;padding:8px 10px!important;line-height:1.1!important}
+html body #nav>a.nt .nl,html body #nav>a.nd .nl,html body #nav>button .nl,
+html body nav#ltabs>a.tb .nl,html body nav#ltabs>a.nd .nl,html body #ltabs>a .nl,html body #ltabs>button .nl{font-size:15px!important;font-weight:700!important}
+html body #nav>a.nt .ni,html body #nav>a.nd .ni,html body #nav>button .ni,
+html body nav#ltabs>a.tb .ni,html body nav#ltabs>a.nd .ni,html body #ltabs>a .ni,html body #ltabs>button .ni{font-size:18px!important}
+@media (max-width:640px){
+  html body #nav>a.nt,html body #nav>a.nd,html body #nav>button,
+  html body nav#ltabs>a.tb,html body nav#ltabs>a.nd,html body nav#ltabs>button,
+  html body #ltabs>a,html body #ltabs>button{min-height:50px!important;padding:6px 4px!important;font-size:13px!important}
+  html body #nav>a.nt .nl,html body nav#ltabs>a.tb .nl,html body #ltabs>a .nl{font-size:13px!important}
+  html body #nav>a.nt .ni,html body nav#ltabs>a.tb .ni,html body #ltabs>a .ni{font-size:17px!important}}
+/* Bets sub-row stays the smaller secondary control */
+html body .tabs.ob-seg>button{min-height:36px!important;padding-top:6px!important;padding-bottom:6px!important;font-size:13px!important;font-weight:600!important;line-height:1.15!important}
+@media (max-width:640px){html body .tabs.ob-seg>button{min-height:34px!important;font-size:12px!important;padding-top:5px!important;padding-bottom:5px!important}}
+/*</NAV-MAIN-TALL>*/

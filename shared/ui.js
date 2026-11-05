@@ -91,7 +91,7 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
     h+='</tbody></table></div><div class="note tt-k">Columns after Bets: what each row owes that person.</div>';
     /* If settled today: net balances, then greedy (largest debtor pays largest creditor) = fewest payments */
     var bal=R.map(function(p){var b=0;R.forEach(function(q){if(q.id!==p.id)b+=(M(q.id,p.id)||0)-(M(p.id,q.id)||0)});return {n:p.name,b:Math.round(b*100)/100}}),pay=[];
-    for(var k=0;k<50;k++){var d=null,c=null;bal.forEach(function(x){if(x.b<-0.004&&(!d||x.b<d.b))d=x;if(x.b>0.004&&(!c||x.b>c.b))c=x});if(!d||!c)break;var v=Math.round(Math.min(-d.b,c.b)*100)/100;pay.push(e(d.n)+' pays '+e(c.n)+' '+f(v)+'$');d.b+=v;c.b-=v}
+    for(var k=0;k<50;k++){var d=null,c=null;bal.forEach(function(x){if(x.b<-0.004&&(!d||x.b<d.b))d=x;if(x.b>0.004&&(!c||x.b>c.b))c=x});if(!d||!c)break;var v=Math.round(Math.min(-d.b,c.b)*100)/100;pay.push(e(d.n)+' pays '+e(c.n)+' '+f(v));d.b+=v;c.b-=v}
     return h+(pay.length?'<div class="card tt-s"><b>If settled today</b>'+pay.map(function(x){return '<div class="tset">'+x+'</div>'}).join('')+'</div>':'')};
   /* STEP5-BETS: "Who Owes Who" matrix (rows owe columns), both sites. P: [{id,label,title}], M(rowId,colId)->amount, o: {esc,fmt,h2Attr,tblAttr,rowKey} */
   SHARED_UI.owesMatrix=function(P,M,o){var e=o.esc,t=function(p){return p.title!=null?' title="'+e(p.title)+'"':''};
