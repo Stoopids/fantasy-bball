@@ -375,3 +375,6 @@ html body .tabs.ob-seg>button{min-width:0;width:100%;white-space:normal;line-hei
 @media (max-width:899px){html body .b27-opps{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}html body .b27-opps .b27-chip{min-height:52px;font-size:12.5px}html body .b27-chip.op .nm .xs{display:none}html body .b27-chip.op .nm .sh{display:inline}}
 /* STEP10: Request "1. Who is it open to?" + All/Clear: always one row, buttons side by side (never stacked) */
 html body .rq-qrow{flex-wrap:nowrap!important}html body .rq-qrow>.s27-sel,html body .rq-qrow>.b27-selbar{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;grid-template-rows:none!important;grid-auto-flow:column!important;align-items:center;gap:6px!important;margin:0 0 0 auto!important;flex:none!important;width:auto!important}html body .rq-qrow .s27-selb{width:auto!important;min-height:32px}
+/* STEP10b: Select all / Clear sit tight right beside "1. Who is it open to?" (left-aligned group, one line) */
+html body .rq-qrow{justify-content:flex-start!important;gap:10px!important}html body .rq-qrow>.b27-q{flex:0 1 auto!important}html body .rq-qrow>.s27-sel,html body .rq-qrow>.b27-selbar{margin:0!important}
+html body .rq-qrow .s27-selb{padding:4px 10px!important;min-width:0}
