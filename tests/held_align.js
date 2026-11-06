@@ -100,12 +100,13 @@ function start(){
     const card=document.querySelector('.ggrid>.gm:not(.gfin)');
     const pair=card?[...card.querySelectorAll(':scope > .gside a.chip, :scope .gside a.chip')].slice(0,2):[];
     const teamGap=pair.length===2?Math.round(pair[1].getBoundingClientRect().top-pair[0].getBoundingClientRect().bottom):null;
-    const ownerBeside=!!(card&&[...card.querySelectorAll(':scope>.gside')].some(row=>row.querySelector('a.chip')&&row.querySelector('.opill')));
+    const ownerBeside=!!(card&&card.querySelector('.gowns .opill'));
+    const hits=[...document.querySelectorAll('.ggrid>.gm')].map(card=>{const btn=card.querySelector('.qb-btn');if(!btn)return null;const b=btn.getBoundingClientRect();return [...card.querySelectorAll('.gowns .opill')].filter(p=>{const r=p.getBoundingClientRect();const overlap=!(r.right<=b.left||r.left>=b.right||r.bottom<=b.top||r.top>=b.bottom);return overlap||p.scrollWidth>p.clientWidth+1}).length}).filter(n=>n);
     const navGap=nav&&first?Math.round(first.getBoundingClientRect().top-nav.getBoundingClientRect().bottom):null;
-    return {pills:pills.map(box),rows:[...new Set(pills.map(e=>Math.round(e.getBoundingClientRect().top)))],chips,teamGap,ownerBeside,navGap,qb:qb.length,qbBg:qb0?getComputedStyle(qb0).backgroundColor:'',qbFg:qb0?getComputedStyle(qb0).color:'',qbBolt:qbBoltEl?getComputedStyle(qbBoltEl).color:'',hasBolt:!!qbBoltEl,liveQb:!!live,finalQb:[...document.querySelectorAll('.gfin .qb-btn, .gm.gfin .qb-btn')].length,foot,freshHidden:!fresh||fresh.hidden,onlWrap:os?os.flexWrap:'',over:document.documentElement.scrollWidth>innerWidth+2,tally:[...document.querySelectorAll('#ltabs a')].filter(a=>getComputedStyle(a).display!=='none').map(a=>a.getAttribute('data-v')),day:{labels,longest:labels.slice().sort((a,b)=>ctx.measureText(b).width-ctx.measureText(a).width)[0]||'',worst,worstW:Math.round(ctx.measureText(worst).width),inner:Math.round(inner),font:cs?cs.font:'',rowScroll:row?row.scrollWidth:0,rowClient:row?row.clientWidth:0}};
+    return {pills:pills.map(box),rows:[...new Set(pills.map(e=>Math.round(e.getBoundingClientRect().top)))],chips,teamGap,ownerBeside,ownerHits:hits.reduce((a,b)=>a+b,0),navGap,qb:qb.length,qbBg:qb0?getComputedStyle(qb0).backgroundColor:'',qbFg:qb0?getComputedStyle(qb0).color:'',qbBolt:qbBoltEl?getComputedStyle(qbBoltEl).color:'',hasBolt:!!qbBoltEl,liveQb:!!live,finalQb:[...document.querySelectorAll('.gfin .qb-btn, .gm.gfin .qb-btn')].length,foot,freshHidden:!fresh||fresh.hidden,onlWrap:os?os.flexWrap:'',over:document.documentElement.scrollWidth>innerWidth+2,tally:[...document.querySelectorAll('#ltabs a')].filter(a=>getComputedStyle(a).display!=='none').map(a=>a.getAttribute('data-v')),day:{labels,longest:labels.slice().sort((a,b)=>ctx.measureText(b).width-ctx.measureText(a).width)[0]||'',worst,worstW:Math.round(ctx.measureText(worst).width),inner:Math.round(inner),font:cs?cs.font:'',rowScroll:row?row.scrollWidth:0,rowClient:row?row.clientWidth:0}};
   });
   ok('upcoming, past and the filters share one 28px row under the nav',g.pills.length>=7&&Math.max(...g.rows)-Math.min(...g.rows)<=2&&g.pills.every(p=>p.h===28)&&g.pills.some(p=>/Upcoming/.test(p.t))&&g.pills.some(p=>/Past/.test(p.t))&&g.pills.some(p=>/Stoop vs Stoop/.test(p.t))&&g.navGap>=0&&g.navGap<=12,g);
-  ok('team pills stay 200x40 and touch with no gap',g.chips.length>0&&g.chips.every(c=>c.w===200&&c.h===40)&&g.teamGap===0&&g.ownerBeside,g);
+  ok('team pills stay 200x40, touch, and owners clear the quick bet',g.chips.length>0&&g.chips.every(c=>c.w===200&&c.h===40)&&g.teamGap===0&&g.ownerBeside&&g.ownerHits===0,g);
   ok('quick bet uses the request blue, white text, and the lightning icon',g.qb>0&&g.qbBg==='rgb(30, 58, 138)'&&g.qbFg==='rgb(255, 255, 255)'&&g.qbBolt==='rgb(255, 255, 255)'&&g.hasBolt,{qb:g.qb,bg:g.qbBg,fg:g.qbFg,bolt:g.qbBolt});
   ok('games footer drops the time-zone line and the standings update',!/time zone/i.test(g.foot)&&g.freshHidden,g.foot);
   ok('desktop nav has no Tally tab',!g.tally.includes('tally'),g.tally);
@@ -121,6 +122,9 @@ function start(){
   const clickQ=await P.page.evaluate(()=>({open:!!document.querySelector('.qb-pick, .qbd'),titles:document.querySelectorAll('.qb-s[title], .qbs-o[title]').length}));
   ok('click opens quick bet and its choices have no hover title',clickQ.open&&clickQ.titles===0,clickQ);
   await P.page.keyboard.press('Escape');
+  const longest=await P.page.evaluate(()=>{let best=null;[...document.querySelectorAll('.ggrid>.gm')].forEach(card=>{if(!card.querySelector('.qb-btn'))return;const name=[...card.querySelectorAll('.gowns .opill')].map(p=>p.innerText.trim()).sort((a,b)=>b.length-a.length)[0]||'';if(!best||name.length>best.name.length)best={name,id:card.dataset.gid}});if(best){const el=document.querySelector('.gm[data-gid="'+best.id+'"]');el.scrollIntoView({block:'center'});el.setAttribute('data-longown','1')}return best});
+  console.log('  longest owner '+JSON.stringify(longest));
+  await L.sleep(200);
   await P.page.screenshot({path:'/opt/cursor/artifacts/next-games-desktop.png'});
   await P.close();
 
@@ -136,12 +140,15 @@ function start(){
     const nav=document.getElementById('ltabs'), first=document.querySelector('.gfone .rkseg-b');
     const card=document.querySelector('.ggrid>.gm:not(.gfin)');
     const pair=card?[...card.querySelectorAll('.gside a.chip')].slice(0,2):[];
-    return {more,main,over,tops,n:controls.length,rowW:Math.round(rr.width),rowRight:Math.round(rr.right),rowScroll:row?row.scrollWidth:0,vw:innerWidth,page:document.documentElement.scrollWidth,navGap:nav&&first?Math.round(first.getBoundingClientRect().top-nav.getBoundingClientRect().bottom):null,teamGap:pair.length===2?Math.round(pair[1].getBoundingClientRect().top-pair[0].getBoundingClientRect().bottom):null,h:controls[0]?Math.round(controls[0].getBoundingClientRect().height):0};
+    const hits=[...document.querySelectorAll('.ggrid>.gm')].map(card=>{const btn=card.querySelector('.qb-btn');if(!btn)return 0;const b=btn.getBoundingClientRect();return [...card.querySelectorAll('.gowns .opill')].filter(p=>{const r=p.getBoundingClientRect();return !(r.right<=b.left||r.left>=b.right||r.bottom<=b.top||r.top>=b.bottom)||p.scrollWidth>p.clientWidth+1}).length}).reduce((a,b)=>a+b,0);
+    return {more,main,over,tops,n:controls.length,rowW:Math.round(rr.width),rowRight:Math.round(rr.right),rowScroll:row?row.scrollWidth:0,vw:innerWidth,page:document.documentElement.scrollWidth,navGap:nav&&first?Math.round(first.getBoundingClientRect().top-nav.getBoundingClientRect().bottom):null,teamGap:pair.length===2?Math.round(pair[1].getBoundingClientRect().top-pair[0].getBoundingClientRect().bottom):null,h:controls[0]?Math.round(controls[0].getBoundingClientRect().height):0,ownerHits:hits};
   });
   ok('phone More still holds Tally and the other extra tabs',phone.more.includes('tally')&&phone.more.includes('profile')&&phone.more.includes('rules'),phone);
   ok('phone games controls stay on one contained scrolling row',phone.n>=7&&Math.max(...phone.tops)-Math.min(...phone.tops)<=2&&!phone.over&&phone.rowRight<=phone.vw+1&&phone.rowScroll>phone.rowW,phone);
   console.log('  phone390 '+JSON.stringify(phone));
-  ok('phone nav-to-controls gap stays tight and team pills touch',phone.navGap>=0&&phone.navGap<=12&&phone.teamGap===0&&phone.h===28,phone);
+  ok('phone nav-to-controls gap stays tight and team pills touch',phone.navGap>=0&&phone.navGap<=12&&phone.teamGap===0&&phone.h===28&&phone.ownerHits===0,phone);
+  await P.page.evaluate(()=>{const el=document.querySelector('.ggrid>.gm .qb-btn');if(el)el.closest('.gm').scrollIntoView({block:'center'})});
+  await L.sleep(150);
   await P.page.screenshot({path:'/opt/cursor/artifacts/next-games-phone.png'});
   await P.page.evaluate(()=>{const r=document.querySelector('.gfone');if(r)r.scrollLeft=r.scrollWidth});
   await L.sleep(150);

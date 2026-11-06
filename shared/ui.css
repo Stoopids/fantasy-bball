@@ -436,7 +436,9 @@ html body #main .gfone #gDaySel,html body #lbody .gfone #gDaySel{min-width:208px
 html body #lbody .ggrid:not(:has(>.gfin))>.gm,html body #main .ggrid:not(:has(>.gfin))>.gm{display:flex!important;flex-direction:column!important;grid-row:auto!important;grid-template-rows:none!important;align-items:stretch!important;height:auto!important;margin:0 0 8px!important;row-gap:0!important}
 html body .ggrid>.gm>.gsp,html body .gm>.gsp{display:none!important;height:0!important;margin:0!important}
 html body #lbody .ggrid>.gm .gside,html body #main .ggrid>.gm .gside{display:flex!important;flex-direction:row!important;align-items:center!important;gap:6px!important;padding:0!important;margin:0!important}
-html body #lbody .ggrid>.gm .gside .gow,html body #main .ggrid>.gm .gside .gow{height:auto!important;min-height:0!important;margin:0!important;padding:0!important;line-height:1.1!important}
+html body #lbody .ggrid>.gm .gowns,html body #main .ggrid>.gm .gowns{display:flex!important;flex-direction:column!important;gap:2px!important;margin:4px 0 0!important;min-width:0!important}
+html body #lbody .ggrid>.gm .gowns .gow,html body #main .ggrid>.gm .gowns .gow{display:block!important;height:auto!important;min-height:0!important;margin:0!important;padding:0!important;overflow:visible!important;white-space:normal!important;line-height:1.2!important}
+html body #lbody .ggrid>.gm .gowns .opill,html body #main .ggrid>.gm .gowns .opill{max-width:100%!important;white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important}
 html body .gow[aria-hidden="true"]{display:none!important;height:0!important;margin:0!important;padding:0!important}
 html body .ggrid>.gm .qbw,html body .gm .qbw{margin-top:4px!important}
 /* All teams: content-sized table, tight columns, one badge size from the longest name. Games chips stay 200x40. */
