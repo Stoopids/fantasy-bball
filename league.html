@@ -19,9 +19,10 @@
 <link rel="stylesheet" href="css/sync-step1.css?v=1.45.0">
 <link rel="stylesheet" href="shared/ui.css?v=1.8.31">
 <style>/* Page rules that sit after shared/ui.css: Ball card buttons use .mkbtns, and the online names live inside #chat. */
-html body .gm .gh{flex-wrap:nowrap!important}
-html body .gm .gh .mkbtns{position:static!important;flex-direction:row!important;align-items:center!important;margin-left:auto!important;gap:4px!important}
-html body .gm .mkbtns>button,html body .gm .mkbtns .qb-btn{width:auto!important;height:26px!important;min-height:26px!important;padding:0 7px!important;font-size:11px!important}
+html body #lbody .ggrid>.gm:not(.gfin)>.gh,html body #lbody .ggrid .gbody>.gh{grid-column:1 / span 2!important;width:auto!important;max-width:none!important;min-width:0!important;margin:0!important;justify-self:stretch!important;align-self:stretch!important;flex-wrap:nowrap!important;align-items:center!important;box-sizing:border-box!important}
+html body #lbody .gm .gh .mkbtns{position:static!important;display:flex!important;flex-flow:row nowrap!important;align-items:center!important;flex:0 0 auto!important;width:auto!important;margin:0 0 0 auto!important;gap:4px!important}
+html body #lbody .gm .gh .mkbtns>button,html body #lbody .gm .gh .mkbtns .qb-btn{width:auto!important;min-width:0!important;height:26px!important;min-height:26px!important;max-height:26px!important;padding:0 7px!important;font-size:11px!important;line-height:1!important;box-sizing:border-box!important}
+html body #lbody .gm .gh .mkbtns .qbw{display:inline-flex!important;width:auto!important;flex:0 0 auto!important;margin:0!important;padding:0!important}
 html body .tabs.ob-seg.ob-phone{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 html body .tabs.ob-seg.ob-desk{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 @media (max-width:700px){
