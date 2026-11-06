@@ -17,8 +17,14 @@
 <link rel="stylesheet" href="css/league-app.css">
 <link rel="stylesheet" href="css/power.css">
 <link rel="stylesheet" href="css/sync-step1.css?v=1.45.0">
-<link rel="stylesheet" href="shared/ui.css?v=1.8.23">
-<style>/* s25 LINKS-HOOK: the sheet + .lcbtns rules from css/app.css (that sheet is not loaded on this page) */.sheetbg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:40;display:flex;align-items:flex-end;justify-content:center}.sheet{background:var(--card);border-top:3px solid var(--acc);border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));width:100%;max-width:520px;max-height:90vh;max-height:90dvh;overflow:auto;box-sizing:border-box}.sheet h2{margin:0 0 8px;font-size:20px}.sheet .btn.block{display:block;width:100%;margin-top:12px;min-height:44px}#lcard .hint{color:var(--mut);font-size:13px;margin:6px 0 0}.lcbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}.lcbtns .btn{width:100%;text-align:center;padding:12px;min-height:44px;box-sizing:border-box}@media(min-width:700px){.lcbtns{grid-template-columns:repeat(4,1fr)}}</style>
+<link rel="stylesheet" href="shared/ui.css?v=1.8.26">
+<style>/* Page rules that sit after shared/ui.css on STOOPIDS too: 200x40 team pills, one filter row, desktop has no Tally tab. */
+html body .ggrid>.gm:not(.gfin) .gside a.chip{width:200px!important;min-width:200px!important;max-width:200px!important;height:40px!important;min-height:40px!important;max-height:40px!important;box-sizing:border-box!important}
+html body #lbody .gf3>.gf2.gfpills>.gf2-s,html body #lbody .gf3>.gf2.gfpills>.gf2-b{flex:0 0 auto!important;width:auto!important;min-width:0!important;max-width:none!important;height:28px!important;min-height:28px!important;font-size:12px!important;line-height:26px!important;padding:0 10px!important}
+html body #lbody .gf3>.gf2.gfpills>select.gf2-s{width:auto!important;padding:0 22px 0 8px!important}
+html body #lbody .gfone .rkseg .rkseg-b{height:24px!important;min-height:24px!important;font-size:11.5px!important;padding:0 8px!important;line-height:22px!important}
+@media (min-width:701px){html body nav#ltabs>a[data-v="tally"]{display:none!important}}
+/* s25 LINKS-HOOK: the sheet + .lcbtns rules from css/app.css (that sheet is not loaded on this page) */.sheetbg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:40;display:flex;align-items:flex-end;justify-content:center}.sheet{background:var(--card);border-top:3px solid var(--acc);border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));width:100%;max-width:520px;max-height:90vh;max-height:90dvh;overflow:auto;box-sizing:border-box}.sheet h2{margin:0 0 8px;font-size:20px}.sheet .btn.block{display:block;width:100%;margin-top:12px;min-height:44px}#lcard .hint{color:var(--mut);font-size:13px;margin:6px 0 0}.lcbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}.lcbtns .btn{width:100%;text-align:center;padding:12px;min-height:44px;box-sizing:border-box}@media(min-width:700px){.lcbtns{grid-template-columns:repeat(4,1fr)}}</style>
 <title>League site · NCAA Fantasy Basketball · Season + Tournament</title>
 </head>
 <body class="lsite">
@@ -26,7 +32,7 @@
 <div id="app"></div>
 <script src="js/version.js"></script>
 <script src="js/qr.min.js"></script>
-<script src="shared/ui.js?v=1.8.23"></script>
+<script src="shared/ui.js?v=1.8.26"></script>
 <script src="js/core.js"></script>
 <script src="js/scoring.js"></script>
 <script src="js/league-d.js"></script>

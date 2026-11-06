@@ -19,7 +19,7 @@ document.addEventListener('keydown',e=>{const el=e.target;if(!ok(el)||e.key.leng
 
 /* Who's online strip: on = [name HTML], off = [[name HTML, ms since last seen or Infinity]], ago(ms) -> 'x min ago'. Returns the strip's inner HTML (same on both sites). */
 (function(g){if(!g.SHARED_UI)return;var U=g.SHARED_UI;
-U.onlineStrip=function(on,off,ago){var live=on.length?on.map(function(n){return '<span class="onl-p on" title="Online now"><i class="pd"></i>'+n+'</span>'}).join(''):'<span class="onl-none">nobody</span>';var was=(off||[]).map(function(x){return '<span class="onl-p last" title="Last seen"><i class="pd off"></i>'+x[0]+' <small>'+(x[1]===Infinity?'not seen yet':ago(x[1]))+'</small></span>'}).join('');return '<span class="onl-g onl-now"><b class="onl-h">Online</b>'+live+'</span>'+(was?'<span class="onl-g onl-was"><b class="onl-h">Last seen</b>'+was+'</span>':'')};
+U.onlineStrip=function(on,off,ago){var live=on.length?on.map(function(n){return '<span class="onl-p on" title="Online now"><i class="pd"></i>'+n+'</span>'}).join(''):'<span class="onl-none">nobody</span>';var was=off.map(function(x){return '<span class="onl-p" title="Last seen"><i class="pd off"></i>'+x[0]+' <small>'+(x[1]===Infinity?'not seen yet':ago(x[1]))+'</small></span>'}).join('');return '<span class="onl-g onl-now"><b class="onl-h">Online</b>'+live+'</span>'+(was?'<span class="onl-g onl-was"><b class="onl-h">Last seen</b>'+was+'</span>':'')};
 /* Online dot on a Standings card: toggles .isonl and the small dot after the name (no layout shift). */
 U.markOnline=function(c,yes){c.classList.toggle('isonl',!!yes);var w=c.querySelector('.who');if(!w)return;var b=w.querySelector('.onlb');if(yes&&!b){b=document.createElement('span');b.className='onlb';b.title='Online now';(w.querySelector('b')||w).appendChild(b)}else if(!yes&&b)b.remove()};
 /* 'checked just now' after a manual Refresh: ts = click time (0 = never). */
@@ -121,11 +121,19 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
   /* STEP6-TEAMS: STOOPIDS All-teams table, both sites. o: {filters(html),heads:[[k,label,title,cls]],sk,sd,btn(k)->attrs,rows:[{attr,cells:[[cls,attr,html]]}],e} */
   SHARED_UI.teamsTable=function(o){var e=o.e;
     var th=function(h){var k=h[0],on=o.sk===k;return '<th class="'+(h[3]==null?'n s27-sort':h[3])+'" aria-sort="'+(on?(o.sd>0?'ascending':'descending'):'none')+'"><button type="button" title="'+e(h[2])+'. Tap to sort" '+o.btn(k)+'>'+h[1]+'<i aria-hidden="true">'+(on?(o.sd>0?'▲':'▼'):'↕')+'</i></button></th>'};
-    return '<div class="tapf" role="group" aria-label="Filter by owner">'+o.filters+'</div><div class="card tap s27-rk"><table><tr>'+o.heads.map(th).join('')+'</tr>'+
-      o.rows.map(function(r){return '<tr'+(r.attr||'')+'>'+r.cells.map(function(c){return '<td'+(c[0]?' class="'+c[0]+'"':'')+(c[1]||'')+'>'+c[2]+'</td>'}).join('')+'</tr>'}).join('')+'</table></div>'};
+    var html='<div class="tapf" role="group" aria-label="Filter by owner">'+o.filters+'</div><div class="card tap s27-rk"><table><tr>'+o.heads.map(th).join('')+'</tr>'+
+      o.rows.map(function(r){return '<tr'+(r.attr||'')+'>'+r.cells.map(function(c){return '<td'+(c[0]?' class="'+c[0]+'"':'')+(c[1]||'')+'>'+c[2]+'</td>'}).join('')+'</tr>'}).join('')+'</table></div>';
+    setTimeout(function(){try{SHARED_UI.atBadgeFit()}catch(e){}},0);return html};
+  /* All-teams badges: one width, the longest name in this table, and one height. Hidden filter rows still count. */
+  SHARED_UI.atBadgeFit=function(){var cards=document.querySelectorAll('.card.tap.s27-rk');if(!cards.length)return;cards.forEach(function(card){
+    var chips=[].slice.call(card.querySelectorAll('td:first-child .chip'));if(!chips.length)return;
+    var probe=chips[0].cloneNode(true);probe.style.cssText='position:absolute;left:0;top:0;visibility:hidden;pointer-events:none;width:max-content;min-width:0;max-width:none;height:30px;min-height:30px;display:inline-flex';
+    document.body.appendChild(probe);var max=0,longest='';
+    chips.forEach(function(c){probe.className=c.className;probe.innerHTML=c.innerHTML;var w=probe.offsetWidth;var label=(c.textContent||'').replace(/\s+/g,' ').trim();if(w>max){max=w;longest=label}});
+    probe.remove();if(max>0){card.style.setProperty('--at-badge',max+'px');card.setAttribute('data-at-long',longest)}});};
 
   /* STEP6-BETS: New bet question tips (STOOPIDS wording), both sites */
-  SHARED_UI.TIPS={who:'Tap one or more managers. Several = one bet, one result.',text:'Write it as you say it: "Kansas -4 beats Duke".',amt:function(min){return 'Minimum '+min},odds:'If you’re right, they owe amount × first ÷ second. Even = 1-1.',when:'Sorting only. It does not settle the bet, pick a winner, or close a request.',rqwho:'Tap one or more managers.',rqamt:function(min){return 'Amount for each acceptance. Minimum '+min+'.'},rqodds:'Per acceptance: if you are right, they owe amount × first ÷ second. Even = 1-1. Nothing is posted until you send the request.',rqmany:'How many people can accept. Each acceptance is its own bet. This does not pick a winner.',rqexp:'The invitation closes then. It does not settle the bet or pick a winner.',
+  SHARED_UI.TIPS={who:'Tap one or more managers. Several = one bet, one result.',text:'Write it as you say it: "Kansas -4 beats Duke".',amt:function(min){return 'Minimum '+min},odds:'If you’re right, they owe amount × first ÷ second. Even = 1-1.',
     /* STEP12-TIPS: Pool form question tips (the old grey notes under each Pool step) */
     pterms:'Say what the pool is, e.g. “STOOPIDS season-long tournament pool”.',ppl:'You’re in automatically. Tap everyone else who’s in.',buy:function(min){return 'Buy-in per person, minimum '+min+'. The pot is buy-in × people in.'},pay:'Amounts only; you pick who finished where when you settle it. They must add up to the pot. Optional: leave blank to fill in when it’s over.'};
 
@@ -180,7 +188,7 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
       if(r.status==='open'&&!(me&&r.by===me&&A.canWrite()&&!nt))h+='<div class="rq-act rq-copy">'+'<button type="button" class="btn sec rq-cp" data-rq="cp" data-v="'+e(r.id)+'">Copy</button>'+'</div>';   /* STEP14-COPY: every open card can copy the Bet Requested text */
       return h+'</div>'}
     function form(){var f=S.f,now0=Date.now(),G=games().filter(function(x){var st=Date.parse(x.start)||0,ws=f.cov==='2h'?st+HALF_MS:st;if(String(x.id)===String(f.gid))return true;if(x.status==='final'||st>=now0+7*86400000)return false;if(f.cov==='2h')return !(x.period&&+x.period>=2)&&now0<ws;return x.status==='scheduled'&&now0<ws}),g=game(f.gid),me=A.me(),nOth=A.others().length;
-      /* same template as the Write it Up form: heading, then the questions. Who you are comes from Profile, not a changer on this form. */
+      /* same template as Write it Up: header, Select all / Clear, numbered questions, Amount + Odds, summary, big button. Identity stays on Profile. */
       var h='<div class="card b27-form rq-form" id="rqForm">'+SHARED_UI.entryHead('rq')+(S.edit?'<div class="note">Editing this request. Nothing is posted until you save.</div>':'');
       /* STEP10: Select all / Clear sit right-aligned on the same line as question 1; the Stoop buttons stay on the next row */
       h+=(A.others().length%4?rqQ(1,'rqwho','Who is it open to?'):'<div class="rq-qrow">'+rqQ(1,'rqwho','Who is it open to?')+'<div class="s27-sel b27-selbar"><button type="button" class="s27-selb" data-rq="all"><span class="f">Select all</span><span class="s">All</span></button><button type="button" class="s27-selb" data-rq="clear">Clear</button></div></div>')+chips(f);
@@ -204,11 +212,11 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
 function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
     function expTxt(r,now){var ws=winStart(r,game(r.gid));return r.exp>=ws?(r.cov==='2h'?'when the 2nd half starts':'at tipoff'):'in '+left(r.exp-now)}
     function ifTxt(r,side){var s=String(side||''),k=r.k;if(k==='txt')return s?'If '+s+' hits':'If it misses';if(k==='ou')return 'If it goes '+s;s=s.replace(/\s[+-]\d+(\.\d+)?$/,k==='sp'?'$&':'');return 'If '+s+(k==='sp'?' covers':' wins')}
-    function stakeTxt(n){var x=Math.round(Number(n)*100)/100;return A.stake?A.stake(x):(x+' pushups')}
+    function stakeBit(n,prefix){var x=Math.round(Number(n)*100)/100;return A.stake?A.stake(x):(prefix?'$'+x:x+'$')}
     function explainParts(r){var o=r.odds||[1,1],rn=(A.real||A.nick)(r.by),win2=Math.round(r.amt*o[0]/o[1]*100)/100,ot=r.k==='ou'?r.other:String(r.other||'').replace(/\s[+-]?\d+(\.\d+)?$/,'');
-      return {win:ifTxt(r,r.lab)+', '+rn+' wins '+stakeTxt(r.amt)+' from whoever accepts.',lose:ifTxt(r,ot)+', the person who accepts wins '+stakeTxt(win2)+(+o[0]===+o[1]?'':' ('+oddsTxt(o)+')')+' from '+rn+'.'}}
+      return {win:ifTxt(r,r.lab)+', '+rn+' wins '+stakeBit(r.amt,false)+' from whoever accepts.',lose:ifTxt(r,ot)+', '+(A.stake?'the person':'the Stoop')+' who accepts wins '+stakeBit(win2,false)+(+o[0]===+o[1]?'':' ('+oddsTxt(o)+')')+' from '+rn+'.'}}
     function explain(r){var p=explainParts(r);return '<div class="rq-ex note">'+e(p.win)+'<br>'+e(p.lose)+'</div>'}
-    function rqQ(n,tip,label){return '<div class="b27-q"><button type="button" class="s27-tipk" data-tip="'+tip+'" aria-expanded="false" onclick="s27WhenClick(this)">'+n+'. '+label+'</button></div>'}
+    function rqQ(n,tip,label){return '<div class="b27-q"><button type="button" class="s27-tipk" data-tip="'+tip+'" aria-expanded="false" onfocus="s27TipShow(this)" onclick="s27WhenClick(this)">'+n+'. '+label+'</button></div>'}
     function rqPreview(f){var g=game(f.gid),p=pick(g&&g.g,f),me=A.me(),amt=f.amtC?(+f.amtTxt>0?+f.amtTxt:null):f.amt,o=f.odds||[1,1];
       var nTo=f.to.length,nOth=A.others().length,cap=nTo||nOth,sl=f.sAll?cap:f.slots?Math.max(1,Math.min(f.slots,cap)):(nTo||1);
       var who=nTo?(nTo===1?(A.real||A.nick)(f.to[0]):nTo>=nOth?'all stoops':(f.to||[]).map(function(id){return (A.real||A.nick)(id)}).join(', ')):'any stoop';
@@ -223,12 +231,12 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
       if(+o[0]===+o[1])return t;
       var od=o[0]+'-'+o[1];if(t.toLowerCase().indexOf(od.toLowerCase())>=0)return t;return (t?t+' ':'')+'at '+od}
     function vsRight(r,acc){if(acc)return nmOf(acc);if(r.to&&r.to.length===1)return nmOf(r.to[0]);var n=slots(r)||(r.to?r.to.length:0);return 'Open to '+n+' stoop'+(n===1?'':'s')}
-    function waText(r,kind,acc){var left=nmOf(r.by),right=vsRight(r,kind==='acc'?acc:null),line=stakeTxt(r.amt)+' '+left+' v '+right,desc=descLine(r);
-      if(kind==='bet'){var rights=(r.to||[]).map(nmOf).filter(Boolean),rightB=rights.length?rights.join(', '):right,lineB=stakeTxt(r.amt)+' '+left+' v '+rightB;return ['💥 '+lineB+' 💥',desc].filter(Boolean).join('\n')}
-      if(kind==='acc')return ['💥 '+line+' — Accepted 💥',desc].filter(Boolean).join('\n');
-      if(kind==='del')return ['Bet Request Deleted: '+line,desc].filter(Boolean).join('\n');
-      if(kind==='close')return ['Bet Request Closed: '+line,desc,tk(r).length+' people in'].filter(Boolean).join('\n');
-      return ['💣 '+line+' 💣',desc,'Expires '+expTxt(r,Date.now())].filter(Boolean).join('\n')}
+    function waText(r,kind,acc){var left=nmOf(r.by),right=vsRight(r,kind==='acc'?acc:null),money=stakeBit(r.amt,true)+' '+left+' v '+right,desc=descLine(r);
+      if(kind==='bet'){var rights=(r.to||[]).map(nmOf).filter(Boolean),rightB=rights.length?rights.join(', '):right,moneyB=stakeBit(r.amt,true)+' '+left+' v '+rightB;return ['💥 '+moneyB+' 💥',desc].filter(Boolean).join('\n')}
+      if(kind==='acc')return ['💥 '+money+' — Accepted 💥',desc].filter(Boolean).join('\n');
+      if(kind==='del')return ['Bet Request Deleted: '+money,desc].filter(Boolean).join('\n');
+      if(kind==='close')return ['Bet Request Closed: '+money,desc,tk(r).length+' '+(A.stake?'people':'stoops')+' in'].filter(Boolean).join('\n');
+      return ['💣 '+money+' 💣',desc,'Expires '+expTxt(r,Date.now())].filter(Boolean).join('\n')}
     function toast(ok){return (S.base||'Request posted')+(ok===true?' \u00b7 message copied, paste in WhatsApp, Stoopid':ok===false?'. Copy the message below for WhatsApp.':'.')}
     function say(txt,base){S.copied=null;S.fb=null;S.posted=false;S.base=base;copy(txt)}
     function copy(t,done){var fin=function(ok){S.copied=ok;S.fb=ok?null:t;if(S.posted)S.msg=toast(ok);if(done)done(ok);A.render()};var fb=function(){var ok=false;try{var ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();ok=!!document.execCommand('copy');ta.remove()}catch(x){}fin(ok)};
@@ -255,7 +263,7 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
       var L=S.list.filter(function(r){return shown(r,now)}).sort(function(a,b){return a.exp-b.exp}),me=A.me();
       var h='';if(S.msg&&!S.f.gid)h+='<div class="card '+(S.bad?'b27-bad':'b27-ok')+'" role="status">'+e(S.msg)+(S.fb?'<pre class="rq-fb">'+e(S.fb)+'</pre><div class="rq-act"><button type="button" class="btn" data-rq="wa">Copy</button></div>':'')+'</div>';
       if(mode==='open')return h+(L.length?'<h2 class="rq-h">Open requests</h2><div class="rq-grid">'+L.map(function(r){return card(r,now)}).join('')+'</div>':'<div class="card note rq-none">No open requests right now.</div>');
-      return h+(me&&A.canWrite()?form():'<div class="card note rq-none">Pick who you are to request a bet.</div>')}
+      return h+(me&&A.canWrite()?form():'<div class="card note rq-none">Set who you are on Profile before you request a bet.</div>')}
     async function act(k,v){var f=S.f,me=A.me(),now=Date.now();
       if(k==='cp'){var rc=S.list.find(function(x){return x.id===v});if(rc)copy(waText(rc,'new'),function(ok){S.msg=ok?'Message copied, paste in WhatsApp.':'Could not copy. Long-press to copy the text below.';S.bad=!ok});return}   /* STEP14-COPY */
       if(k==='wa'){if(S.fb)copy(S.fb,function(ok){if(ok){S.msg='Message copied, paste in WhatsApp.';S.bad=false}});return}
@@ -330,8 +338,8 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
     var ou=+ln.ou;if(isFinite(ou)&&ou>0){var m=nm(A)+' v '+nm(H);out.push({k:'ou',t:'Over/under',s:[['Over','Under'],['Under','Over']].map(function(p){return{lab:p[0]+' '+ou,txt:p[0]+' '+ou+' vs '+p[1]+' '+ou+', '+m+d}})})}
     return out};
   SHARED_UI.qbBlankText=function(g,o){return o.name(g.away)+' vs '+o.name(g.home)+(o.date?', '+o.date:'')};
-  /* GAME-ROW: the two team pills stack with no space between them. The owner sits beside the pill, on that same row. o={chip,seed,tag,owners,scores,lose,hs1} */
-  SHARED_UI.gameRow=function(o,e){return '<div class="gside'+(o.lose?' lose':'')+(o.hs1?' hs1':'')+'"><div class="nm">'+o.chip+(o.seed?'<span class="seed">('+e(String(o.seed))+')</span>':'')+(o.tag||'')+'</div>'+(o.owners?'<div class="gow">'+o.owners+'</div>':'')+'<div class="sc2">'+(o.scores||'')+'</div></div>'};
+  /* GAME-ROW: one team row of a game card, same markup on both sites: pill · seed · ⭐/🐶 · 1H/2H/T, owner chip on its own row under the pill. o={chip,seed,tag,owners,scores,lose,hs1} (already safe markup; seed is escaped here) */
+  SHARED_UI.gameRow=function(o,e){return '<div class="gside'+(o.lose?' lose':'')+(o.hs1?' hs1':'')+'"><div class="nm">'+o.chip+(o.seed?'<span class="seed">('+e(String(o.seed))+')</span>':'')+(o.tag||'')+'</div><div class="sc2">'+(o.scores||'')+'</div></div><div class="gow"'+(o.owners?'':' aria-hidden="true"')+'>'+(o.owners||'&nbsp;')+'</div>'};
   SHARED_UI.qbSheet=function(g,list,o){var e=o.e,t=e(o.name(g.away))+' vs '+e(o.name(g.home));list=(list||[]).filter(function(x){return x.k!=='win'});
     /* inline drop-down under the game card (no modal): spread each side, moneyline, over/under when posted, plus a plain Request a bet. Every choice opens Request a bet prefilled */
     var h='<div class="qbd" role="region" aria-label="Quick bet: '+t+'"><div class="qbd-h"><b>\u26A1 Quick bet</b><button type="button" class="qbd-x" aria-label="Close" '+o.close()+'>\u2715</button></div>';
@@ -360,7 +368,7 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
   SHARED_UI.whenBox=function(o){o=o||{};var e=o.e||function(s){return String(s==null?'':s)},k=o.kind==='date'||o.kind==='season'||o.kind==='game'?o.kind:'unknown';
     var btn=function(id,lab){return '<button type="button" class="b27-chip" data-when="'+id+'" aria-pressed="'+(k===id?'true':'false')+'" '+(o.pick?o.pick(id):'')+'>'+e(lab)+'</button>'};
     var q=(o.step?String(o.step)+'. ':'')+'When can this be settled?';
-    var h='<div class="b27-when"><div class="b27-q"><button type="button" class="s27-tipk" data-tip="when" aria-expanded="false" onclick="s27WhenClick(this)">'+e(q)+'</button></div><div class="b27-when-c" role="group" aria-label="When can this be settled?">'+btn('date','Choose a date')+btn('season','End of season')+(o.game||k==='game'?btn('game','End game'):'')+btn('unknown','Not sure yet')+'</div>';
+    var h='<div class="b27-when"><div class="b27-q"><button type="button" class="s27-tipk" data-tip="when" aria-expanded="false" onfocus="s27TipShow(this)" onclick="s27WhenClick(this)">'+e(q)+'</button></div><div class="b27-when-c" role="group" aria-label="When can this be settled?">'+btn('date','Choose a date')+btn('season','End of season')+(o.game||k==='game'?btn('game','End game'):'')+btn('unknown','Not sure yet')+'</div>';
     if(k==='date')h+='<input class="sb-in b27-in" type="date" id="'+(o.inputId||'whenDate')+'" aria-label="Choose a date" value="'+e(o.est||'')+'" '+(o.dateAttr||'')+'>';
     if(k==='season'){var id=o.seasonId||'';h+='<div class="note">'+(id?e('End of '+id+'. No calendar end date is set, so this only groups the bet.'):e('End of season. No season id is on file, so this only groups the bet.'))+'</div>'}
     if(k==='game')h+='<div class="note">'+e('End game. No game end is linked, so this only groups it.')+'</div>';

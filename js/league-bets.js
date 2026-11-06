@@ -870,12 +870,13 @@ function tallyPage(){if(!H)return '';if(H.demo)return '<div class="card" id="b27
 function setOb(v){S.ob=v==='request'?'request':v==='all'||v==='open'||v==='tally'?'all':'form'}
 window.LBETS={after:afterRender,_t:{propose,S,stampText,poolEntries,poolCheck,poolParse,greedy,POOL_TXT,DISCLAIMER,placedFx,mountRx,clampFix,RX,settlePop,readBet,claimText,judge,autoGame,AUTO_NOTE,settleSound,soundFor,sndMuted,myTurn,theirTurn,statusKey,whenKey,fMatch,betClip},init,start,view,tallyPage,setOb,badge,poll,reduce,tally,parseLog,win,filterHash:()=>{try{return fHashOut()}catch(e){return''}},setFilterHash:(f,q)=>{try{fFromHash(f,q)}catch(e){}},reveal:id=>{try{return reveal(id)}catch(e){return false}},bets:()=>{try{return compute()}catch(e){return[]}},quickHtml:(g,ctx)=>{QCTX=ctx||null;try{return quickHtml(g,ctx)}catch(e){return''}},_state:S};
 
+const BALL_TIPS={when:'Sorting only. It does not settle the bet, pick a winner, or close a request.',rqwho:'Tap one or more managers.',rqamt:min=>'Amount for each acceptance. Minimum '+min+'.',rqodds:'Per acceptance: if you are right, they owe amount × first ÷ second. Even = 1-1. Nothing is posted until you send the request.',rqmany:'How many people can accept. Each acceptance is its own bet. This does not pick a winner.',rqexp:'The invitation closes then. It does not settle the bet or pick a winner.'};
 function openTip(el){if(!el)return;const open=el.getAttribute('aria-expanded')==='true';document.querySelectorAll('.s27-pop').forEach(e=>e.remove());document.querySelectorAll('.s27-tipk[aria-expanded=true]').forEach(e=>e.setAttribute('aria-expanded','false'));if(open)return;
-  const T=(window.SHARED_UI&&SHARED_UI.TIPS)||{};let t=T[el.getAttribute('data-tip')]||'';if(typeof t==='function')t=t(C.min);
+  const T=(window.SHARED_UI&&SHARED_UI.TIPS)||{},key=el.getAttribute('data-tip');let t=T[key]||BALL_TIPS[key]||'';if(typeof t==='function')t=t(C.min);
   const p=document.createElement('div');p.className='s27-pop';p.setAttribute('role','tooltip');p.innerHTML='<span>'+esc(t)+'</span> <a href="help.html#howto-newbet">How to make a bet →</a>';
   el.setAttribute('aria-expanded','true');el.insertAdjacentElement('afterend',p)}
-function s27TipShow(el){openTip(el)}
-function s27WhenClick(el){if(!el)return;el._tip=1;openTip(el)}
+function s27TipShow(el){if(!el)return;el._justFocus=1;openTip(el)}
+function s27WhenClick(el){if(!el)return;el._tip=1;if(el._justFocus){el._justFocus=0;return}openTip(el)}
 window.s27TipShow=s27TipShow;window.s27WhenClick=s27WhenClick;
 document.addEventListener('click',function(ev){const el=ev.target&&ev.target.closest&&ev.target.closest('.b27-form .s27-tipk,.rq-form .s27-tipk');
   if(!el){if(!(ev.target&&ev.target.closest&&ev.target.closest('.s27-pop')))document.querySelectorAll('.s27-pop').forEach(e=>e.remove());return}
