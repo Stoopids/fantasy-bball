@@ -460,6 +460,8 @@ html body .b27-ao .b27-amts,html body .b27-ao .b27-chips{display:flex!important;
 html body .b27-ao .b27-amt,html body .b27-ao .b27-chip{width:auto!important;min-width:44px!important;height:36px!important;min-height:36px!important;padding:0 10px!important;font-size:13px!important;letter-spacing:0!important}
 @media (min-width:1000px){
  html body .entry-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+ html body .entry-pair>.entry-rq{order:1}
+ html body .entry-pair>.entry-wiu{order:2}
  html body .entry-pair .entry-col.is-on>.card{box-shadow:0 0 0 2px rgba(255,255,255,.28)}
  html body .entry-hd.entry-hd-wiu,html body .entry-hd.entry-hd-rq{padding:6px 12px}
  html body .entry-hd.entry-hd-wiu p,html body .entry-hd.entry-hd-rq p{margin-top:2px;line-height:1.2}
@@ -518,3 +520,35 @@ html body #main .card.tap.s27-rk table,html body #lbody .card.tap.s27-rk table,h
 html body #main .card.tap.s27-rk th,html body #main .card.tap.s27-rk td,html body #lbody .card.tap.s27-rk th,html body #lbody .card.tap.s27-rk td,html body .lgref .card.tap.s27-rk th,html body .lgref .card.tap.s27-rk td{width:auto!important;max-width:none!important;white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important;padding:4px 6px!important}
 html body #main .card.tap.s27-rk td:first-child a.chip,html body #lbody .card.tap.s27-rk td:first-child a.chip,html body .lgref .card.tap.s27-rk td:first-child a.chip{display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;box-sizing:border-box!important;width:var(--at-badge,max-content)!important;min-width:var(--at-badge,max-content)!important;max-width:none!important;height:30px!important;min-height:30px!important;max-height:30px!important;padding:0 10px 0 3px!important;gap:6px!important;font-size:13px!important;line-height:1!important;font-weight:700!important;white-space:nowrap!important;overflow:visible!important}
 html body #main .card.tap.s27-rk td:first-child a.chip img,html body #main .card.tap.s27-rk td:first-child a.chip .nologo,html body #lbody .card.tap.s27-rk td:first-child a.chip img,html body #lbody .card.tap.s27-rk td:first-child a.chip .nologo,html body .lgref .card.tap.s27-rk td:first-child a.chip img,html body .lgref .card.tap.s27-rk td:first-child a.chip .nologo{width:20px!important;height:20px!important;flex:none!important}
+.rq-notes{position:fixed;z-index:70;left:50%;bottom:112px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;width:min(360px,calc(100% - 24px));pointer-events:none}
+.rq-n{pointer-events:auto;display:flex;align-items:flex-start;gap:8px;padding:10px 10px 10px 12px;border-radius:12px;background:#172033;color:#eef1f7;border:1px solid #2f6b47;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.rq-n.dec{border-color:#8a2d2d}
+.rq-nt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.rq-nt b{font-size:14px;line-height:1.3}
+.rq-nt span{font-size:13px;line-height:1.35;overflow-wrap:anywhere}
+.rq-ni{color:#aab}
+.rq-nx{flex:none;width:36px;height:36px;border-radius:8px;border:1px solid #3a4256;background:transparent;color:inherit;font:inherit;font-size:16px;cursor:pointer}
+/* Standings identity line. Last in the standings content, above the fixed chat and online row. */
+html body .idline{margin:16px 0 calc(76px + env(safe-area-inset-bottom,0px));padding:0;font-size:15px;line-height:1.4;color:var(--tx,#eef1f7)}
+html body .idline-ch{display:inline;margin:0;padding:2px 4px;min-height:36px;border:0;background:transparent;color:var(--acc,#ffd23f);font:inherit;font-weight:800;text-decoration:underline;cursor:pointer}
+html body .idline-ch:focus-visible{outline:2px solid var(--acc,#ffd23f);outline-offset:3px;border-radius:6px}
+html body #main .gfone,html body #lbody .gfone{display:flex!important;flex-direction:column!important;align-items:stretch!important;overflow:visible!important;gap:6px!important}
+html body #main .gfone>.gfrow,html body #lbody .gfone>.gfrow{display:flex!important;flex-flow:row nowrap!important;align-items:center!important;width:100%!important;margin:0!important}
+html body #main .gfone .segrow,html body #main .gfone .mkrow,html body #lbody .gfone .segrow,html body #lbody .gfone .mkrow{display:flex!important;flex-flow:row nowrap!important;align-items:center!important;width:100%!important;gap:6px!important;margin:0!important}
+html body #main .gfone .gref,html body #lbody .gfone .gref{margin-left:auto!important;width:28px!important;min-width:28px!important;height:28px!important;min-height:28px!important;padding:0!important;border-radius:50%!important;flex:0 0 28px!important}
+html body .gm .gh{flex-wrap:nowrap!important;min-height:0!important}
+html body .gm .gh .gbtns{position:static!important;flex-direction:row!important;margin-left:auto!important}
+html body .gm .gbtns>button{width:auto!important;height:26px!important;min-height:26px!important;padding:0 7px!important;font-size:11px!important}
+/* Games search pills: intrinsic width, side by side, wrapping into one or two tight rows. Not a stack of full-width bars. */
+html body #main .gfone>.gf3,html body #lbody .gfone>.gf3{display:block!important;width:100%!important;max-width:100%!important;overflow:visible!important;margin:0!important}
+html body #main .gfone .gf2.gfpills,html body #main .gfone .gf2.gfwhen,html body #lbody .gfone .gf2.gfpills,html body #lbody .gfone .gf2.gfwhen{display:flex!important;flex-flow:row wrap!important;align-items:center!important;justify-content:flex-start!important;align-content:flex-start!important;gap:6px!important;width:100%!important;max-width:100%!important;margin:0!important;padding:0!important}
+html body #main .gfone .gfpills>.gf2-s,html body #main .gfone .gfpills>.gf2-b,html body #main .gfone .gfwhen>.gf2-s,html body #main .gfone .gfwhen>.gf2-b,html body #lbody .gfone .gfpills>.gf2-s,html body #lbody .gfone .gfpills>.gf2-b,html body #lbody .gfone .gfwhen>.gf2-s,html body #lbody .gfone .gfwhen>.gf2-b{width:auto!important;max-width:100%!important;min-width:0!important;flex:0 1 auto!important;height:28px!important;min-height:28px!important;padding:0 10px!important;font-size:12px!important}
+html body #main .gf3>.gf2.gfpills>input.gf2-s,html body #lbody .gf3>.gf2.gfpills>input.gf2-s{width:16ch!important;max-width:46%!important}
+@media (max-width:999px){
+ html body .entry-pair>.entry-col{position:absolute!important;width:0!important;max-width:0!important;overflow:hidden!important}
+ html body .entry-pair[data-focus="form"]>.entry-wiu,html body .entry-pair[data-focus="request"]>.entry-rq{position:static!important;width:100%!important;max-width:100%!important}
+}
+@media (max-width:700px){
+ html body #onlStrip.onl-fixed{left:8px!important;right:132px!important;height:44px!important;max-height:44px!important;font-size:14px!important;overflow-x:auto!important}
+ html body .chat.chat-pop{bottom:calc(60px + env(safe-area-inset-bottom,0px))!important}
+}

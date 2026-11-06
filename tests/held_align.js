@@ -7,6 +7,32 @@ const L=require('./lib.js');
 const root=path.join(__dirname,'..');
 let n=0,bad=0;const fails=[];
 function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;fails.push(name);console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,400):''))}}
+async function pointer(page,selector,act){
+  let last='';
+  for(let i=0;i<8;i++){
+    const box=await page.evaluate(sel=>{
+      const el=document.querySelector(sel);
+      if(!el||!el.isConnected)return null;
+      el.scrollIntoView({block:'center',inline:'nearest'});
+      const r=el.getBoundingClientRect();
+      if(r.width<1||r.height<1)return null;
+      return {x:r.left+r.width/2,y:Math.min(Math.max(r.top+r.height/2,r.top+4),r.bottom-4)};
+    },selector).catch(e=>{last=String(e);return null});
+    if(!box){await L.sleep(160);continue}
+    try{
+      if(act==='click')await page.mouse.click(box.x,box.y,{delay:40});
+      else await page.mouse.move(box.x,box.y);
+      const hit=await page.evaluate((sel,x,y)=>{
+        const el=document.elementFromPoint(x,y),t=document.querySelector(sel);
+        return !!(el&&t&&(el===t||t.contains(el)||el.contains(t)));
+      },selector,box.x,box.y);
+      if(hit)return;
+      last='miss';
+    }catch(e){last=String(e);if(!/detached|Target closed|Execution context|Node is/i.test(last))throw e}
+    await L.sleep(180);
+  }
+  throw new Error('pointer '+act+' missed '+selector+' '+last);
+}
 
 function sharedCheck(){
   const vm=require('vm');
@@ -105,7 +131,9 @@ function start(){
     const navGap=nav&&first?Math.round(first.getBoundingClientRect().top-nav.getBoundingClientRect().bottom):null;
     return {pills:pills.map(box),rows:[...new Set(pills.map(e=>Math.round(e.getBoundingClientRect().top)))],chips,teamGap,ownerBeside,ownerHits:hits.reduce((a,b)=>a+b,0),navGap,qb:qb.length,qbBg:qb0?getComputedStyle(qb0).backgroundColor:'',qbFg:qb0?getComputedStyle(qb0).color:'',qbBolt:qbBoltEl?getComputedStyle(qbBoltEl).color:'',hasBolt:!!qbBoltEl,liveQb:!!live,finalQb:[...document.querySelectorAll('.gfin .qb-btn, .gm.gfin .qb-btn')].length,foot,freshHidden:!fresh||fresh.hidden,onlWrap:os?os.flexWrap:'',over:document.documentElement.scrollWidth>innerWidth+2,tally:[...document.querySelectorAll('#ltabs a')].filter(a=>getComputedStyle(a).display!=='none').map(a=>a.getAttribute('data-v')),day:{labels,longest:labels.slice().sort((a,b)=>ctx.measureText(b).width-ctx.measureText(a).width)[0]||'',selected,selectedW:Math.round(ctx.measureText(selected).width),inner:Math.round(inner),font:cs?cs.font:'',rowScroll:row?row.scrollWidth:0,rowClient:row?row.clientWidth:0}};
   });
-  ok('upcoming, past and the filters share one row under the nav',g.pills.length>=7&&Math.max(...g.rows)-Math.min(...g.rows)<=2&&g.pills.filter(p=>/Upcoming|Past/.test(p.t)).every(p=>p.h===24)&&g.pills.filter(p=>!/Upcoming|Past/.test(p.t)).every(p=>p.h===28)&&g.pills.some(p=>/Stoop vs Stoop/.test(p.t))&&g.navGap>=0&&g.navGap<=12,g);
+  const gpills=g.pills.filter(p=>/All Stoops|Stoop vs Stoop|Month|All days|Search/.test(p.t));
+  const gprows=[...new Set(gpills.map(p=>p.top))];
+  ok('upcoming and past share a row and the search pills wrap in one or two compact rows',g.pills.length>=7&&g.pills.filter(p=>/Upcoming|Past/.test(p.t)).every(p=>p.h===24)&&gpills.length===5&&gpills.every(p=>p.h<=32&&p.w<700)&&gprows.length>=1&&gprows.length<=2&&g.pills.some(p=>/Stoop vs Stoop/.test(p.t))&&g.navGap>=0&&g.navGap<=12,g);
   ok('team pills stay 200x40, touch, and owners clear the quick bet',g.chips.length>0&&g.chips.every(c=>c.w===200&&c.h===40)&&g.teamGap===0&&g.ownerBeside&&g.ownerHits===0,g);
   ok('quick bet uses the request blue, white text, and the lightning icon',g.qb>0&&g.qbBg==='rgb(30, 58, 138)'&&g.qbFg==='rgb(255, 255, 255)'&&g.qbBolt==='rgb(255, 255, 255)'&&g.hasBolt,{qb:g.qb,bg:g.qbBg,fg:g.qbFg,bolt:g.qbBolt});
   ok('games footer drops the time-zone line and the standings update',!/time zone/i.test(g.foot)&&g.freshHidden,g.foot);
@@ -119,8 +147,8 @@ function start(){
   ok('hover does not open quick bet',!(await P.page.$('.qb-pick, .qbd')));
   await P.page.click('.qb-btn');
   await L.sleep(300);
-  const clickQ=await P.page.evaluate(()=>({open:!!document.querySelector('.qb-pick, .qbd'),titles:document.querySelectorAll('.qb-s[title], .qbs-o[title]').length}));
-  ok('click opens quick bet and its choices have no hover title',clickQ.open&&clickQ.titles===0,clickQ);
+  const clickQ=await P.page.evaluate(()=>{const q=document.querySelector('.qbd, .qb-pick');return {open:!!q,titles:document.querySelectorAll('.qb-s[title], .qbs-o[title]').length,text:q?q.innerText:''}});
+  ok('click opens quick bet and its choices have no hover title',clickQ.open&&clickQ.titles===0&&!/Moneyline|to win/i.test(clickQ.text||''),clickQ);
   await P.page.keyboard.press('Escape');
   const longest=await P.page.evaluate(()=>{let best=null;[...document.querySelectorAll('.ggrid>.gm')].forEach(card=>{if(!card.querySelector('.qb-btn'))return;const name=[...card.querySelectorAll(':scope>.gow .opill')].map(p=>p.innerText.trim()).sort((a,b)=>b.length-a.length)[0]||'';if(!best||name.length>best.name.length)best={name,id:card.dataset.gid}});if(best){const el=document.querySelector('.gm[data-gid="'+best.id+'"]');el.scrollIntoView({block:'center'});el.setAttribute('data-longown','1')}return best});
   console.log('  longest owner '+JSON.stringify(longest));
@@ -136,17 +164,22 @@ function start(){
     const row=document.querySelector('.gfone');
     const controls=[...document.querySelectorAll('.gfone .rkseg-b, .gfone .gf2-s, .gfone .gf2-b')].filter(e=>e.offsetParent);
     const tops=[...new Set(controls.map(e=>Math.round(e.getBoundingClientRect().top)))];
+    const filt=controls.filter(e=>/All Stoops|Stoop vs Stoop|Month|All days|Search/.test(e.innerText||e.getAttribute('aria-label')||e.placeholder||'')).map(e=>{const r=e.getBoundingClientRect();return {w:Math.round(r.width),h:Math.round(r.height),top:Math.round(r.top)}});
     const rr=row?row.getBoundingClientRect():{width:0,right:0};
     const nav=document.getElementById('ltabs'), first=document.querySelector('.gfone .rkseg-b');
     const card=document.querySelector('.ggrid>.gm:not(.gfin)');
     const pair=card?[...card.querySelectorAll('.gside a.chip')].slice(0,2):[];
     const hits=[...document.querySelectorAll('.ggrid>.gm')].map(card=>{const btn=card.querySelector('.qb-btn');if(!btn)return 0;const b=btn.getBoundingClientRect();return [...card.querySelectorAll(':scope>.gow .opill')].filter(p=>{const r=p.getBoundingClientRect();return !(r.right<=b.left||r.left>=b.right||r.bottom<=b.top||r.top>=b.bottom)||p.scrollWidth>p.clientWidth+1}).length}).reduce((a,b)=>a+b,0);
-    return {more,main,over,tops,n:controls.length,rowW:Math.round(rr.width),rowRight:Math.round(rr.right),rowScroll:row?row.scrollWidth:0,vw:innerWidth,page:document.documentElement.scrollWidth,navGap:nav&&first?Math.round(first.getBoundingClientRect().top-nav.getBoundingClientRect().bottom):null,teamGap:pair.length===2?Math.round(pair[1].getBoundingClientRect().top-pair[0].getBoundingClientRect().bottom):null,h:controls[0]?Math.round(controls[0].getBoundingClientRect().height):0,ownerHits:hits};
+    return {more,main,over,tops,filt,n:controls.length,rowW:Math.round(rr.width),rowRight:Math.round(rr.right),rowScroll:row?row.scrollWidth:0,vw:innerWidth,page:document.documentElement.scrollWidth,navGap:nav&&first?Math.round(first.getBoundingClientRect().top-nav.getBoundingClientRect().bottom):null,teamGap:pair.length===2?Math.round(pair[1].getBoundingClientRect().top-pair[0].getBoundingClientRect().bottom):null,h:controls[0]?Math.round(controls[0].getBoundingClientRect().height):0,ownerHits:hits};
   });
   ok('phone More still holds Tally and the other extra tabs',phone.more.includes('tally')&&phone.more.includes('profile')&&phone.more.includes('rules'),phone);
-  ok('phone games controls stay on one contained scrolling row',phone.n>=7&&Math.max(...phone.tops)-Math.min(...phone.tops)<=2&&!phone.over&&phone.rowRight<=phone.vw+1&&phone.rowScroll>phone.rowW,phone);
+  const frows=[...new Set((phone.filt||[]).map(p=>p.top))];
+  ok('phone search pills sit side by side in one or two tight rows',phone.n>=7&&!phone.over&&phone.rowRight<=phone.vw+1&&(phone.filt||[]).length===5&&frows.length>=1&&frows.length<=2&&phone.filt.every(p=>p.h<=32&&p.w<phone.vw*0.8),phone);
   console.log('  phone390 '+JSON.stringify(phone));
   ok('phone nav-to-controls gap stays tight and team pills touch',phone.navGap>=0&&phone.navGap<=12&&phone.teamGap===0&&phone.h===24&&phone.ownerHits===0,phone);
+  await P.page.evaluate(()=>{const r=document.querySelector('.gfone');if(r)r.scrollIntoView({block:'start'})});
+  await L.sleep(100);
+  await P.page.screenshot({path:'/opt/cursor/artifacts/compact-filters-phone.png'});
   await P.page.evaluate(()=>{const el=document.querySelector('.ggrid>.gm .qb-btn');if(el)el.closest('.gm').scrollIntoView({block:'center'})});
   await L.sleep(150);
   await P.page.screenshot({path:'/opt/cursor/artifacts/next-games-phone.png'});
@@ -200,9 +233,11 @@ function start(){
   await P.page.screenshot({path:'/opt/cursor/artifacts/next-pool-empty.png'});
   await P.page.click('#b27KindBet');
   await L.sleep(200);
-  ok('request heading is blue and desktop has two bet tabs',/30,\s*58,\s*138|rgb\(30, 58, 138\)/.test(bet.rqBg)&&bet.desk.join('|')==='Write it Up or Request|All Bets',bet);
-  await P.page.evaluate(()=>{const t=document.querySelector('#b27Text');t.value='Duke beats UNC';t.dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('[data-lb=opp]').click();document.querySelector('[data-lb=amt]').click()});
+  ok('request heading is blue and desktop has two bet tabs',/30,\s*58,\s*138|rgb\(30, 58, 138\)/.test(bet.rqBg)&&bet.desk.join('|')==='Request or Write it up|All Bets',bet);
+  await P.page.evaluate(()=>{const t=document.querySelector('#b27Text');t.value='Duke beats UNC';t.dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('#b27Form [data-lb=opp]').click();document.querySelector('#b27Form [data-lb=amt]').click()});
   await L.sleep(200);
+  await P.page.click('#b27Form [data-lb=when][data-v=season]');
+  await L.sleep(150);
   await P.page.click('#b27Place');
   await P.page.waitForSelector('#b27Confirm',{timeout:5000});
   await P.page.evaluate(()=>{const c=navigator.clipboard||(navigator.clipboard={});c.writeText=async function(t){c._last=t;c._n=(c._n||0)+1}});
@@ -210,6 +245,8 @@ function start(){
   await P.page.waitForFunction(()=>/Placed/.test((document.getElementById('b27Msg')||{}).innerText||''),{timeout:10000});
   const saved=await P.page.evaluate(()=>{const m=(document.getElementById('b27Msg')||{}).innerText||'';return {m,clip:navigator.clipboard._last||'',n:navigator.clipboard._n||0}});
   ok('copy happens only after the save and uses pushups plus the burst',saved.n===1&&/💥/.test(saved.clip)&&/pushups/.test(saved.clip)&&!/\$/.test(saved.clip)&&/Placed/.test(saved.m),saved);
+  const season=await P.page.evaluate(()=>{const b=window.LBETS.bets().find(x=>x.text==='Duke beats UNC');return b?{wk:b.wk,sid:b.sid,when:window.SHARED_UI.whenText(b)}:null});
+  ok('end of season is saved on the new bet',!!season&&season.wk==='season'&&season.sid==='2026-27'&&/End of season · 2026-27/.test(season.when),season);
   await P.page.click('[data-ob=all]');
   await P.page.waitForSelector('#b27Flt',{timeout:5000});
   const filt=await P.page.evaluate(()=>({
@@ -217,15 +254,15 @@ function start(){
     link:(document.querySelector('#b27Flt a')||{}).innerText,tally:!!document.querySelector('#b27Tally summary'),sum:(document.querySelector('#b27Tally summary')||{}).innerText
   }));
   ok('all bets defaults to Open, Any, Any time and keeps Tally inside the list',filt.st==='open'&&filt.ac==='any'&&filt.wh==='any'&&/How these filters work/.test(filt.link)&&filt.tally&&/Who owes who/.test(filt.sum),filt);
-  await P.page.hover('.b27-c');
-  await L.sleep(200);
-  await P.page.hover('.b27-m');
-  await L.sleep(200);
+  await pointer(P.page,'.b27-c','move');
+  await L.sleep(250);
+  await pointer(P.page,'.b27-m','move');
+  await L.sleep(250);
   const add=await P.page.$('.s25add');
-  if(add){await add.hover();await L.sleep(450)}
+  if(add){await pointer(P.page,'.s25add','move');await L.sleep(500)}
   const hovered=await P.page.evaluate(()=>({pop:!!document.querySelector('.s27-pop'),who:!!document.querySelector('.s25wl'),pk:!!document.querySelector('.s25pk'),titles:[...document.querySelectorAll('.b27-c [title], .s25rx[title]')].map(e=>e.getAttribute('title')).filter(t=>t&&!/Copy this/.test(t))}));
   ok('hovering a placed bet card does not open a detail',!hovered.pop&&!hovered.who&&!hovered.pk&&hovered.titles.length===0,hovered);
-  if(add){await add.click();await L.sleep(200);ok('click opens the reaction list',!!(await P.page.$('.s25pk')));await P.page.keyboard.press('Escape');await L.sleep(150);ok('escape closes the reaction list',!(await P.page.$('.s25pk')))}
+  if(add){await pointer(P.page,'.s25add','click');await L.sleep(200);ok('click opens the reaction list',!!(await P.page.$('.s25pk')));await P.page.keyboard.press('Escape');await L.sleep(150);ok('escape closes the reaction list',!(await P.page.$('.s25pk')))}
   await P.page.screenshot({path:'/opt/cursor/artifacts/held-bets-filters-desktop.png'});
   await P.page.evaluate(()=>{const n=document.getElementById('b27Tally');if(n){n.open=true;n.scrollIntoView({block:'start'})}});
   await L.sleep(200);
@@ -243,12 +280,38 @@ function start(){
     const wiu=document.querySelector('.entry-wiu')&&getComputedStyle(document.querySelector('.entry-wiu')).display;
     return {tabs:[...document.querySelectorAll('.ob-phone button')].map(b=>b.innerText),size:s&&s.fontSize,white:s&&s.whiteSpace,shown,wiu,q:(document.querySelector('[data-tip=when]')||{}).innerText};
   });
-  ok('phone keeps three bet tabs and a smaller single-line request heading',req.tabs.join('|')==='Write it Up|Request|All Bets'&&req.shown&&req.wiu==='none'&&req.size==='13px'&&req.white==='nowrap',req);
+  ok('phone keeps three bet tabs and a smaller single-line request heading',req.tabs.join('|')==='Request|Write it Up|All Bets'&&req.shown&&req.wiu==='none'&&req.size==='13px'&&req.white==='nowrap',req);
   await P.page.evaluate(()=>{const t=document.querySelector('[data-rq-in=text]');if(t){t.value='Virginia beats Duke';t.dispatchEvent(new Event('input',{bubbles:true}))}const a=document.querySelector('[data-rq=amt]');if(a)a.click()});
   await L.sleep(200);
   await P.page.screenshot({path:'/opt/cursor/artifacts/held-request-phone.png'});
   const filled=await P.page.evaluate(()=>document.body.innerText.includes('pushups')||document.body.innerText.includes('Virginia'));
   ok('filled request shows the bet text',filled);
+  await P.page.click('.ob-phone [data-v=form]');
+  await P.page.waitForSelector('#b27Text',{timeout:8000});
+  const wide=async()=>P.page.evaluate(()=>{const f=document.getElementById('b27Form');const r=f.getBoundingClientRect();const phone=document.querySelector('.ob-phone');const tops=[...new Set([...phone.querySelectorAll('button')].map(b=>Math.round(b.getBoundingClientRect().top)))];return {w:Math.round(r.width),rows:tops.length,text:(document.getElementById('b27Text')||{}).value||'',wk:(window.LBETS._state.f||{}).wk}});
+  const wA=await wide();
+  await P.page.evaluate(()=>{const t=document.getElementById('b27Text');t.focus();t.value='keep this draft';t.dispatchEvent(new Event('input',{bubbles:true}));t.setSelectionRange(4,4)});
+  await P.page.click('[data-lb=when][data-v=season]');
+  await L.sleep(200);
+  const wB=await wide();
+  await P.page.click('#ltabs a[data-v=games]');
+  await L.sleep(250);
+  await P.page.click('#ltabs a[data-v=bets]');
+  await P.page.waitForSelector('#b27Text',{timeout:8000});
+  const wC=await wide();
+  ok('phone write-up width stays put across refresh and return',wA.rows===1&&wB.rows===1&&wC.rows===1&&Math.abs(wA.w-wB.w)<=2&&Math.abs(wA.w-wC.w)<=2&&wB.text==='keep this draft'&&wC.text==='keep this draft'&&wB.wk==='season'&&wC.wk==='season',{wA,wB,wC});
+  await P.page.screenshot({path:'/opt/cursor/artifacts/held-bets-phone-stable.png'});
+  await P.close();
+  P=await open('#bets',{w:473,h:900});
+  await P.page.waitForSelector('#b27Form',{timeout:10000});
+  const w473=async()=>P.page.evaluate(()=>{const f=document.getElementById('b27Form');const phone=document.querySelector('.ob-phone');const tops=phone?[...new Set([...phone.querySelectorAll('button')].map(b=>Math.round(b.getBoundingClientRect().top)))]:[];return {w:f?Math.round(f.getBoundingClientRect().width):0,rows:tops.length}});
+  const e473=await w473();
+  await P.page.click('#ltabs a[data-v=games]');
+  await L.sleep(200);
+  await P.page.click('#ltabs a[data-v=bets]');
+  await P.page.waitForSelector('#b27Form',{timeout:8000});
+  const r473=await w473();
+  ok('473px write-up stays one tab row and the same width',e473.rows===1&&r473.rows===1&&e473.w>300&&Math.abs(e473.w-r473.w)<=2,{e473,r473});
   await P.close();
 
   const ben=info.managers[1];
@@ -258,6 +321,10 @@ function start(){
   await P.page.waitForSelector('#profileTeam',{timeout:8000});
   const prof=await P.page.evaluate(()=>({team:(document.getElementById('profileTeam')||{}).innerText||'',name:(document.getElementById('profileName')||{}).innerText||''}));
   ok('profile shows the switched device identity',/Blazers|Ben/.test(prof.team+' '+prof.name),prof);
+  await P.page.click('#ltabs a[data-v=standings]');
+  await P.page.waitForSelector('.idline',{timeout:8000});
+  const idl=await P.page.evaluate(()=>({t:(document.querySelector('.idline')||{}).innerText||'',onForm:!!document.querySelector('#b27Form .idline, #rqForm .idline')}));
+  ok('standings names who is logged in and bets forms do not',/You are logged in as/.test(idl.t)&&/Change\?/.test(idl.t)&&!idl.onForm,idl);
   await P.page.click('#ltabs a[data-v=bets]');
   await P.page.waitForSelector('#b27Text',{timeout:8000});
   const noRow=await P.page.evaluate(()=>({change:!!document.querySelector('#b27Form a[href*="join.html"]'),you:/you are\s/i.test((document.getElementById('b27Form')||{}).innerText||'')}));

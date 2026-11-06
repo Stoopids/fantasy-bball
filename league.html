@@ -17,10 +17,25 @@
 <link rel="stylesheet" href="css/league-app.css">
 <link rel="stylesheet" href="css/power.css">
 <link rel="stylesheet" href="css/sync-step1.css?v=1.45.0">
-<link rel="stylesheet" href="shared/ui.css?v=1.8.26">
-<style>/* Page rules that sit after shared/ui.css on STOOPIDS too: 200x40 team pills, one filter row, desktop has no Tally tab. */
+<link rel="stylesheet" href="shared/ui.css?v=1.8.32">
+<style>/* Page rules that sit after shared/ui.css: Ball card buttons use .mkbtns, and the online names live inside #chat. */
+html body #lbody .ggrid>.gm:not(.gfin)>.gh,html body #lbody .ggrid .gbody>.gh{grid-column:1 / span 2!important;width:auto!important;max-width:none!important;min-width:0!important;margin:0!important;justify-self:stretch!important;align-self:stretch!important;flex-wrap:nowrap!important;align-items:center!important;box-sizing:border-box!important}
+html body #lbody .gm .gh .mkbtns{position:static!important;display:flex!important;flex-flow:row nowrap!important;align-items:center!important;flex:0 0 auto!important;width:auto!important;margin:0 0 0 auto!important;gap:4px!important}
+html body #lbody .gm .gh .mkbtns>button,html body #lbody .gm .gh .mkbtns .qb-btn{width:auto!important;min-width:0!important;height:26px!important;min-height:26px!important;max-height:26px!important;padding:0 7px!important;font-size:11px!important;line-height:1!important;box-sizing:border-box!important}
+html body #lbody .gm .gh .mkbtns .qbw{display:inline-flex!important;width:auto!important;flex:0 0 auto!important;margin:0!important;padding:0!important}
+html body .tabs.ob-seg.ob-phone{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+html body .tabs.ob-seg.ob-desk{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+@media (max-width:700px){
+ html body.lsite .chat.chat-off{left:8px!important;right:8px!important;width:auto!important;max-width:none!important;height:44px!important;max-height:44px!important;display:flex!important;flex-direction:row!important;align-items:center!important;gap:8px!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important;overflow:visible!important}
+ html body.lsite .chat.chat-off #chatpres{flex:1 1 auto;min-width:0;height:44px;margin:0;overflow-x:auto;overflow-y:hidden;font-size:14px}
+ html body.lsite .chat.chat-off .chat-launch{flex:none}
+ html body.lsite .chat.chat-pop{left:auto!important;right:max(12px,env(safe-area-inset-right,0px))!important;width:min(320px,calc(100vw - 24px))!important;bottom:calc(60px + env(safe-area-inset-bottom,0px))!important;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;overflow:visible!important;max-height:none!important}
+ html body.lsite .chat.chat-pop #chatpres{position:fixed;left:8px;right:108px;bottom:max(8px,env(safe-area-inset-bottom,0px));height:44px;margin:0;overflow-x:auto;font-size:14px;z-index:29}
+ html body.lsite .chat.chat-pop .chat-b{width:min(320px,calc(100vw - 24px))!important}
+}
+/* Page rules that sit after shared/ui.css on STOOPIDS too: 200x40 team pills, one filter row, desktop has no Tally tab. */
 html body .ggrid>.gm:not(.gfin) .gside a.chip{width:200px!important;min-width:200px!important;max-width:200px!important;height:40px!important;min-height:40px!important;max-height:40px!important;box-sizing:border-box!important}
-html body #lbody .gf3>.gf2.gfpills>.gf2-s,html body #lbody .gf3>.gf2.gfpills>.gf2-b{flex:0 0 auto!important;width:auto!important;min-width:0!important;max-width:none!important;height:28px!important;min-height:28px!important;font-size:12px!important;line-height:26px!important;padding:0 10px!important}
+html body #lbody .gf3>.gf2.gfpills>select.gf2-s,html body #lbody .gf3>.gf2.gfpills>.gf2-b{flex:0 0 auto!important;min-width:0!important;height:28px!important;min-height:28px!important;font-size:12px!important;line-height:26px!important;padding:0 10px!important}
 html body #lbody .gf3>.gf2.gfpills>select.gf2-s{width:auto!important;padding:0 22px 0 8px!important}
 html body #lbody .gfone .rkseg .rkseg-b{height:24px!important;min-height:24px!important;font-size:11.5px!important;padding:0 8px!important;line-height:22px!important}
 @media (min-width:701px){html body nav#ltabs>a[data-v="tally"]{display:none!important}}
@@ -32,7 +47,7 @@ html body #lbody .gfone .rkseg .rkseg-b{height:24px!important;min-height:24px!im
 <div id="app"></div>
 <script src="js/version.js"></script>
 <script src="js/qr.min.js"></script>
-<script src="shared/ui.js?v=1.8.26"></script>
+<script src="shared/ui.js?v=1.8.32"></script>
 <script src="js/core.js"></script>
 <script src="js/scoring.js"></script>
 <script src="js/league-d.js"></script>
