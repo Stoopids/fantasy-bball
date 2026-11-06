@@ -51,12 +51,17 @@ function start(){
 
 (async()=>{
   sharedCheck();
-  const {srv,port}=await start();
+  const {srv,port,mem}=await start();
   const base='http://127.0.0.1:'+port;
   process.env.API=base+'/api/data/';
   const id=await seed(process.env.API,{rounds:8});
   const info=seed.info;
   const me=info.managers[0];
+  const now=Date.now();
+  const lid=String(id).toLowerCase();
+  mem.set('fbn1-'+lid+'-pr-'+me.id,JSON.stringify({t:now}));
+  mem.set('fbn1-'+lid+'-pr-'+info.managers[1].id,JSON.stringify({t:now-5*3600e3}));
+  mem.set('fbn1-'+lid+'-chat',JSON.stringify({version:1,msgs:[{id:'heldhist',ts:now-60000,who:me.id,text:'History stays'}]}));
   async function open(hash,opt){
     opt=opt||{};
     const P=await L.phone('held',{desktop:!!opt.desk,w:opt.w||(opt.desk?1280:390),h:opt.h||(opt.desk?900:844)});
@@ -69,8 +74,8 @@ function start(){
     return P}
   let P=await open('#games',{desk:true,w:1280,h:900});
   let g=await P.page.evaluate(()=>{
-    const pills=[...document.querySelectorAll('.gf3 .gfpills > *, .gf3 .gfwhen > *')].filter(e=>e.offsetParent);
-    const box=e=>{const r=e.getBoundingClientRect();return {t:(e.innerText||e.getAttribute('aria-label')||'').slice(0,24),w:Math.round(r.width),h:Math.round(r.height)}};
+    const pills=[...document.querySelectorAll('.gf3 .gfall > *')].filter(e=>e.offsetParent);
+    const box=e=>{const r=e.getBoundingClientRect();return {t:(e.innerText||e.placeholder||e.getAttribute('aria-label')||'').slice(0,24),w:Math.round(r.width),h:Math.round(r.height),top:Math.round(r.top)}};
     const chips=[...document.querySelectorAll('.ggrid>.gm:not(.gfin) .gside a.chip')].slice(0,3).map(e=>{const r=e.getBoundingClientRect();return {w:Math.round(r.width),h:Math.round(r.height)}});
     const qb=[...document.querySelectorAll('.qb-btn')];
     const live=document.body.innerText.includes('LIVE')&&[...document.querySelectorAll('.gm')].some(el=>/LIVE/.test(el.innerText)&&el.querySelector('.qb-btn'));
@@ -79,15 +84,26 @@ function start(){
     const fresh=document.getElementById('fresh');
     const onl=document.getElementById('onlStrip');
     const os=onl?getComputedStyle(onl):null;
-    return {pills:pills.map(box),chips,qb:qb.length,qbBg:qb[0]?getComputedStyle(qb[0]).backgroundColor:'',liveQb:!!live,finalQb:[...document.querySelectorAll('.gfin .qb-btn, .gm.gfin .qb-btn')].length,foot,freshHidden:!fresh||fresh.hidden,onlWrap:os?os.flexWrap:'',over:document.documentElement.scrollWidth>innerWidth+2,tally:[...document.querySelectorAll('#ltabs a')].filter(a=>getComputedStyle(a).display!=='none').map(a=>a.getAttribute('data-v'))};
+    const day=document.getElementById('gDaySel');
+    const cs=day?getComputedStyle(day):null;
+    const ctx=document.createElement('canvas').getContext('2d');
+    if(cs)ctx.font=cs.font;
+    const labels=day?[...day.options].map(o=>o.text):[];
+    const worst='Yesterday · Wed, Sep 30, 2026';
+    const pad=cs?parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight):0;
+    const inner=day?day.clientWidth-pad:0;
+    const row=document.querySelector('.gf3');
+    return {pills:pills.map(box),rows:[...new Set(pills.map(e=>Math.round(e.getBoundingClientRect().top)))],chips,qb:qb.length,qbBg:qb[0]?getComputedStyle(qb[0]).backgroundColor:'',liveQb:!!live,finalQb:[...document.querySelectorAll('.gfin .qb-btn, .gm.gfin .qb-btn')].length,foot,freshHidden:!fresh||fresh.hidden,onlWrap:os?os.flexWrap:'',over:document.documentElement.scrollWidth>innerWidth+2,tally:[...document.querySelectorAll('#ltabs a')].filter(a=>getComputedStyle(a).display!=='none').map(a=>a.getAttribute('data-v')),day:{labels,longest:labels.slice().sort((a,b)=>ctx.measureText(b).width-ctx.measureText(a).width)[0]||'',worst,worstW:Math.round(ctx.measureText(worst).width),inner:Math.round(inner),font:cs?cs.font:'',rowScroll:row?row.scrollWidth:0,rowClient:row?row.clientWidth:0}};
   });
-  ok('five games filter controls are 150x32 and the day select is 149',g.pills.length===5&&g.pills.filter(p=>p.w===150&&p.h===32).length===4&&g.pills.some(p=>p.w===149&&p.h===32),g.pills);
+  ok('five games filters sit on one 26px row and the short controls are under 150px',g.pills.length===5&&g.rows.length===1&&g.pills.every(p=>p.h===26)&&g.pills.filter(p=>p.w<150).length>=4,g.pills);
   ok('upcoming team pills are 200x40',g.chips.length>0&&g.chips.every(c=>c.w===200&&c.h===40),g.chips);
   ok('quick bet shows on upcoming cards and stays yellow',g.qb>0&&/255,\s*212,\s*0|rgb\(255, 212, 0\)/.test(g.qbBg),{qb:g.qb,bg:g.qbBg});
   ok('games footer drops the time-zone line and the standings update',!/time zone/i.test(g.foot)&&g.freshHidden,g.foot);
   ok('desktop nav has no Tally tab',!g.tally.includes('tally'),g.tally);
-  ok('games page does not overflow at 1280',!g.over);
-  await P.page.screenshot({path:'/opt/cursor/artifacts/held-games-desktop.png'});
+  ok('games page does not overflow at 1280 and the longest day label fits the day control',!g.over&&g.day.worstW<=g.day.inner,g.day);
+  console.log('  day '+JSON.stringify(g.day));
+  console.log('  pills '+JSON.stringify(g.pills));
+  await P.page.screenshot({path:'/opt/cursor/artifacts/next-games-desktop.png'});
   await P.close();
 
   P=await open('#games',{w:390,h:844});
@@ -95,12 +111,16 @@ function start(){
     const more=[...document.querySelectorAll('#ltabs a.nm-x')].map(a=>a.getAttribute('data-v'));
     const main=[...document.querySelectorAll('#ltabs a:not(.nm-x), #ltabs .nm-b')].map(a=>(a.innerText||'').replace(/\s+/g,' ').trim());
     const over=document.documentElement.scrollWidth>innerWidth+2;
-    const groups=[...document.querySelectorAll('.gf3 > .gf2')].map(e=>e.className);
-    return {more,main,over,groups};
+    const row=document.querySelector('.gf3');
+    const controls=[...document.querySelectorAll('.gfall > *')].filter(e=>e.offsetParent);
+    const tops=[...new Set(controls.map(e=>Math.round(e.getBoundingClientRect().top)))];
+    const rr=row?row.getBoundingClientRect():{width:0,right:0};
+    return {more,main,over,tops,n:controls.length,rowW:Math.round(rr.width),rowRight:Math.round(rr.right),rowScroll:row?row.scrollWidth:0,vw:innerWidth,page:document.documentElement.scrollWidth};
   });
   ok('phone More still holds Tally and the other extra tabs',phone.more.includes('tally')&&phone.more.includes('profile')&&phone.more.includes('rules'),phone);
-  ok('phone games filters stay in two groups without page overflow',phone.groups.some(c=>/gfpills/.test(c))&&phone.groups.some(c=>/gfwhen/.test(c))&&!phone.over,phone);
-  await P.page.screenshot({path:'/opt/cursor/artifacts/held-games-phone.png'});
+  ok('phone games filters stay on one contained row without page overflow',phone.n===5&&phone.tops.length===1&&!phone.over&&phone.rowRight<=phone.vw+1&&phone.rowScroll>phone.rowW,phone);
+  console.log('  phone390 '+JSON.stringify(phone));
+  await P.page.screenshot({path:'/opt/cursor/artifacts/next-games-phone.png'});
   await P.close();
 
   P=await open('#bets',{desk:true,w:1280,h:900});
@@ -152,6 +172,8 @@ function start(){
   ok('phone keeps three bet tabs and a smaller single-line request heading',req.tabs.join('|')==='Write it Up|Request|All Bets'&&req.shown&&req.wiu==='none'&&req.size==='13px'&&req.white==='nowrap',req);
   await P.page.evaluate(()=>{const t=document.querySelector('[data-rq-in=text]');if(t){t.value='Virginia beats Duke';t.dispatchEvent(new Event('input',{bubbles:true}))}const a=document.querySelector('[data-rq=amt]');if(a)a.click()});
   await L.sleep(200);
+  await P.page.click('#chatbar');
+  await L.sleep(200);
   await P.page.click('#chatX');
   await L.sleep(200);
   await P.page.screenshot({path:'/opt/cursor/artifacts/held-request-phone.png'});
@@ -160,23 +182,42 @@ function start(){
   await P.close();
 
   P=await open('#games',{desk:true});
-  const chat=await P.page.evaluate(()=>{
+  const measure=()=>P.page.evaluate(()=>{
     const c=document.getElementById('chat');
     const r=c.getBoundingClientRect();
     const who=document.getElementById('chatwho');
-    return {cls:c.className,w:Math.round(r.width),right:Math.round(innerWidth-r.right),bottom:Math.round(innerHeight-r.bottom),pad:getComputedStyle(document.body).paddingBottom,who:(who||{}).innerText,switcher:!!c.querySelector('select, [data-a=pres]'),x:!!document.getElementById('chatX'),min:!!document.getElementById('chatMin'),snd:(document.getElementById('chatSnd')||{}).innerText};
+    const panel=document.getElementById('chatpanel');
+    return {cls:c.className,w:Math.round(r.width),left:Math.round(r.left),right:Math.round(innerWidth-r.right),bottom:Math.round(innerHeight-r.bottom),pad:getComputedStyle(document.body).paddingBottom,chatH:getComputedStyle(document.documentElement).getPropertyValue('--chatH').trim(),who:(who||{}).innerText,switcher:!!(who&&who.querySelector('select, [data-a=pres]')),x:!!document.getElementById('chatX'),min:!!document.getElementById('chatMin'),snd:(document.getElementById('chatSnd')||{}).innerText,panelHidden:!panel||panel.hidden,launch:!!document.getElementById('chatlaunch'),pres:(document.getElementById('chatpres')||{}).innerText||'',hist:(document.getElementById('chatlist')||{}).innerText||''};
   });
-  ok('chat opens as a 320px corner overlay with no page padding',chat.w===320&&chat.right>=10&&chat.right<=16&&chat.pad==='0px'&&/Ana|Aces/.test(chat.who)&&!chat.switcher&&/Sound off/.test(chat.snd),chat);
-  await P.page.screenshot({path:'/opt/cursor/artifacts/held-chat-desktop.png'});
-  await P.page.click('#chatX');
-  await L.sleep(200);
-  const off=await P.page.evaluate(()=>({cls:document.getElementById('chat').className,launch:!!document.getElementById('chatlaunch')}));
-  ok('X hides chat to a launcher',/chat-off/.test(off.cls)&&off.launch,off);
-  await P.page.click('#chatlaunch');
+  await P.page.waitForFunction(()=>{const p=document.getElementById('chatpres');return p&&/cbo/.test(p.innerHTML)&&/5h ago/.test(p.innerText)},{timeout:8000});
+  const landed=await measure();
+  ok('chat starts minimized on the full-width bottom bar with no page padding',/chat-bar/.test(landed.cls)&&landed.left===0&&landed.w>1000&&landed.bottom===0&&landed.pad==='0px'&&landed.chatH==='0px'&&landed.panelHidden,landed);
+  const strip=await P.page.evaluate(()=>({html:document.getElementById('chatpres').innerHTML,text:document.getElementById('chatpres').innerText,last:(document.getElementById('chatlast')||{}).innerText||''}));
+  ok('minimized bar lists who is here, how long since the others, and the last message',/cbo/.test(strip.html)&&/pd/.test(strip.html)&&/cbf/.test(strip.html)&&/5h ago/.test(strip.text)&&/History stays/.test(strip.last),strip);
+  await P.page.screenshot({path:'/opt/cursor/artifacts/next-chat-bar.png'});
+  await P.page.click('#chatbar');
+  await L.sleep(250);
+  const chat=await measure();
+  ok('opening the bar shows the 320px corner overlay with a read-only name',chat.w===320&&chat.right>=10&&chat.right<=16&&chat.bottom>=10&&chat.bottom<=16&&chat.pad==='0px'&&/Ana|Aces/.test(chat.who)&&!chat.switcher&&/Sound off/.test(chat.snd)&&!chat.panelHidden&&/History stays/.test(chat.hist),chat);
+  await P.page.screenshot({path:'/opt/cursor/artifacts/next-chat-pop.png'});
   await P.page.click('#chatMin');
   await L.sleep(200);
-  const bar=await P.page.evaluate(()=>{const c=document.getElementById('chat');const r=c.getBoundingClientRect();return {cls:c.className,w:Math.round(r.width),left:Math.round(r.left)}});
-  ok('Minimize restores the full-width bottom bar',/chat-bar/.test(bar.cls)&&bar.left===0&&bar.w>600,bar);
+  const bar=await measure();
+  ok('Minimize restores the full-width bottom bar',/chat-bar/.test(bar.cls)&&bar.left===0&&bar.w>1000&&bar.panelHidden&&bar.pad==='0px',bar);
+  await P.page.click('#chatbar');
+  await L.sleep(200);
+  const again=await measure();
+  ok('reopening keeps the history',/chat-pop/.test(again.cls)&&/History stays/.test(again.hist),again.hist);
+  await P.page.screenshot({path:'/opt/cursor/artifacts/next-chat-reopen.png'});
+  await P.page.click('#chatX');
+  await L.sleep(200);
+  const off=await measure();
+  ok('X hides chat to a launcher',/chat-off/.test(off.cls)&&off.launch,off);
+  await P.page.screenshot({path:'/opt/cursor/artifacts/next-chat-off.png'});
+  await P.page.click('#chatlaunch');
+  await L.sleep(200);
+  const back=await measure();
+  ok('the launcher reopens the same history',/chat-pop/.test(back.cls)&&back.w===320&&/History stays/.test(back.hist),back);
   await P.page.goto(base+'/help.html#howto-filters',{waitUntil:'domcontentloaded'});
   await L.sleep(300);
   await P.page.screenshot({path:'/opt/cursor/artifacts/held-filters-guide.png'});
