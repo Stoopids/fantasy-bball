@@ -23,7 +23,7 @@
 .mkbtns{position:absolute;top:0;right:0;display:flex;flex-direction:column;gap:6px;align-items:stretch;z-index:2}
 .mkbtns .qbw{margin:0!important;padding:0!important;display:block}
 .mkbtns>button,.mkbtns .s27-copy,.mkbtns .qb-btn{position:static!important;width:96px!important;height:30px!important;min-height:30px!important;margin:0!important;padding:0 8px!important;font-size:12px!important;font-weight:700!important;border-radius:8px!important;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap}
-.mkbtns .qb-btn{background:#FFD400!important;color:#111!important;border:0!important}
+.mkbtns .qb-btn{background:#1e3a8a!important;color:#fff!important;border:0!important}
 .gm .gside .nm{max-width:calc(100% - 100px)}
 .gm.mkbet{border-color:#22c55e!important;box-shadow:0 0 0 1px #22c55e inset!important}
 .mkrow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:nowrap;margin:0 0 10px}
