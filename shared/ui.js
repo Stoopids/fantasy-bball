@@ -166,12 +166,33 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
     function left(ms){var m=Math.max(1,Math.round(ms/60000)),d=Math.round(m/1440);return m<60?m+'m':m<48*60?Math.round(m/60)+'h':d<60?d+' days':d<330?Math.round(d/30)+' months':Math.round(d/365)<=1?'1 year':Math.round(d/365)+' years'}
     var YEAR=366*86400000;
     function expAt(f,now,ws){if(f.mode==='start')return ws||null;var x;if(f.mode==='at'){x=Date.parse(f.at);if(isNaN(x))return null}else{var n=+f.n;if(!(n>0))return null;x=now+n*({m:60000,h:3600000,d:86400000,w:604800000,mo:2592000000}[f.mode]||3600000)}return x>now+YEAR?null:x}
-    function sides(g){var o=SHARED_UI.qbOptions(g,{name:A.tname,date:A.dateET(g)});if(o.length)return o;
-      var d=A.dateET(g);return [{k:'win',t:'Winner (no odds posted)',s:[[g.away,g.home],[g.home,g.away]].map(function(p){return{lab:A.tname(p[0])+' to win',txt:A.tname(p[0])+' beats '+A.tname(p[1])+(d?', '+d:'')}})}]}
+    function sides(g){return SHARED_UI.qbOptions(g,{name:A.tname,date:A.dateET(g)})}
     function pick(g,f){var tt=String(f.text||'').trim().slice(0,A.maxText||140);if(!g)return tt?{k:'txt',si:0,lab:tt,other:'',txt:tt}:null;if(tt&&!(f.side&&(function(){var q=f.side.split(':'),oo=sides(g).find(function(x){return x.k===q[0]});return oo&&oo.s[+q[1]]&&(oo.s[+q[1]].lab===tt||oo.s[+q[1]].txt===tt)})()))return {k:'txt',si:0,lab:tt,other:'',txt:tt+' ('+A.tname(g.away)+' vs '+A.tname(g.home)+', '+A.dateET(g)+')'};if(!f.side)return null;var p=f.side.split(':'),o=sides(g).find(function(x){return x.k===p[0]}),s=o&&o.s[+p[1]];var ot=o.s[1-(+p[1])];return s?{k:p[0],si:+p[1],lab:s.lab,other:ot?ot.lab:'',txt:(f.cov==='2h'?'2nd half: ':'')+s.txt}:null}
     async function write(mut,ok){for(var k=0;k<3;k++){var cur=parse(await A.get());if(!ok(cur)){await A.set(JSON.stringify({v:1,reqs:mut(cur)}))}
         await new Promise(function(r){setTimeout(r,350+Math.random()*400)});var back=parse(await A.get());if(ok(back)){S.list=back;S.at=Date.now();return back}}throw new Error('conflict')}
-    async function load(){if(S.loading)return;S.loading=true;S.at=Date.now();try{S.list=parse(await A.get());S.at=Date.now();paint();
+    function responseEvents(list,me){var out=[];(list||[]).forEach(function(r){if(!r||r.by!==me||!r.id)return;var sum=String(r.txt||r.lab||'Request').replace(/\s+/g,' ').trim().slice(0,90);
+      (r.took||[]).forEach(function(t){if(t&&t.m&&t.m!==me)out.push({key:'a:'+r.id+':'+t.m,who:t.m,resp:'accepted',sum:sum,id:r.id})});
+      (r.dec||[]).forEach(function(m){if(m&&m!==me)out.push({key:'d:'+r.id+':'+m,who:m,resp:'declined',sum:sum,id:r.id})})});return out}
+    function clearNotes(){S.noteT=S.noteT||{};if(typeof document==='undefined')return;var h=document.getElementById('rqNotes');if(h)h.textContent='';Object.keys(S.noteT).forEach(function(k){clearTimeout(S.noteT[k])});S.noteT={}}
+    function dismissNote(key){if(S.noteT&&S.noteT[key]){clearTimeout(S.noteT[key]);delete S.noteT[key]}if(typeof document==='undefined')return;var n=document.querySelector('.rq-n[data-key="'+key.replace(/"/g,'')+'"]');if(n)n.remove()}
+    function pushNote(ev){if(typeof document==='undefined'||!document.body)return;S.noteT=S.noteT||{};var host=document.getElementById('rqNotes');
+      if(!host){host=document.createElement('div');host.id='rqNotes';host.className='rq-notes';host.setAttribute('aria-live','polite');host.setAttribute('aria-relevant','additions');document.body.appendChild(host);
+        if(!S.noteEsc){S.noteEsc=1;document.addEventListener('keydown',function(e){if(e.key!=='Escape')return;var last=document.querySelector('#rqNotes .rq-n:last-child');if(!last)return;dismissNote(last.getAttribute('data-key'))})}}
+      if(host.querySelector('.rq-n[data-key="'+ev.key.replace(/"/g,'')+'"]'))return;
+      var name=nmOf(ev.who),row=document.createElement('div');row.className='rq-n'+(ev.resp==='declined'?' dec':'');row.setAttribute('data-key',ev.key);row.setAttribute('role','status');
+      var text=document.createElement('div');text.className='rq-nt';
+      var b=document.createElement('b');b.textContent=name+' '+ev.resp;text.appendChild(b);
+      var s=document.createElement('span');s.textContent=ev.sum;text.appendChild(s);
+      var i=document.createElement('span');i.className='rq-ni';i.textContent='Request '+ev.id;text.appendChild(i);
+      var x=document.createElement('button');x.type='button';x.className='rq-nx';x.setAttribute('aria-label','Dismiss');x.textContent='\u2715';x.addEventListener('click',function(){dismissNote(ev.key)});
+      row.appendChild(text);row.appendChild(x);host.appendChild(row);
+      S.noteT[ev.key]=setTimeout(function(){dismissNote(ev.key)},5000)}
+    function observe(list){var me=A.me();if(!me){S.noteMe='';S.noteKeys=null;clearNotes();return}
+      var events=responseEvents(list,me);
+      if(S.noteMe!==me||!S.noteKeys){S.noteMe=me;S.noteKeys={};events.forEach(function(ev){S.noteKeys[ev.key]=1});clearNotes();return}
+      var fresh=events.filter(function(ev){return !S.noteKeys[ev.key]});
+      events.forEach(function(ev){S.noteKeys[ev.key]=1});fresh.forEach(pushNote)}
+    async function load(){if(S.loading)return;S.loading=true;S.at=Date.now();try{S.list=parse(await A.get());S.at=Date.now();observe(S.list);paint();
         var now=Date.now(),dead=S.list.filter(function(r){return r.status==='open'&&!live(r,now)}).map(function(r){return r.id});
         if(dead.length&&A.canWrite())await write(function(c){return c.map(function(r){return dead.indexOf(r.id)>=0&&r.status==='open'&&!live(r,now)?Object.assign({},r,{status:tk(r).length>=slots(r)?'full':'closed',endedAt:now}):r})},function(c){return c.every(function(r){return dead.indexOf(r.id)<0||r.status!=='open'})})}
       catch(x){}S.loading=false;A.render()}
@@ -321,27 +342,24 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
     if(typeof document!=='undefined'){document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.target.closest('[data-rq]');if(!t)return;ev.preventDefault();act(t.dataset.rq,t.dataset.v)});
       document.addEventListener('change',function(ev){var t=ev.target;if(t&&t.dataset&&t.dataset.rqIn)input(t.dataset.rqIn,t.value)});
       document.addEventListener('input',function(ev){var t=ev.target;if(!(t&&t.dataset&&(t.dataset.rqIn==='amtTxt'||t.dataset.rqIn==='n'||t.dataset.rqIn==='oddTxt'||t.dataset.rqIn==='text')))return;S.f[t.dataset.rqIn]=t.value;if(t.dataset.rqIn==='text'||t.dataset.rqIn==='amtTxt')rqPaintExplain()})}
-    return {view:view,openN:openN,pinned:pinned,prefill:prefill,load:load,count:count,paint:paint,S:S,waText:waText,label:'\u{1F4E8} Request a bet'}};
+    return {view:view,openN:openN,pinned:pinned,prefill:prefill,load:load,count:count,paint:paint,observe:observe,S:S,waText:waText,label:'\u{1F4E8} Request a bet'}};
   /* STEP7-NAMES: Stoop label rule (both sites): roomy spots = emoji + team nickname; tight spots use the real name.
      shortName/tinyName = the bet-form chip's phone labels (same cut on both sites). */
   SHARED_UI.shortName=function(n){n=String(n);var w=n.split(/\s+/).filter(Boolean),l=w[w.length-1];if(w.length>1&&l.length>=4&&l.length<=9)return l;if(n.length<=9)return n;if(w.length>1&&w[0].length<=9)return w[0];return n.slice(0,8)+'\u2026'};
   SHARED_UI.tinyName=function(n){var t=SHARED_UI.shortName(n);return t.length<=7?t:t.slice(0,4)};
   /* STEP7-QUICKBET: Games "Quick bet" window. qbOptions(g,{name,date}) -> [{k,t,s:[{lab,txt}]}] from the posted odds only
-     (spread each side, moneyline each side, over/under); [] when no odds are posted. qbSheet(g,list,o) -> the window markup;
+     (spread each side, over/under). No moneyline and no straight-winner preset. [] when neither is posted. qbSheet(g,list,o) -> the window markup;
      each site wires the taps through o.pick(k,i) / o.blank() / o.close() attribute strings. Nothing is placed from here. */
   SHARED_UI.qbOptions=function(g,o){var A=g.away,H=g.home,ln=(g.line&&typeof g.line==='object')?g.line:{},nm=o.name,d=o.date?', '+o.date:'',out=[];
-    var num=function(v){return v!=null&&v!==''&&isFinite(+v)};var sg=function(v){return (+v>0?'+':'')+(+v)};
     var fav=String(ln.fav)===String(A.id)?A:String(ln.fav)===String(H.id)?H:null,sp=+ln.sp;
     if(fav&&isFinite(sp)&&sp>0){var dog=fav===A?H:A;out.push({k:'sp',t:'Spread',s:[fav,dog].map(function(x){var y=x===fav?dog:fav,sx=x===fav?'-':'+',sy=y===fav?'-':'+';return{lab:nm(x)+' '+sx+sp,txt:nm(x)+' '+sx+sp+' vs '+nm(y)+' '+sy+sp+d}})})}
-    var ma=num(ln.aml)?ln.aml:num(ln.mlA)?ln.mlA:ln.ml&&num(ln.ml.away)?ln.ml.away:null,mh=num(ln.hml)?ln.hml:num(ln.mlH)?ln.mlH:ln.ml&&num(ln.ml.home)?ln.ml.home:null;
-    if(ma!=null&&mh!=null)out.push({k:'ml',t:'Moneyline',s:[[A,H,ma],[H,A,mh]].map(function(r){return{lab:nm(r[0])+' '+sg(r[2]),txt:nm(r[0])+' '+sg(r[2])+' to beat '+nm(r[1])+d}})});
     var ou=+ln.ou;if(isFinite(ou)&&ou>0){var m=nm(A)+' v '+nm(H);out.push({k:'ou',t:'Over/under',s:[['Over','Under'],['Under','Over']].map(function(p){return{lab:p[0]+' '+ou,txt:p[0]+' '+ou+' vs '+p[1]+' '+ou+', '+m+d}})})}
     return out};
   SHARED_UI.qbBlankText=function(g,o){return o.name(g.away)+' vs '+o.name(g.home)+(o.date?', '+o.date:'')};
   /* GAME-ROW: one team row of a game card, same markup on both sites: pill · seed · ⭐/🐶 · 1H/2H/T, owner chip on its own row under the pill. o={chip,seed,tag,owners,scores,lose,hs1} (already safe markup; seed is escaped here) */
   SHARED_UI.gameRow=function(o,e){return '<div class="gside'+(o.lose?' lose':'')+(o.hs1?' hs1':'')+'"><div class="nm">'+o.chip+(o.seed?'<span class="seed">('+e(String(o.seed))+')</span>':'')+(o.tag||'')+'</div><div class="sc2">'+(o.scores||'')+'</div></div><div class="gow"'+(o.owners?'':' aria-hidden="true"')+'>'+(o.owners||'&nbsp;')+'</div>'};
-  SHARED_UI.qbSheet=function(g,list,o){var e=o.e,t=e(o.name(g.away))+' vs '+e(o.name(g.home));list=(list||[]).filter(function(x){return x.k!=='win'});
-    /* inline drop-down under the game card (no modal): spread each side, moneyline, over/under when posted, plus a plain Request a bet. Every choice opens Request a bet prefilled */
+  SHARED_UI.qbSheet=function(g,list,o){var e=o.e,t=e(o.name(g.away))+' vs '+e(o.name(g.home));list=(list||[]).filter(function(x){return x.k!=='win'&&x.k!=='ml'});
+    /* inline drop-down under the game card (no modal): spread each side and over/under when posted, plus a plain Request a bet. Every choice opens Request a bet prefilled */
     var h='<div class="qbd" role="region" aria-label="Quick bet: '+t+'"><div class="qbd-h"><b>\u26A1 Quick bet</b><button type="button" class="qbd-x" aria-label="Close" '+o.close()+'>\u2715</button></div>';
     list.forEach(function(x){h+='<div class="qbs-r"><span class="qbs-l">'+e(x.t)+'</span><span class="qbs-s">'+x.s.map(function(s,i){return '<button type="button" class="qbs-o" aria-label="'+e(s.txt)+'" '+o.pick(x.k,i)+'>'+e(s.lab)+'</button>'}).join('')+'</span></div>'});
     return h+'<button type="button" class="qbs-o qbd-req" '+o.blank()+'>\u{1F4E8} Request a bet</button></div>'};
@@ -379,6 +397,11 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
   SHARED_UI.weeklySection=function(items,o){var e=o.e;var L=(items||[]).filter(function(x){return x&&x.title}).slice().sort(function(a,b){return String(b.date||'').localeCompare(String(a.date||''))});
     var list=L.length?'<div class="rcl">'+L.map(function(x){return '<article class="card rci"><small>'+e(x.kind==='special'?'Special':'Weekly')+(x.date?' · '+e(o.fmtDate(String(x.date).slice(0,10))):'')+'</small><h3>'+e(x.title)+'</h3><p>'+e(x.body||'')+'</p></article>'}).join('')+'</div>':'<div class="card note rcnone"'+(o.emptyAttr||'')+'>No weekly write-ups yet. The first one comes after opening week.</div>';
     return '<section class="rcw"'+(o.secAttr||'')+'><h2>📰 Weekly write-ups</h2>'+list+'</section>'};
+  /* Standings only. name is already escaped. change is the existing picker attribute (presAsk). No name: guest, and no Change control, because a fresh visit cannot pick one. */
+  SHARED_UI.loginLine=function(o){o=o||{};
+    if(!o.name)return '<p class="idline" role="status">You\u2019re viewing as a guest. This visit can\u2019t pick a name.</p>';
+    var ch=o.change?' <button type="button" class="idline-ch" '+o.change+'>Change?</button>':'';
+    return '<p class="idline">You are logged in as <b>'+o.name+'</b> \u2014'+ch+'</p>'};
 })(typeof window!=='undefined'?window:globalThis);
 
 /* NAV-MORE: under 700px (phone and half-page) show 5 main tabs across: Standings, Games, Bets, Teams + More. More opens a scrollable sheet with every other nav item

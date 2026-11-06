@@ -66,7 +66,7 @@ const oddsLabel=(a,b)=>a===1&&b===1?'Even (1-1)':a+'-'+b;
 const oddsShort=(a,b)=>a===1&&b===1?'at even odds':'at '+a+'-'+b;
 function vEv(e){if(!e||typeof e!=='object')return null;const ts=Number(e.ts);if(!isFinite(ts)||ts<1e12||ts>4e12||!idOk(e.u)||!idOk(e.id))return null;
   if(e.k==='p'){const amt=Number(e.amt),a=Number(e.a),b=Number(e.b);if(!(e.to==='*'||midOk(e.to))||!Number.isInteger(amt)||amt<C.min||amt>C.max||!Number.isInteger(a)||!Number.isInteger(b)||a<1||b<1||a>C.maxOdds||b>C.maxOdds||typeof e.text!=='string')return null;
-    const text=clean(e.text);if(!text)return null;return{k:'p',u:e.u,ts,id:e.id,to:e.to,amt,a,b,text,g:idOk(e.g)?e.g:undefined,c:vClaim(e.c),v:vV(e),...vPost(e),...(midOk(e.for)&&e.to!=='*'&&e.for!==e.to?{for:e.for}:{})}}
+    const text=clean(e.text);if(!text)return null;const when=window.SHARED_UI&&SHARED_UI.whenPack?SHARED_UI.whenPack(e.wk,e.est,e.sid):null;return{k:'p',u:e.u,ts,id:e.id,to:e.to,amt,a,b,text,g:idOk(e.g)?e.g:undefined,c:vClaim(e.c),v:vV(e),...vPost(e),...(when?{wk:when.wk,est:when.est,sid:when.sid}:{}),...(midOk(e.for)&&e.to!=='*'&&e.for!==e.to?{for:e.for}:{})}}
   if(e.k==='a'||e.k==='d'||e.k==='w')return{k:e.k,u:e.u,ts,id:e.id,v:vV(e)};
   if(e.k==='s'&&(e.r==='b'||e.r==='o'||e.r==='p'))return{k:'s',u:e.u,ts,id:e.id,r:e.r,src:vSrc(e.src),v:vV(e)};
   if(e.k==='fr'&&idOk(e.fx)&&(e.r==='b'||e.r==='o'||e.r==='p'))return{k:'fr',u:e.u,ts,id:e.id,fx:e.fx,r:e.r};
@@ -423,7 +423,8 @@ function pasteHtml(me){const z=S.pz||{txt:''};const r=z.r;let body='';
 /* s28j: 'Posted by <name> · Nov 3, 7:00 PM WIB' = LTIME.stamp (the League's one time helper: device zone + short label); the same string goes into the copied text */
 const postedTxt=b=>b&&b.postedBy?'Posted by '+nm(b.postedBy)+' · '+(window.LTIME&&LTIME.stamp?LTIME.stamp(b.postedAt):new Date(b.postedAt).toLocaleString()):'';
 function postedHtml(b){return b&&b.postedBy?`<div class="mut b27-posted" data-posted="1">${esc(postedTxt(b))}</div>`:''}
-function whenField(step,game){if(!(window.SHARED_UI&&SHARED_UI.whenBox))return '';const f=S.f;return SHARED_UI.whenBox({e:esc,kind:f.wk||'unknown',est:f.est,seasonId:'',step:String(step),game:!!game,inputId:'b27Est',pick:id=>`data-lb="when" data-v="${id}"`,dateAttr:'data-when-date="1"'})}
+function betSeason(){try{const s=window.L&&L.meta&&L.meta.season;if(typeof s==='string'&&/^[0-9]{4}-[0-9]{2}$/.test(s))return s}catch(e){}return '2026-27'}
+function whenField(step,game){if(!(window.SHARED_UI&&SHARED_UI.whenBox))return '';const f=S.f;return SHARED_UI.whenBox({e:esc,kind:f.wk||'unknown',est:f.est,seasonId:betSeason(),step:String(step),game:!!game,inputId:'b27Est',pick:id=>`data-lb="when" data-v="${id}"`,dateAttr:'data-when-date="1"'})}
 function formHtml(me){const f=S.f,oth=others();const err=formOK();const util=oth.length%4?`<div class="b27-util" role="group" aria-label="Select people"><button type="button" class="s27-selb" data-lb="oppall"><span class="f">Select all</span><span class="s">All</span></button><button type="button" class="s27-selb" data-lb="oppclear">Clear</button></div>`:'';
   const head=window.SHARED_UI&&SHARED_UI.entryHead?SHARED_UI.entryHead('wiu'):'<h2>Write it Up</h2>';
   return`<div class="card b27-form" id="b27Form">${head}${qbHint()}${S.edited||!PF()?'':pasteHtml(me)}${S.edited?`<div class="note b27-edhint" role="status" id="b27EdHint">✏️ Filled in from Bet #${esc(S.edited)} (withdrawn). Change it, then place it again.</div>`:''}${kindTabs('')}
@@ -513,7 +514,7 @@ function poolSettle(b,back){const me=meMid();if(!me||b.by!==me){S.msg=POOL_TXT.o
   act([mkEv('pb',{id:b.id,back})],PT('saved')).then(ok=>{if(ok){S.poolTxt[b.id]='';S.placeWho[b.id]=[]}})}
 /* ----- Tally (partner vTally): person table (only people with bets or amounts), then Who Owes Who (all 8, gross, rows owe columns), then netted settle lines ----- */
 function obSeg(){const all=S.ob==='all'||S.ob==='open'||S.ob==='tally',entry=!all,sg=(k,on,t)=>`<button type="button" class="${on?'on':''}" aria-pressed="${on}" data-lb="obview" data-ob="${k}" data-v="${k}">${t}</button>`;
-  return `<div class="tabs ob-seg ob-desk" role="group" aria-label="Bets" id="b27Seg">${sg('form',entry,'Write it Up or Request')}${sg('all',all,'All Bets')}</div><div class="tabs ob-seg ob-phone" role="group" aria-label="Bets">${sg('form',S.ob==='form','Write it Up')}${sg('request',S.ob==='request','Request')}${sg('all',all,'All Bets')}</div>`}
+  return `<div class="tabs ob-seg ob-desk" role="group" aria-label="Bets" id="b27Seg">${sg('form',entry,'Request or Write it up')}${sg('all',all,'All Bets')}</div><div class="tabs ob-seg ob-phone" role="group" aria-label="Bets">${sg('request',S.ob==='request','Request')}${sg('form',S.ob==='form','Write it Up')}${sg('all',all,'All Bets')}</div>`}
 function tallyHtml(T){const ow=owners(),per=m=>T.per[m]||{net:0,bets:0},Lo=m=>T.lost[m]||0,Wo=m=>T.won[m]||0,M=(a,b)=>(T.M[a]&&T.M[a][b])||0;
   const ids=ow.filter(o=>per(o.mid).bets>0||Lo(o.mid)||Wo(o.mid));
   let h=`<div class="card" id="b27TallyHead"><b>🧮 Tally · 2026-27</b><div class="note">From this league's bet ledger only. Rows owe columns.</div></div>`;
@@ -545,7 +546,7 @@ function view(){if(!H)return'';
     :(S.kind==='pool'&&!S.edited)?((()=>{S.p.confirm=false;const hd=window.SHARED_UI&&SHARED_UI.entryHead?SHARED_UI.entryHead('wiu'):'<h2>Write it Up</h2>';return `<div class="card b27-form" id="b27Form" data-kind="pool">${hd}${kindTabs('')}</div>`})())
     :(S.f.confirm?modal(`<div class="card b27-confirm" id="b27Confirm"><b>Check it, then confirm</b>${clean(S.f.text)?`<div class="s26terms">${esc(clean(S.f.text))}</div>`:''}<div class="b27-sum">${esc(summary())}</div>${readAsHtml()}<div id="b27Live">${liveHtml()}</div><div class="b27-act"><button type="button" class="btn b27-big" data-lb="confirm"${S.busy||formOK()?' disabled':''}>${S.busy?'Saving…':'✅ Yes, place it'}</button><button type="button" class="btn sec b27-big" data-lb="edit"${S.busy?' disabled':''}>← Change</button></div></div>`):formHtml(me));
   if(!listing){const focus=S.ob==='request'?'request':'form',rq=RQ()?RQ().view():'<div class="card note">Request a bet is unavailable right now.</div>';
-    h+=`<div class="entry-pair" data-focus="${focus}"><div class="entry-col entry-wiu${focus==='form'?' is-on':''}">${wiu}</div><div class="entry-col entry-rq${focus==='request'?' is-on':''}">${rq}</div></div>`;
+    h+=`<div class="entry-pair" data-focus="${focus}"><div class="entry-col entry-rq${focus==='request'?' is-on':''}">${rq}</div><div class="entry-col entry-wiu${focus==='form'?' is-on':''}">${wiu}</div></div>`;
     if(S.state==='init'&&window.LLOADER)return h+LLOADER()+intro;return h+intro}
   if(S.state==='init'&&window.LLOADER)return h+LLOADER()+intro;
   if(RQ())h+=RQ().pinned(false,enter);
@@ -775,7 +776,7 @@ async function confirmPlace(){if(S.busy)return;const e=formOK();if(e){S.msg=e;S.
   const sig=(f.forMid||'')+'>'+targets.join(',')+'|'+clean(f.text)+'|'+f.amt+'|'+f.odds.join('-');
   if(!S.fid||S.fid.sig!==sig)S.fid={sig,g:targets.length>1?rid():undefined,evs:targets.map(t=>({id:rid(),u:rid(),to:t}))};
   const ts=Date.now();
-  const pack=window.SHARED_UI&&SHARED_UI.whenPack?SHARED_UI.whenPack(f.wk||'unknown',f.est,''):{wk:f.wk||'unknown',est:f.wk==='date'?f.est:null,sid:null};
+  const pack=window.SHARED_UI&&SHARED_UI.whenPack?SHARED_UI.whenPack(f.wk||'unknown',f.est,betSeason()):{wk:f.wk||'unknown',est:f.wk==='date'?f.est:null,sid:f.wk==='season'?betSeason():null};
   const evs=S.fid.evs.map((x,i)=>Object.assign({k:'p',u:x.u,ts:ts+i,v:SV,id:x.id,to:x.to,amt:f.amt,a:f.odds[0],b:f.odds[1],text:clean(f.text),postedBy:meMid(),postedAt:ts,wk:pack.wk,est:pack.est,sid:pack.sid},f.forMid?{for:f.forMid}:{},S.fid.g?{g:S.fid.g}:{},(()=>{const c=readBet(clean(f.text));return c?{c}:{}})()));
   const ok=await act(evs,'');
   if(ok){const ns=S.fid.evs.map(x=>(compute().find(b=>b.id===x.id)||{}).n).filter(Boolean);const saved=compute().find(b=>b.id===S.fid.evs[0].id)||{by:f.forMid||meMid(),to:targets[0],acc:targets[0]==='*'?null:targets[0],amt:f.amt,a:f.odds[0],b:f.odds[1],text:clean(f.text)};
@@ -805,7 +806,6 @@ function qbOk(g){if(!H||H.demo||!g||g.status!=='scheduled'||!g.home||!g.away)ret
 function qbOpts(g,ctx){const A=g.away,Hm=g.home,ln=(g.line&&typeof g.line==='object')?g.line:{},d=qbDate(g),o=[];const nm_=s=>qbNm(s,ctx);
   const fav=String(ln.fav)===String(A.id)?A:String(ln.fav)===String(Hm.id)?Hm:null,sp=Number(ln.sp);
   if(fav&&isFinite(sp)&&sp>0){const dog=fav===A?Hm:A;o.push({k:'sp',t:'Spread',s:[fav,dog].map(x=>{const y=x===fav?dog:fav,sx=x===fav?'-':'+',sy=y===fav?'-':'+';return{lab:nm_(x)+' '+sx+sp,team:x,txt:nm_(x)+' '+sx+sp+' vs '+nm_(y)+' '+sy+sp+', '+d}})})}
-  o.push({k:'win',t:'Winner',s:[A,Hm].map(x=>{const y=x===A?Hm:A;return{lab:nm_(x),team:x,txt:nm_(x)+' beats '+nm_(y)+', '+d}})});
   const ou=Number(ln.ou);if(isFinite(ou)&&ou>0){const m=nm_(A)+' v '+nm_(Hm);o.push({k:'ou',t:'Over/under',s:[['Over','Under'],['Under','Over']].map(([x,y])=>({lab:x+' '+ou,team:null,txt:x+' '+ou+' vs '+y+' '+ou+', '+m+', '+d}))})}
   return o}
 /* the button + (when open) the picker for one Games card. ctx.name(side) = the short team name the card shows. Returns '' when no button applies. */
@@ -845,7 +845,7 @@ function RQ(){if(RQ_||!H||H.demo||typeof SHARED_UI==='undefined'||!SHARED_UI.Req
   RQ_=SHARED_UI.Requests({maxText:(typeof C!=="undefined"&&C.maxText)||140,change:"location.href='join.html?l='+encodeURIComponent('"+String(H.id).replace(/[^A-Za-z0-9]/g,'')+"');return false",e:esc,me:()=>meMid(),others:()=>owners().filter(o=>o.mid!==meMid()).map(o=>({id:o.mid,emoji:o.emoji||'',nick:nick_(o)})),nick:m=>nick_(own(m))||'?',real:m=>(own(m).name||nick_(own(m))||'?'),
     canWrite:()=>!!meMid()&&!window.LVIEW&&!(H&&H.demo),amounts:C.amounts,stake:n=>n+' pushup'+(n===1?'':'s'),
     games:()=>((H&&H.games&&H.games())||[]).filter(g=>g&&g.home&&g.away).map(g=>({id:String(g.id),g,start:g.start,status:g.status,period:g.period||null,label:qbNm(g.away,QCTX)+' vs '+qbNm(g.home,QCTX)+' · '+qbDate(g)})),
-    tname:s=>qbNm(s,QCTX),dateET:g=>qbDate(g),link:()=>location.href.split('#')[0]+'#bets',goRequest:()=>{S.ob='request'},waiting:()=>0,navEl:()=>document.querySelector('#ltabs a[data-v="bets"]'),
+    tname:s=>qbNm(s,QCTX),dateET:g=>qbDate(g),seasonId:()=>betSeason(),link:()=>location.href.split('#')[0]+'#bets',goRequest:()=>{S.ob='request'},waiting:()=>0,navEl:()=>document.querySelector('#ltabs a[data-v="bets"]'),
     seenScope:()=>String((H&&H.id)||'')+':'+(meMid()||'guest'),reqMatch:r=>reqMatch(r),watchExpiry:()=>S.ob==='all',
     get:()=>Store.get(FBN.Keys(H.id).base+'-requests'),set:txt=>Store.set(FBN.Keys(H.id).base+'-requests',txt),
     placeBet:async(r,me)=>{const ts=Date.now(),text=clean(r.txt||r.lab);const c=readBet(text);const pack=window.SHARED_UI&&SHARED_UI.whenPack?SHARED_UI.whenPack(r.wk,r.est,r.sid):{wk:r.wk||'unknown',est:r.est||null,sid:r.sid||null};await append([Object.assign({k:'p',u:rid(),ts,v:SV,id:rid(),to:me,for:r.by,amt:r.amt,a:(r.odds||[1,1])[0],b:(r.odds||[1,1])[1],text,postedBy:me,postedAt:ts,req:r.id,wk:pack.wk,est:pack.est,sid:pack.sid},c?{c}:{})]);redraw()},
