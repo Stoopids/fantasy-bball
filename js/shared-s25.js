@@ -254,14 +254,13 @@ S25.renderReactions=function(el,counts,mine,onToggle,opts){if(!el||!el.ownerDocu
   let wl=null;const showWho=e=>{const w=who(e);if(!w.length)return;if(!wl){wl=doc.createElement('div');wl.className='s25wl';wl.setAttribute('data-s25-wl','');el.appendChild(wl)}wl.textContent=e+' '+w.join(', ')},hideWho=()=>{if(wl){wl.remove();wl=null}};
   const fire=(e,on)=>{closeOpen();if(typeof onToggle==='function')onToggle(e,on)};
   EM.filter(e=>cnt(e)>0).forEach(e=>{const n=cnt(e),on=my.has(e),w=who(e),b=doc.createElement('button');b.type='button';b.className='s25rx'+(on?' on':'');b.setAttribute('data-s25-rx',e);b.setAttribute('aria-pressed',String(on));
-    b.setAttribute('aria-label',e+' '+n+(w.length?': '+w.join(', '):''));if(w.length)b.title=w.join(', ');b.innerHTML='';b.appendChild(doc.createTextNode(e));const s=doc.createElement('span');s.className='n';s.textContent=String(n);b.appendChild(s);
+    b.setAttribute('aria-label',e+' '+n+(w.length?': '+w.join(', '):''));b.innerHTML='';b.appendChild(doc.createTextNode(e));const s=doc.createElement('span');s.className='n';s.textContent=String(n);b.appendChild(s);
     if(ro)b.disabled=true;let lp=false,tm=null;
     b.addEventListener('pointerdown',()=>{lp=false;clearTimeout(tm);tm=setTimeout(()=>{lp=true;showWho(e)},500)});['pointerup','pointercancel','pointerleave'].forEach(t=>b.addEventListener(t,()=>clearTimeout(tm)));
     b.addEventListener('contextmenu',ev=>ev.preventDefault());
-    if(fine){b.addEventListener('mouseenter',()=>showWho(e));b.addEventListener('mouseleave',()=>{if(!lp)hideWho()})}
     b.addEventListener('click',ev=>{if(lp){lp=false;ev.preventDefault();return}if(!ro)fire(e,!on)});el.appendChild(b)});
   if(ro)return;
-  const add=doc.createElement('button');add.type='button';add.className='s25add';add.setAttribute('data-s25-add','');add.setAttribute('aria-haspopup','true');add.setAttribute('aria-expanded','false');add.setAttribute('aria-label','Add a reaction');add.title='Add a reaction';add.textContent='😀+';el.appendChild(add);
+  const add=doc.createElement('button');add.type='button';add.className='s25add';add.setAttribute('data-s25-add','');add.setAttribute('aria-haspopup','true');add.setAttribute('aria-expanded','false');add.setAttribute('aria-label','Add a reaction');add.textContent='😀+';el.appendChild(add);
   let pk=null;const close=()=>{if(pk){pk.remove();pk=null}add.setAttribute('aria-expanded','false')};
   const open=()=>{if(pk)return;closeOpen();pk=doc.createElement('div');pk.className='s25pk';pk.setAttribute('role','menu');pk.setAttribute('data-s25-pk','');
     EM.forEach(e=>{const on=my.has(e),b=doc.createElement('button');b.type='button';b.setAttribute('role','menuitemcheckbox');b.setAttribute('aria-checked',String(on));b.setAttribute('data-s25-pick',e);b.setAttribute('aria-label',e);if(on)b.className='on';b.textContent=e;b.addEventListener('click',()=>fire(e,!on));pk.appendChild(b)});
@@ -270,8 +269,8 @@ S25.renderReactions=function(el,counts,mine,onToggle,opts){if(!el||!el.ownerDocu
       if(abs+r.width>vw-6)left=vw-6-r.width-er.left;if(er.left+left<6)left=6-er.left;pk.style.left=left+'px'}}catch(e){}   // keep the picker inside the viewport (320px safe)
     const f=pk.querySelector('button');if(f&&!fine)f.focus({preventScroll:true})};
   add.addEventListener('click',()=>{if(pk){closeOpen();close()}else open()});
-  if(fine){let ht=null;const hold=()=>clearTimeout(ht),later=()=>{clearTimeout(ht);ht=setTimeout(()=>{if(OPEN&&OPEN.el===el)closeOpen()},350)};
-    add.addEventListener('mouseenter',()=>{hold();open()});add.addEventListener('mouseleave',later);el.addEventListener('mouseenter',hold);el.addEventListener('mouseleave',later)}};
+  add.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();if(pk){closeOpen();close()}else open()}});
+};
 G.pickPlaced=S25.pickPlaced;G.renderReactions=S25.renderReactions;
 /* ===== s25c upset tagline: mixed into the 2-day rotation (every 4th slot) when ESPN shows a recent men's college hoops upset ===== */
 S25.UPSET_TEMPLATES=["{Winner} over {Loser}. Chaos is an art form.","Houston, {Loser} has a problem.","{Loser}, you had one job.","Upset alert: {Winner} 1, the experts 0.","Et tu, {Winner}? {Loser} never saw it coming.","Ask not what {Loser} can do for you; ask what {Winner} just did.","To be ranked, or not to be ranked: {Loser} chose not.","One small step for {Winner}, one giant faceplant for {Loser}.","{Winner} {WS}, {Loser} {LS}. The experts are crying.","Upset is as upset does. Today, {Winner} does.","Frankly, my dear {Loser}, {Winner} didn't give a damn.","{Winner} came to play. {Loser} came to watch.","Believe in upsets yet? {Winner} does.","Somebody stop this! {Winner} over {Loser}.","Ice in the veins! {Winner} with the upset.","Absolutely wild! {Winner} took down {Loser}.","Boom goes the dynamite. {Loser} goes home.","Oh my! {Winner} 1, the pundits 0.","Bang! {Winner} drops {Loser}.","Get that outta here! {Loser}, take a seat.","Not over till the buzzer. For {Loser}, it's over.","You miss 100% of the shots you don't take. {Loser} missed the rest too.","Déjà vu all over again: {Loser} loses to {Winner}.","Everyone's got a plan until {Winner} shows up.","When you come to a fork in the road, take {Winner}.","It's not whether you get knocked down. {Loser} stayed down.","Nobody goes to {Loser} games anymore. They're too crowded.","Winning isn't everything, it's the only thing. Ask {Winner}.","Half this game is 90% mental. {Loser} brought the other half."];

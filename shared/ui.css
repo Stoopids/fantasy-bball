@@ -435,7 +435,8 @@ html body #main .gfone select.gf2-s,html body #lbody .gfone select.gf2-s{padding
 html body #main .gfone #gDaySel,html body #lbody .gfone #gDaySel{min-width:208px!important}
 html body #lbody .ggrid:not(:has(>.gfin))>.gm,html body #main .ggrid:not(:has(>.gfin))>.gm{display:flex!important;flex-direction:column!important;grid-row:auto!important;grid-template-rows:none!important;align-items:stretch!important;height:auto!important;margin:0 0 8px!important;row-gap:0!important}
 html body .ggrid>.gm>.gsp,html body .gm>.gsp{display:none!important;height:0!important;margin:0!important}
-html body .ggrid .gside{padding-top:0!important;padding-bottom:0!important;margin:0!important}
+html body #lbody .ggrid>.gm .gside,html body #main .ggrid>.gm .gside{display:flex!important;flex-direction:row!important;align-items:center!important;gap:6px!important;padding:0!important;margin:0!important}
+html body #lbody .ggrid>.gm .gside .gow,html body #main .ggrid>.gm .gside .gow{height:auto!important;min-height:0!important;margin:0!important;padding:0!important;line-height:1.1!important}
 html body .gow[aria-hidden="true"]{display:none!important;height:0!important;margin:0!important;padding:0!important}
 html body .ggrid>.gm .qbw,html body .gm .qbw{margin-top:4px!important}
 /* All teams: content-sized table, tight columns, one badge size from the longest name. Games chips stay 200x40. */

@@ -100,11 +100,12 @@ function start(){
     const card=document.querySelector('.ggrid>.gm:not(.gfin)');
     const pair=card?[...card.querySelectorAll(':scope > .gside a.chip, :scope .gside a.chip')].slice(0,2):[];
     const teamGap=pair.length===2?Math.round(pair[1].getBoundingClientRect().top-pair[0].getBoundingClientRect().bottom):null;
+    const ownerBeside=!!(card&&[...card.querySelectorAll(':scope>.gside')].some(row=>row.querySelector('a.chip')&&row.querySelector('.opill')));
     const navGap=nav&&first?Math.round(first.getBoundingClientRect().top-nav.getBoundingClientRect().bottom):null;
-    return {pills:pills.map(box),rows:[...new Set(pills.map(e=>Math.round(e.getBoundingClientRect().top)))],chips,teamGap,navGap,qb:qb.length,qbBg:qb0?getComputedStyle(qb0).backgroundColor:'',qbFg:qb0?getComputedStyle(qb0).color:'',qbBolt:qbBoltEl?getComputedStyle(qbBoltEl).color:'',hasBolt:!!qbBoltEl,liveQb:!!live,finalQb:[...document.querySelectorAll('.gfin .qb-btn, .gm.gfin .qb-btn')].length,foot,freshHidden:!fresh||fresh.hidden,onlWrap:os?os.flexWrap:'',over:document.documentElement.scrollWidth>innerWidth+2,tally:[...document.querySelectorAll('#ltabs a')].filter(a=>getComputedStyle(a).display!=='none').map(a=>a.getAttribute('data-v')),day:{labels,longest:labels.slice().sort((a,b)=>ctx.measureText(b).width-ctx.measureText(a).width)[0]||'',worst,worstW:Math.round(ctx.measureText(worst).width),inner:Math.round(inner),font:cs?cs.font:'',rowScroll:row?row.scrollWidth:0,rowClient:row?row.clientWidth:0}};
+    return {pills:pills.map(box),rows:[...new Set(pills.map(e=>Math.round(e.getBoundingClientRect().top)))],chips,teamGap,ownerBeside,navGap,qb:qb.length,qbBg:qb0?getComputedStyle(qb0).backgroundColor:'',qbFg:qb0?getComputedStyle(qb0).color:'',qbBolt:qbBoltEl?getComputedStyle(qbBoltEl).color:'',hasBolt:!!qbBoltEl,liveQb:!!live,finalQb:[...document.querySelectorAll('.gfin .qb-btn, .gm.gfin .qb-btn')].length,foot,freshHidden:!fresh||fresh.hidden,onlWrap:os?os.flexWrap:'',over:document.documentElement.scrollWidth>innerWidth+2,tally:[...document.querySelectorAll('#ltabs a')].filter(a=>getComputedStyle(a).display!=='none').map(a=>a.getAttribute('data-v')),day:{labels,longest:labels.slice().sort((a,b)=>ctx.measureText(b).width-ctx.measureText(a).width)[0]||'',worst,worstW:Math.round(ctx.measureText(worst).width),inner:Math.round(inner),font:cs?cs.font:'',rowScroll:row?row.scrollWidth:0,rowClient:row?row.clientWidth:0}};
   });
   ok('upcoming, past and the filters share one 28px row under the nav',g.pills.length>=7&&Math.max(...g.rows)-Math.min(...g.rows)<=2&&g.pills.every(p=>p.h===28)&&g.pills.some(p=>/Upcoming/.test(p.t))&&g.pills.some(p=>/Past/.test(p.t))&&g.pills.some(p=>/Stoop vs Stoop/.test(p.t))&&g.navGap>=0&&g.navGap<=12,g);
-  ok('team pills stay 200x40 and the two teams sit together',g.chips.length>0&&g.chips.every(c=>c.w===200&&c.h===40)&&g.teamGap!=null&&g.teamGap<=32,g);
+  ok('team pills stay 200x40 and touch with no gap',g.chips.length>0&&g.chips.every(c=>c.w===200&&c.h===40)&&g.teamGap===0&&g.ownerBeside,g);
   ok('quick bet uses the request blue, white text, and the lightning icon',g.qb>0&&g.qbBg==='rgb(30, 58, 138)'&&g.qbFg==='rgb(255, 255, 255)'&&g.qbBolt==='rgb(255, 255, 255)'&&g.hasBolt,{qb:g.qb,bg:g.qbBg,fg:g.qbFg,bolt:g.qbBolt});
   ok('games footer drops the time-zone line and the standings update',!/time zone/i.test(g.foot)&&g.freshHidden,g.foot);
   ok('desktop nav has no Tally tab',!g.tally.includes('tally'),g.tally);
@@ -140,7 +141,7 @@ function start(){
   ok('phone More still holds Tally and the other extra tabs',phone.more.includes('tally')&&phone.more.includes('profile')&&phone.more.includes('rules'),phone);
   ok('phone games controls stay on one contained scrolling row',phone.n>=7&&Math.max(...phone.tops)-Math.min(...phone.tops)<=2&&!phone.over&&phone.rowRight<=phone.vw+1&&phone.rowScroll>phone.rowW,phone);
   console.log('  phone390 '+JSON.stringify(phone));
-  ok('phone nav-to-controls gap stays tight and teams sit together',phone.navGap>=0&&phone.navGap<=12&&phone.teamGap!=null&&phone.teamGap<=32&&phone.h===28,phone);
+  ok('phone nav-to-controls gap stays tight and team pills touch',phone.navGap>=0&&phone.navGap<=12&&phone.teamGap===0&&phone.h===28,phone);
   await P.page.screenshot({path:'/opt/cursor/artifacts/next-games-phone.png'});
   await P.page.evaluate(()=>{const r=document.querySelector('.gfone');if(r)r.scrollLeft=r.scrollWidth});
   await L.sleep(150);
@@ -179,6 +180,12 @@ function start(){
   await P.page.keyboard.press('Escape');
   await L.sleep(100);
   ok('escape closes the bet detail',!(await P.page.$('.s27-pop')));
+  await P.page.hover('.entry-rq .s27-tipk');
+  await L.sleep(350);
+  ok('hover does not open a request detail',!(await P.page.$('.s27-pop')));
+  await P.page.hover('#b27Sum, .b27-sum, .entry-wiu');
+  await L.sleep(250);
+  ok('hovering the write-up summary does not open a detail',!(await P.page.$('.s27-pop')));
   await P.page.click('#b27KindPool');
   await L.sleep(250);
   const pool=await P.page.evaluate(()=>{const f=document.getElementById('b27Form'),rq=document.getElementById('rqForm');return {kind:f&&f.dataset.kind,bet:(document.getElementById('b27KindBet')||{}).innerText||'',pool:(document.getElementById('b27KindPool')||{}).innerText||'',betOn:(document.getElementById('b27KindBet')||{}).getAttribute&&document.getElementById('b27KindBet').getAttribute('aria-pressed'),poolOn:document.getElementById('b27KindPool').getAttribute('aria-pressed'),amt:!!(f&&f.querySelector('#b27En, .b27-amt, #b27Text, input')),rq:!!(rq&&rq.querySelector('#b27KindPool, .b27-kind')),you:/you are\s/i.test((f||{}).innerText||'')}});
@@ -203,6 +210,15 @@ function start(){
     link:(document.querySelector('#b27Flt a')||{}).innerText,tally:!!document.querySelector('#b27Tally summary'),sum:(document.querySelector('#b27Tally summary')||{}).innerText
   }));
   ok('all bets defaults to Open, Any, Any time and keeps Tally inside the list',filt.st==='open'&&filt.ac==='any'&&filt.wh==='any'&&/How these filters work/.test(filt.link)&&filt.tally&&/Who owes who/.test(filt.sum),filt);
+  await P.page.hover('.b27-c');
+  await L.sleep(200);
+  await P.page.hover('.b27-m');
+  await L.sleep(200);
+  const add=await P.page.$('.s25add');
+  if(add){await add.hover();await L.sleep(450)}
+  const hovered=await P.page.evaluate(()=>({pop:!!document.querySelector('.s27-pop'),who:!!document.querySelector('.s25wl'),pk:!!document.querySelector('.s25pk'),titles:[...document.querySelectorAll('.b27-c [title], .s25rx[title]')].map(e=>e.getAttribute('title')).filter(t=>t&&!/Copy this/.test(t))}));
+  ok('hovering a placed bet card does not open a detail',!hovered.pop&&!hovered.who&&!hovered.pk&&hovered.titles.length===0,hovered);
+  if(add){await add.click();await L.sleep(200);ok('click opens the reaction list',!!(await P.page.$('.s25pk')));await P.page.keyboard.press('Escape');await L.sleep(150);ok('escape closes the reaction list',!(await P.page.$('.s25pk')))}
   await P.page.screenshot({path:'/opt/cursor/artifacts/held-bets-filters-desktop.png'});
   await P.page.evaluate(()=>{const n=document.getElementById('b27Tally');if(n){n.open=true;n.scrollIntoView({block:'start'})}});
   await L.sleep(200);
