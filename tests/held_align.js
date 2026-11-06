@@ -7,6 +7,38 @@ const L=require('./lib.js');
 const root=path.join(__dirname,'..');
 let n=0,bad=0;const fails=[];
 function ok(name,c,x){n++;if(c)console.log('  ok  '+name);else{bad++;fails.push(name);console.log('FAIL  '+name+(x!==undefined?'  -> '+JSON.stringify(x).slice(0,400):''))}}
+/* Real pointer. Re-query after a repaint so a replaced node cannot fail the hover.
+   page.mouse talks to Chrome's pointer; this does not dispatch a synthetic mouseover. */
+async function pointer(page,selector,act){
+  let last='';
+  for(let i=0;i<8;i++){
+    const box=await page.evaluate(sel=>{
+      const el=document.querySelector(sel);
+      if(!el||!el.isConnected)return null;
+      el.scrollIntoView({block:'center',inline:'nearest'});
+      const r=el.getBoundingClientRect();
+      if(r.width<1||r.height<1)return null;
+      const y=Math.min(Math.max(r.top+r.height/2,r.top+4),r.bottom-4);
+      return {x:r.left+r.width/2,y};
+    },selector).catch(e=>{last=String(e);return null});
+    if(!box){await L.sleep(160);continue}
+    try{
+      if(act==='click')await page.mouse.click(box.x,box.y,{delay:40});
+      else await page.mouse.move(box.x,box.y);
+      const hit=await page.evaluate((sel,x,y)=>{
+        const el=document.elementFromPoint(x,y),t=document.querySelector(sel);
+        return !!(el&&t&&(el===t||t.contains(el)||el.contains(t)));
+      },selector,box.x,box.y);
+      if(hit)return;
+      last='miss';
+    }catch(e){
+      last=String(e);
+      if(!/detached|Target closed|Execution context|Node is/i.test(last))throw e;
+    }
+    await L.sleep(180);
+  }
+  throw new Error('pointer '+act+' missed '+selector+' '+last);
+}
 
 function sharedCheck(){
   const vm=require('vm');
@@ -187,6 +219,12 @@ function start(){
   await P.page.keyboard.press('Escape');
   await L.sleep(100);
   ok('escape closes the bet detail',!(await P.page.$('.s27-pop')));
+  await pointer(P.page,'.entry-wiu .s27-tipk','click');
+  await L.sleep(200);
+  ok('click opens the bet detail again',!!(await P.page.$('.s27-pop')));
+  await pointer(P.page,'#ltitle','click');
+  await L.sleep(200);
+  ok('a pointer click outside closes the bet detail',!(await P.page.$('.s27-pop')));
   await P.page.hover('.entry-rq .s27-tipk');
   await L.sleep(350);
   ok('hover does not open a request detail',!(await P.page.$('.s27-pop')));
@@ -217,15 +255,28 @@ function start(){
     link:(document.querySelector('#b27Flt a')||{}).innerText,tally:!!document.querySelector('#b27Tally summary'),sum:(document.querySelector('#b27Tally summary')||{}).innerText
   }));
   ok('all bets defaults to Open, Any, Any time and keeps Tally inside the list',filt.st==='open'&&filt.ac==='any'&&filt.wh==='any'&&/How these filters work/.test(filt.link)&&filt.tally&&/Who owes who/.test(filt.sum),filt);
-  await P.page.hover('.b27-c');
-  await L.sleep(200);
-  await P.page.hover('.b27-m');
-  await L.sleep(200);
+  await pointer(P.page,'.b27-c','move');
+  await L.sleep(250);
+  await pointer(P.page,'.b27-m','move');
+  await L.sleep(250);
   const add=await P.page.$('.s25add');
-  if(add){await add.hover();await L.sleep(450)}
+  if(add){await pointer(P.page,'.s25add','move');await L.sleep(500)}
   const hovered=await P.page.evaluate(()=>({pop:!!document.querySelector('.s27-pop'),who:!!document.querySelector('.s25wl'),pk:!!document.querySelector('.s25pk'),titles:[...document.querySelectorAll('.b27-c [title], .s25rx[title]')].map(e=>e.getAttribute('title')).filter(t=>t&&!/Copy this/.test(t))}));
   ok('hovering a placed bet card does not open a detail',!hovered.pop&&!hovered.who&&!hovered.pk&&hovered.titles.length===0,hovered);
-  if(add){await add.click();await L.sleep(200);ok('click opens the reaction list',!!(await P.page.$('.s25pk')));await P.page.keyboard.press('Escape');await L.sleep(150);ok('escape closes the reaction list',!(await P.page.$('.s25pk')))}
+  if(add){
+    await pointer(P.page,'.s25add','click');
+    await L.sleep(200);
+    ok('click opens the reaction list',!!(await P.page.$('.s25pk')));
+    await P.page.keyboard.press('Escape');
+    await L.sleep(150);
+    ok('escape closes the reaction list',!(await P.page.$('.s25pk')));
+    await pointer(P.page,'.s25add','click');
+    await L.sleep(200);
+    ok('click opens the reaction list again',!!(await P.page.$('.s25pk')));
+    await pointer(P.page,'#ltitle','click');
+    await L.sleep(200);
+    ok('a pointer click outside closes the reaction list',!(await P.page.$('.s25pk')));
+  }
   await P.page.screenshot({path:'/opt/cursor/artifacts/held-bets-filters-desktop.png'});
   await P.page.evaluate(()=>{const n=document.getElementById('b27Tally');if(n){n.open=true;n.scrollIntoView({block:'start'})}});
   await L.sleep(200);
