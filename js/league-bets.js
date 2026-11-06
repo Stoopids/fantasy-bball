@@ -48,7 +48,7 @@ const idOk=v=>typeof v==='string'&&/^[a-z0-9]{6,24}$/.test(v);
 const midOk=v=>typeof v==='string'&&/^[0-9a-f]{8,32}$/.test(v);
 let H=null;const SENT=new Map();   /* events this device wrote, kept so a lost update (two devices of mine writing at the same instant) is healed on the next look */
 const S={more:{},rxWho:null,prop:{},autoFix:{},logs:{},got:{},state:'init',fails:0,timer:null,busy:false,msg:'',bad:false,started:false,sig:'',ask:null,me:null,stale:0,
-  f:{opps:[],open:false,text:'',amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false},fid:null,kind:'bet',p:{text:'',pp:[],entry:'',places:['',''],showErr:{},confirm:false},pid:null,poolTxt:{},poolErr:{},placeWho:{},qb:'',q:{g:null,amt:5,vs:null,msg:''},undoT:null};
+  f:{opps:[],open:false,text:'',amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false,wk:'unknown',est:''},fid:null,kind:'bet',clip:null,ob:'form',p:{text:'',pp:[],entry:'',places:['',''],showErr:{},confirm:false},pid:null,poolTxt:{},poolErr:{},placeWho:{},qb:'',q:{g:null,amt:5,vs:null,msg:''},undoT:null};
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const KEY=mid=>FBN.Keys(H.id).base+'-bets-'+mid;
 /* ---------- pure helpers ---------- */
@@ -97,7 +97,7 @@ function reduce(logs,mids,now){const set=new Set(mids),all=[];
   for(const{e,mid,late}of all){if(seen.has(mid+'|'+e.u))continue;seen.add(mid+'|'+e.u);
     if(e.k==='p'){/* s28j: a bet can be posted FOR another manager (e.for = bettor A, written in the poster's log): A (by) and B (to) both have to accept; postedBy = the log owner */
       const fr=e.for&&e.for!==mid?e.for:null,by=fr||mid;if(bets.has(e.id)||(fr&&(!set.has(fr)||e.to==='*'))||(e.to!=='*'&&(!set.has(e.to)||e.to===by)))continue;
-      const nb={v25:e.v===SV,id:e.id,n:++n,by,to:e.to,amt:e.amt,a:e.a,b:e.b,text:e.text,g:e.g,c:e.c,rx:{},ts:e.ts,status:'pending',acc:null,reps:{},res:null,auto:false,fixes:[],fix:null,tp:!!fr,ackA:!fr};
+      const nb={v25:e.v===SV,id:e.id,n:++n,by,to:e.to,amt:e.amt,a:e.a,b:e.b,text:e.text,g:e.g,c:e.c,rx:{},ts:e.ts,status:'pending',acc:null,reps:{},res:null,auto:false,fixes:[],fix:null,tp:!!fr,ackA:!fr,wk:e.wk||'unknown',est:e.est||null,sid:e.sid||null};
       if(e.postedBy===mid){nb.postedBy=mid;nb.postedAt=Number(e.postedAt)||e.ts}if(fr&&e.to===mid){nb.acc=mid;nb.accTs=e.ts}if(!AF()&&e.to!=='*'){nb.status='open';nb.acc=e.to;nb.accTs=e.ts;nb.ackA=true}
       bets.set(e.id,nb);continue}
     if(e.k==='pl'){if(bets.has(e.id)||!e.parts.includes(mid)||!e.parts.every(p=>set.has(p)))continue;   /* s28 pool: the builder is always in it; numbered with the bets */
@@ -313,46 +313,49 @@ function stampTime(ms){return LTIME.time(ms)}   /* s28j item 12: LTIME (no zone 
 function stampText(b,now){const p=[];if(b&&b.ts!=null&&!isNaN(+b.ts))p.push('Placed '+stampDate(+b.ts,now)+', '+stampTime(+b.ts));
   if(b&&b.status==='settled'&&b.settledTs!=null&&!isNaN(+b.settledTs))p.push('Settled '+stampDate(+b.settledTs,now)+', '+stampTime(+b.settledTs));return p.join(' · ')}
 function stampHtml(b){const t=stampText(b);return t?`<div class="b27-stamp">${esc(t)}</div>`:''}
-/* ---------- s24 list filters: Person (Me / Everyone / each manager) x Status (All / Waiting on me / Open / Settled / Wash) ----------
-   kept per device per league in localStorage fbn.x.<league>.betf as {p,s,q}; p = 'all' | 'me' | position 1-8 in the league (never a manager id); q = search terms
-   (bet text + manager names, case-insensitive, live); also in the URL as #bets/f=<p>-<s> or #bets/f=<p>-<s>/q=<terms> */
-const FS={all:'Any status',open:'Open',settled:'Settled',wash:'Wash',waiting:'Waiting on me',stoops:'Waiting on stoops',req:'Requested'};
+/* All Bets filters: Person and search stay. Status, Action needed and When all apply at once. Default Open + Any + Any time.
+   Requests are not classified by those three. Person and search apply to requests only after invitation eligibility. */
+const FST=[['open','Open'],['all','All'],['settled','Settled'],['wash','Wash'],['void','Cancelled']];
+const FAC=[['any','Any'],['mine','My turn'],['theirs','Their turn']];
+const FWH=[['any','Any time'],['up','Upcoming'],['today','Today'],['over','Past settle date'],['game','End game'],['season','End of season'],['none','Not sure yet']];
 const fKey=()=>'fbn.x.'+(H&&H.id)+'.betf';
-const fOk=(p,s)=>/^(all|me|[1-8])$/.test(p)&&s in FS;
 const qClean=q=>clean(q,60);
-function fLoad(){if(S.fl)return;S.fl=1;S.fp=S.fp||'all';S.fs=S.fs||'all';S.fq=S.fq||'';try{const v=JSON.parse(localStorage.getItem(fKey())||'null');if(v&&fOk(v.p,v.s)){S.fp=v.p;S.fs=v.s;S.fq=qClean(v.q||'')}}catch(e){}}
-function fSave(){try{if(S.fp==='all'&&S.fs==='all'&&!S.fq)localStorage.removeItem(fKey());else localStorage.setItem(fKey(),JSON.stringify(S.fq?{p:S.fp,s:S.fs,q:S.fq}:{p:S.fp,s:S.fs}))}catch(e){}}
-function fSet(p,s,quiet,q){if(!fOk(p,s))return false;S.fl=1;S.fp=p;S.fs=s;if(q!==undefined)S.fq=qClean(q);fSave();if(!quiet&&H&&H.onFilter)H.onFilter();return true}
-const fPm=me=>S.fp==='me'?me:S.fp==='all'?null:((owners()[+S.fp-1]||{}).mid||null);
-const fEff=me=>({p:(S.fp==='me'&&!me)?'all':S.fp,s:((S.fs==='waiting'||S.fs==='stoops')&&(!me||!AF()))?'all':S.fs});   /* a watcher has no "me": those choices fall back */
-/* STEP10: waitsOn = "Waiting on me": ONLY bets where I can tap something (Accept/Decline, the placer enters the result / Confirm, answer a Fix, settle my pool).
-   waitsStoops = "Waiting on stoops": live bets I'm in that only another Stoop can move. */
-function waitsOn(b,me){if(!me)return false;if(!AF()&&b.kind!=='pool')return false;if(b.kind==='pool')return b.status==='open'&&!b.back&&b.by===me;const party=b.by===me||b.acc===me;
-  if(b.status==='pending'){if(b.tp)return (me===b.by&&!b.ackA)||(me===b.to&&!b.acc);return b.by!==me&&(b.to===me||b.to==='*')}
-  if(b.status==='open')return b.by===me;
-  if(b.status==='reported')return party&&!b.reps[me];
-  if(b.status==='disputed')return party;
-  if(b.status==='settled')return party&&!!b.fix&&b.fix.by!==me;return false}
-function waitsStoops(b,me){if(!me||waitsOn(b,me))return false;if(!AF()&&b.kind!=='pool')return false;if(b.kind==='pool')return b.status==='open'&&!b.back&&b.by!==me&&b.parts.includes(me);const party=b.by===me||b.acc===me;
-  if(b.status==='pending')return b.tp?(me===b.by||me===b.to||me===b.postedBy):(b.by===me);
-  if(b.status==='open'||b.status==='reported')return party;
-  if(b.status==='settled')return party&&!!b.fix&&b.fix.by===me;return false}
-function fMatch(b,me){fLoad();const e=fEff(me);if(e.s==='req')return false;/*STEP8-REQUEST*/
-  if(e.p!=='all'){const pm=e.p==='me'?me:fPm(me);if(!pm||!(b.by===pm||b.acc===pm||(b.status==='pending'&&b.to===pm)||(b.kind==='pool'&&b.parts.includes(pm))))return false}
-  if(S.fq){const q=S.fq.toLowerCase(),hay=[b.text,nm(b.by),b.acc?nm(b.acc):'',b.to&&b.to!=='*'?nm(b.to):'',...(b.parts||[]).map(nm)].join(' ').toLowerCase();if(!q.split(/\s+/).every(w=>hay.includes(w)))return false}
-  if(b.kind==='pool'){if(e.s==='waiting')return waitsOn(b,me);if(e.s==='stoops')return waitsStoops(b,me);if(e.s==='open')return b.status==='open'&&!b.back;if(e.s==='settled')return b.status==='open'&&!!b.back;return e.s!=='wash'}
-  if(e.s==='waiting')return waitsOn(b,me);if(e.s==='stoops')return waitsStoops(b,me);if(e.s==='open')return['pending','open','reported','disputed'].includes(b.status);
-  if(e.s==='settled')return b.status==='settled';if(e.s==='wash')return b.status==='settled'&&b.res==='p';return true}
-const fActive=me=>{fLoad();const e=fEff(me);return e.p!=='all'||e.s!=='all'||!!S.fq};
-function fEmpty(me){return 'No bets match this filter.'}
-function fBar(me,bets){fLoad();const e=fEff(me),oth=owners(),wn=me?bets.filter(b=>waitsOn(b,me)).length:0,wn2=me?bets.filter(b=>waitsStoops(b,me)).length:0;
-  const po=`<option value="all"${e.p==='all'?' selected':''}>Everyone</option>`+(me?`<option value="me"${S.fp==='me'?' selected':''}>Me</option>`:'')+oth.map((o,i)=>`<option value="${i+1}"${S.fp===String(i+1)?' selected':''}>${esc(bRNm(o)?o.team_name+' · '+bRNm(o):(o.team_name||o.name))}</option>`).join('');
-  const so=Object.keys(FS).filter(k=>(k!=='waiting'&&k!=='stoops')||(me&&AF())).map(k=>`<option value="${k}"${e.s===k?' selected':''}>${esc(FS[k])}${k==='waiting'&&wn?' ('+wn+')':k==='stoops'&&wn2?' ('+wn2+')':''}</option>`).join('');
-  const lost=!me&&(S.fp==='me'||S.fs==='waiting'||S.fs==='stoops')?'<div class="note" id="b27FltNote">“Me”, “Waiting on me” and “Waiting on stoops” need your own manager link, so this shows everyone.</div>':'';
-  return`<div class="card s24fb b27-flt" id="b27Flt" role="search" aria-label="Filter bets"><div class="b27-fr"><select id="b27FP" aria-label="Person">${po}</select><select id="b27FS" aria-label="Status">${so}</select><input id="b27FQ" type="search" class="b27-fq" placeholder="search terms…" aria-label="Search bets" autocomplete="off" maxlength="60" enterkeyhint="search" value="${esc(S.fq)}"></div>${lost}</div>`}
-function fHashOut(){fLoad();return S.fp==='all'&&S.fs==='all'&&!S.fq?'':'f='+S.fp+'-'+S.fs+(S.fq?'/q='+encodeURIComponent(S.fq):'')}
-function fFromHash(f,q){const m=/^(all|me|[1-8])-(all|waiting|open|settled|wash)$/.exec(String(f||''));if(m)fSet(m[1],m[2],true,q==null?'':q)}
-function reveal(id){const me=meMid(),b=compute().find(x=>x.id===id);if(!b||!fActive(me)||fMatch(b,me))return false;fSet('all','all',true,'');return true}
+const fPerson=p=>/^(all|me|[1-8])$/.test(p)?p:'all';
+function fLoad(){if(S.fl)return;S.fl=1;S.fp='all';S.fst='open';S.fac='any';S.fwh='any';S.fq='';
+  try{const v=JSON.parse(localStorage.getItem(fKey())||'null');if(!v||typeof v!=='object')return;
+    S.fp=fPerson(v.p);if(v.q)S.fq=qClean(v.q);
+    if(FST.some(x=>x[0]===v.st))S.fst=v.st;else if(v.s==='all'||v.s==='open'||v.s==='settled'||v.s==='wash')S.fst=v.s;else if(v.s==='waiting'){S.fst='open';S.fac='mine'}else if(v.s==='stoops'){S.fst='open';S.fac='theirs'}
+    if(FAC.some(x=>x[0]===v.ac))S.fac=v.ac;if(FWH.some(x=>x[0]===v.wh))S.fwh=v.wh}catch(e){}}
+function fSave(){try{const d=S.fp==='all'&&S.fst==='open'&&S.fac==='any'&&S.fwh==='any'&&!S.fq;if(d)localStorage.removeItem(fKey());else localStorage.setItem(fKey(),JSON.stringify({p:S.fp,st:S.fst,ac:S.fac,wh:S.fwh,q:S.fq}))}catch(e){}}
+function fSet(p,st,ac,wh,quiet,q){if(!fPerson(p)||!FST.some(x=>x[0]===st)||!FAC.some(x=>x[0]===ac)||!FWH.some(x=>x[0]===wh))return false;S.fl=1;S.fp=fPerson(p);S.fst=st;S.fac=ac;S.fwh=wh;if(q!==undefined)S.fq=qClean(q);fSave();if(!quiet&&H&&H.onFilter)H.onFilter();return true}
+function inBet(b,mid){if(!mid||!b)return false;return b.by===mid||b.acc===mid||(b.status==='pending'&&(b.to===mid||b.to==='*'))||(b.kind==='pool'&&(b.parts||[]).includes(mid))}
+function statusKey(b){if(!b)return 'void';if(b.kind==='pool'){if(b.status==='void')return 'void';if(b.back)return 'settled';return b.status==='open'?'open':'void'}
+  if(b.status==='declined'||b.status==='withdrawn'||b.status==='void')return 'void';if(b.status==='settled'&&b.res==='p')return 'wash';if(b.status==='settled')return 'settled';return 'open'}
+/* My turn is a real step: answer a correction, confirm a proposed final, or enter a result after the game is final.
+   A sorting date, a game later today, and a game still being played are not a result-entry task. */
+function myTurn(b,me){if(!me||!b||b.kind==='pool')return false;const party=b.by===me||b.acc===me;
+  if(b.fix&&b.fix.st==='pending'&&party&&b.fix.by!==me)return true;
+  if(b.by!==me||!(b.status==='open'||b.status==='reported'||b.status==='disputed'))return false;
+  const P=S.prop[b.id];if(P&&P.st==='final')return true;const g=b.c?autoGame(b.c,false):null;return !!(g&&g.status==='final')}
+function theirTurn(b,me){if(!me||!b||b.kind==='pool'||myTurn(b,me))return false;if(!(b.by===me||b.acc===me||b.to===me))return false;const other=b.by===me?b.acc:b.by;return !!(other&&myTurn(b,other))}
+function whenKey(b){return window.SHARED_UI&&SHARED_UI.whenClass?SHARED_UI.whenClass(b):'none'}
+function fMatch(b,me,o){fLoad();o=o||{};const p=o.p!=null?o.p:S.fp,st=o.st||S.fst,ac=o.ac||S.fac,wh=o.wh||S.fwh,q=o.q!=null?o.q:S.fq;
+  if(q){const hay=[b.text,nm(b.by),b.acc?nm(b.acc):'',b.to&&b.to!=='*'?nm(b.to):'',...(b.parts||[]).map(nm)].join(' ').toLowerCase();if(!String(q).toLowerCase().split(/\s+/).filter(Boolean).every(w=>hay.includes(w)))return false}
+  if(p!=='all'){const pm=p==='me'?me:(owners()[+p-1]||{}).mid;if(!pm||!inBet(b,pm))return false}
+  if(st!=='all'&&statusKey(b)!==st)return false;if(ac==='mine'&&!myTurn(b,me))return false;if(ac==='theirs'&&!theirTurn(b,me))return false;if(wh!=='any'&&whenKey(b)!==wh)return false;return true}
+const fActive=me=>{fLoad();return S.fp!=='all'||S.fst!=='open'||S.fac!=='any'||S.fwh!=='any'||!!S.fq};
+function fEmpty(){return 'No bets match this filter.'}
+function fBar(me,bets){fLoad();const oth=owners();
+  const opt=(list,cur,extra)=>list.map(([k,t])=>`<option value="${k}"${k===cur?' selected':''}>${esc(t)}${extra&&extra[k]!=null?' ('+extra[k]+')':''}</option>`).join('');
+  const nMine=bets.filter(b=>fMatch(b,me,{ac:'mine'})).length,nTheirs=bets.filter(b=>fMatch(b,me,{ac:'theirs'})).length;
+  const po=`<option value="all"${S.fp==='all'?' selected':''}>Everyone</option>`+(me?`<option value="me"${S.fp==='me'?' selected':''}>Me</option>`:'')+oth.map((o,i)=>`<option value="${i+1}"${S.fp===String(i+1)?' selected':''}>${esc(bRNm(o)?o.team_name+' · '+bRNm(o):(o.team_name||o.name))}</option>`).join('');
+  const need=!me&&(S.fac==='mine'||S.fac==='theirs')?' Pick who you are to use My turn or Their turn.':'';
+  return`<div class="card s24fb b27-flt" id="b27Flt" role="search" aria-label="Filter bets"><div class="b27-fr"><select id="b27FP" aria-label="Person">${po}</select><select id="b27FS" aria-label="Status">${opt(FST,S.fst)}</select><select id="b27FA" aria-label="Action needed">${opt(FAC,S.fac,{mine:nMine,theirs:nTheirs})}</select><select id="b27FW" aria-label="When">${opt(FWH,S.fwh)}</select><input id="b27FQ" type="search" class="b27-fq" placeholder="search terms…" aria-label="Search bets" autocomplete="off" maxlength="60" enterkeyhint="search" value="${esc(S.fq)}"></div><div class="note" style="margin-top:6px"><a href="help.html#howto-filters">How these filters work →</a>${need}</div></div>`}
+function fHashOut(){fLoad();return S.fp==='all'&&S.fst==='open'&&S.fac==='any'&&S.fwh==='any'&&!S.fq?'':'f='+S.fp+'-'+S.fst+'-'+S.fac+'-'+S.fwh+(S.fq?'/q='+encodeURIComponent(S.fq):'')}
+function fFromHash(f,q){const m=/^(all|me|[1-8])-(all|open|settled|wash|void|waiting|stoops)(?:-(any|mine|theirs))?(?:-(any|up|today|over|game|season|none))?$/.exec(String(f||''));if(!m)return;let st=m[2],ac=m[3]||'any',wh=m[4]||'any';if(st==='waiting'){st='open';ac='mine'}if(st==='stoops'){st='open';ac='theirs'}fSet(m[1],st,ac,wh,true,q==null?'':q)}
+function reveal(id){const me=meMid(),b=compute().find(x=>x.id===id);if(!b||!fActive(me)||fMatch(b,me))return false;fSet('all','all','any','any',true,'');return true}
+function reqMatch(r){fLoad();const me=meMid(),p=S.fp,who=p==='me'?me:p==='all'?null:(owners()[+p-1]||{}).mid;
+  if(who&&r.by!==who&&(r.to||[]).indexOf(who)<0)return false;if(!S.fq)return true;const hay=[r.txt,r.lab,nm(r.by),...(r.to||[]).map(nm),r.game].join(' ').toLowerCase();return String(S.fq).toLowerCase().split(/\s+/).filter(Boolean).every(w=>hay.includes(w))}
 let CUR=[];const UNDO_MS=30000;
 const undoable=(b,me)=>!!me&&(b.kind==='pool'?b.status==='open'&&b.by===me:AF()?b.status==='pending'&&b.by===me:b.status==='open'&&(b.postedBy||b.by)===me&&!Object.keys(b.reps||{}).length)&&Date.now()-b.ts<UNDO_MS;
 const grpUndo=(g,me)=>g?CUR.filter(x=>x.g===g&&undoable(x,me)):[];
@@ -420,14 +423,17 @@ function pasteHtml(me){const z=S.pz||{txt:''};const r=z.r;let body='';
 /* s28j: 'Posted by <name> · Nov 3, 7:00 PM WIB' = LTIME.stamp (the League's one time helper: device zone + short label); the same string goes into the copied text */
 const postedTxt=b=>b&&b.postedBy?'Posted by '+nm(b.postedBy)+' · '+(window.LTIME&&LTIME.stamp?LTIME.stamp(b.postedAt):new Date(b.postedAt).toLocaleString()):'';
 function postedHtml(b){return b&&b.postedBy?`<div class="mut b27-posted" data-posted="1">${esc(postedTxt(b))}</div>`:''}
-function formHtml(me){const f=S.f,oth=others();const err=formOK();
-  return`<div class="card b27-form" id="b27Form"><b>New bet</b> <span class="note">· you are <b>${esc(nm(me))}</b> <a href="join.html?l=${encodeURIComponent(H.id)}">(change)</a></span>${qbHint()}${S.edited||!PF()?'':pasteHtml(me)}${S.edited?`<div class="note b27-edhint" role="status" id="b27EdHint">✏️ Filled in from Bet #${esc(S.edited)} (withdrawn). Change it, then place it again.</div>`:''}${kindTabs(`<div class="b27-selbar"><button type="button" class="b27-sm" data-lb="oppall"><span class="f">Select all</span><span class="s">All</span></button><button type="button" class="b27-sm" data-lb="oppclear">Clear</button><span class="cnt" id="b27SelCnt" aria-live="polite">${f.open?'Open to anyone':f.opps.length?f.opps.length+' selected':'None selected'}</span></div>`)}
-   <div class="b27-q"><button type="button" class="s27-tipk" data-tip="who" aria-expanded="false">1. Who are you betting against?</button></div><div class="b27-opps" role="group" aria-label="Opponents" style="--n:${oth.length}">${oth.map(o=>chip(o,'opp',!f.open&&f.opps.includes(o.mid))).join('')}</div>
+function whenField(step,game){if(!(window.SHARED_UI&&SHARED_UI.whenBox))return '';const f=S.f;return SHARED_UI.whenBox({e:esc,kind:f.wk||'unknown',est:f.est,seasonId:'',step:String(step),game:!!game,inputId:'b27Est',pick:id=>`data-lb="when" data-v="${id}"`,dateAttr:'data-when-date="1"'})}
+function formHtml(me){const f=S.f,oth=others();const err=formOK();const util=oth.length%4?`<div class="b27-util" role="group" aria-label="Select people"><button type="button" class="s27-selb" data-lb="oppall"><span class="f">Select all</span><span class="s">All</span></button><button type="button" class="s27-selb" data-lb="oppclear">Clear</button></div>`:'';
+  const head=window.SHARED_UI&&SHARED_UI.entryHead?SHARED_UI.entryHead('wiu'):'<h2>Write it Up</h2>';
+  return`<div class="card b27-form" id="b27Form">${head}<span class="note">you are <b>${esc(nm(me))}</b> <a href="join.html?l=${encodeURIComponent(H.id)}">(change)</a></span>${qbHint()}${S.edited||!PF()?'':pasteHtml(me)}${S.edited?`<div class="note b27-edhint" role="status" id="b27EdHint">✏️ Filled in from Bet #${esc(S.edited)} (withdrawn). Change it, then place it again.</div>`:''}${kindTabs('')}
+   <div class="b27-q"><button type="button" class="s27-tipk" data-tip="who" aria-expanded="false">1. Who are you betting against?</button></div><div class="b27-opps" role="group" aria-label="Opponents" style="--n:${oth.length}">${oth.map(o=>chip(o,'opp',!f.open&&f.opps.includes(o.mid))).join('')}${util}</div><span class="sr" id="b27SelCnt" aria-live="polite">${f.open?'Open to anyone':f.opps.length?f.opps.length+' selected':'None selected'}</span>
    <div class="b27-q"><button type="button" class="s27-tipk" data-tip="text" aria-expanded="false">2. What’s the bet?</button><label for="b27Text" class="sr">What’s the bet?</label></div><input id="b27Text" class="sb-in b27-in" maxlength="${C.maxText}" autocomplete="off" enterkeyhint="go" placeholder="e.g. Kansas -4 beats Duke" value="${esc(f.text)}">
    <div class="b27-ao"><div class="b27-ao-c"><div class="b27-q"><button type="button" class="s27-tipk" data-tip="amt" aria-expanded="false">3. Amount</button></div><div class="b27-amts" role="group" aria-label="Amount">${C.amounts.map(a=>`<button type="button" class="b27-amt" data-lb="amt" data-v="${a}" aria-pressed="${!f.amtCustom&&a===f.amt}">${a}</button>`).join('')}<button type="button" class="b27-amt cu" data-lb="amtcustom" aria-pressed="${f.amtCustom}">Custom</button></div>
    <div id="b27Aw" class="b27-cw"${f.amtCustom?'':' hidden'}><label for="b27Ao" class="sr">Custom amount</label><input id="b27Ao" class="sb-in b27-in" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6" placeholder="Whole number, ${C.min} to ${C.max}" value="${esc(f.amtTxt)}"><div id="b27Ae" class="b27-bad-t" role="alert">${esc(f.amtErr)}</div></div></div><div class="b27-ao-c">
    <div class="b27-q"><button type="button" class="s27-tipk" data-tip="odds" aria-expanded="false">4. Odds</button></div><div class="b27-chips" role="group" aria-label="Odds">${C.odds.map(([a,b])=>`<button type="button" class="b27-chip" data-lb="odds" data-v="${a}-${b}" aria-pressed="${!f.custom&&!!f.odds&&f.odds[0]===a&&f.odds[1]===b}">${a===1&&b===1?'Even':a+'-'+b}</button>`).join('')}<button type="button" class="b27-chip cu" data-lb="oddscustom" aria-pressed="${f.custom}">Custom</button></div>
    <div id="b27Cw" class="b27-cw"${f.custom?'':' hidden'}><label for="b27Co" class="sr">Custom odds</label><input id="b27Co" class="sb-in b27-in" inputmode="text" autocomplete="off" maxlength="9" placeholder="e.g. 7-2 or 10-1" value="${esc(f.customTxt)}"><div id="b27Ce" class="b27-bad-t" role="alert">${esc(f.oddsErr)}</div></div></div></div>
+   ${whenField(5,false)}
    <div class="b27-livebox" id="b27Live" aria-live="polite">${liveHtml()}</div><div class="b27-sum" id="b27Sum">${esc(summary())}</div><div id="b27AutoN">${autoNoteForm()}</div><div class="b27-bad-t" id="b27Hint"></div>
    <button type="button" id="b27Place" class="btn b27-big" data-lb="place"${err?' disabled aria-disabled="true"':''}>Place bet</button></div>`}
 /* ----- pool form: 1 terms, 2 who's in, 3 buy-in (live pot line), 4 payouts by place (amounts only; optional) ----- */
@@ -506,12 +512,11 @@ function poolSettle(b,back){const me=meMid();if(!me||b.by!==me){S.msg=POOL_TXT.o
   if(!(S.ask&&S.ask.id===b.id&&S.ask.w==='pool')){S.poolErr[b.id]='';S.ask={id:b.id,w:'pool'};render(true);return}
   act([mkEv('pb',{id:b.id,back})],PT('saved')).then(ok=>{if(ok){S.poolTxt[b.id]='';S.placeWho[b.id]=[]}})}
 /* ----- Tally (partner vTally): person table (only people with bets or amounts), then Who Owes Who (all 8, gross, rows owe columns), then netted settle lines ----- */
-const OB_LABELS={form:'\u270F\uFE0F Write it Up',all:'\u{1F4CB} All bets',tally:'\u{1F4B0} Tally',request:'\u{1F4E8} Request',open:'\u{1F4CC} Open'};   /* ALL-BETS order: Write it Up, Request, Open, All bets, Tally */
-function obSeg(){const v=S.ob==='tally'?'tally':S.ob==='request'?'request':S.ob==='open'?'open':S.ob==='all'?'all':'form',sg=k=>`<button type="button" class="${v===k?'on':''}" aria-pressed="${v===k}" data-lb="obview" data-v="${k}" id="b27Ob_${k}">${OB_LABELS[k]}</button>`;
-  return `<div class="tabs ob-seg" role="group" aria-label="Bets" id="b27Seg">${sg('form')}${RQ()?sg('request')+sg('open'):''}${sg('all')}${sg('tally')}</div>`}
+function obSeg(){const all=S.ob==='all'||S.ob==='open'||S.ob==='tally',entry=!all,sg=(k,on,t)=>`<button type="button" class="${on?'on':''}" aria-pressed="${on}" data-lb="obview" data-ob="${k}" data-v="${k}">${t}</button>`;
+  return `<div class="tabs ob-seg ob-desk" role="group" aria-label="Bets" id="b27Seg">${sg('form',entry,'Write it Up or Request')}${sg('all',all,'All Bets')}</div><div class="tabs ob-seg ob-phone" role="group" aria-label="Bets">${sg('form',S.ob==='form','Write it Up')}${sg('request',S.ob==='request','Request')}${sg('all',all,'All Bets')}</div>`}
 function tallyHtml(T){const ow=owners(),per=m=>T.per[m]||{net:0,bets:0},Lo=m=>T.lost[m]||0,Wo=m=>T.won[m]||0,M=(a,b)=>(T.M[a]&&T.M[a][b])||0;
   const ids=ow.filter(o=>per(o.mid).bets>0||Lo(o.mid)||Wo(o.mid));
-  let h=`<div class="card" id="b27Tally"><b>🧮 Tally · 2026-27</b><div class="note">From the 2026-27 shared ledger only. Rows owe columns.</div></div>`;
+  let h=`<div class="card" id="b27TallyHead"><b>🧮 Tally · 2026-27</b><div class="note">From this league's bet ledger only. Rows owe columns.</div></div>`;
   if(!ids.length)h+='<div class="card note" id="b27TallyEmpty" data-tally-empty>No 2026-27 bets with amounts yet.</div>';
   else if(typeof SHARED_UI!=='undefined'&&SHARED_UI.tallyTable)h+=SHARED_UI.tallyTable(ow.map(o=>({id:o.mid,name:String(o.name||nick(o)).split(' ')[0],lost:Lo(o.mid),won:Wo(o.mid),net:per(o.mid).net,bets:per(o.mid).bets})),M,{e:esc,fmt:num,rowKey:'data-mid',tblAttr:' id="b27People" data-tally="people" aria-label="Tally"'});/*TALLY-ONE*/
   else if(typeof SHARED_UI!=='undefined'&&SHARED_UI.tallyPeople)h+=SHARED_UI.tallyPeople(ids.slice().sort((a,b)=>per(b.mid).net-per(a.mid).net).map(o=>({id:o.mid,tdAttr:` title="${esc(o.name)}"`,nameHtml:`<b class="tnt">${esc(nick(o))}</b>${bRNm(o,1)?`<small class="tnr">${esc(bRNm(o,1))}</small>`:''}`,lost:Lo(o.mid),won:Wo(o.mid),net:per(o.mid).net,bets:per(o.mid).bets,fines:0})),{e:esc,fmt:num,tblAttr:' id="b27People" data-tally="people" aria-label="Tally per person"',rowKey:'data-mid',zero:'<span class="mut">0</span>'});/*STEP7-TALLY*/
@@ -527,28 +532,30 @@ function copyText(t,ok){const fall=()=>{try{const ta=document.createElement('tex
 /* ----- the page (partner vB27 order): Write it Up / Tally + Copy link, message, New bet (or the watcher card), Bets (n) + mute, filter row, cards, the intro card with the live line last ----- */
 function view(){if(!H)return'';
   if(H.demo)return'<div class="card" id="b27Demo"><b>💵 Bets</b><div class="note">Bets are switched off in the demo, so nothing here can touch a real league.</div></div>';
-  const me=meMid(),bets=compute().sort((a,b)=>b.n-a.n),T=tally(bets);CUR=bets;markSeen();clearTimeout(S.undoT);{const left=bets.filter(b=>undoable(b,me)).map(b=>UNDO_MS-(Date.now()-b.ts));if(left.length)S.undoT=setTimeout(()=>{if(H&&H.active()){const a=document.activeElement;if(!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))render(true)}},Math.max(300,Math.min(...left)+250))}
+  const me=meMid(),raw=compute(),bets=(window.SHARED_UI&&SHARED_UI.estSort)?SHARED_UI.estSort(raw,SHARED_UI.estToday(),b=>+b.ts||0):raw.slice().sort((a,b)=>b.n-a.n),T=tally(bets);CUR=bets;clearTimeout(S.undoT);{const left=bets.filter(b=>undoable(b,me)).map(b=>UNDO_MS-(Date.now()-b.ts));if(left.length)S.undoT=setTimeout(()=>{if(H&&H.active()){const a=document.activeElement;if(!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))render(true)}},Math.max(300,Math.min(...left)+250))}
   const top=S.state==='ok'?(S.stale?`<span class="bad" id="b27Off">● offline: showing the last saved bets. Retrying…</span>`:'<span class="good">● live</span> · everyone in this league sees the same bets')
     :S.state==='error'?`<span class="bad" id="b27Off">● can’t reach the bets right now. Retrying… <button type="button" class="btn sec b27-b" data-lb="retry" id="b27Retry">Try now</button></span>`:'';
   const intro=`<div class="card b27-intro" id="b27Intro"><div class="note b27-note" id="b27Note">${esc(DISCLAIMER)}</div><div class="note" style="margin-top:6px">This page just <b>records</b> who bet what and who owes whom.</div><div class="note b27-top" id="b27Head" style="margin-top:6px"><span id="b27Top">${top}</span></div></div>`;
   const seg=`<div class="s26w-row" id="b27SegRow">${obSeg()}</div>`;
-  if(S.ob==='tally'&&S.state!=='init')return seg+tallyHtml(T);
-  /*<STEP8-REQUEST>*/if(S.ob==='request'&&RQ())return seg+RQ().view();if(S.ob==='open'&&RQ())return seg+RQ().view('open');/*</STEP8-REQUEST>*/
-  let h=seg;/*<STEP8-REQUEST>*/if(RQ()){fLoad();if(S.ob==='all'&&S.fs==='req')h+=RQ().pinned(true)}/*STEP10: no pinned strip on Write it Up*//*</STEP8-REQUEST>*/
-  if(S.msg)h+=`<div class="card ${S.bad?'b27-bad':'b27-ok'}" role="status" id="b27Msg">${esc(S.msg)}${(()=>{const gu=me&&S.undoG?grpUndo(S.undoG,me):[];return gu.length>1?`<div class="b27-act"><button type="button" class="btn sec b27-b" data-lb="undogroup" data-g="${esc(S.undoG)}"${S.busy?' disabled':''}>↩ Undo all ${gu.length} bets (30 s)</button></div>`:''})()}</div>`;
-  /*<ALL-BETS>*/if(S.ob==='all'){}/*list only*/else/*</ALL-BETS>*/ if(!me)h+=`<div class="card" id="b27Watch"><b>👀 Watching only</b><div class="note">You can read every bet here. To place or answer a bet, open this page from your own manager link (the League site button in the draft room).</div><p style="margin:8px 0 0"><a class="btn b27-b" id="b27Room" href="${esc(H.roomHref())}">Open the draft room</a></p></div>`;
-  else if(S.kind==='pool'&&!S.edited){const cf=S.p.confirm?poolConfirmHtml():'';if(S.p.confirm&&!cf)S.p.confirm=false;h+=cf?modal(cf):poolFormHtml(me)}
-  else if(S.f.confirm){const e=formOK(),t=clean(S.f.text);h+=modal(`<div class="card b27-confirm" id="b27Confirm"><b>Check it, then confirm</b>${t?`<div class="s26terms">${esc(t)}</div>`:''}<div class="b27-sum">${esc(summary())}</div>${readAsHtml()}<div id="b27Live">${liveHtml()}</div><div class="b27-act"><button type="button" class="btn b27-big" data-lb="confirm"${S.busy||e?' disabled':''}>${S.busy?'Saving…':'✅ Yes, place it'}</button><button type="button" class="btn sec b27-big" data-lb="edit"${S.busy?' disabled':''}>← Change</button></div></div>`)}
-  else h+=formHtml(me);
-  /* still loading the bets: the shared loader instead of an empty list */
+  const listing=S.ob==='all'||S.ob==='open'||S.ob==='tally';
+  const enter=listing&&S._saw!=='all';S._saw=listing?'all':(S.ob||'form');if(enter)markSeen();
+  let h=seg;
+  if(S.msg)h+=`<div class="card ${S.bad?'b27-bad':'b27-ok'}" role="status" id="b27Msg">${esc(S.msg)}${S.clip?`<pre class="rq-fb">${esc(S.clip)}</pre><div class="b27-act"><button type="button" class="btn sec" data-lb="clipretry">Copy</button></div>`:''}${(()=>{const gu=me&&S.undoG?grpUndo(S.undoG,me):[];return gu.length>1?`<div class="b27-act"><button type="button" class="btn sec b27-b" data-lb="undogroup" data-g="${esc(S.undoG)}"${S.busy?' disabled':''}>↩ Undo all ${gu.length} bets (30 s)</button></div>`:''})()}</div>`;
+  const wiu=!me?`<div class="card" id="b27Watch"><b>👀 Watching only</b><div class="note">You can read every bet here. To place or answer a bet, open this page from your own manager link (the League site button in the draft room).</div><p style="margin:8px 0 0"><a class="btn b27-b" id="b27Room" href="${esc(H.roomHref())}">Open the draft room</a></p></div>`
+    :(S.kind==='pool'&&!S.edited)?((()=>{const cf=S.p.confirm?poolConfirmHtml():'';if(S.p.confirm&&!cf)S.p.confirm=false;return cf?modal(cf):poolFormHtml(me)})())
+    :(S.f.confirm?modal(`<div class="card b27-confirm" id="b27Confirm"><b>Check it, then confirm</b>${clean(S.f.text)?`<div class="s26terms">${esc(clean(S.f.text))}</div>`:''}<div class="b27-sum">${esc(summary())}</div>${readAsHtml()}<div id="b27Live">${liveHtml()}</div><div class="b27-act"><button type="button" class="btn b27-big" data-lb="confirm"${S.busy||formOK()?' disabled':''}>${S.busy?'Saving…':'✅ Yes, place it'}</button><button type="button" class="btn sec b27-big" data-lb="edit"${S.busy?' disabled':''}>← Change</button></div></div>`):formHtml(me));
+  if(!listing){const focus=S.ob==='request'?'request':'form',rq=RQ()?RQ().view():'<div class="card note">Request a bet is unavailable right now.</div>';
+    h+=`<div class="entry-pair" data-focus="${focus}"><div class="entry-col entry-wiu${focus==='form'?' is-on':''}">${wiu}</div><div class="entry-col entry-rq${focus==='request'?' is-on':''}">${rq}</div></div>`;
+    if(S.state==='init'&&window.LLOADER)return h+LLOADER()+intro;return h+intro}
   if(S.state==='init'&&window.LLOADER)return h+LLOADER()+intro;
-  /*<ALL-BETS>*/if(S.ob!=='all')return h+intro;/*Write it Up = form only; list on All bets*//*</ALL-BETS>*/
-  const fa=fActive(me),FL=fa?bets.filter(b=>fMatch(b,me)):bets;
-  h+=`<h2 id="b27ListH">Bets (<span id="b27FCount">${fa?num(FL.length)+' of '+num(bets.length):num(bets.length)}</span>)${sndBtn()}</h2>`;
+  if(RQ())h+=RQ().pinned(false,enter);
+  const FL=bets.filter(b=>fMatch(b,me));
+  h+=`<h2 id="b27ListH">Bets (<span id="b27FCount">${num(FL.length)+' of '+num(bets.length)}</span>)${sndBtn()}</h2>`;
   if(bets.length)h+=fBar(me,bets);
   h+=FL.length?'<div class="b27-grid" id="b27Grid">'+FL.slice(0,60).map(b=>b.kind==='pool'?poolCard(b,me):card(b,me)).join('')+'</div>'
     :bets.length?`<div class="card note s24fe" id="b27FEmpty">${fEmpty(me)}</div>`:`<div class="card note" id="b27Empty">No bets yet. Be the first.</div>`;
   if(FL.length>60)h+='<p class="note">Showing the latest 60.</p>';
+  h+=`<details class="card tally-fold" id="b27Tally"><summary><b>Tally</b> <span class="note">Who owes who</span></summary>${tallyHtml(T)}</details>`;
   return h+intro}
 /* ---------- s25: read the bet text + proposed result from the final score (spec: /workspace/league-site-work/s25-autosettle-spec.md) ----------
    readBet(text) -> claim {t:'win'|'margin'|'total', a, b (ESPN team ids, a = the team the claim is about), l (number), op:'gt'|'ge'|'line', s:'o'|'u'} or null (unclear: stays manual).
@@ -686,7 +693,7 @@ const ACT={
     const back={};b.places.forEach((a,i)=>{back[sel[i]]=(back[sel[i]]||0)+a});b.parts.forEach(p=>{if(!(p in back))back[p]=0});poolSettle(b,back)},
   poolgo:el=>{const id=el.dataset.id,b=compute().find(x=>x.id===id);if(!b)return;const r=poolParse(b,S.poolTxt[id]||'');if(!r.ok||!r.back){S.poolErr[id]=r.ok?PT('eEmptyPay'):r.err;S.ask=null;render(true);return}poolSettle(b,r.back)},
   poolvoid:el=>{const b=compute().find(x=>x.id===el.dataset.id),me=meMid();if(!b||!me||b.by!==me||b.status!=='open')return;act([mkEv('w',{id:b.id})],'Saved.')},
-  obview:el=>{const v=el.dataset.v==='tally'?'tally':el.dataset.v==='request'?'request':el.dataset.v==='open'?'open':el.dataset.v==='all'?'all':'form';if(S.ob===v)return;S.ob=v;render(true);window.scrollTo(0,0)},   /* partner obView(): a sub-tab tap opens it at the top */
+  obview:el=>{let v=el.dataset.v==='request'?'request':el.dataset.v==='all'||el.dataset.v==='open'||el.dataset.v==='tally'?'all':'form';if(v==='form'&&el.closest&&el.closest('.ob-desk')&&S.ob==='request')v='request';if(S.ob===v)return;if(v==='all')markSeen();S.ob=v;render(true);if(el.dataset.v==='tally')setTimeout(()=>{const n=document.getElementById('b27Tally');if(n){n.open=true;n.scrollIntoView({block:'start'})}},40);else window.scrollTo(0,0)},
   opp:el=>{const f=S.f,m=el.dataset.mid;f.open=false;S.f.forMid=null;if(S.pz){S.pz.a=S.pz.b=null;S.pz.read=false}const k=f.opps.indexOf(m);if(k>=0)f.opps.splice(k,1);else{f.opps.push(m);const o=others().map(x=>x.mid);f.opps.sort((x,y)=>o.indexOf(x)-o.indexOf(y))}sync()},
   oppall:()=>{S.f.open=false;S.f.forMid=null;if(S.pz){S.pz.a=S.pz.b=null;S.pz.read=false}S.f.opps=others().map(o=>o.mid);sync()},
   oppclear:()=>{S.f.open=false;S.f.forMid=null;if(S.pz){S.pz.a=S.pz.b=null;S.pz.read=false}S.f.opps=[];sync()},
@@ -723,7 +730,9 @@ const ACT={
   qbpick:el=>qbPickGo(el),qbgo:el=>qbGo(el),
   undogroup:el=>{const me=meMid(),gu=grpUndo(el.dataset.g,me);if(!gu.length)return;S.undoG=null;act(gu.map(b=>mkEv('w',{id:b.id})),'Undone: '+gu.length+' bets withdrawn.')},
   retry:()=>poll(true),
-  fltreset:()=>{fSet('all','all',false,'');render(true)},
+  fltreset:()=>{fSet('all','open','any','any',false,'');render(true)},
+  when:el=>{S.f.wk=el.dataset.v==='date'||el.dataset.v==='season'||el.dataset.v==='game'?el.dataset.v:'unknown';if(S.f.wk!=='date')S.f.est='';sync()},
+  clipretry:async()=>{if(!S.clip)return;const ok=await copyNow(S.clip);if(ok){const base=String(S.msg||'').replace(/ Could not copy it\. Copy the message below\.$/,'').replace(/ Message copied\. Paste it in WhatsApp\.$/,'');S.clip=null;S.msg=base+' Message copied. Paste it in WhatsApp.';S.bad=false}render(true)},
   betedit:el=>editBet(el),
   fixopen:el=>{S.fixOpen=el.dataset.id;S.ask=null;render(true)},
   fixcancel:()=>{S.fixOpen=null;S.ask=null;render(true)},
@@ -748,7 +757,7 @@ async function editBet(el){const me=meMid(),id=el.dataset.id,b0=compute().find(x
   const ok=await act([mkEv('w',{id})],'Withdrawn for editing. Change what you need and place it again.');if(!ok)return;
   const now=compute().find(x=>x.id===id);if(!now||now.status!=='withdrawn'){S.msg=TOO_LATE;S.bad=true;render(true);return}
   const amtStd=C.amounts.includes(b.amt),oddStd=C.odds.some(([x,y])=>x===b.a&&y===b.b);
-  S.f={opps:b.to==='*'?[]:[b.to],open:b.to==='*',text:b.text,amt:b.amt,amtCustom:!amtStd,amtTxt:amtStd?'':String(b.amt),amtErr:'',odds:[b.a,b.b],custom:!oddStd,customTxt:oddStd?'':b.a+'-'+b.b,oddsErr:'',confirm:false};S.fid=null;S.qb='';S.edited=b.n;render(true);
+  S.f={opps:b.to==='*'?[]:[b.to],open:b.to==='*',text:b.text,amt:b.amt,amtCustom:!amtStd,amtTxt:amtStd?'':String(b.amt),amtErr:'',odds:[b.a,b.b],custom:!oddStd,customTxt:oddStd?'':b.a+'-'+b.b,oddsErr:'',confirm:false,wk:b.wk||'unknown',est:b.est||''};S.fid=null;S.qb='';S.edited=b.n;S.ob='form';render(true);
   setTimeout(()=>{try{const f=document.getElementById('b27Form');if(f)f.scrollIntoView({block:'start'})}catch(_){}},30)}
 function applyAmt(t,quiet){const f=S.f;f.amtTxt=t;const r=parseAmt(t);if(r.ok){f.amt=r.n;f.amtErr=''}else{f.amt=null;f.amtErr=quiet&&!String(t||'').trim()?'':r.err}}
 function applyOdds(t,quiet){const f=S.f;f.customTxt=t;const r=parseOdds(t);if(r.ok){f.odds=[r.a,r.b];f.oddsErr=''}else{f.odds=null;f.oddsErr=quiet&&!t?'':r.err}}
@@ -766,10 +775,17 @@ async function confirmPlace(){if(S.busy)return;const e=formOK();if(e){S.msg=e;S.
   const sig=(f.forMid||'')+'>'+targets.join(',')+'|'+clean(f.text)+'|'+f.amt+'|'+f.odds.join('-');
   if(!S.fid||S.fid.sig!==sig)S.fid={sig,g:targets.length>1?rid():undefined,evs:targets.map(t=>({id:rid(),u:rid(),to:t}))};
   const ts=Date.now();
-  const evs=S.fid.evs.map((x,i)=>Object.assign({k:'p',u:x.u,ts:ts+i,v:SV,id:x.id,to:x.to,amt:f.amt,a:f.odds[0],b:f.odds[1],text:clean(f.text),postedBy:meMid(),postedAt:ts},f.forMid?{for:f.forMid}:{},S.fid.g?{g:S.fid.g}:{},(()=>{const c=readBet(clean(f.text));return c?{c}:{}})()));
+  const pack=window.SHARED_UI&&SHARED_UI.whenPack?SHARED_UI.whenPack(f.wk||'unknown',f.est,''):{wk:f.wk||'unknown',est:f.wk==='date'?f.est:null,sid:null};
+  const evs=S.fid.evs.map((x,i)=>Object.assign({k:'p',u:x.u,ts:ts+i,v:SV,id:x.id,to:x.to,amt:f.amt,a:f.odds[0],b:f.odds[1],text:clean(f.text),postedBy:meMid(),postedAt:ts,wk:pack.wk,est:pack.est,sid:pack.sid},f.forMid?{for:f.forMid}:{},S.fid.g?{g:S.fid.g}:{},(()=>{const c=readBet(clean(f.text));return c?{c}:{}})()));
   const ok=await act(evs,'');
-  if(ok){const ns=S.fid.evs.map(x=>(compute().find(b=>b.id===x.id)||{}).n).filter(Boolean);S.msg='Placed! Bet #'+ns.join(', #')+(f.open?' is open to anyone.':targets.length>1?' ('+targets.length+' managers, '+num(f.amt)+' each) '+(targets.length>1?'are':'is')+(AF()?' waiting for an answer.':' open.'):(!AF()?' is open between '+nm(f.forMid||meMid())+' and '+nm(targets[0])+'.':f.forMid?' is waiting for '+[f.forMid,targets[0]].filter(m=>m!==meMid()).map(nm).join(' and ')+' to accept.':' is waiting for '+nm(targets[0])+' to accept.'))+' You can undo it for 30 seconds.';S.bad=false}
-  if(ok){const pids=S.fid.evs.map(x=>x.id);S.edited=null;S.undoG=S.fid.g||null;S.f={opps:[],open:false,text:'',amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false};S.fid=null;S.pz=null;render(true);placedFx(pids)}else{S.f.confirm=true;render(true)}}
+  if(ok){const ns=S.fid.evs.map(x=>(compute().find(b=>b.id===x.id)||{}).n).filter(Boolean);const saved=compute().find(b=>b.id===S.fid.evs[0].id)||{by:f.forMid||meMid(),to:targets[0],acc:targets[0]==='*'?null:targets[0],amt:f.amt,a:f.odds[0],b:f.odds[1],text:clean(f.text)};
+    let copied=false;const clip=betClip(saved,targets);try{copied=await copyNow(clip)}catch(e){copied=false}
+    S.msg='Placed! Bet #'+ns.join(', #')+(f.open?' is open to anyone.':targets.length>1?' ('+targets.length+' managers, '+num(f.amt)+' each) '+(targets.length>1?'are':'is')+(AF()?' waiting for an answer.':' open.'):(!AF()?' is open between '+nm(f.forMid||meMid())+' and '+nm(targets[0])+'.':f.forMid?' is waiting for '+[f.forMid,targets[0]].filter(m=>m!==meMid()).map(nm).join(' and ')+' to accept.':' is waiting for '+nm(targets[0])+' to accept.'))+' You can undo it for 30 seconds.'+(copied?' Message copied. Paste it in WhatsApp.':' Could not copy it. Copy the message below.');S.bad=false;S.clip=copied?null:clip}
+  if(ok){const pids=S.fid.evs.map(x=>x.id);S.edited=null;S.undoG=S.fid.g||null;S.f={opps:[],open:false,text:'',amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',confirm:false,wk:'unknown',est:''};S.fid=null;S.pz=null;render(true);placedFx(pids)}else{S.clip=null;S.f.confirm=true;render(true)}}
+function betClip(b,targets){const left=nm(b.by),rights=(targets||[]).filter(t=>t&&t!=='*').map(nm),right=rights.length?rights.join(', '):(b.acc?nm(b.acc):(b.to&&b.to!=='*'?nm(b.to):'anyone'));
+  const rq=RQ();if(rq&&rq.waText)return rq.waText({by:b.by,to:rights.length?targets.filter(t=>t!=='*'):(b.acc?[b.acc]:[]),amt:b.amt,odds:[b.a,b.b],txt:b.text||'',lab:b.text||'',exp:Date.now()+3600000,cov:'game'},'bet');
+  return '💥 '+b.amt+' pushups '+left+' v '+right+' 💥\n'+(b.text||'')}
+function copyNow(t){return new Promise(resolve=>{const fin=ok=>resolve(!!ok);const fb=()=>{let ok=false;try{const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();ok=!!(document.execCommand&&document.execCommand('copy'));ta.remove()}catch(e){}fin(ok)};try{if(navigator.clipboard&&navigator.clipboard.writeText&&window.isSecureContext){const p=navigator.clipboard.writeText(t);if(p&&p.then){p.then(()=>fin(true),fb);return}}}catch(e){}fb()})}
 /* "new" mark on the Bets tab: the highest bet number this device has looked at is kept in localStorage (fbn.x.<league>.betseen); a higher number now = something new */
 /* s28g new-bets badge: count of bets placed (b.ts) after this device's last look (localStorage fbn.betsSeen.<league> = ms), not my own; first load sets it to now (0);
    opening Bets sets it to now. Local only: no server write, no extra fetch (uses the loaded bets). League view mode (league-d.js) only guards fbn.me./fbn.cm., so this key works there too. */
@@ -784,9 +800,8 @@ function badge(){try{if(!H||H.demo||S.state!=='ok'||S.stale)return 0;const raw=l
 const qbOwn=s=>{const n=s&&s.owners&&s.owners[0];const o=n==null?null:owners().find(x=>x.name===n);return o?o.mid:null};
 const qbNm=(s,ctx)=>String((ctx&&ctx.name?ctx.name(s):'')||s.short||s.name||s.id);
 function qbDate(g){/*<STEP7-ET>*/try{if(g.start&&!isNaN(Date.parse(g.start)))return new Date(g.start).toLocaleDateString('en-US',{timeZone:'America/New_York',weekday:'short',month:'short',day:'numeric'}).replace(/,/g,'')}catch(e){}/*</STEP7-ET>*/try{if(g.start&&!isNaN(Date.parse(g.start)))return LTIME.dayDate(LTIME.dayKey(g.start));return /^\d{4}-\d{2}-\d{2}$/.test(g.day||'')?LTIME.dayDate(g.day):''}catch(e){return''}}   /* local date of the tip (Sat Nov 7) */
-function qbOk(g){if(!H||H.demo||!g||g.status!=='scheduled'||!g.home||!g.away||!meMid())return false;
-  const a=g.away.owners||[],h=g.home.owners||[];if(!a.length||!h.length||a.some(n=>h.includes(n)))return false;
-  if(!qbOwn(g.away)||!qbOwn(g.home))return false;const t=Date.parse(g.start);if(!isNaN(t)&&t<=Date.now())return false;return true}
+function qbTbd(g){if(!g||!g.start)return true;const d=new Date(g.start);if(isNaN(d))return true;const h=d.getUTCHours(),m=d.getUTCMinutes();return (m===0&&(h===4||h===5))||(m===59&&(h===3||h===4))}
+function qbOk(g){if(!H||H.demo||!g||g.status!=='scheduled'||!g.home||!g.away)return false;if(qbTbd(g))return true;const t=Date.parse(g.start||'');return !(isFinite(t)&&t<=Date.now())}
 function qbOpts(g,ctx){const A=g.away,Hm=g.home,ln=(g.line&&typeof g.line==='object')?g.line:{},d=qbDate(g),o=[];const nm_=s=>qbNm(s,ctx);
   const fav=String(ln.fav)===String(A.id)?A:String(ln.fav)===String(Hm.id)?Hm:null,sp=Number(ln.sp);
   if(fav&&isFinite(sp)&&sp>0){const dog=fav===A?Hm:A;o.push({k:'sp',t:'Spread',s:[fav,dog].map(x=>{const y=x===fav?dog:fav,sx=x===fav?'-':'+',sy=y===fav?'-':'+';return{lab:nm_(x)+' '+sx+sp,team:x,txt:nm_(x)+' '+sx+sp+' vs '+nm_(y)+' '+sy+sp+', '+d}})})}
@@ -828,18 +843,19 @@ function qbGo(el){const g=gameById(el.dataset.g);if(!g||!qbOk(g))return;
 let RQ_=null;
 function RQ(){if(RQ_||!H||H.demo||typeof SHARED_UI==='undefined'||!SHARED_UI.Requests)return RQ_;const nick_=o=>(o&&(o.team_name||o.name))||'';
   RQ_=SHARED_UI.Requests({maxText:(typeof C!=="undefined"&&C.maxText)||140,change:"location.href='join.html?l='+encodeURIComponent('"+String(H.id).replace(/[^A-Za-z0-9]/g,'')+"');return false",e:esc,me:()=>meMid(),others:()=>owners().filter(o=>o.mid!==meMid()).map(o=>({id:o.mid,emoji:o.emoji||'',nick:nick_(o)})),nick:m=>nick_(own(m))||'?',real:m=>(own(m).name||nick_(own(m))||'?'),
-    canWrite:()=>!!meMid()&&!window.LVIEW&&!(H&&H.demo),amounts:C.amounts,
+    canWrite:()=>!!meMid()&&!window.LVIEW&&!(H&&H.demo),amounts:C.amounts,stake:n=>n+' pushup'+(n===1?'':'s'),
     games:()=>((H&&H.games&&H.games())||[]).filter(g=>g&&g.home&&g.away).map(g=>({id:String(g.id),g,start:g.start,status:g.status,period:g.period||null,label:qbNm(g.away,QCTX)+' vs '+qbNm(g.home,QCTX)+' · '+qbDate(g)})),
-    tname:s=>qbNm(s,QCTX),dateET:g=>qbDate(g),link:()=>location.href.split('#')[0]+'#bets',goRequest:()=>{S.ob='request'},waiting:()=>{try{const me=meMid();return me&&S.state==='ok'?compute().filter(b=>b&&waitsOn(b,me)).length:0}catch(e){return 0}},navEl:()=>document.querySelector('#ltabs a[data-v="bets"]'),
+    tname:s=>qbNm(s,QCTX),dateET:g=>qbDate(g),link:()=>location.href.split('#')[0]+'#bets',goRequest:()=>{S.ob='request'},waiting:()=>0,navEl:()=>document.querySelector('#ltabs a[data-v="bets"]'),
+    seenScope:()=>String((H&&H.id)||'')+':'+(meMid()||'guest'),reqMatch:r=>reqMatch(r),watchExpiry:()=>S.ob==='all',
     get:()=>Store.get(FBN.Keys(H.id).base+'-requests'),set:txt=>Store.set(FBN.Keys(H.id).base+'-requests',txt),
-    placeBet:async(r,me)=>{const ts=Date.now(),text=clean(r.txt);const c=readBet(text);await append([Object.assign({k:'p',u:rid(),ts,v:SV,id:rid(),to:me,for:r.by,amt:r.amt,a:(r.odds||[1,1])[0],b:(r.odds||[1,1])[1],text,postedBy:me,postedAt:ts,req:r.id},c?{c}:{})]);redraw()},
-    render:()=>{if(S.ob==='request'||S.ob==='open')redraw()}});return RQ_}
+    placeBet:async(r,me)=>{const ts=Date.now(),text=clean(r.txt||r.lab);const c=readBet(text);const pack=window.SHARED_UI&&SHARED_UI.whenPack?SHARED_UI.whenPack(r.wk,r.est,r.sid):{wk:r.wk||'unknown',est:r.est||null,sid:r.sid||null};await append([Object.assign({k:'p',u:rid(),ts,v:SV,id:rid(),to:me,for:r.by,amt:r.amt,a:(r.odds||[1,1])[0],b:(r.odds||[1,1])[1],text,postedBy:me,postedAt:ts,req:r.id,wk:pack.wk,est:pack.est,sid:pack.sid},c?{c}:{})]);redraw()},
+    render:()=>{if(S.ob==='request'||S.ob==='form'||S.ob==='all'||S.ob==='open')redraw()}});return RQ_}
 /*</STEP8-REQUEST>*/
 function bind(){
   document.addEventListener('contextmenu',e=>{const el=e.target.closest&&e.target.closest('[data-lb=rx]');if(el&&document.getElementById('main')&&document.getElementById('main').contains(el)){e.preventDefault();rxTap(el,true)}});
 document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('[data-lb]');if(!el||!H||!document.getElementById('main')||!document.getElementById('main').contains(el))return;const f=ACT[el.dataset.lb];if(f){e.preventDefault();f(el,e)}});
-  document.addEventListener('change',e=>{const t=e.target;if(!t||!H)return;if(t.dataset&&t.dataset.pw){(S.placeWho[t.dataset.pw]=S.placeWho[t.dataset.pw]||[])[+t.dataset.i]=t.value;S.poolErr[t.dataset.pw]='';S.ask=null;return}if(t.id==='b27FP'||t.id==='b27FS'){fLoad();const p=t.id==='b27FP'?t.value:S.fp,s=t.id==='b27FS'?t.value:S.fs;if(fSet(p,s)){render(true);setTimeout(()=>{const x=document.getElementById(t.id);if(x)x.focus({preventScroll:true})},0)}}});
-  let PZT=0;if(PF())document.addEventListener('input',e=>{const t=e.target;if(t&&t.id==='b27PzT'&&H){if(!S.pz)S.pz={txt:''};S.pz.txt=t.value;if(e.inputType==='insertFromPaste'||S.pz.read){clearTimeout(PZT);PZT=setTimeout(()=>{const x=document.getElementById('b27PzT');if(!x)return;const c=x.selectionStart;ACT.pzread();const y=document.getElementById('b27PzT');if(y){y.focus({preventScroll:true});try{y.setSelectionRange(c,c)}catch(_){}}},e.inputType==='insertFromPaste'?50:500)}return}if(t&&t.id==='b27FQ'&&H){fLoad();const v=t.value,c=t.selectionStart;if(fSet(S.fp,S.fs,false,v)){render(true);const x=document.getElementById('b27FQ');if(x){x.value=v;x.focus({preventScroll:true});try{x.setSelectionRange(c,c)}catch(_){}}}return}if(!t||!H)return;if(t.dataset&&t.dataset.place!=null){S.p.places[+t.dataset.place]=t.value;poolPaint();return}if(t.dataset&&t.dataset.pt){S.poolTxt[t.dataset.pt]=t.value;S.poolErr[t.dataset.pt]='';S.ask=null;return}if(!t.id)return;
+  document.addEventListener('change',e=>{const t=e.target;if(!t||!H)return;if(t.dataset&&t.dataset.pw){(S.placeWho[t.dataset.pw]=S.placeWho[t.dataset.pw]||[])[+t.dataset.i]=t.value;S.poolErr[t.dataset.pw]='';S.ask=null;return}if(t.id==='b27Est'){S.f.est=t.value;S.f.wk='date';sync();return}if(t.id==='b27FP'||t.id==='b27FS'||t.id==='b27FA'||t.id==='b27FW'){fLoad();const p=t.id==='b27FP'?t.value:S.fp,st=t.id==='b27FS'?t.value:S.fst,ac=t.id==='b27FA'?t.value:S.fac,wh=t.id==='b27FW'?t.value:S.fwh;if(fSet(p,st,ac,wh)){render(true);setTimeout(()=>{const x=document.getElementById(t.id);if(x)x.focus({preventScroll:true})},0)}}});
+  let PZT=0;document.addEventListener('input',e=>{const t=e.target;if(!t||!H)return;if(PF()&&t.id==='b27PzT'){if(!S.pz)S.pz={txt:''};S.pz.txt=t.value;if(e.inputType==='insertFromPaste'||S.pz.read){clearTimeout(PZT);PZT=setTimeout(()=>{const x=document.getElementById('b27PzT');if(!x)return;const c=x.selectionStart;ACT.pzread();const y=document.getElementById('b27PzT');if(y){y.focus({preventScroll:true});try{y.setSelectionRange(c,c)}catch(_){}}},e.inputType==='insertFromPaste'?50:500)}return}if(t.id==='b27FQ'){fLoad();const v=t.value,c=t.selectionStart;if(fSet(S.fp,S.fst,S.fac,S.fwh,false,v)){render(true);const x=document.getElementById('b27FQ');if(x){x.value=v;x.focus({preventScroll:true});try{x.setSelectionRange(c,c)}catch(_){}}}return}if(t.dataset&&t.dataset.place!=null){S.p.places[+t.dataset.place]=t.value;poolPaint();return}if(t.dataset&&t.dataset.pt){S.poolTxt[t.dataset.pt]=t.value;S.poolErr[t.dataset.pt]='';S.ask=null;return}if(!t.id)return;
     if(S.kind==='pool'&&!S.edited&&t.id==='b27Text'){S.p.text=t.value;poolPaint();return}if(t.id==='b27En'){S.p.entry=t.value;poolPaint();return}
     if(t.id==='b27Text'){S.f.text=t.value;sync()}else if(t.id==='b27Ao'){applyAmt(t.value);sync()}else if(t.id==='b27Co'){applyOdds(t.value);sync()}});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.q.g&&H&&document.getElementById('main')&&!(e.target&&/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))){const g=S.q.g;S.q.g=null;redraw();setTimeout(()=>{try{const b=document.querySelector('.qb-btn[data-g="'+g+'"]');if(b)b.focus({preventScroll:true})}catch(_){}},20);return}if(e.key==='Escape'&&H&&document.querySelector('.s26k-m')&&!S.busy){e.preventDefault();S.f.confirm=false;S.p.confirm=false;render(true);return}
@@ -850,13 +866,19 @@ function init(h){H=h;if(!S.started){S.started=true;bind();/*<STEP8-REQUEST>*/set
 function start(){if(!H||H.demo)return;poll(false)}
 let modalWas=false;
 function afterRender(){try{mountRx()}catch(e){}try{const m=document.querySelector('.s26k-m');document.body.classList.toggle('s26k-lock',!!m);if(m&&!modalWas){const b=m.querySelector('.b27-act .btn');if(b)b.focus({preventScroll:true})}modalWas=!!m}catch(e){}}
-window.LBETS={after:afterRender,_t:{propose,S,stampText,poolEntries,poolCheck,poolParse,greedy,POOL_TXT,DISCLAIMER,placedFx,mountRx,clampFix,RX,settlePop,readBet,claimText,judge,autoGame,AUTO_NOTE,settleSound,soundFor,sndMuted},init,start,view,badge,poll,reduce,tally,parseLog,win,filterHash:()=>{try{return fHashOut()}catch(e){return''}},setFilterHash:(f,q)=>{try{fFromHash(f,q)}catch(e){}},reveal:id=>{try{return reveal(id)}catch(e){return false}},bets:()=>{try{return compute()}catch(e){return[]}},quickHtml:(g,ctx)=>{QCTX=ctx||null;try{return quickHtml(g,ctx)}catch(e){return''}},_state:S};
+function tallyPage(){if(!H)return '';if(H.demo)return '<div class="card" id="b27Tally"><b>🧮 Tally</b><div class="note">Bets are switched off in the demo, so nothing here can touch a real league.</div></div>';if(S.state==='init')return window.LLOADER?LLOADER():'';return tallyHtml(tally(compute()))}
+function setOb(v){S.ob=v==='request'?'request':v==='all'||v==='open'||v==='tally'?'all':'form'}
+window.LBETS={after:afterRender,_t:{propose,S,stampText,poolEntries,poolCheck,poolParse,greedy,POOL_TXT,DISCLAIMER,placedFx,mountRx,clampFix,RX,settlePop,readBet,claimText,judge,autoGame,AUTO_NOTE,settleSound,soundFor,sndMuted,myTurn,theirTurn,statusKey,whenKey,fMatch,betClip},init,start,view,tallyPage,setOb,badge,poll,reduce,tally,parseLog,win,filterHash:()=>{try{return fHashOut()}catch(e){return''}},setFilterHash:(f,q)=>{try{fFromHash(f,q)}catch(e){}},reveal:id=>{try{return reveal(id)}catch(e){return false}},bets:()=>{try{return compute()}catch(e){return[]}},quickHtml:(g,ctx)=>{QCTX=ctx||null;try{return quickHtml(g,ctx)}catch(e){return''}},_state:S};
 
-/* step6: STOOPIDS tap-for-tip question labels on the New bet form (texts in SHARED_UI.TIPS; League fallback inline) */
-document.addEventListener('click',function(ev){const el=ev.target&&ev.target.closest&&ev.target.closest('.b27-form .s27-tipk');
-  if(!el){if(!(ev.target&&ev.target.closest&&ev.target.closest('.s27-pop')))document.querySelectorAll('.b27-form .s27-pop').forEach(e=>e.remove());return}
-  ev.preventDefault();const open=el.getAttribute('aria-expanded')==='true';document.querySelectorAll('.s27-pop').forEach(e=>e.remove());document.querySelectorAll('.s27-tipk[aria-expanded=true]').forEach(e=>e.setAttribute('aria-expanded','false'));if(open)return;
+function openTip(el){if(!el)return;const open=el.getAttribute('aria-expanded')==='true';document.querySelectorAll('.s27-pop').forEach(e=>e.remove());document.querySelectorAll('.s27-tipk[aria-expanded=true]').forEach(e=>e.setAttribute('aria-expanded','false'));if(open)return;
   const T=(window.SHARED_UI&&SHARED_UI.TIPS)||{};let t=T[el.getAttribute('data-tip')]||'';if(typeof t==='function')t=t(C.min);
-  const p=document.createElement('div');p.className='s27-pop';p.setAttribute('role','tooltip');p.innerHTML='<span>'+esc(t)+'</span> <a href="help.html#bets">How to make a New bet →</a>';
-  el.setAttribute('aria-expanded','true');el.insertAdjacentElement('afterend',p)});
+  const p=document.createElement('div');p.className='s27-pop';p.setAttribute('role','tooltip');p.innerHTML='<span>'+esc(t)+'</span> <a href="help.html#howto-newbet">How to make a bet →</a>';
+  el.setAttribute('aria-expanded','true');el.insertAdjacentElement('afterend',p)}
+function s27TipShow(el){openTip(el)}
+function s27WhenClick(el){if(!el)return;el._tip=1;openTip(el)}
+window.s27TipShow=s27TipShow;window.s27WhenClick=s27WhenClick;
+document.addEventListener('click',function(ev){const el=ev.target&&ev.target.closest&&ev.target.closest('.b27-form .s27-tipk,.rq-form .s27-tipk');
+  if(!el){if(!(ev.target&&ev.target.closest&&ev.target.closest('.s27-pop')))document.querySelectorAll('.s27-pop').forEach(e=>e.remove());return}
+  if(el._tip){el._tip=0;ev.preventDefault();return}
+  ev.preventDefault();openTip(el)});
 })();

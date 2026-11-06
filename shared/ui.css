@@ -402,3 +402,96 @@ html body nav#ltabs>a.tb .ni,html body nav#ltabs>a.nd .ni,html body #ltabs>a .ni
 html body .tabs.ob-seg>button{min-height:36px!important;padding-top:6px!important;padding-bottom:6px!important;font-size:13px!important;font-weight:600!important;line-height:1.15!important}
 @media (max-width:640px){html body .tabs.ob-seg>button{min-height:34px!important;font-size:12px!important;padding-top:5px!important;padding-bottom:5px!important}}
 /*</NAV-MAIN-TALL>*/
+
+/*<PARITY-LAYOUT>*/ /* One layout for every league. Labels differ (short person name vs fantasy team name); the boxes do not. */
+/* Main nav and the page column share one width and the same side inset. Archive on STOOPIDS is an extra tab, not a different control size. */
+html body nav#nav,html body nav#ltabs{box-sizing:border-box!important;width:100%!important;max-width:var(--nav-max,1080px)!important;margin-left:auto!important;margin-right:auto!important;padding-left:16px!important;padding-right:16px!important}
+html body nav#nav>a,html body nav#ltabs>a{box-sizing:border-box!important;height:48px!important;min-height:48px!important;max-height:none!important;padding:0 8px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
+@media (max-width:700px){html body nav#nav.nm5>a,html body nav#nav.nm5>.nm-b,html body nav#ltabs.nm5>a,html body nav#ltabs.nm5>.nm-b{box-sizing:border-box!important;height:50px!important;min-height:50px!important;max-height:50px!important;padding:4px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}}
+html body #main{box-sizing:border-box!important;width:100%!important;max-width:var(--nav-max,1080px)!important;margin-left:auto!important;margin-right:auto!important;padding-left:16px!important;padding-right:16px!important}
+html body.lsite main,html body.lsite #main{box-sizing:border-box!important;width:100%!important;max-width:var(--nav-max,1080px)!important;margin-left:auto!important;margin-right:auto!important;padding-left:0!important;padding-right:0!important}
+html body #lbody{box-sizing:border-box!important;width:100%!important;max-width:none!important;margin-left:auto!important;margin-right:auto!important;padding-left:16px!important;padding-right:16px!important}
+/* All teams owner filters: equal cells. A long team name wraps to two lines inside the cell instead of pushing the row onto a new line. */
+html body .tapf,html body .lgref .tapf{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(96px,1fr))!important;gap:6px!important;justify-content:stretch!important;align-items:stretch!important;width:100%!important;max-width:none!important;margin:0 auto 10px!important}
+html body .tapf button,html body .lgref .tapf button{display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2;line-clamp:2;width:100%!important;min-width:0!important;min-height:40px!important;height:auto!important;margin:0!important;padding:6px 8px!important;box-sizing:border-box!important;font-size:13px!important;font-weight:700!important;line-height:1.15!important;text-align:center!important;white-space:normal!important;overflow:hidden!important;overflow-wrap:anywhere!important}
+@media (max-width:640px){html body .tapf button,html body .lgref .tapf button{font-size:12px!important;min-height:38px!important;padding:5px 6px!important}}
+/* All teams table fills that same column. The Stoop cell wraps two lines; it is not clipped to 8 characters and the card does not shrink to the text. */
+html body #allteams,html body #atfilter,html body .card.tap,html body .lgref .card.tap{width:100%!important;max-width:none!important;margin-left:0!important;margin-right:0!important;box-sizing:border-box!important}
+html body .card.tap table,html body .lgref .card.tap table{width:100%!important;table-layout:auto!important}
+html body .card.tap .to,html body .lgref .card.tap .to,html body .card.tap td.to,html body .lgref .card.tap td.to{max-width:none!important;width:22%;white-space:normal!important;overflow:hidden!important;text-overflow:unset!important;line-height:1.15;vertical-align:middle}
+html body .card.tap td.to .tnt,html body .lgref .card.tap td.to .tnt{display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2;line-clamp:2;white-space:normal!important;overflow:hidden!important;text-overflow:unset!important}
+/* Games filters: content-sized pills on one wrapping row (who, matchup, month, day, search). Not stretched bars. */
+html body #main .gf3>.gf2.gfpills,html body #main .gf3>.gf2.gfwhen,html body #lbody .gf3>.gf2.gfpills,html body #lbody .gf3>.gf2.gfwhen{display:flex!important;flex-flow:row wrap!important;align-items:center!important;justify-content:flex-start!important;width:auto!important;max-width:100%!important;gap:6px!important;margin:0!important;padding:0!important;background:none!important;border:0!important}
+html body #main .gf3>.gf2.gfpills>.gf2-s,html body #main .gf3>.gf2.gfpills>.gf2-b,html body #main .gf3>.gf2.gfwhen>.gf2-s,html body #main .gf3>.gf2.gfwhen>.gf2-b,html body #lbody .gf3>.gf2.gfpills>.gf2-s,html body #lbody .gf3>.gf2.gfpills>.gf2-b,html body #lbody .gf3>.gf2.gfwhen>.gf2-s,html body #lbody .gf3>.gf2.gfwhen>.gf2-b{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:150px!important;min-width:150px!important;max-width:150px!important;flex:0 0 150px!important;height:32px!important;min-height:32px!important;padding:0 10px!important;font-size:13px!important;line-height:normal!important;border-radius:999px!important;box-sizing:border-box!important;overflow:hidden}
+html body #lbody .gf3>.gf2.gfwhen>select.gf-day,html body #main .gf3>.gf2.gfwhen>select.gf-day{width:149px!important;min-width:149px!important;max-width:149px!important;flex-basis:149px!important}
+html body .ggrid>.gm:not(.gfin) .gside a.chip{width:200px!important;min-width:200px!important;max-width:200px!important;height:40px!important;min-height:40px!important;max-height:40px!important;box-sizing:border-box!important}
+html body #onlStrip.onl{flex-wrap:nowrap!important;justify-content:flex-start!important;overflow-x:auto!important;max-width:100%!important}
+html body #onlStrip .onl-p,html body #onlStrip .onl-h{flex:none}
+@media (min-width:701px){html body nav#ltabs>a[data-v="tally"],html body nav#nav>a[data-tab="tally"]{display:none!important}}
+.qb-btn,.ggrid .qb-btn{background:#FFD400;color:#111;border:0}
+.qb-btn .qb-bolt{color:#111}
+html body #main .gf3>.gf2.gfpills>select.gf2-s,html body #main .gf3>.gf2.gfwhen>select.gf2-s,html body #lbody .gf3>.gf2.gfpills>select.gf2-s,html body #lbody .gf3>.gf2.gfwhen>select.gf2-s{padding:0 22px 0 10px!important}
+html body .titlebar{position:relative}
+html body .s12-hd{display:flex!important;align-items:center!important;justify-content:center!important;width:100%;box-sizing:border-box;position:static}
+html body .s12-hd h1,html body .s12-hd #ltitle{text-align:center;margin:0!important;min-width:0;max-width:calc(100% - 200px);white-space:nowrap}
+@media (max-width:700px){html body .s12-hd h1,html body .s12-hd #ltitle{font-size:clamp(24px,6vw,40px)!important;letter-spacing:-.02em;max-width:calc(100% - 150px)}}
+html body .s12-hd .s12-share,html body .titlebar>.s12-share{position:absolute;top:6px;right:12px;z-index:20}
+html body .s12menu{position:absolute;top:100%;right:0;z-index:30;display:flex;flex-direction:column;gap:4px;min-width:140px;margin-top:4px;padding:6px;border-radius:12px;background:var(--card,#1b2030);border:1px solid var(--line,#333);box-shadow:0 8px 24px rgba(0,0,0,.35)}
+html body .s12menu button{font:inherit;font-weight:700;min-height:36px;border-radius:8px;border:1px solid var(--line,#333);background:transparent;color:inherit;cursor:pointer}
+html body .wme{padding:8px 10px!important}html body .wme summary{cursor:pointer;display:flex;justify-content:space-between;gap:8px;align-items:center}html body .wme-r{display:flex;gap:8px;align-items:center;margin-top:8px}html body .wme-a{font-weight:800;flex:none}html body .wme-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}html body .wme-r .btn{flex:none;min-height:32px}
+/* ENTRY-PAIR: desktop Write it Up (left, yellow, already agreed) beside Request (right, blue, not agreed). Under 1000px only the selected tab's column shows, at full width. */
+html body .entry-pair{display:block;width:100%;max-width:100%;min-width:0}
+html body .entry-col{min-width:0;max-width:100%}
+html body .entry-hd{margin:-8px -8px 10px;padding:10px 12px;border-radius:10px 10px 0 0}
+html body .entry-hd h2{margin:0!important;font-size:18px;line-height:1.2}
+html body .entry-hd p{margin:4px 0 0;font-size:13.5px;line-height:1.35;white-space:normal;overflow-wrap:break-word;max-width:100%}
+html body .b27-due{margin-top:4px;font-size:12.5px;font-weight:700}
+html body .b27-due[data-due="over"]{color:#fca5a5}
+html body .b27-due[data-due="today"]{color:#fde68a}
+html body .b27-due[data-due="up"]{color:#93c5fd}
+html body .b27-due[data-due="none"]{color:var(--mut,#9aa)}
+html body .b27-due[data-due="season"]{color:#c4b5fd}
+html body .b27-due[data-due="game"]{color:#93c5fd}
+html body .b27-when-c{display:flex;flex-wrap:wrap;gap:6px}
+html body .b27-when-c .b27-chip{width:auto!important;min-height:36px;padding:0 10px}
+html body .entry-hd-wiu{background:#FFD400;color:#1a1400}
+html body .entry-hd-wiu p{color:#3f3200}
+html body .entry-hd-rq{background:#1e3a8a;color:#f8fafc}
+html body .entry-hd-rq p{color:#dbeafe}
+html body .b27-ao{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:8px!important}
+html body .b27-ao .b27-amts,html body .b27-ao .b27-chips{display:flex!important;flex-wrap:wrap!important;gap:6px!important}
+html body .b27-ao .b27-amt,html body .b27-ao .b27-chip{width:auto!important;min-width:44px!important;height:36px!important;min-height:36px!important;padding:0 10px!important;font-size:13px!important;letter-spacing:0!important}
+@media (min-width:1000px){
+ html body .entry-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+ html body .entry-pair .entry-col.is-on>.card{box-shadow:0 0 0 2px rgba(255,255,255,.28)}
+ html body .entry-hd.entry-hd-wiu,html body .entry-hd.entry-hd-rq{padding:6px 12px}
+ html body .entry-hd.entry-hd-wiu p,html body .entry-hd.entry-hd-rq p{margin-top:2px;line-height:1.2}
+ html body .entry-hd-wiu h2,html body .entry-hd-rq h2{font-size:22px;line-height:1.05;letter-spacing:.04em;text-transform:uppercase}
+ html body .entry-ico{margin-right:.2em}
+ html body .entry-sub-m{display:none!important}
+ html body .entry-rq a{color:#93c5fd}
+ html body .entry-rq a:focus-visible,html body .entry-rq button:focus-visible,html body .entry-rq input:focus-visible,html body .entry-rq select:focus-visible{outline-color:#93c5fd}
+ html body .entry-rq .b27-chip[aria-pressed=true],html body .entry-rq .b27-amt[aria-pressed=true],html body .entry-rq .btn.sec.on,html body .entry-rq .btn.sec[aria-pressed=true]{background:#1e3a8a;color:#fff;border-color:#1e3a8a}
+ html body .entry-rq .btn.b27-big:not(.sec),html body .entry-rq .rq-send:not(.sec){background:#1e3a8a;color:#fff}
+}
+html body .tabs.ob-seg.ob-phone{display:none!important}
+@media (max-width:999px){
+ html body .tabs.ob-seg.ob-desk{display:none!important}
+ html body .tabs.ob-seg.ob-phone{display:grid!important}
+ html body .entry-pair{display:block}
+ html body .entry-pair .entry-col{display:none!important}
+ html body .entry-pair[data-focus="form"] .entry-wiu,html body .entry-pair[data-focus="request"] .entry-rq{display:block!important}
+ html body .entry-hd.entry-hd-wiu,html body .entry-hd.entry-hd-rq{display:flex;align-items:baseline;gap:6px;padding:4px 8px;margin:-8px -8px 8px}
+ html body .entry-hd.entry-hd-wiu h2,html body .entry-hd.entry-hd-rq h2{font-size:13px;line-height:1.15;letter-spacing:-.02em;text-transform:none;white-space:nowrap;flex:none}
+ html body .entry-sub-d{display:none!important}
+ html body .entry-ico{display:none!important}
+ html body .entry-sub-m{display:block!important}
+ html body .entry-rq [data-when="game"]{display:none!important}
+ html body .entry-hd.entry-hd-wiu p,html body .entry-hd.entry-hd-rq p{margin:0;font-size:8.5px;line-height:1.15;letter-spacing:-.02em;white-space:nowrap;min-width:0}
+}
+/* Request (and the same opponent grid): 4 equal cells, so 7 invitees are 4 then 3. */
+html body .b27-opps,html body .rq-to{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+html body .b27-opps>.b27-util{display:flex;flex-direction:column;justify-content:stretch;gap:4px;min-width:0;min-height:58px;height:100%;box-sizing:border-box}
+html body .b27-util .s27-selb{flex:1 1 0;width:100%;min-height:0;margin:0;padding:0 4px;border-radius:12px;font-size:12px;line-height:1.05}
+@media (max-width:599px){html body .b27-opps>.b27-util{min-height:52px;gap:3px}html body .b27-util .s27-selb{border-radius:9px;font-size:11px}}
+/*</PARITY-LAYOUT>*/
