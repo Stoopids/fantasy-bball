@@ -505,10 +505,10 @@ html body #main .gfone,html body #lbody .gfone{display:flex!important;flex-flow:
 html body #main .gfone .gfrow,html body #main .gfone .segrow,html body #main .gfone .mkrow,html body #main .gfone .gf3,html body #main .gfone .gf2,html body #lbody .gfone .gfrow,html body #lbody .gfone .segrow,html body #lbody .gfone .mkrow,html body #lbody .gfone .gf3,html body #lbody .gfone .gf2{display:contents!important}
 html body #main .gfone .rkseg,html body #lbody .gfone .rkseg{display:inline-flex!important;flex:none!important;order:0!important;width:auto!important;grid-template-columns:none!important;gap:6px!important;background:transparent!important;border:0!important}
 html body #main .gfone .gref,html body #main .gfone .gf2-s,html body #main .gfone .gf2-b,html body #lbody .gfone .gref,html body #lbody .gfone .gf2-s,html body #lbody .gfone .gf2-b{order:0!important}
-html body .ggrid>.gm:not(.gfin),html body .ggrid .gbody{display:grid!important;grid-template-columns:max-content minmax(0,1fr);column-gap:8px;row-gap:0!important;align-items:center}
-html body .ggrid>.gm:not(.gfin)>.gh,html body .ggrid>.gm:not(.gfin)>.gl,html body .ggrid>.gm:not(.gfin)>.gsp,html body .ggrid>.gm:not(.gfin)>.qbd,html body .ggrid>.gm:not(.gfin)>.qb-pick,html body .ggrid .gbody>.gh,html body .ggrid .gbody>.gl,html body .ggrid .gbody>.gsp{grid-column:1 / -1}
-html body .ggrid>.gm:not(.gfin)>.gside,html body .ggrid .gbody>.gside{grid-column:1;padding:0!important;margin:0!important}
-html body .ggrid>.gm:not(.gfin)>.gow,html body .ggrid .gbody>.gow{grid-column:2;display:flex!important;align-items:center;height:40px!important;min-height:0!important;max-height:40px!important;margin:0!important;padding:0!important;align-self:center;white-space:nowrap;overflow:hidden}
+html body .ggrid>.gm:not(.gfin),html body .ggrid .gbody{display:grid!important;grid-template-columns:minmax(0,1fr);column-gap:8px;row-gap:0!important;align-items:center;min-width:0;max-width:100%}
+html body .ggrid>.gm:not(.gfin)>.gh,html body .ggrid>.gm:not(.gfin)>.gl,html body .ggrid>.gm:not(.gfin)>.gsp,html body .ggrid>.gm:not(.gfin)>.qbd,html body .ggrid>.gm:not(.gfin)>.qb-pick,html body .ggrid .gbody>.gh,html body .ggrid .gbody>.gl,html body .ggrid .gbody>.gsp{grid-column:1 / -1;min-width:0;max-width:100%}
+html body .ggrid>.gm:not(.gfin)>.gside,html body .ggrid .gbody>.gside{grid-column:1;display:flex!important;align-items:center;gap:6px;min-width:0;max-width:100%;padding:0!important;margin:0!important}
+html body .ggrid>.gm:not(.gfin)>.gow,html body .ggrid .gbody>.gow{grid-column:1;display:flex!important;flex-wrap:wrap;align-items:center;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;align-self:stretch;white-space:normal!important;overflow:visible!important;max-width:100%}
 html body .ggrid>.gm:not(.gfin)>.gow[aria-hidden="true"],html body .ggrid .gbody>.gow[aria-hidden="true"]{visibility:hidden!important}
 html body .ggrid>.gm:not(.gfin)>.gh,html body .ggrid .gbody>.gh{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:flex-start!important;min-height:0!important;padding-right:0!important;margin-bottom:2px!important}
 html body .ggrid>.gm:not(.gfin)>.gh .gbtns,html body .ggrid>.gm:not(.gfin)>.gh .mkbtns,html body .ggrid .gbody>.gh .gbtns,html body .ggrid .gbody>.gh .mkbtns{position:static!important;top:auto!important;right:auto!important;flex-direction:row!important;margin:0 0 0 auto!important;z-index:auto!important}
@@ -549,6 +549,16 @@ html body #main .gf3>.gf2.gfpills>input.gf2-s,html body #lbody .gf3>.gf2.gfpills
  html body .entry-pair[data-focus="form"]>.entry-wiu,html body .entry-pair[data-focus="request"]>.entry-rq{position:static!important;width:100%!important;max-width:100%!important}
 }
 @media (max-width:700px){
- html body #onlStrip.onl-fixed{left:8px!important;right:132px!important;height:44px!important;max-height:44px!important;font-size:14px!important;overflow-x:auto!important}
+ html body #onlStrip.onl-fixed{left:8px!important;right:calc(max(12px,env(safe-area-inset-right,0px)) + 8px + var(--chat-btn,122px))!important;height:44px!important;max-height:44px!important;font-size:14px!important;overflow-x:auto!important}
  html body .chat.chat-pop{bottom:calc(60px + env(safe-area-inset-bottom,0px))!important}
 }
+/* Scores stay beside the pill. The pill may shrink and ellipsize the existing short team name. The owner badge is the next row and wraps in full. Copy / Quick bet (.gbtns or .mkbtns) stay on the time row. */
+html body .ggrid .gside .nm{flex:1 1 auto;min-width:0;overflow:hidden}
+html body .ggrid .gside .sc2{flex:0 0 auto}
+html body .ggrid>.gm:not(.gfin) .gside a.chip,html body .ggrid .gbody .gside a.chip{flex:1 1 auto!important;width:auto!important;min-width:0!important;max-width:min(200px,100%)!important;height:40px!important;min-height:40px!important;max-height:40px!important}
+html body .ggrid .gow .opill{max-width:100%}
+html body .ggrid>.gm:not(.gfin)>.gow[aria-hidden="true"],html body .ggrid .gbody>.gow[aria-hidden="true"]{height:0!important;max-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
+html body .gm .gh>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html body .gm .gh .gbtns,html body .gm .gh .mkbtns{position:static!important;flex:none!important;flex-direction:row!important;margin-left:auto!important;order:1}
+html body .gm .gh .h2b{order:2;flex:1 1 100%;min-width:0;max-width:100%;white-space:normal}
+html body .ggrid .gow:not([aria-hidden="true"]){visibility:visible!important;height:auto!important;max-height:none!important;overflow:visible!important}
