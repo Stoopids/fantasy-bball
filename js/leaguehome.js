@@ -668,7 +668,8 @@ function chatPresHtml(){if(!MG||!MG.length)return '<span class="onl-h">Online</s
   const lab=m=>{const o=(D&&D.owners||[]).find(x=>x.mid===m.mid)||m;return esc((o.emoji?o.emoji+' ':'')+A.disp(o.name||m.name,isTestL()))};
   if(window.SHARED_UI&&SHARED_UI.onlineStrip)return SHARED_UI.onlineStrip(on.map(lab),off.map(([m,a])=>[lab(m),a]),a=>esc(F.agoText(a)));
   return '<span class="onl-h">Online</span>'+(on.length?on.map(m=>`<span class="onl-p on" title="Online now"><i class="pd"></i>${lab(m)}</span>`).join(''):'<span class="onl-none">Nobody here</span>')+(off.length?'<span class="onl-h onl-last">Last seen</span>'+off.map(([m,a])=>`<span class="onl-p last" title="Last seen"><i class="pd off"></i>${lab(m)} <small>${a===Infinity?'not seen yet':esc(F.agoText(a))}</small></span>`).join(''):'')}
-function paintChat(){const pr=document.getElementById('chatpres');if(pr)pr.innerHTML=chatPresHtml();
+function fitChatBtn(){const t=document.getElementById('chatlaunch')||document.getElementById('chatbar');if(!t)return;const w=Math.ceil(t.getBoundingClientRect().width);if(w>0)document.documentElement.style.setProperty('--chat-btn',w+'px')}
+function paintChat(){const pr=document.getElementById('chatpres');if(pr)pr.innerHTML=chatPresHtml();fitChatBtn();
   const last=document.getElementById('chatlast');
   if(last&&CHAT.last){const w=MG.find(m=>m.mid===CHAT.last.who);last.textContent=(w?A.disp(w.name,isTestL()):'Someone')+': '+CHAT.last.text;last.classList.remove('mut')}
   if(CHAT.open)U.lsSet('lchat.'+id,String(CHAT.n));
