@@ -249,10 +249,11 @@ function pzSync(){const z=S.pz;if(!z||!z.read||!z.r||!z.r.ok)return;const box=do
 const PF=()=>{try{return window.LPASTE_BET===true}catch(e){return false}};   /* s28j2: PASTE_BET flag (default OFF; only the preview sets window.LPASTE_BET=true): off = no Paste a bet box, no 'Read it', no paste handlers */
 const AF=()=>{try{return window.LACCEPT_FLOW===true}catch(e){return false}};
 const STX={pending:['Waiting','open'],open:['Open','open'],reported:['Result reported','open'],disputed:['Disagreement','unparsed'],settled:['Settled','settled'],declined:['Declined','unparsed'],withdrawn:['Withdrawn','unparsed']};
+const WASH='\uD83D\uDCA6';
 function resultLine(b){if(b.status!=='settled')return'';const p=payFor(b);const d=(b.auto?' (settled automatically: no reply for 2 days)':'')+(b.src&&!(b.fixes||[]).some(x=>x.st==='confirmed')?' · from the final score: '+b.src.sc:'');
-  if(b.res==='p')return'Wash: nobody owes anything'+d;
+  if(b.res==='p')return WASH+': nobody owes anything'+d;
   return b.res==='b'?nm(b.by)+' won ('+nm(b.acc)+' owes '+num(p.right)+')'+d:nm(b.acc)+' won ('+nm(b.by)+' owes '+num(p.wrong)+')'+d}
-const rLab=(b,r)=>r==='p'?'Wash':nm(r==='b'?b.by:b.acc)+' won';
+const rLab=(b,r)=>r==='p'?WASH:nm(r==='b'?b.by:b.acc)+' won';
 const tm=ms=>LTIME.stamp(ms);   /* Nov 3, 7:00 PM WIB: viewer's zone, labelled */
 const FXST={pending:'waiting for the other side',confirmed:'confirmed',declined:'declined',withdrawn:'withdrawn',replaced:'replaced by a newer request',countered:'answered with a different result'};
 function fixHtml(b,me,btn,ask){let h='';const party=me&&(b.by===me||b.acc===me),F=b.fix;
@@ -263,9 +264,25 @@ function fixHtml(b,me,btn,ask){let h='';const party=me&&(b.by===me||b.acc===me),
   if(S.fixOpen===b.id)return h+`<div class="b27-act" data-fixpick="${esc(b.id)}"><span class="note">Correct result? The other side must confirm.</span>${['b','o','p'].filter(r=>r!==b.res).map(r=>btn('fixreq',rLab(b,r),'sec',r)).join('')}${btn('fixcancel','Cancel')}</div>`;
   return h+`<div class="b27-act">${btn('fixopen','✏️ Fix result')}</div>`}
 /* s28c: the per-bet button copies only the bet as text (no link) and shows 'Copied' (leaguehome.js cpText / LCPBTN, same button as Games) */
-const betText=b=>{/* s28j: per-bet Copy = the reference s29e copy-card format (paste_bet_spec.md item 6); brand suffix = this league's name; no zone label */
+function openCopy(b){if(!b)return'';const od=(b.a||1)+'\u2013'+(b.b||1),who=b.to==='*'&&!b.acc?'anyone':nm(b.acc||b.to);
+  let line2=String(b.text||'').replace(/\s+/g,' ').trim(),extra='';const c=b.c;
+  if(c&&c.t==='margin'){const fl=(c.op==='plus'?'+':'-')+c.l;line2=tName(c.a)+' '+fl+' v '+tName(c.b)}
+  else{const m=/^(.*?)\s+([+-]\d+(?:\.\d+)?)\s+(?:vs\.?|v\.?)\s+(.*?)\s+([+-]\d+(?:\.\d+)?)(.*)$/i.exec(line2);
+    if(m&&Math.abs(+m[2]+ +m[4])<0.05){extra=String(m[5]||'').replace(/^,\s*/,'').trim();line2=(m[1]+' '+m[2]+' v '+m[3]).replace(/\s+/g,' ').trim()}
+    else line2=line2.replace(/\s+(?:vs\.?|versus)\s+/ig,' v ')}
+  const iso=window.SHARED_UI&&SHARED_UI.whenKind&&SHARED_UI.whenKind(b)==='date'?b.est:'';let when='';
+  if(iso&&/^\d{4}-\d{2}-\d{2}$/.test(iso)){const d=new Date(iso+'T12:00:00');when=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate()}
+  else{const dm=/^((?:Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+[A-Za-z]+\s+\d{1,2})\b/.exec(extra);if(dm)when=dm[1]}
+  const k=window.SHARED_UI&&SHARED_UI.whenKind?SHARED_UI.whenKind(b):'unknown';
+  const exp=k==='season'?'Season':k==='date'&&b.est&&SHARED_UI.estLabel?SHARED_UI.estLabel(b.est).replace(/,?\s+\d{4}$/,''):'Tip';
+  const amt=Math.round(Number(b.amt)||0),stake=amt+' pushup'+(amt===1?'':'s');
+  return ['\uD83D\uDCA3 '+stake+' '+nm(b.by)+' v '+who+' \u00b7 '+od+' \uD83D\uDCA3',line2,(when?when+' \u00b7 ':'')+'Exp: '+exp].join('\n')}
+function betTerms(b){return [b.status,b.text||'',b.amt,b.a,b.b,b.to||'',b.acc||'',b.wk||'',b.est||'',b.res||'',b.by||''].join('\x1f')}
+function betHash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(36)}
+const betText=b=>{/* s28j: per-bet Copy = the reference s29e copy-card format; open bets use the short WhatsApp lines (pushups, not dollars) */
+    if(b&&b.kind!=='pool'&&(b.status==='open'||b.status==='pending'||b.status==='reported'||b.status==='disputed'))return openCopy(b);
     const pool=b.kind==='pool',other=b.acc||b.to,on=b.to==='*'&&!b.acc?'anyone':(pool&&b.parts?b.parts.map(nm).join(', '):nm(other));
-    const stw=b.status==='settled'?(b.res==='p'?'Wash':'Settled'):(b.status==='withdrawn'||b.status==='declined'||b.status==='cancelled')?'Cancelled':'Open';
+    const stw=b.status==='settled'?(b.res==='p'?WASH:'Settled'):(b.status==='withdrawn'||b.status==='declined'||b.status==='cancelled')?'Cancelled':'Open';
     const won=b.status==='settled'&&!pool&&b.res!=='p'?' · '+(b.res==='b'?nm(b.by):on)+' won':'';
     const day=t=>{try{return new Date(+t).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}catch(e){return''}};
     const lg=(String(document.title||'').split(' · ')[0]||'').trim();
@@ -277,17 +294,18 @@ const betText=b=>{/* s28j: per-bet Copy = the reference s29e copy-card format (p
     const pt=b.postedAt||b.ts;if(pt!=null)L.push('Posted '+day(pt)+(b.postedBy?' by '+nm(b.postedBy):'')+(lg?' · '+lg:''));
     return L.join('\n')};
 const linkBtn=(b,w)=>window.LCPBTN?window.LCPBTN(betText(b),w):'';
-function card(b,me){const L=lines(b.by,b.acc||b.to,b.amt,b.a,b.b);const st=b.status==='settled'&&b.res==='p'?['Wash','wash']:(!AF()&&b.status==='pending')?STX.open:STX[b.status];const party=me&&(b.by===me||b.acc===me);
+function card(b,me){const L=lines(b.by,b.acc||b.to,b.amt,b.a,b.b);const st=b.status==='settled'&&b.res==='p'?[WASH,'wash']:(!AF()&&b.status==='pending')?STX.open:STX[b.status];const party=me&&(b.by===me||b.acc===me);
   const other=b.acc||b.to;const vs=b.to==='*'&&!b.acc?'anyone who takes it':nm(other);
-  let h=`<div class="card b27-c" data-bet="${esc(b.id)}"><div class="s24hd"><b>Bet #${b.n}</b> <span class="st ${st[1]}">${esc(st[0])}</span> <span class="mut" style="font-size:12px">${esc(day(b.ts))}</span>${b.g&&CUR.filter(x=>x.g===b.g).length>1?` <span class="mut" style="font-size:12px">· 1 of ${CUR.filter(x=>x.g===b.g).length} placed together</span>`:''}${linkBtn(b,'bet')}</div>
-   <div class="b27-t${esc(S.more[b.id]?' open':'')}" id="b27T-${esc(b.id)}">${esc(b.text)}</div><button type="button" class="b27-more" data-lb="more" data-id="${esc(b.id)}" aria-controls="b27T-${esc(b.id)}" aria-expanded="${esc(String(!!S.more[b.id]))}"${S.more[b.id]?'':' hidden'}>${S.more[b.id]?'less':'more'}</button><div class="b27-m">${tmH(b.by)} vs ${b.to==='*'&&!b.acc?`<b>${esc(vs)}</b>`:tmH(other)} · <b>${esc(num(b.amt))}</b> · ${esc(oddsLabel(b.a,b.b))}</div>
+  const dueShow=window.SHARED_UI&&SHARED_UI.whenShow?SHARED_UI.whenShow(b):'none',dueTxt=window.SHARED_UI&&SHARED_UI.whenText?SHARED_UI.whenText(b):'';
+  let h=`<div class="card b27-c${S.flashBet===b.id?' act-flash':''}" data-bet="${esc(b.id)}"><div class="s24hd"><b>Bet #${b.n}</b> <span class="st ${st[1]}">${esc(st[0])}</span> <span class="mut" style="font-size:12px">${esc(day(b.ts))}</span>${b.g&&CUR.filter(x=>x.g===b.g).length>1?` <span class="mut" style="font-size:12px">· 1 of ${CUR.filter(x=>x.g===b.g).length} placed together</span>`:''}${linkBtn(b,'bet')}</div>
+   ${dueTxt?`<div class="b27-due" data-due="${esc(dueShow)}">${esc(dueTxt)}</div>`:''}<div class="b27-t${esc(S.more[b.id]?' open':'')}" id="b27T-${esc(b.id)}">${esc(b.text)}</div><button type="button" class="b27-more" data-lb="more" data-id="${esc(b.id)}" aria-controls="b27T-${esc(b.id)}" aria-expanded="${esc(String(!!S.more[b.id]))}"${S.more[b.id]?'':' hidden'}>${S.more[b.id]?'less':'more'}</button><div class="b27-m">${tmH(b.by)} vs ${b.to==='*'&&!b.acc?`<b>${esc(vs)}</b>`:tmH(other)} · <b>${esc(num(b.amt))}</b> · ${esc(oddsLabel(b.a,b.b))}</div>
    <div class="b27-w">${esc(L.win)}</div><div class="b27-l">${esc(L.lose)}</div>${L.rounded?'<div class="mut b27-r">Rounded to a whole number.</div>':''}${postedHtml(b)}`;
   if(!clampQ){clampQ=true;requestAnimationFrame(clampFix)}
   const rl=resultLine(b);if(rl)h+=`<div class="note" style="margin-top:4px"><b>Result:</b> ${esc(rl)}${b.fixes&&b.fixes.some(x=>x.st==='confirmed')?' <span class="st settled">Corrected</span>':''}</div>`;
   h+='<div class="b27-sp" aria-hidden="true"></div>';
   h+=stampHtml(b);   /* s25: 'Placed … · Settled …' in the viewer's zone, top of the pinned-bottom block */   /* s25: pushes notes, buttons and reactions to the bottom so they line up across a row */
   const ask=(k,r)=>S.ask&&S.ask.id===b.id&&S.ask.w===k+(r||'');
-  const btn=(k,label,extra,r,fx)=>`<button type="button" class="btn ${extra||'sec'} b27-b" data-lb="${k}" data-id="${esc(b.id)}"${r?` data-r="${esc(r)}"`:''}${fx?` data-fx="${esc(fx)}"`:''}${S.busy?' disabled':''}>${ask(k,r)?'Tap again to confirm':esc(label)}</button>`;
+  const btn=(k,label,extra,r,fx)=>`<button type="button" class="btn ${extra||'sec'} b27-b" data-lb="${k}" data-id="${esc(b.id)}" data-st="${esc(betHash(betTerms(b)))}"${r?` data-r="${esc(r)}"`:''}${fx?` data-fx="${esc(fx)}"`:''}${S.busy?' disabled':''}>${ask(k,r)?'Tap again to confirm':esc(label)}</button>`;
   if(b.status==='pending'&&b.tp&&me&&((me===b.by&&!b.ackA)||(me===b.to&&!b.acc)))h+=`<div class="note" style="margin-top:4px">${esc(nm(b.postedBy||b.by))} posted this bet for ${esc(nm(b.by))} and ${esc(nm(b.to))}. Is it right?</div><div class="b27-act">${btn('accept','✅ Accept','pri')}${btn('decline','✖ Decline')}</div>`;
   else if(b.status==='pending'&&b.tp)h+=`<div class="note" style="margin-top:4px">Waiting for ${esc([!b.ackA&&b.by,!b.acc&&b.to].filter(Boolean).map(nm).join(' and '))} to accept.</div>${me&&me===b.postedBy?`<div class="b27-act">${btn('withdraw','↩ Withdraw this bet')}</div>`:''}`;
   else if(b.status==='pending'&&!AF())h+=`<div class="note" style="margin-top:4px">Open to anyone (older bet). It can be settled once ${esc(nm(b.by))} edits in the other manager.</div>${me===b.by?`<div class="b27-act">${btn('betedit','✏️ Edit')}</div>`:''}`;
@@ -296,12 +314,12 @@ function card(b,me){const L=lines(b.by,b.acc||b.to,b.amt,b.a,b.b);const st=b.sta
     else if(me===b.by)h+=`<div class="note" style="margin-top:4px">Waiting for ${b.to==='*'?'someone to take it':esc(nm(b.to))+' to answer'}.</div><div class="b27-act">${btn('betedit','✏️ Edit')}${btn('withdraw',undoable(b,me)?'↩ Undo this bet (30 s)':'↩ Withdraw this bet')}</div>${(()=>{const gu=grpUndo(b.g,me);return gu.length>1&&gu.slice().sort((p,q)=>q.n-p.n)[0].id===b.id?`<div class="b27-act"><button type="button" class="btn sec b27-b" data-lb="undogroup" data-g="${esc(b.g)}"${S.busy?' disabled':''}>↩ Undo all ${gu.length} bets placed together (30 s)</button></div>`:''})()}`;
     else h+=`<div class="note" style="margin-top:4px">Waiting for ${b.to==='*'?'someone to take it':esc(nm(b.to))+' to answer'}.</div>`}
   if(!AF()&&b.status==='open'&&b.kind!=='pool'&&undoable(b,me))h+=`<div class="b27-act">${btn('withdraw','↩ Undo this bet (30 s)')}</div>`;
-  if(b.status==='reported'||b.status==='disputed'){const lb={b:nm(b.by)+' won',o:nm(b.acc)+' won',p:'Wash'};const said=Object.entries(b.reps).map(([m,x])=>esc(nm(m))+' said <b>'+esc(lb[x.r])+'</b>').join(', ');
+  if(b.status==='reported'||b.status==='disputed'){const lb={b:nm(b.by)+' won',o:nm(b.acc)+' won',p:WASH};const said=Object.entries(b.reps).map(([m,x])=>esc(nm(m))+' said <b>'+esc(lb[x.r])+'</b>').join(', ');
     h+=`<div class="note b27-legacy" style="margin-top:4px">Earlier answer${Object.keys(b.reps).length>1?'s':''} (before the new rule): ${said}.${b.status==='reported'?' Without a result from '+esc(nm(b.by))+' it settles by itself 2 days after that answer.':''}</div>`}
   if(LIVE(b)&&party&&me!==b.by)h+=`<div class="note b27-onlyc" style="margin-top:6px">Only ${esc(nm(b.by))} (who placed it) can enter the result.</div>`;
   h+=autoHtml(b,me,btn,ask);
   const PR=S.prop[b.id];if(LIVE(b)&&me&&me===b.by&&!(PR&&PR.st==='final'&&!S.autoFix[b.id])){
-    const labels={b:nm(b.by)+' won',o:nm(b.acc)+' won',p:'Wash'};
+    const labels={b:nm(b.by)+' won',o:nm(b.acc)+' won',p:WASH};
     h+=`<div class="b27-act"><span class="note">Who won?</span>${['b','o','p'].map(r=>btn('settle',labels[r],'sec',r)).join('')}</div>`}
   if(b.status==='settled')h+=fixHtml(b,me,btn,ask);
   return h+rxHtml(b,me)+'</div>'}
@@ -582,6 +600,7 @@ function readBet(text){try{const X=teamIdx();let s=' '+String(text||'').replace(
   if(m=new RegExp('^@1 \\+'+N+' (?:vs\\.?|v\\.?|over|against|at|@|beats?|covers? (?:vs\\.?|against)) @2$').exec(t))return{t:'margin',a:A,b:B,l:+m[1],op:'plus'};   /* s28j: 'Duke +4 vs Virginia' = Duke covers unless Virginia wins by more than 4 */
   if(m=new RegExp('^@1 (?:beats?|defeats?|wins? (?:over|against|vs\\.?)) @2 by more than '+N+'(?: points?)?$').exec(t))return{t:'margin',a:A,b:B,l:+m[1],op:'gt'};
   if(m=new RegExp('^@1 (?:beats?|defeats?|wins? (?:over|against|vs\\.?)) @2 by (\\d{1,3})(?: points?)? or more(?: points?)?$').exec(t))return{t:'margin',a:A,b:B,l:+m[1],op:'ge'};
+  if(m=new RegExp('^(over|under) '+N+' vs\\.? (over|under) '+N+'[,:]? @1 '+VS+' @2(?:\\b.*)?$').exec(t)){if(+m[2]!==+m[4])return null;return{t:'total',a:A,b:B,l:+m[2],s:m[1][0]}}
   if(m=new RegExp('^(over|under) '+N+'(?: points?| total)?[,:]? @1 '+VS+' @2$').exec(t))return{t:'total',a:A,b:B,l:+m[2],s:m[1][0]};
   if(m=new RegExp('^@1 '+VS+' @2[,:]? (over|under) '+N+'(?: points?| total)?$').exec(t))return{t:'total',a:A,b:B,l:+m[2],s:m[1][0]};
   return null}catch(e){return null}}
@@ -622,7 +641,7 @@ function autoHtml(b,me,btn,ask){if(!b.c)return'';const rk=x=>{try{return window.
   /*STEP9-AUTOSETTLE live leader*/if(P.st==='live'&&window.SHARED_UI&&SHARED_UI.autoLine)return read+SHARED_UI.autoLine({e:esc,live:true,who:P.r==='b'?nm(b.by):P.r==='o'?nm(b.acc):'',sc:scoreText(b,P)});
   if(P.st==='wait')return read+`<div class="note b27-prop">No final score yet. ${cr?'Settle it by hand any time, or come back after the game.':''}</div>`;
   if(P.st==='none'||P.st==='down')return read+`<div class="note b27-prop">${P.st==='down'?'Scores can’t be read right now':'No matching game found yet'}: settle it by hand.</div>`;
-  const lab={b:nm(b.by)+' won',o:nm(b.acc)+' won',p:'Wash'}[P.r];
+  const lab={b:nm(b.by)+' won',o:nm(b.acc)+' won',p:WASH}[P.r];
   /*STEP9-AUTOSETTLE*/if(window.SHARED_UI&&SHARED_UI.autoLine){const cb=cr&&!S.autoFix[b.id];return read+'<div class="card b27-propc" id="b27Prop-'+esc(b.id)+'">'+SHARED_UI.autoLine({e:esc,live:false,who:P.r==='b'?nm(b.by):P.r==='o'?nm(b.acc):'',sc:scoreText(b,P),btn:cb?btn('autook','✅ Confirm','pri',P.r)+' '+btn('autofix','✏️ Fix'):'',note:cb?'Nothing is settled until someone taps Confirm.':(!cr?'Only '+nm(b.by)+' (who placed it) can confirm or fix this.':'')})+'</div>'}
   let h=read+`<div class="card b27-propc" id="b27Prop-${esc(b.id)}"><div><b>Final:</b> ${esc(scoreText(b,P))}</div><div>Proposed result: <b>${esc(lab)}</b></div>`;
   if(cr&&!S.autoFix[b.id])h+=`<div class="b27-act">${btn('autook','✅ Confirm','pri',P.r)}${btn('autofix','✏️ Fix')}</div><div class="note">Nothing is settled until you confirm.</div>`;
@@ -643,7 +662,7 @@ const sndBtn=()=>{const m=sndMuted();return` <button type="button" class="s25mut
 /* ---------- s25: settle pop-up (win / loss / wash), ~2 s, with the sound; tap or Esc closes ----------
    The memes are the shared SVGs + captions in js/shared-s25.js (S25.MEMES / S25.MEME_MS), shown as an <img> data URL (never as markup).
    A window.FBN_SETTLE_MEMES override wins if present; if the shared file did not load, a plain text card shows. */
-const POPTXT={win:['🏆','You won this one!'],loss:['😬','You lost this one. Pushups time.'],wash:['🤝','Wash: nobody owes anything.']};
+const POPTXT={win:['🏆','You won this one!'],loss:['😬','You lost this one. Pushups time.'],wash:['🤝',WASH+': nobody owes anything.']};
 /* s25: meme pop-ups are shelved (owner decision, same on the partner site). One switch: with POPUPS=false no pop-up or meme ever shows; settle sounds + mute are unaffected. */
 const POPUPS=false;
 function settlePop(kind){if(!POPUPS)return;try{const old=document.getElementById('b27Pop');if(old)old.remove();const X=window.S25,SM=X&&X.MEMES&&X.MEMES[kind];
@@ -716,7 +735,7 @@ const ACT={
   sndtoggle:()=>{try{if(sndMuted())localStorage.removeItem(SND_KEY);else localStorage.setItem(SND_KEY,'1')}catch(e){}render(true)},
   autook:el=>{const id=el.dataset.id,b=compute().find(x=>x.id===id),me=meMid(),P=S.prop[id];
     if(!b||!me||b.by!==me||!LIVE(b)||!P||P.st!=='final'||P.r!==el.dataset.r){S.ask=null;S.msg=b&&b.by!==me?'Only the manager who placed this bet can confirm its result.':'That result can’t be confirmed any more.';S.bad=true;render(true);return}
-    const w='autook'+P.r;if(S.ask&&S.ask.id===id&&S.ask.w===w){act([mkEv('s',{id,r:P.r,src:{g:P.g,sc:scoreText(b,P)}})],'Settled from the final score. Saved.')}else{S.ask={id,w};render(true)}},
+    const w='autook'+P.r,terms=betTerms(b);if(S.ask&&S.ask.id===id&&S.ask.w===w){if(S.ask.terms!==terms){S.ask=null;S.msg='That bet changed. Review it again.';S.bad=true;render(true);return}S.flashBet=id;copyNow(openCopy(b));act([mkEv('s',{id,r:P.r,src:{g:P.g,sc:scoreText(b,P)}})],'Settled from the final score. Saved.')}else{S.ask={id,w,terms};render(true)}},
   autofix:el=>{const id=el.dataset.id,b=compute().find(x=>x.id===id);if(!b||b.by!==meMid())return;S.autoFix[id]=1;S.ask=null;render(true)},
   accept:el=>doBet(el,'a','Accepted. The bet is on.'),
   decline:el=>doBet(el,'d','Declined.'),
@@ -724,7 +743,7 @@ const ACT={
   settle:el=>{const id=el.dataset.id,r=el.dataset.r,w='settle'+r;const b=compute().find(x=>x.id===id),me=meMid();
     /* s25: creator only (the button is not even drawn for anyone else; reduce() ignores a result from anyone else too) */
     if(!b||!me||b.by!==me||!LIVE(b)){S.ask=null;S.msg=b&&!LIVE(b)?'This bet is already settled.':'Only the manager who placed this bet can settle it.';S.bad=true;render(true);return}
-    if(S.ask&&S.ask.id===id&&S.ask.w===w){doBet(el,'s','Saved.',{r})}else{S.ask={id,w};render(true)}},
+    const terms=betTerms(b);if(S.ask&&S.ask.id===id&&S.ask.w===w){if(S.ask.terms!==terms){S.ask=null;S.msg='That bet changed. Review it again.';S.bad=true;render(true);return}S.flashBet=id;copyNow(openCopy(b));doBet(el,'s','Saved.',{r})}else{S.ask={id,w,terms};render(true)}},
   qbtoggle:el=>{const g=el.dataset.g||null;S.q.g=(!g||S.q.g===g)?null:g;S.q.msg='';redraw();if(S.q.g)setTimeout(()=>{try{const b=document.querySelector('.qbs [data-lb=qbgo], .qb-pick [data-lb=qbpick]');if(b)b.focus({preventScroll:true})}catch(_){}},20)},
   qbamt:el=>{S.q.amt=+el.dataset.v===10?10:5;redraw()},
   qbvs:el=>{S.q.vs=el.dataset.mid;S.q.msg='';redraw()},
@@ -853,7 +872,10 @@ function RQ(){if(RQ_||!H||H.demo||typeof SHARED_UI==='undefined'||!SHARED_UI.Req
 /*</STEP8-REQUEST>*/
 function bind(){
   document.addEventListener('contextmenu',e=>{const el=e.target.closest&&e.target.closest('[data-lb=rx]');if(el&&document.getElementById('main')&&document.getElementById('main').contains(el)){e.preventDefault();rxTap(el,true)}});
-document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('[data-lb]');if(!el||!H||!document.getElementById('main')||!document.getElementById('main').contains(el))return;const f=ACT[el.dataset.lb];if(f){e.preventDefault();f(el,e)}});
+const ACTK={settle:1,autook:1,accept:1,decline:1,withdraw:1,fixreq:1,fixok:1,fixno:1,fixwd:1};
+document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('[data-lb]');if(!el||!H||!document.getElementById('main')||!document.getElementById('main').contains(el))return;const f=ACT[el.dataset.lb];if(!f)return;e.preventDefault();
+  if(ACTK[el.dataset.lb]){if(S.busy)return;if(S.lockUntil&&Date.now()<S.lockUntil)return;S.lockUntil=Date.now()+450;const id=el.dataset.id;if(id&&el.dataset.st){const b=compute().find(x=>x.id===id);if(!b||betHash(betTerms(b))!==el.dataset.st){S.ask=null;S.msg='That bet changed. Review it again.';S.bad=true;render(true);return}}}
+  f(el,e)});
   document.addEventListener('change',e=>{const t=e.target;if(!t||!H)return;if(t.dataset&&t.dataset.pw){(S.placeWho[t.dataset.pw]=S.placeWho[t.dataset.pw]||[])[+t.dataset.i]=t.value;S.poolErr[t.dataset.pw]='';S.ask=null;return}if(t.id==='b27Est'){S.f.est=t.value;S.f.wk='date';sync();return}if(t.id==='b27FP'||t.id==='b27FS'||t.id==='b27FA'||t.id==='b27FW'){fLoad();const p=t.id==='b27FP'?t.value:S.fp,st=t.id==='b27FS'?t.value:S.fst,ac=t.id==='b27FA'?t.value:S.fac,wh=t.id==='b27FW'?t.value:S.fwh;if(fSet(p,st,ac,wh)){render(true);setTimeout(()=>{const x=document.getElementById(t.id);if(x)x.focus({preventScroll:true})},0)}}});
   let PZT=0;document.addEventListener('input',e=>{const t=e.target;if(!t||!H)return;if(PF()&&t.id==='b27PzT'){if(!S.pz)S.pz={txt:''};S.pz.txt=t.value;if(e.inputType==='insertFromPaste'||S.pz.read){clearTimeout(PZT);PZT=setTimeout(()=>{const x=document.getElementById('b27PzT');if(!x)return;const c=x.selectionStart;ACT.pzread();const y=document.getElementById('b27PzT');if(y){y.focus({preventScroll:true});try{y.setSelectionRange(c,c)}catch(_){}}},e.inputType==='insertFromPaste'?50:500)}return}if(t.id==='b27FQ'){fLoad();const v=t.value,c=t.selectionStart;if(fSet(S.fp,S.fst,S.fac,S.fwh,false,v)){render(true);const x=document.getElementById('b27FQ');if(x){x.value=v;x.focus({preventScroll:true});try{x.setSelectionRange(c,c)}catch(_){}}}return}if(t.dataset&&t.dataset.place!=null){S.p.places[+t.dataset.place]=t.value;poolPaint();return}if(t.dataset&&t.dataset.pt){S.poolTxt[t.dataset.pt]=t.value;S.poolErr[t.dataset.pt]='';S.ask=null;return}if(!t.id)return;
     if(S.kind==='pool'&&!S.edited&&t.id==='b27Text'){S.p.text=t.value;poolPaint();return}if(t.id==='b27En'){S.p.entry=t.value;poolPaint();return}
@@ -868,7 +890,7 @@ let modalWas=false;
 function afterRender(){try{mountRx()}catch(e){}try{const m=document.querySelector('.s26k-m');document.body.classList.toggle('s26k-lock',!!m);if(m&&!modalWas){const b=m.querySelector('.b27-act .btn');if(b)b.focus({preventScroll:true})}modalWas=!!m}catch(e){}}
 function tallyPage(){if(!H)return '';if(H.demo)return '<div class="card" id="b27Tally"><b>🧮 Tally</b><div class="note">Bets are switched off in the demo, so nothing here can touch a real league.</div></div>';if(S.state==='init')return window.LLOADER?LLOADER():'';return tallyHtml(tally(compute()))}
 function setOb(v){S.ob=v==='request'?'request':v==='all'||v==='open'||v==='tally'?'all':'form'}
-window.LBETS={after:afterRender,_t:{propose,S,stampText,poolEntries,poolCheck,poolParse,greedy,POOL_TXT,DISCLAIMER,placedFx,mountRx,clampFix,RX,settlePop,readBet,claimText,judge,autoGame,AUTO_NOTE,settleSound,soundFor,sndMuted,myTurn,theirTurn,statusKey,whenKey,fMatch,betClip},init,start,view,tallyPage,setOb,badge,poll,reduce,tally,parseLog,win,filterHash:()=>{try{return fHashOut()}catch(e){return''}},setFilterHash:(f,q)=>{try{fFromHash(f,q)}catch(e){}},reveal:id=>{try{return reveal(id)}catch(e){return false}},bets:()=>{try{return compute()}catch(e){return[]}},quickHtml:(g,ctx)=>{QCTX=ctx||null;try{return quickHtml(g,ctx)}catch(e){return''}},_state:S};
+window.LBETS={after:afterRender,_t:{propose,S,stampText,poolEntries,poolCheck,poolParse,greedy,POOL_TXT,DISCLAIMER,placedFx,mountRx,clampFix,RX,settlePop,readBet,claimText,judge,autoGame,AUTO_NOTE,settleSound,soundFor,sndMuted,myTurn,theirTurn,statusKey,whenKey,fMatch,betClip,openCopy,betTerms,betHash},init,start,view,tallyPage,setOb,badge,poll,reduce,tally,parseLog,win,filterHash:()=>{try{return fHashOut()}catch(e){return''}},setFilterHash:(f,q)=>{try{fFromHash(f,q)}catch(e){}},reveal:id=>{try{return reveal(id)}catch(e){return false}},bets:()=>{try{return compute()}catch(e){return[]}},quickHtml:(g,ctx)=>{QCTX=ctx||null;try{return quickHtml(g,ctx)}catch(e){return''}},_state:S};
 
 const BALL_TIPS={when:'Sorting only. It does not settle the bet, pick a winner, or close a request.',rqwho:'Tap one or more managers.',rqamt:min=>'Amount for each acceptance. Minimum '+min+'.',rqodds:'Per acceptance: if you are right, they owe amount × first ÷ second. Even = 1-1. Nothing is posted until you send the request.',rqmany:'How many people can accept. Each acceptance is its own bet. This does not pick a winner.',rqexp:'The invitation closes then. It does not settle the bet or pick a winner.'};
 function openTip(el){if(!el)return;const open=el.getAttribute('aria-expanded')==='true';document.querySelectorAll('.s27-pop').forEach(e=>e.remove());document.querySelectorAll('.s27-tipk[aria-expanded=true]').forEach(e=>e.setAttribute('aria-expanded','false'));if(open)return;
