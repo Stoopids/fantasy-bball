@@ -434,7 +434,7 @@ function formHtml(me){const f=S.f,oth=others();const err=formOK();const util=oth
    <div id="b27Aw" class="b27-cw"${f.amtCustom?'':' hidden'}><label for="b27Ao" class="sr">Custom amount</label><input id="b27Ao" class="sb-in b27-in" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6" placeholder="Whole number, ${C.min} to ${C.max}" value="${esc(f.amtTxt)}"><div id="b27Ae" class="b27-bad-t" role="alert">${esc(f.amtErr)}</div></div></div><div class="b27-ao-c">
    <div class="b27-q"><button type="button" class="s27-tipk" data-tip="odds" aria-expanded="false">4. Odds</button></div><div class="b27-chips" role="group" aria-label="Odds">${C.odds.map(([a,b])=>`<button type="button" class="b27-chip" data-lb="odds" data-v="${a}-${b}" aria-pressed="${!f.custom&&!!f.odds&&f.odds[0]===a&&f.odds[1]===b}">${a===1&&b===1?'Even':a+'-'+b}</button>`).join('')}<button type="button" class="b27-chip cu" data-lb="oddscustom" aria-pressed="${f.custom}">Custom</button></div>
    <div id="b27Cw" class="b27-cw"${f.custom?'':' hidden'}><label for="b27Co" class="sr">Custom odds</label><input id="b27Co" class="sb-in b27-in" inputmode="text" autocomplete="off" maxlength="9" placeholder="e.g. 7-2 or 10-1" value="${esc(f.customTxt)}"><div id="b27Ce" class="b27-bad-t" role="alert">${esc(f.oddsErr)}</div></div></div></div>
-   ${whenField(5,false)}
+   ${whenField(5,true)}
    <div class="b27-livebox" id="b27Live" aria-live="polite">${liveHtml()}</div><div class="b27-sum" id="b27Sum">${esc(summary())}</div><div id="b27AutoN">${autoNoteForm()}</div><div class="b27-bad-t" id="b27Hint"></div>
    <button type="button" id="b27Place" class="btn b27-big" data-lb="place"${err?' disabled aria-disabled="true"':''}>Place bet</button></div>`}
 /* ----- pool form: 1 terms, 2 who's in, 3 buy-in (live pot line), 4 payouts by place (amounts only; optional) ----- */
@@ -732,7 +732,7 @@ const ACT={
   undogroup:el=>{const me=meMid(),gu=grpUndo(el.dataset.g,me);if(!gu.length)return;S.undoG=null;act(gu.map(b=>mkEv('w',{id:b.id})),'Undone: '+gu.length+' bets withdrawn.')},
   retry:()=>poll(true),
   fltreset:()=>{fSet('all','open','any','any',false,'');render(true)},
-  when:el=>{S.f.wk=el.dataset.v==='date'||el.dataset.v==='season'||el.dataset.v==='game'?el.dataset.v:'unknown';if(S.f.wk!=='date')S.f.est='';sync()},
+  when:el=>{S.f.wk=el.dataset.v==='date'||el.dataset.v==='season'||el.dataset.v==='game'?el.dataset.v:'unknown';if(S.f.wk!=='date')S.f.est='';render(true)},
   clipretry:async()=>{if(!S.clip)return;const ok=await copyNow(S.clip);if(ok){const base=String(S.msg||'').replace(/ Could not copy it\. Copy the message below\.$/,'').replace(/ Message copied\. Paste it in WhatsApp\.$/,'');S.clip=null;S.msg=base+' Message copied. Paste it in WhatsApp.';S.bad=false}render(true)},
   betedit:el=>editBet(el),
   fixopen:el=>{S.fixOpen=el.dataset.id;S.ask=null;render(true)},
