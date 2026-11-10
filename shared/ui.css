@@ -446,7 +446,7 @@ html body .b27-due{margin-top:4px;font-size:12.5px;font-weight:700}
 html body .b27-due[data-due="over"]{color:#fca5a5}
 html body .b27-due[data-due="today"]{color:#fde68a}
 html body .b27-due[data-due="up"]{color:#93c5fd}
-html body .b27-due[data-due="none"]{color:var(--mut,#9aa)}
+html body .b27-due[data-due="none"],html body .b27-due[data-due="done"]{color:var(--mut,#9aa)}
 html body .b27-due[data-due="season"]{color:#c4b5fd}
 html body .b27-due[data-due="game"]{color:#93c5fd}
 html body .b27-when-c{display:flex;flex-wrap:wrap;gap:6px}
@@ -485,7 +485,6 @@ html body .tabs.ob-seg.ob-phone{display:none!important}
  html body .entry-sub-d{display:none!important}
  html body .entry-ico{display:none!important}
  html body .entry-sub-m{display:block!important}
- html body .entry-rq [data-when="game"]{display:none!important}
  html body .entry-hd.entry-hd-wiu p,html body .entry-hd.entry-hd-rq p{margin:0;font-size:8.5px;line-height:1.15;letter-spacing:-.02em;white-space:nowrap;min-width:0}
 }
 /* Request (and the same opponent grid): 4 equal cells, so 7 invitees are 4 then 3. */
@@ -529,7 +528,24 @@ html body #main .card.tap.s27-rk td:first-child a.chip img,html body #main .card
 .rq-ni{color:#aab}
 .rq-nx{flex:none;width:36px;height:36px;border-radius:8px;border:1px solid #3a4256;background:transparent;color:inherit;font:inherit;font-size:16px;cursor:pointer}
 /* Standings identity line. Last in the standings content, above the fixed chat and online row. */
-html body .idline{margin:16px 0 calc(76px + env(safe-area-inset-bottom,0px));padding:0;font-size:15px;line-height:1.4;color:var(--tx,#eef1f7)}
+html body .idline{margin:8px 0 calc(8px + var(--chat-btn,44px) + env(safe-area-inset-bottom,0px));padding:0;font-size:15px;line-height:1.4;color:var(--tx,#eef1f7)}
+html body footer#foot{padding-bottom:8px}
+html body nav#ltabs{position:sticky!important;top:0!important;z-index:40!important;background:var(--bg,#0e121b)!important}
+html{scroll-padding-top:64px}
+html body .hero{cursor:pointer}
+html body .hero.hero-open{height:min(72vh,560px)!important}
+@media (max-width:700px){
+ html body .tapf,html body .lgref .tapf{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:4px!important;max-width:100%}
+ html body .tapf button,html body .lgref .tapf button{font-size:11px!important;line-height:1.15!important;padding:3px 2px!important;white-space:normal!important;min-height:32px!important;overflow:visible!important}
+ html body .tapf button:first-child,html body .lgref .tapf button:first-child{grid-column:1 / -1}
+}
+html body .card.tap.s27-rk th:first-child,html body .card.tap.s27-rk td:first-child{position:sticky;left:0;z-index:2;background:var(--card,#1b2030)}
+html body .card.tap.s27-rk th:first-child{z-index:3}
+@keyframes actflash{0%{box-shadow:0 0 0 3px #FFD400}100%{box-shadow:0 0 0 0 transparent}}
+html body .s27-copy.on,html body .s27-copy.flash{background:var(--acc,#ffd400);color:#111;border-color:var(--acc,#ffd400)}
+html body .s27-copy.flash,html body .act-flash{animation:actflash .7s ease}
+html body .glinks{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 0}
+html body .glink{font:inherit;font-weight:800;color:var(--acc,#FFD400);background:transparent;border:0;padding:0;cursor:pointer}
 html body .idline-ch{display:inline;margin:0;padding:2px 4px;min-height:36px;border:0;background:transparent;color:var(--acc,#ffd23f);font:inherit;font-weight:800;text-decoration:underline;cursor:pointer}
 html body .idline-ch:focus-visible{outline:2px solid var(--acc,#ffd23f);outline-offset:3px;border-radius:6px}
 html body #main .gfone,html body #lbody .gfone{display:flex!important;flex-direction:column!important;align-items:stretch!important;overflow:visible!important;gap:6px!important}
@@ -556,7 +572,7 @@ html body #main .gf3>.gf2.gfpills>input.gf2-s,html body #lbody .gf3>.gf2.gfpills
 html body .ggrid .gside .nm{flex:1 1 auto;min-width:0;overflow:hidden}
 html body .ggrid .gside .sc2{flex:0 0 auto}
 html body .ggrid>.gm:not(.gfin) .gside a.chip,html body .ggrid .gbody .gside a.chip{flex:1 1 auto!important;width:auto!important;min-width:0!important;max-width:min(200px,100%)!important;height:40px!important;min-height:40px!important;max-height:40px!important}
-html body .ggrid .gow .opill{max-width:100%}
+html body .ggrid .gow .opill{max-width:none!important;overflow:visible!important;text-overflow:clip!important;white-space:normal!important}
 html body .ggrid>.gm:not(.gfin)>.gow[aria-hidden="true"],html body .ggrid .gbody>.gow[aria-hidden="true"]{height:0!important;max-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
 html body .gm .gh>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 html body .gm .gh .gbtns,html body .gm .gh .mkbtns{position:static!important;flex:none!important;flex-direction:row!important;margin-left:auto!important;order:1}

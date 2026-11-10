@@ -306,7 +306,7 @@ function gSpread(g){const ln=g.line&&typeof g.line==='object'?g.line:null,sp=ln&
 function gName(s){const t=T.TEAMS[s.id];return (t&&(t.short||t.name))||s.short||String(s.id)}
 /* s28c per-card copy (Games + Bets, same button): copies clean multi-line text for WhatsApp, never a link; the button flips to 'Copied' for 2 s */
 const CPI='Copy';const cpBtn=window.LCPBTN=(t,w)=>`<button type="button" class="s27-copy cpt" data-a="cptext" data-t="${esc(t)}" aria-label="Copy this ${esc(w)} as text" title="Copy this ${esc(w)}">${CPI}</button>`;   /* = STOOPIDS s29b .s27-copy */
-function cpText(el){const t=String(el.dataset.t||'').replace(/https?:\/\/\S+/g,'').trim();const done=()=>{el.textContent='Copied';el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>{el.textContent=CPI;el.classList.remove('on')},2000)};
+function cpText(el){const t=String(el.dataset.t||'').replace(/https?:\/\/\S+/g,'').trim();const done=()=>{el.textContent='Copied';el.classList.add('on','flash');clearTimeout(el._t);el._t=setTimeout(()=>{el.textContent=CPI;el.classList.remove('on','flash')},700)};
   const fall=()=>{try{const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()}catch(e){}done()};
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,fall);else fall()}
 function gameText(g){/* the reference site s29b copy format (games_snippet.md): lines with missing data are left out; the date + time use the card's own LTIME formatters (device zone + label).
@@ -337,7 +337,7 @@ function lineTxt(g,fin){const ln=g.line&&typeof g.line==='object'?g.line:null;if
   const fs=String(ln.fav)===String(g.home.id)?g.home:String(ln.fav)===String(g.away.id)?g.away:null;
   const fav=fs&&sp!=null&&sp>0?`<b>${esc(tShort(fs))}</b> -${sp}`:'Pick\u2019em';
   const ml=/*sync-step2: face has no moneyline; opened final card + Copy keep it*/fin&&(ln.aml!=null||ln.hml!=null)?` · Moneyline ${esc(tShort(g.away))} ${fml(ln.aml)} / ${esc(tShort(g.home))} ${fml(ln.hml)}`:'';
-  const o=ou!=null?` · Over/under ${ou}`:'';
+  const o=ou!=null?` · O/U ${ou}`:'';
   return `${fin?(ln.type==='close'?'Closing line':'Last line'):'Line'}: ${fav}${ml}${o}${ln.p?` <span class="mut">· DraftKings</span>`:''}`}
 function gameBody(g){const fin=g.status==='final',live=g.status==='live';const ln=g.line&&typeof g.line==='object'?g.line:null;
   const dog=ln?(ln.dog!=null?ln.dog:(String(ln.fav)===String(g.home.id)?g.away.id:String(ln.fav)===String(g.away.id)?g.home.id:null)):null;
@@ -354,18 +354,29 @@ function gameBody(g){const fin=g.status==='final',live=g.status==='live';const l
   foot+=lvNote(g);/* HALF-SCORES footer line replaced by HS-INLINE */
   return `<div class="gh">${head}<div class="mkbtns">${cpBtn(gameText(g),'game')}${g._qbBtn||''}</div></div>${row(g.away)}${row(g.home,'H')}<div class="gl">${foot}</div>`}
 function gameCard(g){const fin=g.status==='final';const cls='gm'+(g.h2h||g.civil?' h2h':'')+(gHasBet(g)?' mkbet':'');
-  if(!fin){const q=quick(g),cut=q.indexOf('</div>')+6,qb=q.startsWith('<div class="qbw">')?q.slice(0,cut):'';const gg=Object.assign({},g,{_qbBtn:qb});return `<div class="${esc(cls)}" data-gid="${esc(String(g.id))}">${gameBody(gg)}<div class="gsp" aria-hidden="true"></div>${qb?q.slice(cut):q}</div>`}
+  const links=gBetLinkHtml(g);
+  if(!fin){const q=quick(g),cut=q.indexOf('</div>')+6,qb=q.startsWith('<div class="qbw">')?q.slice(0,cut):'';const gg=Object.assign({},g,{_qbBtn:qb});return `<div class="${esc(cls)}" data-gid="${esc(String(g.id))}">${gameBody(gg)}${links}<div class="gsp" aria-hidden="true"></div>${qb?q.slice(cut):q}</div>`}
   const id=String(g.id),op=GEXP.has(id)||SUB===id,x=gxId(g),sc=s=>`${esc(tShort(s))} ${s.score!=null?esc(String(s.score)):''}`;
-  /*STEP5-GAMES*/if(typeof SHARED_UI!=='undefined'&&SHARED_UI.finalCard)return SHARED_UI.finalCard({esc,cls:esc(cls),attr:` data-gid="${esc(id)}"`,open:op,away:{name:tShort(g.away),score:g.away.score,win:g.away.win},home:{name:tShort(g.home),score:g.home.score,win:g.home.win},upset:g.upset&&g.upset.is,btnAttr:`data-a="gfin" data-g="${esc(id)}"`,btnAttr2:` aria-controls="${esc(x)}"`,bodyCls:'gbody gx',bodyAttr:` id="${esc(x)}"`,body:gameBody(g)+boxSlot(g)});
-  return `<div class="${esc(cls)} gfin${op?' open':''}" data-gid="${esc(id)}"><button type="button" class="gsum" data-a="gfin" data-g="${esc(id)}" aria-expanded="${op}" aria-controls="${esc(x)}"><span class="gst">FINAL</span><span class="${g.away.win?'w':''}">${sc(g.away)}</span><span class="mut">·</span><span class="${g.home.win?'w':''}">${sc(g.home)}</span>${g.upset&&g.upset.is?'<span>😱</span>':''}<span class="gch" aria-hidden="true">${op?'▾':'▸'}</span></button><div class="gbody gx" id="${esc(x)}"${op?'':' hidden'}>${gameBody(g)}${boxSlot(g)}</div></div>`}
+  /*STEP5-GAMES*/if(typeof SHARED_UI!=='undefined'&&SHARED_UI.finalCard)return SHARED_UI.finalCard({esc,cls:esc(cls),attr:` data-gid="${esc(id)}"`,open:op,away:{name:tShort(g.away),score:g.away.score,win:g.away.win},home:{name:tShort(g.home),score:g.home.score,win:g.home.win},upset:g.upset&&g.upset.is,btnAttr:`data-a="gfin" data-g="${esc(id)}"`,btnAttr2:` aria-controls="${esc(x)}"`,bodyCls:'gbody gx',bodyAttr:` id="${esc(x)}"`,body:gameBody(g)+boxSlot(g),tail:links});
+  return `<div class="${esc(cls)} gfin${op?' open':''}" data-gid="${esc(id)}"><button type="button" class="gsum" data-a="gfin" data-g="${esc(id)}" aria-expanded="${op}" aria-controls="${esc(x)}"><span class="gst">FINAL</span><span class="${g.away.win?'w':''}">${sc(g.away)}</span><span class="mut">·</span><span class="${g.home.win?'w':''}">${sc(g.home)}</span>${g.upset&&g.upset.is?'<span>😱</span>':''}<span class="gch" aria-hidden="true">${op?'▾':'▸'}</span></button><div class="gbody gx" id="${esc(x)}"${op?'':' hidden'}>${gameBody(g)}${boxSlot(g)}</div>${links}</div>`}
 /* sync-step1: green outline when a bet on this game is in the ledger (matched by game id or both school names in the bet text) */
-function gHasBet(g){try{const bs=window.LBETS&&LBETS.bets?LBETS.bets():[];const id=String(g.id);   /* League bets: reduce() of the per-manager logs; b.g = ESPN event id of the game */
-  return bs.some(b=>b&&b.kind!=='pool'&&String(b.g||'')===id&&b.status!=='void'&&b.status!=='declined'&&b.status!=='withdrawn')}catch(e){return false}}
+let GBETM=null;
+function gBetMap(){if(GBETM)return GBETM;const map={},games=(D&&D.games)||[];
+  const add=(id,b)=>{if(!id||!b)return;const a=map[id]||(map[id]=[]);if(!a.some(x=>x.id===b.id))a.push(b)};
+  try{const bs=(window.LBETS&&LBETS.bets?LBETS.bets():[]).filter(b=>b&&b.kind!=='pool'&&b.status!=='void'&&b.status!=='declined'&&b.status!=='withdrawn'&&b.status!=='cancelled');
+    bs.forEach(b=>{if(b.src&&b.src.g)add(String(b.src.g),b);if(b.g&&games.some(g=>String(g.id)===String(b.g)))add(String(b.g),b);
+      if(!b.c)return;const sides=g=>g&&g.home&&g.away&&[String(g.home.id),String(g.away.id)];
+      const cands=games.filter(g=>{const s=sides(g);return s&&s.includes(String(b.c.a))&&s.includes(String(b.c.b))});if(!cands.length)return;
+      const t=+b.ts||0;cands.sort((a,c)=>Math.abs(Date.parse(a.start||0)-t)-Math.abs(Date.parse(c.start||0)-t));add(String(cands[0].id),b)})}catch(e){}
+  return GBETM=map}
+function gBetLinkHtml(g){const list=(gBetMap()[String(g&&g.id||'')]||[]).slice().sort((a,c)=>(a.n||0)-(c.n||0));if(!list.length)return '';
+  return '<div class="glinks">'+list.map(b=>'<button type="button" class="glink" data-a="gbet" data-id="'+esc(b.id)+'">#'+b.n+'</button>').join('')+'</div>'}
+function gHasBet(g){try{return !!(gBetMap()[String(g.id)]||[]).length}catch(e){return false}}
 /* s22: the "Quick bet" pill + picker of a Games card is built by js/league-bets.js (it knows the managers, the viewer and the form); '' when it does not apply */
 function quick(g){try{return window.LBETS&&LBETS.quickHtml?LBETS.quickHtml(g,{name:s=>{const t=T.TEAMS[s.id];return(t&&(t.short||t.name))||s.short||''}}):''}catch(e){return''}}
 /* s26c14 (partner header/footer parity): Refresh Live Games + 'Last updated <time>' sit at the top of the Games tab only (was in the header); lvUI() fills them */
 const liveRow=()=>'<div id="live" class="lv" hidden><span id="lvT" aria-live="polite"></span><button id="lvB" type="button" data-a="lvrefresh" aria-label="Refresh live games">&#8635; Refresh Live Games</button><span id="lvU" class="lvU" hidden></span></div>';
-function vGames(){const every=D.games||[],nHidden=every.filter(g=>!gOwned(g)).length;if(!nHidden)gAll=false;const all=gAll?every:every.filter(gOwned);
+function vGames(){GBETM=null;const every=D.games||[],nHidden=every.filter(g=>!gOwned(g)).length;if(!nHidden)gAll=false;const all=gAll?every:every.filter(gOwned);
   const ups=all.filter(g=>g.status!=='final'),fin=all.filter(g=>g.status==='final');if(!gMode)gMode=ups.length?'upcoming':'scores';
   let list=(gMode==='upcoming'?ups:fin.slice().reverse());if(gOwner!=='all')list=list.filter(g=>g.home.owners.includes(gOwner)||g.away.owners.includes(gOwner));
   if(gQ){const q=gQ.toLowerCase(),nm=s=>[gName(s),s.short,s.name].join(' ').toLowerCase();list=list.filter(g=>nm(g.away).includes(q)||nm(g.home).includes(q))}   /* sync-step3: team search (More panel) */if(gH2H)list=list.filter(g=>/*sync-step2*/gOwner!=='all'?!!g.h2h:(g.h2h||g.civil));
@@ -624,7 +635,9 @@ try{let _tf=0;window.addEventListener('resize',()=>{clearTimeout(_tf);_tf=setTim
    Validated exactly as the hook asks (and by F.heroOk again inside U.heroApply); never put into innerHTML. */
 let BOOTM=null;   /* last league meta read (also before the draft, when L is not set yet) */
 function leaguePhoto(){const M_=(L&&L.meta)||BOOTM,p=M_&&M_.settings&&M_.settings.photo;return typeof p==='string'&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p)&&F.heroOk(p)?p:null}
-function paintHero(){const el=document.getElementById('hero');if(el)U.heroApply(el,HERO_CUSTOM||leaguePhoto()||F.HERO.file)}
+let HERO_OPEN=false;
+function paintHero(){const el=document.getElementById('hero');if(!el)return;U.heroApply(el,HERO_CUSTOM||leaguePhoto()||F.HERO.file);
+  el.classList.toggle('hero-open',HERO_OPEN);el.setAttribute('role','button');el.tabIndex=0;el.setAttribute('aria-expanded',HERO_OPEN?'true':'false');el.setAttribute('aria-label','College basketball banner. Tap to enlarge the photo.')}
 async function loadHero(force){HERO_CUSTOM=DEMO?null:await U.heroLoad(id,force)}
 function readImage(file){return new Promise((res,rej)=>{const url=URL.createObjectURL(file);const im=new Image();im.onload=()=>{URL.revokeObjectURL(url);res(im)};im.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('That file is not a picture we can open.'))};im.src=url})}
 const heroEncoder=im=>async(edge,q)=>{const w=edge,h=Math.round(edge*5/16);const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');const sc=Math.max(w/im.width,h/im.height);const dw=im.width*sc,dh=im.height*sc;x.fillStyle='#10131a';x.fillRect(0,0,w,h);x.drawImage(im,(w-dw)/2,(h-dh)/2,dw,dh);return c.toDataURL('image/jpeg',q)};
@@ -694,6 +707,7 @@ const ACT={trynow:()=>boot(true),
   tab:(el,e)=>{if(e&&(e.defaultPrevented||e.button>0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey))return;if(e)e.preventDefault();tab=el.dataset.v;SUB=null;MISS=null;TOP0=true;hashPut(true);render();window.scrollTo(0,0)},
   shareleague:el=>{const url=shareUrl(SHTAB),done=()=>{if(!el)return;el.textContent='Copied';clearTimeout(el._t);el._t=setTimeout(()=>{el.textContent=canShare()?'Share':'Copy link'},2000)};if(canShare()){navigator.share({title:(L&&L.meta?L.meta.name:'League site'),url}).catch(e=>{if(!(e&&e.name==='AbortError')){copyText(url);done()}})}else{copyText(url);done()}},
   cptext:el=>cpText(el),
+  gbet:el=>{const id=el.dataset.id;tab='bets';SUB=null;MISS=null;try{if(window.LBETS&&LBETS.reveal)LBETS.reveal(id)}catch(e){}hashPut(true);render();setTimeout(()=>{try{const n=document.querySelector('[data-bet="'+CSS.escape(id)+'"]');if(n)n.scrollIntoView({block:'center'})}catch(e){}},40)},
   copymgr:el=>{copyText(mgrUrl());if(!el)return;el.textContent='Copied';el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>{el.textContent=CPI;el.classList.remove('on')},2000)},
   /*STEP12-HSHARE*/sharesite:el=>{const url=shareUrl(''),done=()=>{if(!el)return;el.textContent='Copied';el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>{el.textContent='🔗 Share';el.classList.remove('on')},1600)};if(canShare()){navigator.share({title:(L&&L.meta?A.disp(L.meta.name,isTestL()):'League'),url}).catch(e=>{if(!(e&&e.name==='AbortError')){copyText(url);done()}})}else{copyText(url);done()}},
   cptab:()=>shareLink(tab+(fHash()?'/'+fHash():''),tabTitle()),
@@ -709,6 +723,8 @@ const ACT={trynow:()=>boot(true),
   stview:el=>{SVIEW=el.dataset.v==='breakdown'?'breakdown':'league';hashPut(false);try{localStorage.setItem('standingsView',SVIEW)}catch(e){}render()},
   gmode:el=>{gMode=el.dataset.v;gDay='all';if(gMode!=='upcoming')gH2H=false;render()},gh2h:()=>{gH2H=!gH2H;render()},
   fresh:()=>freshToggle(),gmore:()=>{gMore=!gMore;render()},lvrefresh:()=>lvManual(),/*<ST-REFRESH>*/strefresh:(el)=>{/*REFRESH-NOW shared*/if(window.SHARED_UI&&SHARED_UI.refreshNow){ST_CHK=Date.now();LV.fails=0;LV.paused=false;SHARED_UI.refreshNow('.mkref:not(.gref)',[()=>loadScores(),()=>lvCheck(true)],()=>render());return}ST_CHK=Date.now();const bt=document.querySelector('.mkref');if(bt){bt.disabled=true;bt.textContent='Refreshing\u2026'}LV.fails=0;LV.paused=false;Promise.resolve().then(()=>lvCheck(true)).catch(()=>{}).finally(()=>{try{render()}catch(e){}})}/*</ST-REFRESH>*/};
+document.addEventListener('click',e=>{const h=e.target&&e.target.closest&&e.target.closest('#hero');if(!h)return;HERO_OPEN=!HERO_OPEN;h.classList.toggle('hero-open',HERO_OPEN);h.setAttribute('aria-expanded',HERO_OPEN?'true':'false')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&HERO_OPEN){HERO_OPEN=false;const h=document.getElementById('hero');if(h){h.classList.remove('hero-open');h.setAttribute('aria-expanded','false')}return}if((e.key==='Enter'||e.key===' ')&&e.target&&e.target.id==='hero'){e.preventDefault();e.target.click()}});
 document.addEventListener('change',e=>{const el=e.target;if(el.id==='herofile'){const f=el.files&&el.files[0];el.value='';if(f)heroChange(f);return}
   if(el.id==='s29shSel'){SHTAB=el.value;const i=document.getElementById('s29shUrl');if(i)i.textContent=shareUrl(SHTAB)}else if(el.id==='gOwnerSel'){gOwner=el.value;render()}else if(el.id==='gQIn'){gQ=el.value.trim();render()}else if(el.id==='gMonthSel'){if(el.value){gDay=el.value;render()}}else if(el.id==='gDaySel'){gDay=el.value;render()}else if(el.id==='gUnowned'){gAll=el.checked;render()}});
 document.addEventListener('submit',e=>{if(e.target&&e.target.id==='chatform'){e.preventDefault();const i=document.getElementById('chatin');const t=i?i.value.trim():'';if(!t||!ME||DEMO)return;i.value='';CHAT.draft='';sendChat(t)}});
