@@ -3162,7 +3162,7 @@ function chatInit(){
    Rounding rule: all maths is integer; amt x a/b is rounded HALF UP to a whole number (7.5 -> 8, 3.33 -> 3), and never below 1; the card says so when it happened.
    Remove everything between the BETS-2627 markers (CSS, JS, load hook) to drop the tab. */
 const PULK={url:BALL.url('bets-view'),amounts:[5,10,20,25,50],minAmt:5,maxAmt:1000,oddsChips:[[1,1],[2,1],[3,1],[4,1],[5,1]],maxOdds:100,maxText:140,maxBets:300,undoMs:300000,seenKey:(HK+'bets2627_seen'),pollMs:45000,pollOpenMs:15000};
-const U={state:'init',doc:{bets:[]},known:null,maxN:0,mine:new Set(),opps:[],amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',text:'',confirm:false,busy:false,msg:'',msgBad:false,fids:{},gid:null,askSettle:null,askDel:null,editOf:null,fails:0,timer:null,started:false,undoT:null,est:'',wk:'game',whenPick:false};
+const U={state:'init',doc:{bets:[]},known:null,maxN:0,mine:new Set(),opps:[],amt:5,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',text:'',confirm:false,busy:false,msg:'',msgBad:false,fids:{},gid:null,askSettle:null,askDel:null,editOf:null,fails:0,timer:null,started:false,undoT:null,est:'',wk:'game',whenPick:false};
 /*<POOL>*/Object.assign(U,{kind:'bet',pp:[],entry:'',backTxt:'',poolTxt:{},poolErr:{}});/*</POOL>*/
 /* ---- pure helpers (unit-tested) ---- */
 const b27Num=n=>{const neg=n<0;n=Math.abs(Math.round(n));return (neg?'-':'')+n.toLocaleString('en-US')};      // plain whole number, thousands separator, no unit
@@ -3391,7 +3391,7 @@ function b27Edit(){U.confirm=false;render()}
     const mine=ids.map(id=>back.find(b=>b.id===id)).filter(Boolean);
     {const m=mine[0],k=m?b27Opps(m).length:1;let copied=false;try{copied=clip?await b27CopyNow(clip):false}catch(err){copied=false}U.msg='Placed! Bet #'+(m?m.n:'')+(k>1?' against '+k+' managers ('+b27Num(U.amt)+' each)':'')+' is unsettled. You can undo it for 5 minutes.';if(copied){U.clip=null;betCopied()}else{U.clip=clip;U.msg+=' Could not copy.'}U.msgBad=false;/*<S25C-FX>*/s25PlacedFx(m&&m.id)/*</S25C-FX>*/}
     U.undoG=null;/*<S24-EDIT>*/if(edOf){const o=back.find(x=>x.id===edOf);U.msg+=o?' It replaces bet #'+o.n+' (now cancelled).':'';U.editOf=null}/*</S24-EDIT>*/
-    U.opps=[];U.backer=null;U.pz=null;U.amt=null;U.amtCustom=false;U.amtTxt='';U.amtErr='';U.odds=[1,1];U.custom=false;U.customTxt='';U.oddsErr='';U.text='';U.est='';U.wk='game';U.whenPick=false;U.confirm=false;U.fids={};U.gid=null;/*<S25E-RD>*/U.rdEd=null;U.rdOpen=false;/*</S25E-RD>*/
+    U.opps=[];U.backer=null;U.pz=null;U.amt=5;U.amtCustom=false;U.amtTxt='';U.amtErr='';U.odds=[1,1];U.custom=false;U.customTxt='';U.oddsErr='';U.text='';U.est='';U.wk='game';U.whenPick=false;U.confirm=false;U.fids={};U.gid=null;/*<S25E-RD>*/U.rdEd=null;U.rdOpen=false;/*</S25E-RD>*/
     clearTimeout(U.undoT);U.undoT=setTimeout(()=>{if(tab==='bets27')render()},PULK.undoMs+300);
   }catch(e){U.clip=null;/*<S24-EDIT>*/if(e&&e.message==='locked'){U.editOf=null;U.confirm=false;U.busy=false;U.msg='Once a bet is posted, its terms stay as written. Only the result can be entered.';U.msgBad=true;render();return}
     if(e&&e.message==='late'){const o=U.doc.bets.find(x=>x.id===U.editOf);U.editOf=null;U.confirm=false;U.busy=false;U.msg='Too late to edit: bet'+(o?' #'+o.n:'')+' was already settled or cancelled. Nothing was saved; your changes are still in the form.';U.msgBad=true;b27Poll();render();return}/*</S24-EDIT>*/U.msg=e&&e.message==='full'?'The bets ledger is full.':/*<SAFE-RACE>*/e&&e.message==='conflict'?'Couldn’t save, try again. Someone else was saving at the same moment.':/*</SAFE-RACE>*/'Couldn’t save. Check your connection and tap Place bet again (it won’t double-post).';U.msgBad=true;U.confirm=true}
@@ -3664,7 +3664,7 @@ async function b27SaveEdit(){const id=U.editOf,e=b27FormOK();if(e){b27Err(e);U.c
   U.busy=true;U.msg='Saving…';U.msgBad=false;render();
   try{const back=await b27Write(cur=>{const old=cur.find(c=>c.id===id);if(!old||old.kind==='pool'||!b27CanUndo(old))throw new Error('late');return cur.map(c=>{if(c.id!==id)return c;const y=Object.assign({},c,{backer:nb.backer,other:nb.other,amt:nb.amt,odds:nb.odds,text:nb.text,status:'open',wk:nb.wk,rd:nb.rd});if(nb.opponents)y.opponents=nb.opponents.slice();else delete y.opponents;if(nb.est)y.est=nb.est;else delete y.est;if(nb.sid)y.sid=nb.sid;else delete y.sid;return y})},cur=>{const hits=cur.filter(c=>c.id===id);return hits.length===1&&hits[0].status==='open'&&hits[0].text===nb.text});
     b27Apply(back);const saved=back.find(c=>c.id===id);U.msg='Updated bet #'+(saved?saved.n:'')+'. Same number, no second bet.';U.msgBad=false;U.editOf=null;U.confirm=false;
-    Object.assign(U,{opps:[],backer:null,amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',text:'',est:'',wk:'game',whenPick:false,fids:{},rdEd:null,rdOpen:false});
+    Object.assign(U,{opps:[],backer:null,amt:5,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',text:'',est:'',wk:'game',whenPick:false,fids:{},rdEd:null,rdOpen:false});
   }catch(err){if(err&&err.message==='late'){U.editOf=null;U.confirm=false;U.msg='Too late to edit. Nothing was saved.';U.msgBad=true}else{U.msg=err&&err.message==='conflict'?'Couldn’t save, try again.':'Couldn’t save. Nothing was replaced.';U.msgBad=true;U.confirm=true}}
   U.busy=false;render()}
 /* ---- view ---- */
@@ -4196,7 +4196,7 @@ function s24DeepGo(){
 }
 function s24AfterLoad(){/*<NO-JUMP>*/const first=!S24.al;S24.al=1;/*</NO-JUMP>*/if(S24.sub)s24DeepGo()/*<TAB-TOP>*/;else if(first){if(tab==='bets27'||tab==='bets')betsLand();else window.scrollTo(0,0)}/*</TAB-TOP>*//*<S26W>*/;try{window.S26W&&S26W.top()}catch(_){}/*</S26W>*/}   // the 5-min reload never scrolls
 /* ---- 1) Edit ---- */
-function s24ResetForm(){Object.assign(U,{/*<S25>*/rdEd:null,rdOpen:false,/*</S25>*/opps:[],amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',text:'',confirm:false,fids:{},qb:null,est:'',wk:'game',whenPick:false})}
+function s24ResetForm(){Object.assign(U,{/*<S25>*/rdEd:null,rdOpen:false,/*</S25>*/opps:[],amt:5,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',text:'',confirm:false,fids:{},qb:null,est:'',wk:'game',whenPick:false})}
 let estDraft=null;
 function b27HasGame(b){const r=b&&b.rd;return !!(r&&(r.k==='spread'||r.k==='ml'||r.k==='total')&&r.t&&r.o)||!!(b&&b.src&&b.src.g)}
 function s24EstKind(k){if(U.busy||!estDraft)return;estDraft.kind=k==='date'||k==='season'||k==='game'?k:'unknown';if(estDraft.kind!=='date')estDraft.val='';render()}
@@ -4223,7 +4223,7 @@ async function s24EstWrite(id,kind,est){if(U.busy)return;const b=(U.doc.bets||[]
   U.busy=false;render()}
 function s24EstSave(id){if(U.busy||!estDraft||estDraft.id!==id)return;const raw=(document.getElementById('estIn')||{}).value||'';s24EstWrite(id,estDraft.kind,raw||null)}
 function s24EstClear(id){s24EstWrite(id,'unknown',null)}
-function s24EditCancel(){estDraft=null;if(U.editOf){U.editOf=null;Object.assign(U,{opps:[],backer:null,amt:null,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',text:'',confirm:false,est:'',wk:'game',whenPick:false,rdEd:null})}U.msg='';render()}
+function s24EditCancel(){estDraft=null;if(U.editOf){U.editOf=null;Object.assign(U,{opps:[],backer:null,amt:5,amtCustom:false,amtTxt:'',amtErr:'',odds:[1,1],custom:false,customTxt:'',oddsErr:'',text:'',confirm:false,est:'',wk:'game',whenPick:false,rdEd:null})}U.msg='';render()}
 function s24EditHint(){if(!U.editOf)return '';const o=U.doc.bets.find(x=>x.id===U.editOf),n=o?'#'+o.n:'';
   const late=!o||!b27CanUndo(o);
   return `<div class="b27-edn note" role="status" data-s24-editing="${esc(U.editOf)}">Editing bet ${n}. ${late?'<b class="bad">The 5 minutes are up, so this bet can’t be edited any more.</b>':`Updating keeps bet ${n}, the same number, and replaces its wording. No second bet.`} <a href="#" onclick="s24EditCancel();return false">Cancel edit</a></div>`}
