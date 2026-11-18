@@ -27,12 +27,15 @@ function chatSafe(id0){const s=String(id0||'').toLowerCase().replace(/[^a-z0-9]/
 async function readKey(key){const r=await realFetch(enc(key),{cache:'no-store'});if(!r.ok)return '';return r.text()}
 /* A missing requests document is an empty list. Any other failure must not look like an empty list, or the next full-document save would wipe rows the read never saw. */
 async function readReqBody(){const r=await realFetch(enc(reqKey())+'?t='+Date.now(),{cache:'no-store'});if(r.status===404)return {ok:true,text:''};if(!r.ok)return {ok:false,status:r.status};return {ok:true,text:await r.text()}}
+/* Historical bets are baked into data.js. The live document is one read; it carries new bets and later status changes. */
 async function betsGet(){
-  const mids=B.mids||[];const logs={};
-  await Promise.all(mids.map(async mid=>{logs[mid]=await readKey(FBN.Keys(id).base+'-bets-'+mid).catch(()=>'')}))
+  const snap=(typeof window!=='undefined'&&window.BALL_DATA&&window.BALL_DATA.bets_snapshot)||{bets:[],reqs:[]};
   let side='';try{side=await readKey(FBN.Keys(id).base+'-bets-doc')}catch(e){}
-  const doc=window.BALLBets.view(logs,B.keyOf,side);
-  B._reqs=doc.reqs||[];return jsonRes({v:1,bets:doc.bets})}
+  let extra=[];try{let d=JSON.parse(side||'{}');if(typeof d==='string')d=JSON.parse(d);extra=d&&Array.isArray(d.bets)?d.bets:[]}catch(e){extra=[]}
+  const by={};(snap.bets||[]).forEach(b=>{if(b&&b.id)by[b.id]=b});
+  extra.forEach(b=>{if(b&&b.id)by[b.id]=Object.assign({},by[b.id]||{},b)});
+  B._reqs=snap.reqs||[];
+  return jsonRes({v:1,bets:Object.keys(by).map(k=>by[k])})}
 function parseDoc(raw){try{let d=JSON.parse(raw||'{}');if(typeof d==='string')d=JSON.parse(d);return d&&typeof d==='object'?d:null}catch(e){return null}}
 async function readLogs(){const logs={};await Promise.all((B.mids||[]).map(async mid=>{logs[mid]=await readKey(FBN.Keys(id).base+'-bets-'+mid).catch(()=>'')}));return logs}
 /* Append one event onto one manager's log. Existing events are copied through unchanged. A log that is not empty JSON is left alone. */
@@ -58,7 +61,10 @@ async function betsPost(init){
     let u=('s'+String(b.id)).toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,24);if(u.length<6)continue;
     const ok=await appendEvent(mid,{k:'s',u,ts:Date.now(),id:b.id,r,v:25});if(!ok)return textRes('',502)}
   const fresh=incoming.filter(b=>b&&b.id&&!known.has(b.id));
-  const w=await realFetch(enc(FBN.Keys(id).base+'-bets-doc'),{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({v:1,bets:fresh})});
+  const overlay=incoming.filter(b=>b&&b.id&&known.has(b.id)&&b.status&&b.status!=='open');
+  let prev=[];try{let d=JSON.parse(await readKey(FBN.Keys(id).base+'-bets-doc')||'{}');if(typeof d==='string')d=JSON.parse(d);prev=d&&Array.isArray(d.bets)?d.bets:[]}catch(e){}
+  const out={};prev.forEach(b=>{if(b&&b.id)out[b.id]=b});fresh.forEach(b=>{out[b.id]=b});overlay.forEach(b=>{out[b.id]=Object.assign({},out[b.id]||{},b)});
+  const w=await realFetch(enc(FBN.Keys(id).base+'-bets-doc'),{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({v:1,bets:Object.keys(out).map(k=>out[k])})});
   if(!w.ok)return textRes('',w.status);return textRes('ok')}
 function chatDoc(raw){let d={};try{d=JSON.parse(raw||'{}');if(typeof d==='string')d=JSON.parse(d)}catch(e){d={}}if(!d||typeof d!=='object')d={};if(!Array.isArray(d.msgs))d.msgs=[];return d}
 async function chatGet(){
@@ -119,13 +125,14 @@ B.landingHtml=function(){const real=S.realLeague;
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 B.setTitle=function(name){const h=document.getElementById('ballLg');if(!h)return;const n=String(name||S.product).trim().toUpperCase().replace(/\s+/g,' ');const i=n.lastIndexOf(' ');
   h.textContent='';if(i>0){h.appendChild(document.createTextNode(n.slice(0,i+1)));const sp=document.createElement('span');sp.textContent=n.slice(i+1);h.appendChild(sp)}else h.textContent=n};
-B.load=async function(){
+B.attach=async function(D){
   if(!id){B.setTitle(S.product);throw new Error('no league code')}
-  const {TEAMS,POOL}=teamTable();
-  const L=await FBNLeague.load(id,{pool:POOL});if(!L.meta){B.setTitle(S.product);throw new Error('league not found')}
-  B.L=L;B.meta=L.meta;B.setTitle(L.meta.name||S.product);
-  const MG=L.managers.filter(m=>m&&m.mid);const keys=uniq(MG);B.mids=MG.map(m=>m.mid);
-  MG.forEach((m,i)=>{B.keyOf[m.mid]=keys[i];B.mOf[keys[i]]=m});
+  if(!D||!D.identity||!D.identity.meta){B.setTitle(S.product);throw new Error('league not found')}
+  const L={meta:D.identity.meta,claims:D.identity.claims||{},managers:D.identity.managers||[]};
+  B.L=L;B.meta=L.meta;B.D=D;B.setTitle(L.meta.name||S.product);
+  const MG=L.managers.filter(m=>m&&m.mid);B.mids=MG.map(m=>m.mid);
+  B.keyOf=Object.assign({},D.who||{});B.mOf={};
+  MG.forEach(m=>{if(B.keyOf[m.mid])B.mOf[B.keyOf[m.mid]]=m});
   B.mid=null;B.me=null;
   try{const link=window.LURL||{};let mid=link.as||'',k=link.k||'';
     if(!(mid&&k)){const saved=lsJ('fbn.me.'+id);if(saved&&saved.mid&&saved.k){mid=saved.mid;k=saved.k}}
@@ -133,12 +140,16 @@ B.load=async function(){
   try{if(B.me)localStorage.setItem(HK+'who',B.me)}catch(e){}
   try{const cm=localStorage.getItem('fbn.cm.'+id);B.cmOk=!!(cm&&await FBN.checkPass(L.meta,cm))}catch(e){B.cmOk=false}
   const cmM=MG.find(m=>m.mid===L.meta.cm)||MG[0];B.cmName=(cmM&&cmM.name)||S.commissioner;
-  let SC=null,TN=null;try{SC=await (await realFetch('data/scores.json',{cache:'no-store'})).json();if(SC&&SC.sample)SC=null}catch(e){}try{TN=await (await realFetch('data/tournament.json',{cache:'no-store'})).json();if(TN&&TN.sample)TN=null}catch(e){}
-  const st=L.state||{};let roster=((st.roster&&st.roster.length)?st.roster:(st.real&&st.real.length)?st.real:st.picks)||[];
-  roster=roster.filter(p=>p&&p.tid!=null);
-  B._ctx={L,MG,st,roster,TN,TEAMS,POOL};
-  if(window.LSCHED){LSCHED.init({ids:()=>roster.map(p=>String(p.tid)),enabled:()=>true,onUpdate:()=>{B.applySched()}});SC=LSCHED.merge(SC)}
-  B._ctx.SC=SC;B.publish(SC);if(window.LSCHED)LSCHED.start();return B.D};
+  B._photos=MG.map(m=>({name:B.keyOf[m.mid],team:(m.team||''),emoji:m.emoji||'',photo:m.photo||''}));
+  const D27=window.BALL_DRAFT27;D27.slots.length=0;Object.keys(D27.order).forEach(k=>delete D27.order[k]);
+  (D.slots||[]).forEach(s=>{if(s&&s.manager){D27.slots.push([s.manager,s.mid]);D27.order[s.manager]=(D.picks||[]).filter(p=>p.manager===s.manager).map(p=>String(p.teamId))}});
+  const R=window.BALL_DRAFT27_RESULTS;R.league=L.meta.name;R.draft_date=L.meta.startedAt?new Date(L.meta.startedAt).toISOString():S.draftDate;R.completed_at=(L.meta.status==='complete'&&L.meta.endedAt)?new Date(L.meta.endedAt).toISOString():null;
+  R.draft={type:(L.meta.settings||{}).type||'snake',rounds:(L.meta.settings||{}).rounds||0,managers:MG.length,date:S.draftDate};
+  R.order=(D.slots||[]).map(s=>({manager:s.manager,mid:s.mid,slot:s.slot,owner_name:s.manager,team_name:(B.mOf[s.manager]||{}).team||s.manager}));
+  R.picks=(D.picks||[]).map(p=>({overall:p.overall,round:p.round,pick:p.pick,manager:p.manager,teamId:String(p.teamId),team:p.team}));
+  B.L.state={picks:(D.picks||[]).map(p=>({tid:p.teamId,owner:(MG.find(m=>B.keyOf[m.mid]===p.manager)||{}).mid})),order:MG.map(m=>m.mid)};
+  return D};
+B.load=function(){return B.attach(window.BALL_DATA)};
 B.publish=function(SC){const C=B._ctx;if(!C)return null;SC=SC||C.SC;const L=C.L,MG=C.MG,st=C.st,roster=C.roster,TN=C.TN,TEAMS=C.TEAMS;
   const built=FBNLeagueD.build({leagueName:L.meta.name,managers:MG,roster,order:st.order||L.meta.order,teams:TEAMS,SC,TN,demo:false,season:'2026-27'});
   const nm=mid=>B.keyOf[mid]||'';
@@ -170,13 +181,16 @@ B.publish=function(SC){const C=B._ctx;if(!C)return null;SC=SC||C.SC;const L=C.L,
   R.order=order.map((mid,i)=>({manager:B.keyOf[mid],mid,slot:i+1,owner_name:B.keyOf[mid],team_name:(B.mOf[B.keyOf[mid]]||{}).team||B.keyOf[mid]}));
   R.picks=picks.map((p,i)=>({overall:i+1,round:p.round||0,pick:p.pick||0,manager:B.keyOf[p.owner],teamId:String(p.tid),team:(TEAMS[p.tid]||{}).short||String(p.tid)}));
   if(B.dataName)window[B.dataName]=D;B.D=D;B._photos=MG.map(m=>({name:B.keyOf[m.mid],team:(m.team||''),emoji:m.emoji||'',photo:m.photo||''}));return D};
-B.applySched=function(){if(!window.LSCHED||!B._ctx)return B.D;B.publish(LSCHED.merge(B._ctx.SC));try{if(typeof render==='function')render()}catch(e){}return B.D};
+B.applySched=function(){return B.D};
 B.cmUnlock=async function(pass){if(!B.meta||!pass)return false;const ok=await FBN.checkPass(B.meta,pass);if(ok){try{localStorage.setItem('fbn.cm.'+id,pass)}catch(e){}B.cmOk=true}return ok};
 B.cmLock=function(){try{localStorage.removeItem('fbn.cm.'+id)}catch(e){}B.cmOk=false};
 B.decorate=function(){
   const main=document.getElementById('main');if(!main||!B.L)return;
   if(location.hash.indexOf('recap')>=0){[...main.querySelectorAll('section.d27')].forEach(el=>{if(/Draft grades/.test(el.innerText)&&/Grades coming soon/.test(el.innerText))el.remove()})}
-  if(location.hash.indexOf('recap')>=0&&window.FBNPower&&!main.querySelector('#powerrank')){
+  if(location.hash.indexOf('recap')>=0&&!main.querySelector('#powerrank')){
+    if(!window.FBNPower){if(!B._power){B._power=1;if(!document.getElementById('ballPowerCss')){const l=document.createElement('link');l.id='ballPowerCss';l.rel='stylesheet';l.href='css/power.css';document.head.appendChild(l)}
+      const load=src=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+      load('js/power-gen.js').then(()=>load('js/power-render.js')).then(()=>{B._power=0;try{B.decorate()}catch(e){}}).catch(()=>{B._power=0})}return}
     const host=document.createElement('div');host.id='ballPower';main.insertBefore(host,main.firstChild?main.firstChild.nextSibling:null);
     const st=B.L.state||{};FBNPower.mount(host,{id,done:B.L.meta&&B.L.meta.status==='complete',managers:B.L.managers,state:st,teams:(B.D&&B.D.teams)||{}})}
   if(location.hash.indexOf('profile')>=0&&B._photos&&!main.querySelector('#ballPhotos')){

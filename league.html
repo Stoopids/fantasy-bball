@@ -4,7 +4,8 @@
 <!--<S26W-TOP>--><script>
 /* s26w: the page always opens at the top. Only a bet/game link (#bets/<id>, #games/<id>) opened fresh (not reload / back-forward / restored tab)
    and not opened before on this device scrolls to its card, once. A repeat open of the same saved link is cleaned to the tab hash. */
-(function(){var W=window.S26W={deep:false,user:false,t0:Date.now()};
+(function(){var HK=window.HK||(function(){try{var q=new URLSearchParams(location.search).get('l')||'';q=String(q).replace(/[^A-Za-z0-9]/g,'').toLowerCase().slice(0,40);return 'fbn.'+(q?q+'.':'')}catch(e){return 'fbn.'}})();window.HK=HK;
+  var W=window.S26W={deep:false,user:false,t0:Date.now()};
   try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(e){}
   try{var m=/^#(bets|bets-2025-26|games)\/([A-Za-z0-9_-]{1,40})(?:$|[&?\/])/i.exec(location.hash||'');
     if(m&&!/^(open|request|tally|form|write|all|stoopid)$/i.test(m[2])){var nv=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0],fresh=!nv||nv.type==='navigate',seen={};
@@ -957,7 +958,7 @@ main,#main{padding-top:6px!important}
 /* SYNC7..SYNC14 moved to shared/ui.css (linked right after this style block) */
 
 </style>
-<link rel="stylesheet" href="shared/ui.css?v=1.86.0"><link rel="stylesheet" href="css/power.css">
+<link rel="stylesheet" href="shared/ui.css?v=1.86.0">
 <style>/*<SORT-FIT> phone All teams: the card scrolls sideways, the page does not. Names stay full size. */@media (max-width:480px){html body .card.tap.s27-rk{padding-left:4px!important;padding-right:4px!important}html body .card.tap.s27-rk th{font-size:11px!important}html body .card.tap.s27-rk td.n,html body .card.tap.s27-rk td.to,html body .card.tap.s27-rk td.cf{font-size:13px!important}html body .card.tap.s27-rk .s27-sort i{font-size:.7em!important;margin-left:0!important}}/*</SORT-FIT>*/</style>
 </head>
 <body>
@@ -984,7 +985,7 @@ main,#main{padding-top:6px!important}
 </section><!--</CHAT>-->
 <footer id="foot"></footer>
 <script src="shared/ui.js?v=1.86.3"></script>
-<script src="js/version.js"></script><script src="js/core.js"></script><script src="js/scoring.js"></script><script src="js/league-d.js"></script><script src="js/league-sched.js"></script><script src="js/store.js"></script><script src="assets/teams.js"></script><script src="js/league.js"></script><script src="js/power-gen.js"></script><script src="js/power-render.js"></script><script src="js/ball-settings.js"></script><script src="js/ball-bets.js"></script><script src="js/ball-stoopids.js"></script>
+<script src="js/version.js"></script><script src="js/core.js"></script><script src="js/league-d.js"></script><script src="js/ball-settings.js"></script><script src="js/ball-bets.js"></script><script src="js/ball-stoopids.js"></script>
 <script>
 /*<S25-SHARED>*/
 /* shared-s25.js : STOOPIDS s25 shared core (auto-settle reading + result math + ESPN matching, settle sounds, settle memes, taglines, reactions).
@@ -4530,10 +4531,10 @@ function s24FilterBar(bets,me,ph){const settledOnly=ph==='Search settled bets';
 /*<ST-REFRESH>*/// Standings Refresh: re-fetch data.js + an immediate live-scores check, with visible feedback ("Refreshing…", then "checked just now")
 let ST_CHK=0;function stRefresh(btn){/*REFRESH-NOW shared*/if(window.SHARED_UI&&SHARED_UI.refreshNow){ST_CHK=Date.now();LV.fails=0;LV.paused=false;return SHARED_UI.refreshNow('.segref:not(.gref)',[()=>new Promise(r=>load(r)),()=>lvCheck(true)],()=>render())}if(btn){btn.disabled=true;btn.textContent='Refreshing\u2026'}ST_CHK=Date.now();try{lvManual()}catch(e){}load();setTimeout(()=>{try{const u=document.getElementById('stUpd'),d=genDate();if(u)u.textContent='Updated '+(d?relAgo(Date.now()-d.getTime()):'')+(window.SHARED_UI&&SHARED_UI.checkedText?SHARED_UI.checkedText(ST_CHK):' \u00b7 checked just now');const b=document.querySelector('.segref');if(b){b.disabled=false;b.innerHTML='&#8635; Refresh'}}catch(e){}},1500)}/*</ST-REFRESH>*/
 function load(cb){
-  const s=document.createElement('script');s.src='js/ball-settings.js?v='+Date.now();
-  s.onload=async()=>{try{await BALL.load()}catch(e){if(!D){$('#main').innerHTML=BALL.landingHtml();if(typeof cb==='function')cb();return}}D=BALL.D;D._base=D.bets;applyShared();/*<REFRESH-NOW>*/try{lvReapply()}catch(e){}/*</REFRESH-NOW>*/try{cmLoad()}catch(e){}render();try{presInit()}catch(e){}try{chatInit()}catch(e){}/*<REFRESH-NOW>*/try{lvInit()}catch(e){}/*</REFRESH-NOW>*/
+  const s=document.createElement('script');s.src='data.js?v='+Date.now();
+  s.onload=async()=>{try{await BALL.attach(window.BALL_DATA)}catch(e){if(!D){$('#main').innerHTML=BALL.landingHtml();if(typeof cb==='function')cb();return}}D=window.BALL_DATA;D._base=D.bets;applyShared();/*<REFRESH-NOW>*/try{lvReapply()}catch(e){}/*</REFRESH-NOW>*/try{cmLoad()}catch(e){}render();try{presInit()}catch(e){}try{chatInit()}catch(e){}/*<REFRESH-NOW>*/try{lvInit()}catch(e){}/*</REFRESH-NOW>*/
     /*<BETS-2627>*/try{b27Init()}catch(e){}/*</BETS-2627>*//*<S24-EDIT>*/try{s24AfterLoad()}catch(e){}/*</S24-EDIT>*/if(typeof cb==='function')cb()};   /* chatInit = CHAT hook */
-  s.onerror=()=>{if(typeof cb==='function')cb();if(!D)$('#main').innerHTML='<div class="card">Couldn\u2019t load the latest data. Try reloading the page.'+(ADMIN?' (data.js missing: run <code>python3 refresh.py</code> first.)':'')+'</div>'};
+  s.onerror=()=>{if(typeof cb==='function')cb();if(!D)$('#main').innerHTML='<div class="card">Couldn\u2019t load the latest data. Try reloading the page.'+(ADMIN?' (data.js missing: run <code>node tools/build_ball_data.js</code> first.)':'')+'</div>'};
   document.head.appendChild(s);
 }
 load();setInterval(()=>load(),2*60*1000);   /* re-read the published data.js. The scores themselves update when the refresh job runs (every 10 min once this branch is on main). */
