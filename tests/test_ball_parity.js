@@ -9,7 +9,7 @@ for(const f of ['league.html','shared/ui.js','shared/ui.css','js/ball-settings.j
 }
 const html=read('league.html');
 const layer=read('js/ball-stoopids.js');
-assert.ok(html.includes('shared/ui.js?v=1.86.1'),'ui.js cache key was not bumped for the request read fix');
+assert.ok(html.includes('shared/ui.js?v=1.86.2'),'ui.js cache key was not bumped for the accepted-copy fix');
 assert.ok(html.includes("const b27Who=()=>{const w=BALL.me;"),'bets are not limited to the private link');
 assert.ok(layer.includes('checkMgrSecret'),'private link is not checked');
 assert.ok(layer.includes('fbn.me.'), 'saved private link is not read');
