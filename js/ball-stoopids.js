@@ -1,6 +1,7 @@
 /* Ball data layer for the STOOPIDS page (league.html is built from STOOPIDS index.html).
    Reads one Ball league (?l=code) from the fbn1- store, Ball scores, and Ball scoring, and hands the page the same D object STOOPIDS uses.
-   Bet logs and chat are read through js/ball-bets.js and a chat translation. Nothing here writes a STOOPIDS key or rewrites a stored bet log. */
+   Bet logs and chat are read through js/ball-bets.js and a chat translation.
+   The page's request and bet saves land on Ball keys only (fbn1-<league>-requests and fbn1-<league>-bets-doc, plus an appended settle event on the poster's own log). Nothing here writes a STOOPIDS key or rewrites an existing bet event. */
 (function(){'use strict';
 const S=window.BALL;if(!S)return;
 const q=new URLSearchParams(location.search);
@@ -30,11 +31,30 @@ async function betsGet(){
   let side='';try{side=await readKey(FBN.Keys(id).base+'-bets-doc')}catch(e){}
   const doc=window.BALLBets.view(logs,B.keyOf,side);
   B._reqs=doc.reqs||[];return jsonRes({v:1,bets:doc.bets})}
+function parseDoc(raw){try{let d=JSON.parse(raw||'{}');if(typeof d==='string')d=JSON.parse(d);return d&&typeof d==='object'?d:null}catch(e){return null}}
+async function readLogs(){const logs={};await Promise.all((B.mids||[]).map(async mid=>{logs[mid]=await readKey(FBN.Keys(id).base+'-bets-'+mid).catch(()=>'')}));return logs}
+/* Append one event onto one manager's log. Existing events are copied through unchanged. A log that is not empty JSON is left alone. */
+async function appendEvent(mid,ev){
+  const key=FBN.Keys(id).base+'-bets-'+mid;
+  const raw=await readKey(key).catch(()=>'');
+  let evs=[];
+  if(String(raw||'').trim()){const d=parseDoc(raw);if(!d||!Array.isArray(d.ev))return false;evs=d.ev.slice()}
+  if(evs.some(e=>e&&(e.u===ev.u||(e.k==='s'&&e.id===ev.id))))return true;
+  evs.push(ev);
+  const w=await realFetch(enc(key),{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({v:1,ev:evs})});
+  return !!w.ok}
 async function betsPost(init){
   let body='';try{body=init&&init.body?String(init.body):''}catch(e){}
   let incoming=[];try{let d=JSON.parse(body||'{}');if(typeof d==='string')d=JSON.parse(d);incoming=d&&Array.isArray(d.bets)?d.bets:[]}catch(e){return textRes('',400)}
-  const logs={};await Promise.all((B.mids||[]).map(async mid=>{logs[mid]=await readKey(FBN.Keys(id).base+'-bets-'+mid).catch(()=>'')}))
-  const known=new Set((window.BALLBets.view(logs,B.keyOf,'').bets||[]).map(b=>b.id));
+  const logs=await readLogs();
+  const base=window.BALLBets.view(logs,B.keyOf,'');
+  const known=new Set((base.bets||[]).map(b=>b.id));
+  const byId={};(base.bets||[]).forEach(b=>{if(b&&b.id)byId[b.id]=b});
+  const R={backer:'b',other:'o',push:'p'};
+  for(const b of incoming){const old=b&&byId[b.id];if(!old||old.status!=='open')continue;const r=R[b.status];if(!r)continue;
+    const mid=B.mOf&&B.mOf[b.backer]&&B.mOf[b.backer].mid;if(!mid)return textRes('',409);
+    let u=('s'+String(b.id)).toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,24);if(u.length<6)continue;
+    const ok=await appendEvent(mid,{k:'s',u,ts:Date.now(),id:b.id,r,v:25});if(!ok)return textRes('',502)}
   const fresh=incoming.filter(b=>b&&b.id&&!known.has(b.id));
   const w=await realFetch(enc(FBN.Keys(id).base+'-bets-doc'),{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({v:1,bets:fresh})});
   if(!w.ok)return textRes('',w.status);return textRes('ok')}
@@ -56,14 +76,28 @@ async function chatPost(init){
     doc.msgs.push({id:i,ts:Number(x.t)||Date.now(),who:B.mid,text:String(x.x||'').slice(0,280),r:{}})});
   const w=await realFetch(enc(key),{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(doc)});
   return w.ok?textRes('ok'):textRes('',w.status)}
-async function reqGet(){return jsonRes({v:1,reqs:B._reqs||[]})}
+/* Open requests live in Ball's own fbn1-<league>-requests document, the same key the native bets page uses.
+   The page used to reject every POST here, so the form painted the request and the next read (still empty) wiped it. */
+function reqKey(){return FBN.Keys(id).base+'-requests'}
+function storedReqs(raw){const d=parseDoc(raw);return d&&Array.isArray(d.reqs)?d.reqs.filter(r=>r&&r.id):[]}
+async function reqGet(){
+  let stored=[];try{stored=storedReqs(await readKey(reqKey()))}catch(e){}
+  const by={};
+  (B._reqs||[]).forEach(r=>{if(r&&r.id)by[r.id]=r});
+  stored.forEach(r=>{if(r&&r.id)by[r.id]=r});
+  return jsonRes({v:1,reqs:Object.keys(by).map(k=>by[k])})}
+async function reqPost(init){
+  let body='';try{body=String(init&&init.body||'')}catch(e){}
+  let reqs=[];try{let d=JSON.parse(body||'{}');if(typeof d==='string')d=JSON.parse(d);if(!d||!Array.isArray(d.reqs))return textRes('',400);reqs=d.reqs}catch(e){return textRes('',400)}
+  const w=await realFetch(enc(reqKey()),{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({v:1,reqs})});
+  if(!w.ok)return textRes('',w.status);return textRes('ok')}
 window.fetch=function(input,init){
   const url=typeof input==='string'?input:(input&&input.url)||'';
   const method=((init&&init.method)||(input&&input.method)||'GET').toUpperCase();
   if(/stoopids-(bets|requests|presence|chat|commish)-/.test(url))return Promise.reject(new Error('Ball does not use STOOPIDS data'));
   if(id&&url.indexOf(encodeURIComponent(FBN.Keys(id).base+'-bets-view'))>=0)return method==='POST'?betsPost(init):betsGet();
-  if(id&&url.indexOf(encodeURIComponent(FBN.Keys(id).base+'-page-chat'))>=0)return method==='POST'?chatPost(init):chatGet()
-  if(id&&url.indexOf(encodeURIComponent(FBN.Keys(id).base+'-page-requests'))>=0)return method==='GET'||method==='HEAD'?reqGet():Promise.reject(new Error('view'));
+  if(id&&url.indexOf(encodeURIComponent(FBN.Keys(id).base+'-page-chat'))>=0)return method==='POST'?chatPost(init):chatGet();
+  if(id&&url.indexOf(encodeURIComponent(FBN.Keys(id).base+'-page-requests'))>=0)return method==='GET'||method==='HEAD'?reqGet():reqPost(init);
   return realFetch(input,init)};
 const TD=()=>window.TEAMS_DATA||{teams:[],meta:{}};
 function teamTable(){const TEAMS={},POOL=[];(TD().teams||[]).forEach(r=>{TEAMS[r[0]]={name:r[1],short:r[2],abbr:r[3],color:r[4],alt:r[5],logo:r[6],logo_dark:r[6],mascot:r[7]||'',espn_id:r[0]};POOL.push(r[0])});return{TEAMS,POOL}}
