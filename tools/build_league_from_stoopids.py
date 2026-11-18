@@ -142,7 +142,8 @@ else:
 
 # Branding. Archive tab left out (no Ball past seasons). Postseason stays date-gated; Ball's checklist fills it in March.
 rep('<title>STOOPIDS · NCAA Fantasy</title>', "<title>Ball Don't Lie</title>", why='title')
-rep('<p class="s27-pres" id="lpres">Stoopids presents</p>', '<p class="s27-pres" id="lpres">Ball Don\'t Lie presents</p>', why='kicker')
+rep("live:['Where college basketball knowledge goes to be humbled.','Confidence is high. The scoreboard disagrees.','Every win is skill. Every loss is the refs.','Somebody\\u2019s mid-major is carrying them. Somebody\\u2019s blue blood is not.','Bragging rights are checked every 10 minutes.']",
+    'live:["Eight managers. One season. Let\'s play."]', why='header tagline')
 rep('<h1>STOOP<span>IDS</span></h1>', '<h1 id="ballLg">BALL <span>DON\'T LIE</span></h1>', why='heading')
 rep('aria-label="Share STOOPIDS (view-only link to the whole site)"', 'aria-label="Share Ball Don\'t Lie"', why='share label')
 rep('aria-label="The STOOPIDS crew. Tap to enlarge the photo."', 'aria-label="Ball Don\'t Lie banner. Tap to enlarge the photo."', why='hero label')
