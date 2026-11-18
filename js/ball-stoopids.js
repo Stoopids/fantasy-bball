@@ -25,6 +25,8 @@ const lsJ=k=>{try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){re
 function nameOf(mid){return B.keyOf[mid]||''}
 function chatSafe(id0){const s=String(id0||'').toLowerCase().replace(/[^a-z0-9]/g,'');if(/^[a-z0-9]{6,20}$/.test(s))return s;let h=2166136261;const str=String(id0||'');for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return ('c'+('00000000'+(h>>>0).toString(16)).slice(-8)).slice(0,12)}
 async function readKey(key){const r=await realFetch(enc(key),{cache:'no-store'});if(!r.ok)return '';return r.text()}
+/* A missing requests document is an empty list. Any other failure must not look like an empty list, or the next full-document save would wipe rows the read never saw. */
+async function readReqBody(){const r=await realFetch(enc(reqKey()),{cache:'no-store'});if(r.status===404)return {ok:true,text:''};if(!r.ok)return {ok:false,status:r.status};return {ok:true,text:await r.text()}}
 async function betsGet(){
   const mids=B.mids||[];const logs={};
   await Promise.all(mids.map(async mid=>{logs[mid]=await readKey(FBN.Keys(id).base+'-bets-'+mid).catch(()=>'')}))
@@ -76,20 +78,28 @@ async function chatPost(init){
     doc.msgs.push({id:i,ts:Number(x.t)||Date.now(),who:B.mid,text:String(x.x||'').slice(0,280),r:{}})});
   const w=await realFetch(enc(key),{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(doc)});
   return w.ok?textRes('ok'):textRes('',w.status)}
-/* Open requests live in Ball's own fbn1-<league>-requests document, the same key the native bets page uses.
-   The page used to reject every POST here, so the form painted the request and the next read (still empty) wiped it. */
+/* Open requests live in Ball's own fbn1-<league>-requests document.
+   Agreed bets are a different path: append-only per-manager logs, which js/ball-bets.js reads into All bets.
+   This document used to be replaced by whatever list the browser last held. A read that missed the new rows (or only had the log-derived pending rows) then wrote that shorter list back, so Awaiting acceptance flickered. A save now updates the rows it sent and keeps every stored row it did not send. */
 function reqKey(){return FBN.Keys(id).base+'-requests'}
 function storedReqs(raw){const d=parseDoc(raw);return d&&Array.isArray(d.reqs)?d.reqs.filter(r=>r&&r.id):[]}
+function mergeReqs(prev,incoming){const by={};(prev||[]).forEach(r=>{if(r&&r.id)by[r.id]=r});(incoming||[]).forEach(r=>{if(r&&r.id)by[r.id]=Object.assign({},by[r.id]||{},r)});return Object.keys(by).map(k=>by[k])}
 async function reqGet(){
-  let stored=[];try{stored=storedReqs(await readKey(reqKey()))}catch(e){}
+  let got;try{got=await readReqBody()}catch(e){return textRes('',503)}
+  if(!got.ok)return textRes('',got.status||503);
   const by={};
   (B._reqs||[]).forEach(r=>{if(r&&r.id)by[r.id]=r});
-  stored.forEach(r=>{if(r&&r.id)by[r.id]=r});
+  storedReqs(got.text).forEach(r=>{if(r&&r.id)by[r.id]=r});
   return jsonRes({v:1,reqs:Object.keys(by).map(k=>by[k])})}
 async function reqPost(init){
   let body='';try{body=String(init&&init.body||'')}catch(e){}
   let reqs=[];try{let d=JSON.parse(body||'{}');if(typeof d==='string')d=JSON.parse(d);if(!d||!Array.isArray(d.reqs))return textRes('',400);reqs=d.reqs}catch(e){return textRes('',400)}
-  const w=await realFetch(enc(reqKey()),{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({v:1,reqs})});
+  let got;try{got=await readReqBody()}catch(e){return textRes('',503)}
+  if(!got.ok)return textRes('',got.status||503);
+  const prev=storedReqs(got.text);
+  if(!reqs.length&&prev.length)return textRes('',409);
+  const merged=mergeReqs(prev,reqs);
+  const w=await realFetch(enc(reqKey()),{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({v:1,reqs:merged})});
   if(!w.ok)return textRes('',w.status);return textRes('ok')}
 window.fetch=function(input,init){
   const url=typeof input==='string'?input:(input&&input.url)||'';
