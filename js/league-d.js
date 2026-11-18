@@ -67,7 +67,22 @@ A.build=function(a){
     const f=S.isFinal(g),w=f?S.winnerSide(g):null;
     const side=s=>({id:String(s.id),short:shortOf(String(s.id),s.short),score:num(s.score),win:!!(w&&w===s),seed:num(s.seed),owners:ownersOf(s.id),...(Array.isArray(s.ls)&&s.ls.length?{ls:s.ls}:{})});/* HS-INLINE: keep per-half points */
     const home=side(g.home),away=side(g.away);
-    const o={id:String(g.id),day:g.day||'',start:g.start||null,status:g.status||'scheduled',kind:g.kind||'reg',round:g.round||'',neutral:!!g.neutral,home,away};if(g.line&&typeof g.line==='object')o.line={fav:String(g.line.fav),sp:Number(g.line.sp),ou:Number(g.line.ou)};if(g.line&&typeof g.line==="object"){const L0=g.line,nf=v=>v!=null&&v!==''&&isFinite(+v)?+v:null;if(L0.dog!=null)o.line.dog=String(L0.dog);const am=nf(L0.aml!=null?L0.aml:L0.mlA),hm=nf(L0.hml!=null?L0.hml:L0.mlH);if(am!=null)o.line.aml=am;if(hm!=null)o.line.hml=hm;const pv=L0.p||L0.src||L0.provider;if(pv)o.line.p=String(pv).slice(0,40);if(L0.type==='close')o.line.type='close'}   /* s28j item 13: + dog, moneylines, book, closing flag for the the reference site card line */   /* s25: a posted line (when the data has one) for the Games card spread */
+    const o={id:String(g.id),day:g.day||'',start:g.start||null,status:g.status||'scheduled',kind:g.kind||'reg',round:g.round||'',neutral:!!g.neutral,home,away};
+    if(g.line&&typeof g.line==='object'){const L0=g.line,nf=v=>v!=null&&v!==''&&isFinite(+v)?+v:null;
+      const fav=L0.fav!=null?String(L0.fav):(L0.favorite_id!=null?String(L0.favorite_id):'');
+      const dog=L0.dog!=null?String(L0.dog):(L0.underdog_id!=null?String(L0.underdog_id):'');
+      const spRaw=L0.sp!=null?L0.sp:(L0.spread_home!=null?Math.abs(+L0.spread_home):null);
+      const sp=nf(spRaw),ou=nf(L0.ou!=null?L0.ou:L0.total);
+      const byId=id=>!id?'':(String(id)===String(g.home.id)?home.short:String(id)===String(g.away.id)?away.short:'');
+      o.line={fav:fav,sp:sp,ou:ou};
+      if(dog)o.line.dog=dog;
+      const favName=L0.fav_name||byId(fav),dogName=L0.dog_name||byId(dog);
+      if(favName)o.line.fav_name=favName;if(dogName)o.line.dog_name=dogName;
+      const am=nf(L0.aml!=null?L0.aml:L0.mlA),hm=nf(L0.hml!=null?L0.hml:L0.mlH);
+      if(am!=null)o.line.aml=am;if(hm!=null)o.line.hml=hm;
+      const pv=L0.p||L0.src||L0.provider;if(pv)o.line.p=String(pv).slice(0,40);
+      if(L0.type==='close'||L0.line_type==='close')o.line.type='close';else if(L0.type)o.line.type=String(L0.type).slice(0,12);
+    }   /* favorite name comes from fav id + the two schools; a missing name is not a pick'em, and a missing spread stays null instead of 0 */
     o.h2h=!!(home.owners.length&&away.owners.length&&home.owners[0]!==away.owners[0]);
     o.civil=!!(home.owners.length&&away.owners.length&&home.owners[0]===away.owners[0]);
     if(f&&g.kind==='ncaa')o.upset={is:S.isUpset(g),scored:true};
@@ -75,6 +90,7 @@ A.build=function(a){
   const team_games={};
   games.forEach(g=>{[['home','away'],['away','home']].forEach(([a1,b1])=>{const us=g[a1],them=g[b1];if(!(us.owners.length))return;
     const f=g.status==='final';const row={id:g.id,status:g.status,us:us.score,them:them.score,res:f&&us.score!=null&&them.score!=null?(us.score>them.score?'W':'L'):null,site:g.neutral?'N':(a1==='home'?'H':'A'),opp:them.short,oppId:String(them.id),day:g.day,start:g.start,round:g.round,kind:g.kind,seed:us.seed,oppSeed:them.seed};
+    if(g.line){const L=g.line;row.ln={fav:L.fav,dog:L.dog,sp:L.sp,ou:L.ou,fav_name:L.fav_name,dog_name:L.dog_name,p:L.p,type:L.type,we_dog:!!(L.dog&&String(L.dog)===String(us.id)),we_fav:!!(L.fav&&String(L.fav)===String(us.id))};}
     (team_games[us.id]||(team_games[us.id]=[])).push(row)})});
   Object.keys(team_games).forEach(k=>team_games[k].sort((x,y)=>(x.start||x.day||'').localeCompare(y.start||y.day||'')));
   /* owners (s26c8: standings = FBNScore.leagueTotals total) */

@@ -1697,10 +1697,21 @@ const fml=n=>n==null?'–':(n>0?'+'+n:String(n));
 const ownerEmoji=n=>{const o=D.owners.find(x=>x.name===n);return o?o.emoji:''};
 const opills=a=>a&&a.length?a.map(n=>`<span class="opill">${esc(ownerEmoji(n))} ${esc(PN(n))}</span>`).join(''):'';
 function lineSrc(name){const raw=String(name==null?'':name).replace(/\s+/g,' ').trim();if(!raw)return '';const low=raw.toLowerCase();if(/draft\s*kings/.test(low))return 'DraftKings';if(/\bespn\b/.test(low))return 'ESPN';return raw.split(/\s*[·,]\s*/)[0].trim()}
-function lineTxt(ln,away,home,final){
+function lineFavName(ln,g){
+  if(!ln)return '';
+  if(ln.fav_name)return ln.fav_name;
+  const id=ln.fav!=null?String(ln.fav):'';
+  if(!g||!id)return '';
+  if(g.home&&String(g.home.id)===id)return g.home.short||g.home.name||'';
+  if(g.away&&String(g.away.id)===id)return g.away.short||g.away.name||'';
+  return '';
+}
+function lineSpread(ln){return ln&&ln.sp!=null&&isFinite(+ln.sp)?+ln.sp:null}
+function lineTxt(ln,g,final){
   if(!ln)return null;
-  const fav=ln.fav_name?`<b>${esc(ln.fav_name)}</b> -${ln.sp!=null?ln.sp:'?'}`:'Pick\u2019em';
-  const ou=ln.ou!=null?` · O/U ${ln.ou}`:'';
+  const sp=lineSpread(ln),name=lineFavName(ln,g);
+  const fav=name&&sp!=null&&sp>0?`<b>${esc(name)}</b> -${sp}`:(sp!=null&&sp>0?`-${sp}`:'Pick\u2019em');
+  const ou=ln.ou!=null&&isFinite(+ln.ou)&&+ln.ou>0?` · O/U ${ln.ou}`:'';
   const src=lineSrc(ln.p);
   return `${final?(ln.type==='close'?'Closing line':'Last line'):'Line'}: ${fav}${ou}${src?` <span class="mut">· ${esc(src)}</span>`:''}`}
 function gWentOt(g){const n=a=>Array.isArray(a)?a.length:0,lv=g&&g._lv&&g._lv.ls;return Math.max(n(g&&g.away&&g.away.ls),n(g&&g.home&&g.home.ls),n(lv&&lv.a),n(lv&&lv.h))>2}
@@ -1719,7 +1730,7 @@ function gameCard(g){
   if(g.round)head+=`<span>· ${esc(g.round)}</span>`;else if(g.kind==='conf')head+='<span>· Conf tournament</span>';
   if(g.h2h)head+=`<span class="h2b">🥊 ${esc(g.away.owners.map(PN).join('/'))} vs ${esc(g.home.owners.map(PN).join('/'))}</span>`;
   if(g.civil)head+=`<span class="h2b">🙃 CIVIL WAR (${esc(g.away.owners.join('/'))} wins either way)</span>`;
-  let lt=lineTxt(g.line,g.away.short,g.home.short,fin);
+  let lt=lineTxt(g.line,g,fin);
   let foot=lt||(fin?'<span class="mut">No betting line on file for this game.</span>':'<span class="mut">📭 line not posted yet</span>');
   if(fin&&g.upset){const u=g.upset;
     if(g.kind==='ncaa'){if(u.is)foot+=` <span class="up${u.scored?'':' ns'}">😱 UPSET${u.scored?' +'+D.meta.points.upset:' (no bonus)'}</span>`;else if(u.is===false)foot+=' <span class="mut">· no upset</span>'}}
@@ -1831,8 +1842,10 @@ function gameLine(g){/* compact line for a team-row game (roster tab) */
   if(fin){if(g.kind==='ncaa'){if(g.res==='W'&&g.seed!=null&&g.oppSeed!=null&&+g.seed>+g.oppSeed)up=' <span class="up">😱 UPSET</span>'}   /* NCAA tournament: by seed, same seed never an upset */
     else if(g.upset)up=' <span class="up ns">🐶 Underdog win</span>'}
   const ln=g.ln;if(!ln)return fin?(up?`<div class="mut" style="font-size:12px">${up}</div>`:''):'<div class="mut" style="font-size:12px">📭 line not posted yet</div>';
-  const fav=ln.fav_name?`${esc(ln.fav_name)} -${ln.sp!=null?ln.sp:'?'}`:'Pick\u2019em';
-  return `<div class="mut" style="font-size:12px">${fin?(ln.type==='close'?'Closing':'Last'):'Line'}: ${fav}${ln.ou!=null?' · O/U '+ln.ou:''} · ${esc(ln.p||'')}${ln.we_dog?' · 🐶 underdog':ln.we_fav?' · ⭐ favorite':''}${up}</div>`}
+  const sp=lineSpread(ln),name=ln.fav_name||'';
+  const fav=name&&sp!=null&&sp>0?`${esc(name)} -${sp}`:(sp!=null&&sp>0?`-${sp}`:'Pick\u2019em');
+  const ou=ln.ou!=null&&isFinite(+ln.ou)&&+ln.ou>0?' · O/U '+ln.ou:'';
+  return `<div class="mut" style="font-size:12px">${fin?(ln.type==='close'?'Closing':'Last'):'Line'}: ${fav}${ou}${ln.p?' · '+esc(ln.p):''}${ln.we_dog?' · 🐶 underdog':ln.we_fav?' · ⭐ favorite':''}${up}</div>`}
 
 
 /* ---------- side bets ---------- */
@@ -2528,7 +2541,7 @@ function s29Nm(s){return s&&(s.short||s.name||s.id)||''}
 function s29Mgr(s){const names=(s&&s.owners||[]).map(n=>{try{return PN(n)}catch(e){return n}}).filter(Boolean);return names.length?' ('+names.join(', ')+')':''}
 function s29HasScore(s){return s&&s.score!=null&&s.score!==''&&isFinite(+s.score)}
 function s29Pair(g,scored){const a=s29Nm(g.away)+s29Mgr(g.away),h=s29Nm(g.home)+s29Mgr(g.home);if(scored&&s29HasScore(g.away)&&s29HasScore(g.home))return a+' '+g.away.score+' v '+h+' '+g.home.score;return a+' v '+h}
-function s29LineRow(g){const ln=g&&g.line;if(!ln)return '';const bits=[];if(ln.sp!=null&&isFinite(+ln.sp)&&+ln.sp>0&&ln.fav_name)bits.push(ln.fav_name+' -'+ln.sp);else if(ln.sp!=null&&isFinite(+ln.sp)&&!(+ln.sp))bits.push('Pick\'em');if(ln.ou!=null&&ln.ou!=='')bits.push('O/U '+ln.ou);return bits.length?'Line: '+bits.join(' \u00b7 '):''}
+function s29LineRow(g){const ln=g&&g.line;if(!ln)return '';const bits=[],sp=lineSpread(ln),name=lineFavName(ln,g);if(name&&sp!=null&&sp>0)bits.push(name+' -'+sp);else if(sp!=null&&sp>0)bits.push('-'+sp);else if(sp===0)bits.push('Pick\'em');if(ln.ou!=null&&isFinite(+ln.ou)&&+ln.ou>0)bits.push('O/U '+ln.ou);return bits.length?'Line: '+bits.join(' \u00b7 '):''}
 function s29EtWhen(g){const day=etLabel(etKey(g));if(isTBD(g))return day||'';let tm='';try{const d=new Date(g.start);if(!isNaN(d))tm=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit'}).format(d).replace(/\u202f/g,' ')+' ET'}catch(e){}if(day&&tm)return day+' \u00b7 '+tm;return day||tm}
 function s29LiveBit(g){const d=String(g&&g._lv&&g._lv.detail||'').replace(/\s+/g,' ').trim();if(!d)return 'Live';if(/^half(\s*time)?$/i.test(d)||/halftime/i.test(d))return 'Halftime';return d}
 function s29GameText(g){if(!g||!g.away||!g.home)return '';const line=s29LineRow(g),day=etLabel(etKey(g));if(g.status==='live'){const lines=[s29Pair(g,true)+' \u00b7 '+s29LiveBit(g)];if(line)lines.push(line);return lines.join('\n')}if(g.status==='final'){const lines=[s29Pair(g,true)+' \u00b7 '+(gWentOt(g)?'Final/OT':'Final')];if(day)lines.push(day);if(line)lines.push(line);return lines.join('\n')}const lines=[s29Pair(g,false)],when=s29EtWhen(g);if(when)lines.push(when);if(line)lines.push(line);return lines.join('\n')}
