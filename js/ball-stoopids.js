@@ -26,7 +26,7 @@ function nameOf(mid){return B.keyOf[mid]||''}
 function chatSafe(id0){const s=String(id0||'').toLowerCase().replace(/[^a-z0-9]/g,'');if(/^[a-z0-9]{6,20}$/.test(s))return s;let h=2166136261;const str=String(id0||'');for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return ('c'+('00000000'+(h>>>0).toString(16)).slice(-8)).slice(0,12)}
 async function readKey(key){const r=await realFetch(enc(key),{cache:'no-store'});if(!r.ok)return '';return r.text()}
 /* A missing requests document is an empty list. Any other failure must not look like an empty list, or the next full-document save would wipe rows the read never saw. */
-async function readReqBody(){const r=await realFetch(enc(reqKey()),{cache:'no-store'});if(r.status===404)return {ok:true,text:''};if(!r.ok)return {ok:false,status:r.status};return {ok:true,text:await r.text()}}
+async function readReqBody(){const r=await realFetch(enc(reqKey())+'?t='+Date.now(),{cache:'no-store'});if(r.status===404)return {ok:true,text:''};if(!r.ok)return {ok:false,status:r.status};return {ok:true,text:await r.text()}}
 async function betsGet(){
   const mids=B.mids||[];const logs={};
   await Promise.all(mids.map(async mid=>{logs[mid]=await readKey(FBN.Keys(id).base+'-bets-'+mid).catch(()=>'')}))
