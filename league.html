@@ -4,7 +4,8 @@
 <!--<S26W-TOP>--><script>
 /* s26w: the page always opens at the top. Only a bet/game link (#bets/<id>, #games/<id>) opened fresh (not reload / back-forward / restored tab)
    and not opened before on this device scrolls to its card, once. A repeat open of the same saved link is cleaned to the tab hash. */
-(function(){var W=window.S26W={deep:false,user:false,t0:Date.now()};
+(function(){var HK=window.HK||(function(){try{var q=new URLSearchParams(location.search).get('l')||'';q=String(q).replace(/[^A-Za-z0-9]/g,'').toLowerCase().slice(0,40);return 'fbn.'+(q?q+'.':'')}catch(e){return 'fbn.'}})();window.HK=HK;
+  var W=window.S26W={deep:false,user:false,t0:Date.now()};
   try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(e){}
   try{var m=/^#(bets|bets-2025-26|games)\/([A-Za-z0-9_-]{1,40})(?:$|[&?\/])/i.exec(location.hash||'');
     if(m&&!/^(open|request|tally|form|write|all|stoopid)$/i.test(m[2])){var nv=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0],fresh=!nv||nv.type==='navigate',seen={};
@@ -957,7 +958,7 @@ main,#main{padding-top:6px!important}
 /* SYNC7..SYNC14 moved to shared/ui.css (linked right after this style block) */
 
 </style>
-<link rel="stylesheet" href="shared/ui.css?v=1.86.0"><link rel="stylesheet" href="css/power.css">
+<link rel="stylesheet" href="shared/ui.css?v=1.86.0">
 <style>/*<SORT-FIT> phone All teams: the card scrolls sideways, the page does not. Names stay full size. */@media (max-width:480px){html body .card.tap.s27-rk{padding-left:4px!important;padding-right:4px!important}html body .card.tap.s27-rk th{font-size:11px!important}html body .card.tap.s27-rk td.n,html body .card.tap.s27-rk td.to,html body .card.tap.s27-rk td.cf{font-size:13px!important}html body .card.tap.s27-rk .s27-sort i{font-size:.7em!important;margin-left:0!important}}/*</SORT-FIT>*/</style>
 </head>
 <body>
@@ -984,7 +985,7 @@ main,#main{padding-top:6px!important}
 </section><!--</CHAT>-->
 <footer id="foot"></footer>
 <script src="shared/ui.js?v=1.86.3"></script>
-<script src="js/version.js"></script><script src="js/core.js"></script><script src="js/scoring.js"></script><script src="js/league-d.js"></script><script src="js/league-sched.js"></script><script src="js/store.js"></script><script src="assets/teams.js"></script><script src="js/league.js"></script><script src="js/power-gen.js"></script><script src="js/power-render.js"></script><script src="js/ball-settings.js"></script><script src="js/ball-bets.js"></script><script src="js/ball-stoopids.js"></script>
+<script src="js/version.js"></script><script src="js/core.js"></script><script src="js/league-d.js"></script><script src="js/ball-settings.js"></script><script src="js/ball-bets.js"></script><script src="js/ball-stoopids.js"></script>
 <script>
 /*<S25-SHARED>*/
 /* shared-s25.js : STOOPIDS s25 shared core (auto-settle reading + result math + ESPN matching, settle sounds, settle memes, taglines, reactions).
@@ -4075,7 +4076,7 @@ function njPut(k){if(!k)return;const ds=[];for(const x of k.a){const e=document.
   let best=ds[0],bn=0;for(const d of ds){const c=ds.filter(z=>Math.abs(z-d)<=2).length;if(c>bn||(c===bn&&Math.abs(d)<Math.abs(best))){bn=c;best=d}}
   if(Math.abs(best)>=1)njScroll(window.scrollY+best)}
 /*</NO-JUMP>*/
-function pinNavH(){const n=document.getElementById('nav');if(n)document.documentElement.style.setProperty('--navh',Math.ceil(n.getBoundingClientRect().height)+'px');const seg=document.querySelector('#main[data-tab="games"]>.segrow');document.documentElement.style.setProperty('--segh',(seg?Math.ceil(seg.getBoundingClientRect().height):0)+'px');const sub=document.querySelector('#main>.tabs.ob-seg.ob-desk');document.documentElement.style.setProperty('--subh',(sub&&sub.getClientRects().length?Math.ceil(sub.getBoundingClientRect().height):0)+'px');try{const m=document.getElementById('main');if(m&&document.body.classList.contains('hdr-away')&&sub&&sub.getClientRects().length){const r=m.getBoundingClientRect(),cs=getComputedStyle(m),pl=parseFloat(cs.paddingLeft)||0,pr=parseFloat(cs.paddingRight)||0,w=Math.max(0,m.clientWidth-pl-pr);document.documentElement.style.setProperty('--pin-l',(r.left+pl)+'px');document.documentElement.style.setProperty('--pin-w',w+'px');document.documentElement.style.setProperty('--pin-nav-l',r.left+'px');document.documentElement.style.setProperty('--pin-nav-w',(w+pl+pr)+'px')}}catch(e){}try{obEqual()}catch(e){}}
+function pinNavH(){const n=document.getElementById('nav');if(n)document.documentElement.style.setProperty('--navh',Math.ceil(n.getBoundingClientRect().height)+'px');const seg=document.querySelector('#main[data-tab="games"]>.segrow');document.documentElement.style.setProperty('--segh',(seg?Math.ceil(seg.getBoundingClientRect().height):0)+'px');const sub=[...document.querySelectorAll('#main>.tabs.ob-seg')].find(e=>e.getClientRects().length)||null;document.documentElement.style.setProperty('--subh',(sub?Math.ceil(sub.getBoundingClientRect().height):0)+'px');const desk=sub&&sub.classList.contains('ob-desk')?sub:null;try{const m=document.getElementById('main');if(m&&document.body.classList.contains('hdr-away')&&desk){const r=m.getBoundingClientRect(),cs=getComputedStyle(m),pl=parseFloat(cs.paddingLeft)||0,pr=parseFloat(cs.paddingRight)||0,w=Math.max(0,m.clientWidth-pl-pr);document.documentElement.style.setProperty('--pin-l',(r.left+pl)+'px');document.documentElement.style.setProperty('--pin-w',w+'px');document.documentElement.style.setProperty('--pin-nav-l',r.left+'px');document.documentElement.style.setProperty('--pin-nav-w',(w+pl+pr)+'px')}}catch(e){}try{obEqual()}catch(e){}}
 addEventListener('resize',()=>{try{pinNavH()}catch(e){}});
 /* Header (photo + STOOPIDS) is ordinary page content: it scrolls away and comes back only at the very top.
    Once it has left, the main nav stays fixed and the page's second row stays stuck under it, in both directions.
@@ -4100,7 +4101,7 @@ addEventListener('resize',()=>{try{pinNavH()}catch(e){}});
   var scrollTo0=window.scrollTo.bind(window),scrollBy0=window.scrollBy.bind(window);
   window.scrollTo=function(){hush();return scrollTo0.apply(window,arguments)};
   window.scrollBy=function(){hush();return scrollBy0.apply(window,arguments)};
-  function deskBets(){var m=document.getElementById('main');return !!(m&&window.matchMedia('(min-width:1000px)').matches&&m.querySelector(':scope>.tabs.ob-seg.ob-desk'))}
+  function deskBets(){var m=document.getElementById('main');return !!(m&&[...m.querySelectorAll(':scope>.tabs.ob-seg')].some(function(e){return e.getClientRects().length}))}
   function enter(y){
     if(away)return;
     var n=navEl(),line=pinLine();if(!n||line<8)return;
@@ -4141,10 +4142,11 @@ addEventListener('resize',()=>{try{pinNavH()}catch(e){}});
   addEventListener('touchstart',function(e){ty=e.touches&&e.touches[0]?e.touches[0].clientY:0},{passive:true});
   addEventListener('touchmove',function(e){
     var ny=e.touches&&e.touches[0]?e.touches[0].clientY:ty,d=ny-ty;ty=ny;
-    if(!mute&&away&&(window.scrollY||0)<=0&&d>12)show(false);
+    if(!mute&&away&&(window.scrollY||0)<=0&&d>12){if(deskBets()){var m=document.getElementById('main');if(m&&m.scrollTop>0)return}show(false)}
   },{passive:true});
   addEventListener('keydown',function(e){
     if(!away||mute||(window.scrollY||0)>0)return;
+    if(deskBets()){var m=document.getElementById('main');if(m&&m.scrollTop>0)return}
     if(e.key==='ArrowUp'||e.key==='PageUp'||e.key==='Home')show(false);
   });
   addEventListener('resize',function(){
@@ -4530,10 +4532,10 @@ function s24FilterBar(bets,me,ph){const settledOnly=ph==='Search settled bets';
 /*<ST-REFRESH>*/// Standings Refresh: re-fetch data.js + an immediate live-scores check, with visible feedback ("Refreshing…", then "checked just now")
 let ST_CHK=0;function stRefresh(btn){/*REFRESH-NOW shared*/if(window.SHARED_UI&&SHARED_UI.refreshNow){ST_CHK=Date.now();LV.fails=0;LV.paused=false;return SHARED_UI.refreshNow('.segref:not(.gref)',[()=>new Promise(r=>load(r)),()=>lvCheck(true)],()=>render())}if(btn){btn.disabled=true;btn.textContent='Refreshing\u2026'}ST_CHK=Date.now();try{lvManual()}catch(e){}load();setTimeout(()=>{try{const u=document.getElementById('stUpd'),d=genDate();if(u)u.textContent='Updated '+(d?relAgo(Date.now()-d.getTime()):'')+(window.SHARED_UI&&SHARED_UI.checkedText?SHARED_UI.checkedText(ST_CHK):' \u00b7 checked just now');const b=document.querySelector('.segref');if(b){b.disabled=false;b.innerHTML='&#8635; Refresh'}}catch(e){}},1500)}/*</ST-REFRESH>*/
 function load(cb){
-  const s=document.createElement('script');s.src='js/ball-settings.js?v='+Date.now();
-  s.onload=async()=>{try{await BALL.load()}catch(e){if(!D){$('#main').innerHTML=BALL.landingHtml();if(typeof cb==='function')cb();return}}D=BALL.D;D._base=D.bets;applyShared();/*<REFRESH-NOW>*/try{lvReapply()}catch(e){}/*</REFRESH-NOW>*/try{cmLoad()}catch(e){}render();try{presInit()}catch(e){}try{chatInit()}catch(e){}/*<REFRESH-NOW>*/try{lvInit()}catch(e){}/*</REFRESH-NOW>*/
+  const s=document.createElement('script');s.src='data.js?v='+Date.now();
+  s.onload=async()=>{try{await BALL.attach(window.BALL_DATA)}catch(e){if(!D){$('#main').innerHTML=BALL.landingHtml();if(typeof cb==='function')cb();return}}D=window.BALL_DATA;D._base=D.bets;applyShared();/*<REFRESH-NOW>*/try{lvReapply()}catch(e){}/*</REFRESH-NOW>*/try{cmLoad()}catch(e){}render();try{presInit()}catch(e){}try{chatInit()}catch(e){}/*<REFRESH-NOW>*/try{lvInit()}catch(e){}/*</REFRESH-NOW>*/
     /*<BETS-2627>*/try{b27Init()}catch(e){}/*</BETS-2627>*//*<S24-EDIT>*/try{s24AfterLoad()}catch(e){}/*</S24-EDIT>*/if(typeof cb==='function')cb()};   /* chatInit = CHAT hook */
-  s.onerror=()=>{if(typeof cb==='function')cb();if(!D)$('#main').innerHTML='<div class="card">Couldn\u2019t load the latest data. Try reloading the page.'+(ADMIN?' (data.js missing: run <code>python3 refresh.py</code> first.)':'')+'</div>'};
+  s.onerror=()=>{if(typeof cb==='function')cb();if(!D)$('#main').innerHTML='<div class="card">Couldn\u2019t load the latest data. Try reloading the page.'+(ADMIN?' (data.js missing: run <code>node tools/build_ball_data.js</code> first.)':'')+'</div>'};
   document.head.appendChild(s);
 }
 load();setInterval(()=>load(),2*60*1000);   /* re-read the published data.js. The scores themselves update when the refresh job runs (every 10 min once this branch is on main). */
@@ -4974,6 +4976,11 @@ html body .gfin.open>.gsum>span:not(.gst):not(.gch){display:none!important}
 .cm-acts .btn,.cm-row .btn{margin-top:6px}
 /* Bets sub-tabs stay frozen under the main tab row. The open section's heading is scrolled to sit just below them. */
 html body #main>.tabs.ob-seg{position:sticky!important;top:var(--navh,56px)!important;z-index:35!important;background:var(--bg,#0e121b)!important;margin-bottom:8px!important}
+html body #main>.b27-allh,html body #main .b27-grid>.card,html body #main>.entry-hd{scroll-margin-top:calc(var(--navh,56px) + var(--subh,44px) + 8px)}
+body.hdr-away #main>.tabs.ob-seg.ob-phone{position:fixed!important;top:var(--navh,56px)!important;left:0!important;right:0!important;width:100%!important;max-width:none!important;margin:0!important;z-index:37!important;box-sizing:border-box!important;background:var(--bg,#0e121b)!important;padding:4px 12px 8px!important}
+body.hdr-away:has(#main>.tabs.ob-seg.ob-phone){overflow:hidden}
+body.hdr-away:has(#main>.tabs.ob-seg.ob-phone) #main{position:fixed!important;top:calc(var(--navh,56px) + var(--subh,44px))!important;left:0;right:0;bottom:0;width:100%;margin:0!important;overflow:auto;z-index:36;box-sizing:border-box;padding-top:8px!important;padding-bottom:88px!important;background:var(--bg,#0e121b);scroll-padding-top:8px;scroll-snap-type:y mandatory}
+body.hdr-away:has(#main>.tabs.ob-seg) #main>h2,body.hdr-away:has(#main>.tabs.ob-seg) #main>.card,body.hdr-away:has(#main>.tabs.ob-seg) #main .b27-grid>.card,body.hdr-away:has(#main>.tabs.ob-seg) #main>.entry-hd,body.hdr-away:has(#main>.tabs.ob-seg) #main>.entry-pair{scroll-snap-align:start;scroll-margin-top:8px}
 html body .entry-hd.entry-hd-rq,html body .entry-hd.entry-hd-wiu{margin-top:0!important}
 html body #main[data-tab="games"]>.segrow{position:sticky!important;top:var(--navh,56px)!important;z-index:36!important;background:var(--bg,#0e121b)!important;margin-bottom:0!important}
 html body #main[data-tab="games"]>.gfone{position:sticky!important;top:calc(var(--navh,56px) + var(--segh,0px))!important;z-index:35!important;background:var(--bg,#0e121b)!important;padding-bottom:6px!important}
@@ -5031,7 +5038,7 @@ html body .b27-opps.pool-pick>.b27-util>.s27-selb{box-sizing:border-box;width:10
 @media (min-width:1000px){
  html body #main>.tabs.ob-seg.ob-desk{display:flex!important;flex-flow:row nowrap!important;justify-content:flex-start!important;align-items:center!important;width:100%!important;max-width:100%!important;gap:6px!important;margin:0 0 12px!important;padding:0 0 8px!important;background:var(--bg,#0e121b)!important;position:sticky!important;top:var(--navh,56px)!important;z-index:36!important}
  body.hdr-away:has(#main>.tabs.ob-seg.ob-desk){overflow:hidden}
- body.hdr-away:has(#main>.tabs.ob-seg.ob-desk) #main{position:fixed!important;top:calc(var(--navh,55px) + var(--subh,52px))!important;left:0;right:0;bottom:0;width:min(100%,var(--nav-max,1080px));margin:0 auto!important;overflow:auto;z-index:36;box-sizing:border-box;padding-bottom:88px!important;background:var(--bg,#0e121b)}
+ body.hdr-away:has(#main>.tabs.ob-seg.ob-desk) #main{position:fixed!important;top:calc(var(--navh,55px) + var(--subh,52px))!important;left:0;right:0;bottom:0;width:min(100%,var(--nav-max,1080px));margin:0 auto!important;overflow:auto;z-index:36;box-sizing:border-box;padding-top:8px!important;padding-bottom:88px!important;background:var(--bg,#0e121b);scroll-padding-top:8px;scroll-snap-type:y mandatory}
  body.hdr-away:has(#main>.tabs.ob-seg.ob-desk)::before{content:"";position:fixed;z-index:35;top:0;left:0;right:0;height:calc(var(--navh,55px) + var(--subh,52px));background:var(--bg,#10131a);pointer-events:none}
  body.hdr-away:has(#main>.tabs.ob-seg.ob-desk) nav#nav{left:var(--pin-nav-l,0)!important;right:auto!important;width:var(--pin-nav-w,min(100%,var(--nav-max,1080px)))!important;max-width:none!important;margin:0!important}
  body.hdr-away #main>.tabs.ob-seg.ob-desk{position:fixed!important;top:var(--navh,55px)!important;left:var(--pin-l,16px)!important;right:auto!important;width:var(--pin-w,calc(100% - 32px))!important;max-width:none!important;margin:0!important;padding-left:0!important;padding-right:0!important;justify-content:flex-start!important;z-index:36!important;box-sizing:border-box;background:transparent!important}

@@ -1,6 +1,6 @@
 # Stoopids/fantasy-bball - automatic score + rank refresh (approved by Paul, Nov 2 2026).
 # Runs scripts/refresh_job.py --league-only (copy of refresh-job c7a44228 + league-only mode), which
-# writes ONLY data/scores.json, data/tournament.json, data/net.json in FORMAT.md (cf4fc8b4) format via the
+# writes data/scores.json, data/tournament.json, data/net.json, then data.js (one static league file) via the
 # vendored, unchanged tools/refresh_data.py (6559e8a1). Never touches assets/teams.js (meta.p / meta.r / meta.o),
 # bets, picks or rosters. Backup = git history: every refresh is its own commit, so the previous files are
 # `git show HEAD~1:data/<file>`; roll back with `git revert <sha>`.
@@ -47,15 +47,19 @@ jobs:
           done
           # sanity: never sample, never a demo file
           python3 -c "import json;[exit('sample true in '+f) for f in ('data/scores.json','data/tournament.json') if json.load(open(f)).get('sample')]"
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: build data.js (one file, read-only textdb)
+        run: node tools/build_ball_data.js
       - name: commit data/ only (bot identity)
         run: |
           set -eu
           git config user.name  "fantasy-bball-refresh[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- data/scores.json data/tournament.json data/net.json
+          git add -- data/scores.json data/tournament.json data/net.json data.js
           if git diff --cached --quiet; then echo "no data change"; exit 0; fi
-          # refuse if anything outside data/ is staged
-          if git diff --cached --name-only | grep -v '^data/'; then echo "non-data change staged, aborting"; exit 1; fi
+          # refuse if anything outside the published data files is staged
+          if git diff --cached --name-only | grep -v -E '^(data/|data\.js$)'; then echo "non-data change staged, aborting"; exit 1; fi
           git commit -m "data: auto refresh $(date -u +%FT%H:%MZ)"
           git pull --rebase --autostash -q && git push -q
       - uses: actions/upload-artifact@v4
