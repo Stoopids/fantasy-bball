@@ -1,0 +1,57 @@
+/* Ball page: bets read the same before and after the translation, private links are the sign-in, and nothing points at STOOPIDS data. */
+const fs=require('fs'),path=require('path'),assert=require('assert');
+const root=path.join(__dirname,'..');
+const read=f=>fs.readFileSync(path.join(root,f),'utf8');
+const bad=['stoopids-bets-2627-9eaa4f66','stoopids-requests-2627-9eaa4f66','stoopids-presence-23658198955328729a557ddb','stoopids-commish-2627-9eaa4f66','e66a42e9a43f14938ec07992f73a26193c7a0cfe9af88d1e409bce63f454f74e','https://stoopids.github.io/stoopids/','STOOPIDS_DATA','<script src="archive.js'];
+for(const f of ['league.html','shared/ui.js','shared/ui.css','js/ball-settings.js','js/ball-stoopids.js','js/ball-bets.js','stoopid-bet.js']){
+  const t=read(f);
+  for(const w of bad)assert.ok(!t.includes(w),f+' points at STOOPIDS: '+w.slice(0,40));
+}
+const html=read('league.html');
+const layer=read('js/ball-stoopids.js');
+assert.ok(html.includes('shared/ui.js?v=1.86.0'),'ui.js is not the STOOPIDS 1.86.0 copy');
+assert.ok(html.includes("const b27Who=()=>{const w=BALL.me;"),'bets are not limited to the private link');
+assert.ok(layer.includes('checkMgrSecret'),'private link is not checked');
+assert.ok(layer.includes('fbn.me.'), 'saved private link is not read');
+assert.ok(layer.includes('LURL'),'a #as / #k link is not read');
+assert.ok(!html.includes('class="who-pick"'),'name picker is still on the page');
+assert.ok(!html.includes("['archive'"),'Archive tab was added without Ball archive data');
+assert.ok(html.includes('HZAMCHYBBTBBR76C')===false,'the real league id must live in ball-settings.js, not be pasted through the build');
+assert.ok(read('js/ball-settings.js').includes('HZAMCHYBBTBBR76C'));
+assert.ok(read('js/ball-settings.js').includes("commissioner:\"Paul\""));
+
+const BB=require(path.join(root,'js/ball-bets.js'));
+const paul='a'.repeat(16),ken='b'.repeat(16);
+const ev=(o)=>({u:'u'+o.id,ts:1700000000000+o.n,...o});
+const open=ev({k:'p',id:'betopen1',n:1,to:ken,amt:10,a:1,b:1,text:'Duke -3.5',postedBy:paul,postedAt:1700000000001});
+const settledP=ev({k:'p',id:'betset01',n:2,to:ken,amt:20,a:2,b:1,text:'Kansas covers',v:25});
+const settledS=ev({k:'s',id:'betset01',n:3,r:'b',v:25,u:'uset01',ts:1700000005000});
+const anyone=ev({k:'p',id:'betany01',n:4,to:'*',amt:5,a:1,b:1,text:'Open to the league'});
+const logText=JSON.stringify({v:1,ev:[open,settledP,settledS,anyone]});
+const logs={ [paul]:logText,[ken]:'' };
+const nameOf={[paul]:'Paul',[ken]:'Ken'};
+const before=BB.reduce({[paul]:BB.parseLog(logText),[ken]:[]},[paul,ken],1700000009000).map(b=>BB.facts(b,nameOf));
+const after=BB.view(logs,nameOf,'').facts;
+assert.deepStrictEqual(after,before,'translated facts differ from the Ball log');
+assert.strictEqual(logs[paul],logText,'translation rewrote a stored log');
+const doc=BB.view(logs,nameOf,'');
+const byId=Object.fromEntries(doc.bets.map(b=>[b.id,b]));
+assert.strictEqual(byId.betopen1.status,'open');
+assert.strictEqual(byId.betopen1.backer,'Paul');
+assert.strictEqual(byId.betopen1.other,'Ken');
+assert.strictEqual(byId.betopen1.amt,10);
+assert.strictEqual(byId.betopen1.text,'Duke -3.5');
+assert.strictEqual(byId.betset01.status,'backer');
+assert.strictEqual(byId.betset01.amt,20);
+assert.ok(!byId.betany01,'an unaccepted offer was written as an agreed bet');
+assert.ok(doc.reqs.some(r=>r.id==='betany01'&&r.by==='Paul'&&r.txt==='Open to the league'));
+const posted=ev({k:'p',id:'betfor001',n:5,to:paul,for:ken,amt:5,a:1,b:1,text:'Florida -2.5 vs Houston +2.5',v:25,postedBy:paul});
+const postedLog=JSON.stringify({v:1,ev:[posted]});
+const postedView=BB.view({[paul]:postedLog,[ken]:''},nameOf,'');
+assert.strictEqual(postedLog,JSON.stringify({v:1,ev:[posted]}));
+assert.strictEqual(postedView.bets.length,1);
+assert.strictEqual(postedView.bets[0].backer,'Ken');
+assert.strictEqual(postedView.bets[0].other,'Paul');
+assert.strictEqual(postedView.bets[0].status,'open');
+assert.strictEqual(postedView.bets[0].text,'Florida -2.5 vs Houston +2.5');
+console.log('ok',before.length,'bets match before and after; Ball does not point at STOOPIDS');
