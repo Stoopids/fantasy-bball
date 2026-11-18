@@ -481,7 +481,17 @@ def main(argv=None):
                 x["line"] = old_ln[str(x["id"])]
         # ESPN's scoreboard drops odds once a game tips off: one serial core-odds call per started game still missing a line (recent days only, capped)
         lo3 = (today - dt.timedelta(3)).isoformat()
-        miss = [x for x in uniq if not x.get("line") and x["status"] in ("live", "final") and lo3 <= x["day"] <= today.isoformat()][:int(os.environ.get("LINE_FETCH_CAP", "60"))]
+        lo1 = (today - dt.timedelta(1)).isoformat()
+        hi10 = (today + dt.timedelta(10)).isoformat()
+        def needs_line(x):
+            if x.get("line") or x.get("status") in ("canceled", "postponed"):
+                return False
+            pool_hit = str((x.get("home") or {}).get("id")) in pset or str((x.get("away") or {}).get("id")) in pset
+            if x["status"] in ("live", "final") and lo3 <= x["day"] <= today.isoformat():
+                return True
+            # Same window STOOPIDS uses for the Games tab: upcoming pool games, about the next 10 days.
+            return pool_hit and lo1 <= x["day"] <= hi10
+        miss = [x for x in uniq if needs_line(x)][:int(os.environ.get("LINE_FETCH_CAP", "160"))]
         for x in miss:
             try:
                 time.sleep(max(0.0, 1.0 - MIN_GAP))
