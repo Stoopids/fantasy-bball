@@ -369,6 +369,8 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
     function parlayText(r,kind,acc){return copyText(r,kind,acc)}
     function lineDayLbl(r){var rd=r&&r.rd,d=rd&&rd.d||'';if(/^\d{4}-\d{2}-\d{2}/.test(d)){var p=String(d).split('-'),mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+p[1]-1];return mo+' '+Number(p[2])}if(r&&r.legs&&r.legs.length>=2)return parlayDay(r);return String(r&&r.date||'').replace(/,?\s+20\d\d$/,'').replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+/i,'').trim()}
     function lineFace(r){var rd=r&&r.rd;if(!rd)return '';if(rd.k==='total'&&rd.l!=null){var side=rd.ou==='u'?'Under':'Over';return side+' '+rd.l+' v '+(side==='Over'?'Under':'Over')+' '+rd.l}if(!rd.t||!rd.o)return '';if(rd.k==='spread'){var n=+rd.l;return rd.t+' '+(n===0?'PK':(n>0?'+':'')+n)+' v '+rd.o}if(rd.k==='ml')return rd.t+' (no points) v '+rd.o;return ''}
+    /* A picked spread stores "Arizona -4" / "UConn +4" even when no reading was saved. A written sentence stays as written. */
+    function spreadFromLab(r){if(!r||r.k!=='sp'||!r.lab)return '';var m=/^(.+?)\s+([+-]?\d+(?:\.\d+)?|pk)$/i.exec(String(r.lab).trim());if(!m)return '';var opp=String(r.other||'').replace(/\s+[+-]?\d+(?:\.\d+)?$/i,'').replace(/\s+pk$/i,'').trim();if(!opp)return '';var n=/pk/i.test(m[2])?0:+m[2];if(!isFinite(n))return '';return m[1]+' '+(n===0?'PK':(n>0?'+':'')+n)+' v '+opp}
     /* Ready for someone else to settle: the viewer is in the bet, and the backer (Only X can enter result) has to enter it.
        Four lines. Winner is the name the page already suggested from the final, or omitted when there is no result or it is a push. */
     function settleWaitText(r){if(!r||!r.settleFor||r.n==null)return '';var face=lineFace(r),day=lineDayLbl(r),body=[];
@@ -382,7 +384,7 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
     /* One copy for the form, the open-request card, an accepted bet, and a parlay. Built from the stored game reading, stake, names, odds and expiry. The saved sentence is not the source. */
     function copyText(r,kind,acc){if(!r)return '';if(kind==='settle')return settleWaitText(r);var o=r.odds||[1,1],od=+o[0]===+o[1]?'':' \u00b7 '+o[0]+'-'+o[1],left=nmOf(r.by),right=copyWho(r,kind,acc),bomb='\uD83D\uDCA3 $'+r.amt+' '+left+' v '+right+od+' \uD83D\uDCA3',exp=expLbl(r),day=lineDayLbl(r),last=[day,exp?'Exp: '+exp:''].filter(Boolean).join(' \u00b7 '),lines=[bomb];
       if(r.legs&&r.legs.length>=2){var legs=r.legs.map(legLine).filter(Boolean);if(!legs.length)return '';lines.push('Parlay \u00b7 '+r.legs.length+' legs');legs.forEach(function(x){lines.push(x)})}
-      else{var face=lineFace(r);if(!face&&r.free){face=String(r.txt||r.lab||'').replace(/\s+/g,' ').trim();if(!day&&r.exp){day=freeDay(r.exp);last=[day,exp?'Exp: '+exp:''].filter(Boolean).join(' \u00b7 ')}}if(!face)return '';lines.push(face)}
+      else{var face=lineFace(r)||spreadFromLab(r);if(!face&&r.free){face=String(r.txt||r.lab||'').replace(/\s+/g,' ').trim();if(!day&&r.exp){day=freeDay(r.exp);last=[day,exp?'Exp: '+exp:''].filter(Boolean).join(' \u00b7 ')}}if(!face)return '';lines.push(face)}
       if(last)lines.push(last);
       if(kind==='acc')lines.push('Accepted');else if(kind==='del')lines.push('Deleted');else if(kind==='close')lines.push('Closed \u00b7 '+tk(r).length+' stoops in');
       return lines.filter(Boolean).join('\n')}
@@ -451,11 +453,13 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
         catch(x){S.msg='Could not save that.';S.bad=true}S.busy=false;A.render();return}
       if(k==='caccept'){var ra=S.list.find(function(x){return x.id===v}),off=ra&&ra.offer;if(!ra||ra.by!==me||!off||off.ok)return;if(reqHash(offerKey(off))!==st){S.arm=null;S.msg='That counter changed. Review the exact terms.';S.bad=true;A.render();return}
         if(!armHold(v,'caccept',offerKey(off)))return;
-        S.busy=true;S.didBet=S.didBet||{};A.render();
-        try{var preview=Object.assign({},ra,{amt:off.amt,odds:off.odds.slice(),lab:off.lab,txt:off.txt,k:'txt'});
+        var preview=Object.assign({},ra,{amt:off.amt,odds:off.odds.slice(),lab:off.lab,txt:off.txt,k:'txt'});
+        say(waText(preview,'acc',off.by),'Accepted');
+        S.busy=true;S.didBet=S.didBet||{};S.msg='Accepting…';S.bad=false;A.render();
+        try{
           if(!S.didBet[v]){await A.placeBet(preview,off.by);S.didBet[v]=1}
           await write(function(c){return c.map(function(x){if(x.id!==v||x.by!==me||!x.offer||offerKey(x.offer)!==offerKey(off))return x;var y=Object.assign({},x,{amt:off.amt,odds:off.odds.slice(),lab:off.lab,txt:off.txt,k:'txt',took:(x.took||[]).concat([{m:off.by,at:Date.now(),counter:1}])});y.offer=Object.assign({},x.offer,{ok:true});return y})},function(c){var x=c.find(function(y){return y.id===v});return !!(x&&x.offer&&x.offer.ok&&x.amt===off.amt&&x.txt===off.txt)});
-          say(waText(preview,'acc',off.by),'Accepted');S.posted=true;noteCopy(S.copied)}
+          S.posted=true;noteCopy(S.copied)}
         catch(x){S.msg='Could not accept that counter. The original terms were not changed.';S.bad=true}
         S.busy=false;A.render();return}
       if(k==='cp'){var rc=S.list.find(function(x){return x.id===v});if(rc)copy(waText(rc,'new'));return}   /* STEP14-COPY */
@@ -500,14 +504,14 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
           else await write(function(c){return c.filter(function(x){return x.status==='open'||now-(x.endedAt||x.at)<7*86400000}).concat([r])},function(c){return c.some(function(x){return x.id===r.id})});S.f=nf();S.posted=true;noteCopy(S.copied)}
         catch(x){S.msg=x&&x.message==='late'?'Too late to edit: it was accepted or removed.':'Could not send it. Try again.';S.bad=true;if(x&&x.message==='late'){S.edit=null;S.f=nf()}}S.busy=false}
       else if(k==='dec'||k==='cancel'){var gateR=S.list.find(function(x){return x.id===v});if(!gateR||(k==='dec'?(!sees(gateR)||gateR.by===me):gateR.by!==me))return;if(!armHold(v,k==='dec'?'dec':'cancel',reqTerms(gateR)))return;if(k==='cancel'){if(tk(gateR).length){S.msg='Too late to delete: someone accepted. Use Close to others instead.';S.bad=true;A.render();return}say(waText(gateR,'del'),'Request deleted')}S.busy=true;A.render();try{await write(function(c){return c.map(function(x){return x.id!==v?x:k==='dec'?Object.assign({},x,{dec:(x.dec||[]).concat([me])}):(tk(x).length?x:Object.assign({},x,{status:'deleted',endedAt:now}))})},function(c){var x=c.find(function(y){return y.id===v});return !x||(k==='dec'?(x.dec||[]).indexOf(me)>=0:(x.status==='deleted'||!!tk(x).length))});var xd=S.list.find(function(y){return y.id===v});if(k==='dec'){S.msg='Declined.';S.bad=false}else if(xd&&xd.status!=='deleted'){S.posted=false;S.fb='';S.msg='Too late to delete: someone accepted. Use Close to others instead (ignore the copied message).';S.bad=true;S.busy=false;A.render();return}else{S.posted=true;noteCopy(S.copied)}}catch(x){S.msg='Could not save that. Try again.';S.bad=true}S.busy=false}
-      else if(k==='acc'){var accR=S.list.find(function(x){return x.id===v});if(!accR)return;if(!armHold(v,'acc',reqTerms(accR)))return;S.busy=true;S.msg='Accepting…';S.bad=false;A.render();
+      else if(k==='acc'){var accR=S.list.find(function(x){return x.id===v});if(!accR)return;if(!armHold(v,'acc',reqTerms(accR)))return;say(waText(accR,'acc',me),'Accepted');S.busy=true;S.msg='Accepting…';S.bad=false;A.render();
         try{var ok=function(x){return x.id===v&&live(x,Date.now())&&x.to.indexOf(me)>=0&&tk(x).indexOf(me)<0&&x.by!==me};
           var back=await write(function(c){return c.map(function(x){return ok(x)?Object.assign({},x,{took:(x.took||[]).concat([{m:me,at:Date.now()}])}):x})},function(c){var x=c.find(function(y){return y.id===v});return !x||tk(x).indexOf(me)>=0||!live(x,Date.now())});
           var x=back.find(function(y){return y.id===v}),pos=x?tk(x).indexOf(me):-1;
           if(pos<0||pos>=slots(x)){   /* full (or closed) by the time my slot landed: take my slot back, no bet */
             if(pos>=0)await write(function(c){return c.map(function(y){return y.id===v?Object.assign({},y,{took:(y.took||[]).filter(function(z){return z.m!==me})}):y})},function(c){var y=c.find(function(z){return z.id===v});return !y||tk(y).indexOf(me)<0});
-            S.msg='Sorry, it is full: every slot was taken.';S.bad=true}
-          else{await A.placeBet(x,me);say(waText(x,'acc',me),'Accepted');S.posted=true;noteCopy(S.copied)}}
+            S.msg='Sorry, it is full: every slot was taken.';S.bad=true;S.fb=null}
+          else{await A.placeBet(x,me);S.posted=true;noteCopy(S.copied)}}
         catch(y){S.msg='Could not accept it. Try again.';S.bad=true}S.busy=false}
       A.render()}
     function input(k,v){var f=S.f;if(k==='gid'){f.gid=v;f.side='';f.text=''}else if(k==='text'){f.text=v;f.rd=null;f.lineKind='';return}else if(k==='mode'){f.mode=v;f.expPick=true}else if(k==='amtTxt'){f.amtTxt=v;f.amt=null;return}else if(k==='linePts'){f.linePts=v;f.lineKind='custom';f.lineOn=true;applyLine(f,true);A.render();return}else if(k==='oddTxt'){f.oddTxt=v;var mo=/^\s*(\d{1,3})\s*[-:\/]\s*(\d{1,3})\s*$/.exec(v);if(mo&&+mo[1]>0&&+mo[2]>0)f.odds=[+mo[1],+mo[2]];if(f.parlay)pySync(f,false);else if(f.lineKind==='none'||f.lineKind==='custom')applyLine(f);A.render();return}else if(k==='wkMenu'){f.whenPick=true;f.wk=v==='date'||v==='season'||v==='game'?v:'unknown';if(f.wk!=='date')f.est=''}else f[k]=v;A.render()}

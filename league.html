@@ -3380,6 +3380,7 @@ function b27Edit(){U.confirm=false;render()}
   if(U.editOf)return b27SaveEdit();
   const e=b27FormOK();if(e){b27Err(e);U.confirm=false;render();return}
   const nbs=b27BetsFromForm(),ids=nbs.map(b=>b.id),clip=nbs.map(b27ClipText).filter(Boolean).join('\n\n');
+  const copyP=clip?b27CopyNow(clip):Promise.resolve(false);
   U.busy=true;U.msg='Saving…';U.msgBad=false;U.clip=null;render();
   try{
     /* ONE read-modify-write for the whole batch (+ read-back, one retry): only the bets whose id is not there yet are added; done when every id is present */
@@ -3389,7 +3390,7 @@ function b27Edit(){U.confirm=false;render()}
       return cur.concat(miss.map(b=>Object.assign({},b,{n:++n,created_at:at,settled_at:null})))},cur=>ids.every(id=>cur.some(b=>b.id===id))/*<S24-EDIT>*/&&(!edOf||!cur.some(c=>c.id===edOf&&c.status==='open'))/*</S24-EDIT>*/);
     ids.forEach(id=>U.mine.add(id));b27Apply(back);
     const mine=ids.map(id=>back.find(b=>b.id===id)).filter(Boolean);
-    {const m=mine[0],k=m?b27Opps(m).length:1;let copied=false;try{copied=clip?await b27CopyNow(clip):false}catch(err){copied=false}U.msg='Placed! Bet #'+(m?m.n:'')+(k>1?' against '+k+' managers ('+b27Num(U.amt)+' each)':'')+' is unsettled. You can undo it for 5 minutes.';if(copied){U.clip=null;betCopied()}else{U.clip=clip;U.msg+=' Could not copy.'}U.msgBad=false;/*<S25C-FX>*/s25PlacedFx(m&&m.id)/*</S25C-FX>*/}
+    {const m=mine[0],k=m?b27Opps(m).length:1;let copied=false;try{copied=await copyP}catch(err){copied=false}U.msg='Placed! Bet #'+(m?m.n:'')+(k>1?' against '+k+' managers ('+b27Num(U.amt)+' each)':'')+' is unsettled. You can undo it for 5 minutes.';if(copied){U.clip=null;betCopied()}else{U.clip=clip;U.msg+=' Could not copy.'}U.msgBad=false;/*<S25C-FX>*/s25PlacedFx(m&&m.id)/*</S25C-FX>*/}
     U.undoG=null;/*<S24-EDIT>*/if(edOf){const o=back.find(x=>x.id===edOf);U.msg+=o?' It replaces bet #'+o.n+' (now cancelled).':'';U.editOf=null}/*</S24-EDIT>*/
     U.opps=[];U.backer=null;U.pz=null;U.amt=5;U.amtCustom=false;U.amtTxt='';U.amtErr='';U.odds=[1,1];U.custom=false;U.customTxt='';U.oddsErr='';U.text='';U.est='';U.wk='game';U.whenPick=false;U.confirm=false;U.fids={};U.gid=null;/*<S25E-RD>*/U.rdEd=null;U.rdOpen=false;/*</S25E-RD>*/
     clearTimeout(U.undoT);U.undoT=setTimeout(()=>{if(tab==='bets27')render()},PULK.undoMs+300);
@@ -3423,11 +3424,11 @@ function b27DropStale(){if(U.askDel){const b=U.doc&&U.doc.bets&&U.doc.bets.find(
 /*</MULTI-BET>*/async function b27SetStatus(id,status/*<S25>*/,extra/*</S25>*/){
   if(U.busy)return;if(!b27SetStatus.skip&&b27TapLock())return;b27SetStatus.skip=false;const b0=U.doc&&U.doc.bets&&U.doc.bets.find(x=>x.id===id);if(!b0||b0.status!=='open'){b27Stale();return}
   if(U.askSettle&&(U.askSettle.id!==id||U.askSettle.terms!==b27Terms(b0)||(U.askSettle.what!==status&&U.askSettle.what!=='pool'))){b27Stale();return}
-  /*<CREATOR-SETTLE>*/const me0=b27Who();if(status!=='void'&&b0.backer!==me0){U.msg=B27_ONLY;U.msgBad=true;render();return}/*</CREATOR-SETTLE>*/U.busy=true;U.askSettle=null;render();
+  /*<CREATOR-SETTLE>*/const me0=b27Who();if(status!=='void'&&b0.backer!==me0){U.msg=B27_ONLY;U.msgBad=true;render();return}/*</CREATOR-SETTLE>*/let copyP=null;if(status==='backer'||status==='other'||status==='push'){try{const t=s29eCopyText(Object.assign({},b0,{status}));if(t)copyP=b27CopyNow(t)}catch(e){}}U.busy=true;U.askSettle=null;render();
   try{
     const back=await b27Write(cur=>/*<CREATOR-SETTLE>*/{const x=cur.find(b=>b.id===id);if(status!=='void'&&x&&x.status==='open'&&x.backer!==me0)throw new Error('notcreator');return /*</CREATOR-SETTLE>*/cur.map(b=>b.id===id&&b.status==='open'?Object.assign({},b,{status,settled_at:/*<V25>*/status==='void'?new Date().toISOString():s25At()/*</V25>*/}/*<S25>*/,extra||{}/*</S25>*/):b)/*<CREATOR-SETTLE>*/}/*</CREATOR-SETTLE>*/,cur=>{const b=cur.find(x=>x.id===id);return !b||b.status===status||b.status!=='open'});
     b27Apply(back,'force');U.msg='Saved.';U.msgBad=false;
-    if(status==='backer'||status==='other'||status==='push'){U.flashBet=id;try{const t=s29eCopyText(Object.assign({},b0,{status}));if(t)b27CopyNow(t)}catch(e){}}
+    if(status==='backer'||status==='other'||status==='push'){U.flashBet=id;if(copyP)copyP.catch(function(){})}
   }catch(e){U.msg=/*<CREATOR-SETTLE>*/e&&e.message==='notcreator'?B27_ONLY:e&&e.message==='conflict'?'Couldn’t save, try again.':/*</CREATOR-SETTLE>*/'Couldn’t save that. Try again.';U.msgBad=true}
   U.busy=false;render();
 }
@@ -3594,11 +3595,12 @@ function b27PoolRecord(){const ps=b27PoolParts(),c=s26fPoolCheck(),r={amt:c.amt,
   return Object.assign({id:U.fids[k]||(U.fids[k]=b27Rid()),kind:'pool',backer:me,parts:ps,amt:r.amt,back:null,text:b27Clean(U.text),status:'open',wk:w.wk/*<S29E-POSTED>*/,postedBy:me,postedAt:new Date().toISOString()/*</S29E-POSTED>*/},w.est?{est:w.est}:{},w.sid?{sid:w.sid}:{},r.places?{places:r.places}:{})}
 async function b27PoolConfirm(){
   if(U.busy)return;const e=b27PoolFormOK();if(e){b27Err(e);U.confirm=false;render();return}
-  U.busy=true;U.msg='Saving…';U.msgBad=false;render();const nb=b27PoolRecord();
+  const nb=b27PoolRecord();const clip0=b27PoolClip(nb);const copyP=clip0?b27CopyNow(clip0):Promise.resolve(false);
+  U.busy=true;U.msg='Saving…';U.msgBad=false;render();
   try{
     const back=await b27Write(cur=>{if(cur.some(c=>c.id===nb.id))return cur;if(cur.length+1>PULK.maxBets)throw new Error('full');const at=new Date().toISOString();return cur.concat([Object.assign({},nb,{n:b27MaxN(cur)+1,created_at:at,settled_at:/*<V25>*/nb.back?s25At():/*</V25>*/null})])},cur=>cur.some(b=>b.id===nb.id));
     U.mine.add(nb.id);b27Apply(back);const m=back.find(b=>b.id===nb.id);
-    const clip=b27PoolClip(m||nb);let copied=false;try{copied=clip?await b27CopyNow(clip):false}catch(err){copied=false}
+    const clip=b27PoolClip(m||nb);let copied=false;try{copied=await copyP}catch(err){copied=false}
     U.clip=copied?null:clip;U.msg=PT(m&&m.back?'placedDone':'placed',{n:m?m.n:''})+(copied?'':' Could not copy.');if(copied)betCopied();/*<S25C-FX>*/s25PlacedFx(nb.id);/*</S25C-FX>*/U.msgBad=false;U.opps=[];U.pp=[];U.ppSeed=null;U.entry='';U.backTxt='';U.text='';U.places=['',''];U.showErr={};U.confirm=false;U.fids={};
     clearTimeout(U.undoT);U.undoT=setTimeout(()=>{if(tab==='bets27')render()},PULK.undoMs+300);
   }catch(e){U.msg=e&&e.message==='full'?'The bets ledger is full.':PT('cantSave');U.msgBad=true;U.confirm=true}
