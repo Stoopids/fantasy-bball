@@ -5108,7 +5108,7 @@ html body .entry-hd-wiu .wiu-kind .ks{display:none}
 </style><!--</S29E-PASTE>-->
 <!--<S29E-COPY>--><script>
 /* s29e: the per-bet Copy button copies the whole card as WhatsApp-ready plain text (no link). Same words, numbers (b27Num) and odds math (b27Pay) as the card. */
-function s29eOpenCopy(b){if(!b)return '';try{if(typeof RQ!=='undefined'&&RQ&&RQ.copyText){const rd=typeof s25BetRd==='function'?s25BetRd(b):b.rd;const t=RQ.copyText({by:b.backer,to:b27Opps(b),amt:b.amt,odds:[+(b.odds&&b.odds.a||1),+(b.odds&&b.odds.b||1)],rd:rd&&rd.k&&rd.k!=='manual'?rd:null,legs:b.legs&&b.legs.length>=2?b.legs:null,wk:b.wk,est:b.est,cov:b.cov||'game',gid:b.gid||'',start:b.start||'',exp:b.exp||0,date:b.date||''},'bet');if(t)return t}}catch(e){}const who=(b27Opps(b).map(PN).join(', ')||PN(b.other));
+function s29eOpenCopy(b){if(!b)return '';try{if(typeof RQ!=='undefined'&&RQ&&RQ.copyText){const rd=typeof s25BetRd==='function'?s25BetRd(b):b.rd;const t=RQ.copyText({by:b.backer,to:b27Opps(b),amt:b.amt,odds:[+(b.odds&&b.odds.a||1),+(b.odds&&b.odds.b||1)],rd:rd&&rd.k&&rd.k!=='manual'?rd:null,legs:b.legs&&b.legs.length>=2?b.legs:null,txt:b.text||'',lab:b.text||'',wk:b.wk,est:b.est,cov:b.cov||'game',gid:b.gid||'',start:b.start||'',exp:b.exp||0,date:b.date||''},'bet');if(t)return t}}catch(e){}const who=(b27Opps(b).map(PN).join(', ')||PN(b.other));
   let line2=b27Clean(b.text||'');const rd=typeof s25BetRd==='function'?s25BetRd(b):b.rd;
   if(rd&&rd.k==='ml'&&rd.t&&rd.o)line2=rd.t+' (no points) v '+rd.o;
   else if(rd&&rd.k==='total'&&rd.l!=null){const side=rd.ou==='u'?'Under':'Over';line2=side+' '+rd.l+' v '+(side==='Over'?'Under':'Over')+' '+rd.l}
@@ -5174,6 +5174,6 @@ html body #main h2.b27-allh+.card.s24fb+.b27-grid{margin-top:0}
  html body #main h2.b27-allh+.card.s24fb>input.s24q{flex:0 1 auto!important;width:auto!important;max-width:100%!important;min-width:9em;margin-top:4px!important}
 }
 </style>
-<script src="stoopid-bet.js?v=14"></script>
+<script src="stoopid-bet.js?v=15"></script>
 </body>
 </html>

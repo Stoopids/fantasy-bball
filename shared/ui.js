@@ -388,9 +388,12 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
       if(day)lines.push(day);
       return lines.join('\n')}
     /* One copy for the form, the open-request card, an accepted bet, and a parlay. Built from the stored game reading, stake, names, odds and expiry. The saved sentence is not the source. */
-    function copyText(r,kind,acc){if(!r)return '';if(kind==='settle')return settleWaitText(r);if(kind==='settled')return settledCopy(r);var o=r.odds||[1,1],od=+o[0]===+o[1]?'':' \u00b7 '+o[0]+'-'+o[1],left=nmOf(r.by),right=copyWho(r,kind,acc),bomb='\uD83D\uDCA3 $'+r.amt+' '+left+' v '+right+od+' \uD83D\uDCA3',exp=expLbl(r),day=lineDayLbl(r),last=[day,exp?'Exp: '+exp:''].filter(Boolean).join(' \u00b7 '),lines=[bomb];
+    function copyH2h(r,kind,acc){if(r&&r.h2h)return String(r.h2h);if(typeof sbCopyH2h!=='function'||!r||!r.by)return '';var foe=kind==='acc'&&acc?acc:(r.to&&r.to.length===1?r.to[0]:'');if(!foe||foe===r.by)return '';try{return sbCopyH2h(r.by,foe)||''}catch(e){return ''}}
+    function copyText(r,kind,acc){if(!r)return '';if(kind==='settle')return settleWaitText(r);if(kind==='settled')return settledCopy(r);var o=r.odds||[1,1],od=+o[0]===+o[1]?'':' \u00b7 '+o[0]+'-'+o[1],left=nmOf(r.by),right=copyWho(r,kind,acc),bomb='\uD83D\uDCA3 $'+r.amt+' '+left+' v '+right+od+' \uD83D\uDCA3',exp=expLbl(r),day=lineDayLbl(r),last=[day,exp?'Exp: '+exp:''].filter(Boolean).join(' \u00b7 '),lines=[bomb],h2h=copyH2h(r,kind,acc);
+      if(sbIs(r.txt)||sbIs(r.lab)||sbIs(r.text)){lines.push(sbOnce(sl(String(r.txt||r.lab||r.text||'').replace(/\s+/g,' ').trim())));if(h2h)lines.push('H2H: '+h2h);if(last)lines.push(last);if(kind==='acc')lines.push('Accepted');else if(kind==='del')lines.push('Deleted');else if(kind==='close')lines.push('Closed \u00b7 '+tk(r).length+' stoops in');return lines.filter(Boolean).join('\n')}
       if(r.legs&&r.legs.length>=2){var legs=r.legs.map(legLine).filter(Boolean);if(!legs.length)return '';lines.push('Parlay \u00b7 '+r.legs.length+' legs');legs.forEach(function(x){lines.push(x)})}
       else{var got=betFace(r),face=got.face;if(!day&&got.extra){day=got.extra;last=[day,exp?'Exp: '+exp:''].filter(Boolean).join(' \u00b7 ')}if(!face&&r.free){face=String(r.txt||r.lab||'').replace(/\s+/g,' ').trim();if(!day&&r.exp){day=freeDay(r.exp);last=[day,exp?'Exp: '+exp:''].filter(Boolean).join(' \u00b7 ')}}if(!face)return '';lines.push(face)}
+      if(h2h)lines.push('H2H: '+h2h);
       if(last)lines.push(last);
       if(kind==='acc')lines.push('Accepted');else if(kind==='del')lines.push('Deleted');else if(kind==='close')lines.push('Closed \u00b7 '+tk(r).length+' stoops in');
       return lines.filter(Boolean).join('\n')}
