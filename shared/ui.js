@@ -323,7 +323,7 @@ function sbOnce(s){var n=0;return String(s||'').replace(/Stoopid bet:\s*/gi,func
     function sbIs(s){s=String(s||'');if(/Stoopid bet:/i.test(s))return true;try{if(typeof sbParse==='function'&&sbParse(s))return true}catch(e){}return false}
     function sbPay(match,creator,acceptor,winC,winO){if(sbIs(match))return creator+' wins '+winC+'. Otherwise, '+acceptor+' wins '+winO+'.';return sbOnce(match).replace(/\.+$/,'')+', '+creator+' wins '+winC+'. Otherwise, '+acceptor+' wins '+winO+'.'}
 function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
-    function rqMoney(n){var x=Math.round(Number(n)*100)/100;if(!(x>0))return '';return (Math.abs(x-Math.round(x))<0.001?String(Math.round(x)):x.toFixed(2))+'K'}
+    function rqMoney(n){var x=Math.round(Number(n)*100)/100;if(!(x>0))return '';return '$'+(Math.abs(x-Math.round(x))<0.001?String(Math.round(x)):x.toFixed(2))}
     function rqWin(amt,a,b){a=+a||1;b=+b||1;return Math.max(1,Math.floor((amt*a*2+b)/(2*b)))}
     function rqTeam(lab){return String(lab||'').replace(/\s*[+-]\d+(?:\.\d+)?$/,'').trim()}
     function rqExp(f){if(f.mode==='start')return 'Tip';var n=+f.n,u={m:'m',h:'h',d:'d',w:'w',mo:'mo'};if(u[f.mode]&&n>0)return n+u[f.mode];if(f.mode==='at'&&f.at){var d=new Date(f.at);if(!isNaN(d)){var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];return mo+' '+d.getDate()}}return ''}
