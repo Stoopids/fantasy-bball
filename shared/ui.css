@@ -327,17 +327,17 @@ html body .gm .gl{margin-top:2px!important;padding-top:4px!important}
 .qbd-x{min-width:36px;min-height:36px;background:none;border:0;color:inherit;font-size:16px;cursor:pointer}
 .qbd .qbs-r{display:flex;align-items:center;gap:4px;margin:2px 0;flex-wrap:nowrap}
 .qbd .qbs-l{flex:0 0 46px;font-size:11px;opacity:.75;font-weight:800}
-.qbd .qbs-s{display:flex;gap:4px;flex:1 1 auto;flex-wrap:nowrap;justify-content:flex-start;min-width:0}.qbd .qbs-s .qbs-o{flex:1 1 0;width:auto;min-width:0}
+.qbd .qbs-s{display:flex;gap:6px;flex:0 1 auto;flex-wrap:wrap;justify-content:flex-start;min-width:0}.qbd .qbs-s .qbs-o{flex:0 0 auto;width:auto}
 .qbd .qbd-req{display:inline-flex;width:auto;margin-top:4px;align-self:flex-start}
 .qbs-acts{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 0}
 .qbs-acts .qbs-o{flex:0 1 auto;min-height:36px;height:36px;padding:0 8px;font-size:12px}
 .ln-wrap{margin:8px 0 2px}.ln-go{width:auto;min-height:36px;height:36px;padding:0 12px;border-radius:99px}
-html body .rq-form .rq-tools{display:flex;flex-wrap:nowrap;gap:4px;margin:6px 0 0}
-html body .rq-form .rq-tool{flex:1 1 0;min-width:0;height:36px;min-height:36px;padding:0 4px;border-radius:999px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font:inherit;font-size:11px;font-weight:800;line-height:34px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+html body .rq-form .rq-tools{display:flex;flex-wrap:nowrap;justify-content:flex-start;gap:6px;margin:6px 0 0}
+html body .rq-form .rq-tool{flex:0 0 auto;width:auto;height:36px;min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font:inherit;font-size:13px;font-weight:800;line-height:34px;white-space:nowrap;cursor:pointer}
 html body .rq-form .rq-tool[aria-pressed=true]{background:var(--acc);color:#111;border-color:var(--acc)}
 html body .rq-form .rq-tool-body{margin-top:6px}
-html body .rq-form .rq-tool-body .qbs-s{display:flex;flex-wrap:wrap;gap:4px}
-html body .rq-form .rq-tool-body .qbs-o{flex:1 1 140px;min-height:36px;height:auto;padding:6px 8px;font-size:12px}
+html body .rq-form .rq-tool-body .qbs-s{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:6px}
+html body .rq-form .rq-tool-body .qbs-o{flex:0 0 auto;width:auto;min-height:36px;height:36px;padding:0 12px;font-size:13px}
 .ln-box{display:flex;flex-direction:column;gap:6px;margin-top:6px}
 .ln-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .ln-row .b27-chip,.py-add .b27-chip,.py-wrap .ln-go{flex:0 0 auto;width:auto;min-height:36px;height:36px;padding:0 10px;font-size:13px}
@@ -359,8 +359,8 @@ html body .rq-form .rq-tool-body .qbs-o{flex:1 1 140px;min-height:36px;height:au
 html body .qbd{text-align:left!important}
 html body .qbd .qbs-r{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;text-align:left!important;gap:4px!important;margin:2px 0!important;flex-wrap:nowrap!important}
 html body .qbd .qbs-l{flex:0 0 46px!important;text-align:left!important;margin:0!important;font-size:11px!important}
-html body .qbd .qbs-s{display:flex!important;flex:1 1 auto!important;justify-content:flex-start!important;gap:4px!important;flex-wrap:nowrap!important;margin:0!important;min-width:0}
-html body .qbd .qbs-s .qbs-o,html body .qbd .qbd-req{flex:1 1 0!important;width:auto!important;max-width:100%;min-height:36px;height:36px;padding:0 8px;font-size:12px}
+html body .qbd .qbs-s{display:flex!important;flex:0 1 auto!important;justify-content:flex-start!important;gap:6px!important;flex-wrap:wrap!important;margin:0!important;min-width:0}
+html body .qbd .qbs-s .qbs-o,html body .qbd .qbd-req{flex:0 0 auto!important;width:auto!important;max-width:100%;min-height:36px;height:36px;padding:0 12px;font-size:13px}
 html body .qbd .qbd-req{display:inline-flex!important;align-self:flex-start}
 html body .qbd-h{text-align:left!important}
 @media (max-width:600px){html body .qbd .qbs-l{flex:0 0 42px!important;flex-basis:42px!important}}
