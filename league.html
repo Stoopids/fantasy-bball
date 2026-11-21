@@ -3370,7 +3370,7 @@ let wiuGo=0;
 document.addEventListener('pointerdown',function(ev){const t=ev.target&&ev.target.closest&&ev.target.closest('.entry-wiu [data-wiu]');if(!t||ev.button>0)return;wiuGo=Date.now();if(typeof render==='function'){render.rqHold=Date.now()+900;render.rqSelf=1}try{b27ParlayAct(t.getAttribute('data-wiu'),t.getAttribute('data-v'))}finally{if(typeof render==='function')render.rqSelf=0}},true);
 document.addEventListener('click',function(ev){const t=ev.target&&ev.target.closest&&ev.target.closest('.entry-wiu [data-wiu]');if(!t)return;ev.preventDefault();if(Date.now()-wiuGo<400)return;if(typeof render==='function')render.rqSelf=1;try{b27ParlayAct(t.getAttribute('data-wiu'),t.getAttribute('data-v'))}finally{if(typeof render==='function')render.rqSelf=0}},true);
 document.addEventListener('change',function(ev){const t=ev.target;if(!(t&&t.dataset&&t.dataset.wiuIn==='pyGid'))return;if(typeof render==='function'){render.rqHold=Date.now()+900;render.rqSelf=1}try{b27ParlayAct('pyGid',t.value)}finally{if(typeof render==='function')render.rqSelf=0}});
-function b27ClipText(b){if(!b)return '';if(RQ&&RQ.copyText){const rd=typeof s25BetRd==='function'?s25BetRd(b):b.rd;const t=RQ.copyText({by:b.backer,to:b27Opps(b),amt:b.amt,odds:[b.odds&&b.odds.a,b.odds&&b.odds.b],rd:rd&&rd.k&&rd.k!=='manual'?rd:null,legs:b.legs&&b.legs.length>=2?b.legs:null,wk:b.wk,est:b.est,cov:b.cov||'game',gid:b.gid||'',start:b.start||'',exp:b.exp||0,date:b.date||''},'bet');if(t)return t}if(b.legs&&b.legs.length>=2&&typeof s29eOpenCopy==='function')return s29eOpenCopy(b);if(!RQ||!RQ.waText)return '';return RQ.waText({by:b.backer,to:b27Opps(b),amt:b.amt,odds:[b.odds.a,b.odds.b],txt:b.text||'',lab:b.text||'',legs:b.legs||null},'bet')}
+function b27ClipText(b){if(!b)return '';if(RQ&&RQ.copyText){const rd=typeof s25BetRd==='function'?s25BetRd(b):b.rd;const t=RQ.copyText({by:b.backer,to:b27Opps(b),amt:b.amt,odds:[b.odds&&b.odds.a,b.odds&&b.odds.b],rd:rd&&rd.k&&rd.k!=='manual'?rd:null,legs:b.legs&&b.legs.length>=2?b.legs:null,txt:b.text||'',lab:b.text||'',wk:b.wk,est:b.est,cov:b.cov||'game',gid:b.gid||'',start:b.start||'',exp:b.exp||0,date:b.date||''},'bet');if(t)return t}if(b.legs&&b.legs.length>=2&&typeof s29eOpenCopy==='function')return s29eOpenCopy(b);if(!RQ||!RQ.waText)return '';return RQ.waText({by:b.backer,to:b27Opps(b),amt:b.amt,odds:[b.odds.a,b.odds.b],txt:b.text||'',lab:b.text||'',legs:b.legs||null},'bet')}
 function b27CopyNow(t){return new Promise(resolve=>{const fin=ok=>resolve(!!ok);const fb=()=>{let ok=false;try{const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();ok=!!(document.execCommand&&document.execCommand('copy'));ta.remove()}catch(e){}fin(ok)};try{if(navigator.clipboard&&navigator.clipboard.writeText&&window.isSecureContext){const p=navigator.clipboard.writeText(t);if(p&&p.then){p.then(()=>fin(true),fb);return}} }catch(e){}fb()})}
 async function b27ClipRetry(){if(!U.clip)return;const ok=await b27CopyNow(U.clip);if(ok){U.msg=String(U.msg||'').replace(/ Could not copy\.$/,'').replace(/ Could not copy it\. Copy the message below\.$/,'').replace(/ Message copied\. Paste it in WhatsApp\.$/,'');U.clip=null;U.msgBad=false;betCopied()}else U.msgBad=true;render()}
 function b27Place(){/*<POOL>*/if(U.kind==='pool')return b27PoolPlace();/*</POOL>*/const e=b27FormOK();if(e){b27Err(e);render();return}U.msg='';U.clip=null;U.confirm=true;render()}
@@ -5108,7 +5108,7 @@ html body .entry-hd-wiu .wiu-kind .ks{display:none}
 </style><!--</S29E-PASTE>-->
 <!--<S29E-COPY>--><script>
 /* s29e: the per-bet Copy button copies the whole card as WhatsApp-ready plain text (no link). Same words, numbers (b27Num) and odds math (b27Pay) as the card. */
-function s29eOpenCopy(b){if(!b)return '';try{if(typeof RQ!=='undefined'&&RQ&&RQ.copyText){const rd=typeof s25BetRd==='function'?s25BetRd(b):b.rd;const t=RQ.copyText({by:b.backer,to:b27Opps(b),amt:b.amt,odds:[+(b.odds&&b.odds.a||1),+(b.odds&&b.odds.b||1)],rd:rd&&rd.k&&rd.k!=='manual'?rd:null,legs:b.legs&&b.legs.length>=2?b.legs:null,wk:b.wk,est:b.est,cov:b.cov||'game',gid:b.gid||'',start:b.start||'',exp:b.exp||0,date:b.date||''},'bet');if(t)return t}}catch(e){}const who=(b27Opps(b).map(PN).join(', ')||PN(b.other));
+function s29eOpenCopy(b){if(!b)return '';try{if(typeof RQ!=='undefined'&&RQ&&RQ.copyText){const rd=typeof s25BetRd==='function'?s25BetRd(b):b.rd;const t=RQ.copyText({by:b.backer,to:b27Opps(b),amt:b.amt,odds:[+(b.odds&&b.odds.a||1),+(b.odds&&b.odds.b||1)],rd:rd&&rd.k&&rd.k!=='manual'?rd:null,legs:b.legs&&b.legs.length>=2?b.legs:null,txt:b.text||'',lab:b.text||'',wk:b.wk,est:b.est,cov:b.cov||'game',gid:b.gid||'',start:b.start||'',exp:b.exp||0,date:b.date||''},'bet');if(t)return t}}catch(e){}const who=(b27Opps(b).map(PN).join(', ')||PN(b.other));
   let line2=b27Clean(b.text||'');const rd=typeof s25BetRd==='function'?s25BetRd(b):b.rd;
   if(rd&&rd.k==='ml'&&rd.t&&rd.o)line2=rd.t+' (no points) v '+rd.o;
   else if(rd&&rd.k==='total'&&rd.l!=null){const side=rd.ou==='u'?'Under':'Over';line2=side+' '+rd.l+' v '+(side==='Over'?'Under':'Over')+' '+rd.l}
@@ -5146,7 +5146,11 @@ html body .sb-pick,html body .sb-acts{display:flex;flex-wrap:wrap;justify-conten
 html body .sb-own,html body .sb-sh,html body .sb-use{flex:0 0 auto;width:auto;min-width:0;height:36px;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line,#2d3548);background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
 html body select.sb-opp{flex:0 0 auto;width:auto;max-width:100%;field-sizing:content;height:36px;min-height:36px;padding:0 28px 0 12px;border-radius:999px;border:1px solid var(--line,#2d3548);background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
 html body .sb-own[aria-pressed="true"],html body .sb-use{background:#ffd400;color:#111;border-color:#ffd400}
+html body .sb-note{margin:8px 0 0;color:var(--mut,#9aa3b5);font-size:13px;font-weight:650}
 html body .sb-list{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-start;align-items:stretch}
+html body .sb-day{flex:1 0 100%;margin:6px 0 0;font-size:15px;font-weight:800}
+html body .sb-morewrap{flex:1 0 100%}
+html body .sb-more{height:32px;min-height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line,#2d3548);background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
 html body .sb-card{flex:1 1 260px;max-width:440px}
 html body .sb-go{display:flex;flex-wrap:wrap;justify-content:flex-start;align-items:center;gap:6px;margin-top:8px}
 html body .sb-card .sb-use{margin-top:0}
@@ -5174,6 +5178,6 @@ html body #main h2.b27-allh+.card.s24fb+.b27-grid{margin-top:0}
  html body #main h2.b27-allh+.card.s24fb>input.s24q{flex:0 1 auto!important;width:auto!important;max-width:100%!important;min-width:9em;margin-top:4px!important}
 }
 </style>
-<script src="stoopid-bet.js?v=14"></script>
+<script src="stoopid-bet.js?v=19"></script>
 </body>
 </html>
