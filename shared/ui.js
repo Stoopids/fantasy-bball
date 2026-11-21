@@ -397,7 +397,12 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
       if(day)lines.push(day);
       return lines.join('\n')}
     /* One copy for the form, the open-request card, an accepted bet, and a parlay. Built from the stored game reading, stake, names, odds and expiry. The saved sentence is not the source. */
-    function copyText(r,kind,acc){if(!r)return '';if(kind==='settle')return settleWaitText(r);if(kind==='settled')return settledCopy(r);
+    function acceptedCopy(r,acc){var o=r.odds||[1,1],left=nmOf(r.by),right=copyWho(r,'acc',acc),od=+o[0]===+o[1]?'':' \u00b7 '+o[0]+'\u2013'+o[1],lines=['\uD83D\uDCA5 $'+r.amt+' '+left+' v '+right+od+' \u2014 Accepted \uD83D\uDCA5'];
+      if(r.legs&&r.legs.length>=2){lines.push('Parlay \u00b7 '+r.legs.length+' legs');r.legs.forEach(function(L){var x=legLine(L);if(x)lines.push(x)})}
+      else if(r.rd&&r.rd.ml&&r.rd.t&&r.rd.o){var favPick=r.rd.fav===r.rd.t,cash=SHARED_UI.mlCash(r.amt,o[0],favPick);lines.push(r.rd.t+' v '+r.rd.o);lines.push('ML \u00b7 '+left+' wins '+rqMoney(cash.win)+' \u00b7 '+right+' wins '+rqMoney(cash.risk))}
+      else{var got=betFace(r),face=got.face||String(r.txt||r.lab||'').replace(/\s+/g,' ').trim();if(face)lines.push(face)}
+      var day=lineDayLbl(r);if(day)lines.push(day);return lines.filter(Boolean).join('\n')}
+    function copyText(r,kind,acc){if(!r)return '';if(kind==='settle')return settleWaitText(r);if(kind==='settled')return settledCopy(r);if(kind==='acc')return acceptedCopy(r,acc);
       if(r.rd&&r.rd.ml&&r.rd.t&&r.rd.o){var mo=r.odds||[1,1],md=+mo[0]===+mo[1]?'':' \u00b7 '+mo[0]+'\u2013'+mo[1],mlL=nmOf(r.by),mlR=copyWho(r,kind,acc),mlBomb='\uD83D\uDCA3 $'+r.amt+' '+mlL+' v '+mlR+md+' \uD83D\uDCA3',favPick=r.rd.fav===r.rd.t,cash=SHARED_UI.mlCash(r.amt,mo[0],favPick),mlPay='ML \u00b7 '+mlL+' wins '+rqMoney(cash.win)+' \u00b7 '+mlR+' wins '+rqMoney(cash.risk),mlDay=lineDayLbl(r),mlExp=expLbl(r),mlWhen=[mlDay,mlExp?'Exp: '+mlExp:''].filter(Boolean).join(' \u00b7 '),mlLines=[mlBomb,r.rd.t+' v '+r.rd.o,mlPay];if(mlWhen)mlLines.push(mlWhen);if(kind==='acc')mlLines.push('Accepted');else if(kind==='del')mlLines.push('Deleted');else if(kind==='close')mlLines.push('Closed \u00b7 '+tk(r).length+' stoops in');return mlLines.join('\n')}
       var o=r.odds||[1,1],od=+o[0]===+o[1]?'':' \u00b7 '+o[0]+'-'+o[1],left=nmOf(r.by),right=copyWho(r,kind,acc),bomb='\uD83D\uDCA3 $'+r.amt+' '+left+' v '+right+od+' \uD83D\uDCA3',exp=expLbl(r),day=lineDayLbl(r),last=[day,exp?'Exp: '+exp:''].filter(Boolean).join(' \u00b7 '),lines=[bomb];
       if(r.legs&&r.legs.length>=2){var legs=r.legs.map(legLine).filter(Boolean);if(!legs.length)return '';lines.push('Parlay \u00b7 '+r.legs.length+' legs');legs.forEach(function(x){lines.push(x)})}
@@ -479,7 +484,7 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
           S.posted=true;noteCopy(S.copied)}
         catch(x){S.msg='Could not accept that counter. The original terms were not changed.';S.bad=true}
         S.busy=false;A.render();return}
-      if(k==='cp'){var rc=S.list.find(function(x){return x.id===v});if(rc)copy(waText(rc,'new'));return}   /* STEP14-COPY */
+      if(k==='cp'){var rc=S.list.find(function(x){return x.id===v});if(rc){var took=tk(rc);copy(took.length?waText(rc,'acc',took[took.length-1]):waText(rc,'new'))}return}   /* STEP14-COPY */
       if(k==='wa'){if(S.fb)copy(S.fb);return}
       if(k==='edit'){var re=S.list.find(function(x){return x.id===v});if(!re||re.by!==me||tk(re).length||re.status!=='open'){if(re&&tk(re).length){S.msg='Someone already accepted. Those terms stay as agreed.';S.bad=true;A.render()}return}var ws=winStart(re,game(re.gid)),pad=function(n){return String(n).padStart(2,'0')},dt=new Date(re.exp);
         S.f={gid:re.gid,text:re.lab,side:re.k==='txt'?'':re.k+':'+(re.si||0),cov:re.cov||'game',odds:(re.odds||[1,1]).slice(),amt:rqAmts().indexOf(+re.amt)>=0?+re.amt:null,amtTxt:rqAmts().indexOf(+re.amt)>=0?'':String(re.amt),amtC:rqAmts().indexOf(+re.amt)<0,slots:re.slots||null,oddC:!rqChipOdds().some(function(o){return +(re.odds||[1,1])[0]===o[0]&&+(re.odds||[1,1])[1]===o[1]}),to:re.to.slice(),mode:re.exp>=ws?'start':'at',expPick:true,whenPick:true,n:3,at:dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate())+'T'+pad(dt.getHours())+':'+pad(dt.getMinutes()),est:SHARED_UI.whenKind(re)==='date'?re.est:'',wk:SHARED_UI.whenKind(re),rd:copyRd(re.rd)};

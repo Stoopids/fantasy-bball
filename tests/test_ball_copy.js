@@ -16,7 +16,7 @@ const now=Date.now();
 const rd={k:'spread',t:'Siena',o:"St John's",l:28.5,sp:'mcbb',d:'2026-11-18'};
 const siena={id:'r1',status:'open',by:'Paul E',to:['Jim'],amt:5,odds:[1,1],slots:1,txt:"Siena +28.5 v St John's",lab:"Siena +28.5 v St John's",exp:Date.parse('2026-11-19T00:00:00Z'),at:now,wk:'game',gid:'401920682',start:'2026-11-19T00:00Z',rd,took:[],dec:[]};
 const plain={id:'r2',status:'open',by:'Paul E',to:['Jim'],amt:5,odds:[1,1],slots:1,txt:'Duke +5.5 vs UConn -5.5',lab:'Duke +5.5',exp:now+3*3600000,took:[],dec:[],gid:'g',start:new Date(now+86400000).toISOString()};
-const acc='💥 $5 Paul E v Jim — Accepted 💥\nSiena +28.5 v St John\'s';
+const acc='💥 $5 Paul E v Jim — Accepted 💥\nSiena +28.5 v St John\'s\nNov 18';
 assert.strictEqual(ball.waText(siena,'acc','Jim'),acc);
 assert.ok(!ball.waText(siena,'acc','Jim').includes('💣'));
 assert.ok(!/Exp:/.test(ball.waText(siena,'acc','Jim')));
