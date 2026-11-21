@@ -958,7 +958,7 @@ main,#main{padding-top:6px!important}
 /* SYNC7..SYNC14 moved to shared/ui.css (linked right after this style block) */
 
 </style>
-<link rel="stylesheet" href="shared/ui.css?v=1.86.2">
+<link rel="stylesheet" href="shared/ui.css?v=1.86.5">
 <style>/*<SORT-FIT> phone All teams: the card scrolls sideways, the page does not. Names stay full size. */@media (max-width:480px){html body .card.tap.s27-rk{padding-left:4px!important;padding-right:4px!important}html body .card.tap.s27-rk th{font-size:11px!important}html body .card.tap.s27-rk td.n,html body .card.tap.s27-rk td.to,html body .card.tap.s27-rk td.cf{font-size:13px!important}html body .card.tap.s27-rk .s27-sort i{font-size:.7em!important;margin-left:0!important}}/*</SORT-FIT>*/</style>
 </head>
 <body>
@@ -984,7 +984,7 @@ main,#main{padding-top:6px!important}
   </div>
 </section><!--</CHAT>-->
 <footer id="foot"></footer>
-<script src="shared/ui.js?v=1.86.6"></script>
+<script src="shared/ui.js?v=1.86.9"></script>
 <script src="js/version.js"></script><script src="js/core.js"></script><script src="js/league-d.js"></script><script src="js/ball-settings.js"></script><script src="js/ball-bets.js"></script><script src="js/ball-stoopids.js"></script>
 <script>
 /*<S25-SHARED>*/
@@ -1760,7 +1760,7 @@ function qbBtn(g){/*<SYNC1>*/// the Quick bet button, stacked under Copy in the 
   return `<button type="button" class="s27-copy qb-btn" aria-expanded="${open}" aria-label="Quick bet: ${esc(qbNm(g.away))} vs ${esc(qbNm(g.home))}" onclick="qbToggle('${esc(id)}')"><svg class="qb-bolt" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" focusable="false"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg> Quick bet</button>`}
 function qbHtml(g){
   if(!qbOk(g))return '';const id=String(g.id),open=qbG===id;
-  /*<STEP7-QB>*/if(typeof SHARED_UI!=='undefined'&&SHARED_UI.qbSheet){if(!open)return '';return SHARED_UI.qbSheet(g,qbList(g),{e:esc,name:qbNm,date:qbDate(g),close:()=>`onclick="qbToggle(null)"`,blank:()=>`onclick="qbGo('${esc(id)}',null,0)"`,pick:(k,i)=>`onclick="qbGo('${esc(id)}','${k}',${i})"`,straight:i=>`onclick="qbStraight('${esc(id)}',${i})"`,parlay:()=>`onclick="qbParlay('${esc(id)}')"`,line:()=>`onclick="qbLine('${esc(id)}')"`})}/*</STEP7-QB>*/
+  /*<STEP7-QB>*/if(typeof SHARED_UI!=='undefined'&&SHARED_UI.qbSheet){if(!open)return '';return SHARED_UI.qbSheet(g,qbList(g),{e:esc,name:qbNm,date:qbDate(g),close:()=>`onclick="qbToggle(null)"`,blank:()=>`onclick="qbGo('${esc(id)}',null,0)"`,pick:(k,i)=>`onclick="qbGo('${esc(id)}','${k}',${i})"`,ml:i=>`onclick="qbMl('${esc(id)}',${i})"`})}/*</STEP7-QB>*/
   let h='';
   const oa=qbOwn(g.away),oh=qbOwn(g.home),me=b27Who(),need=me!==oa&&me!==oh;
   h+=`<div class="qb-pick" role="group" aria-label="Quick bet picker">`;
@@ -1782,6 +1782,9 @@ function qbLine(id){const g=(D.games||[]).find(x=>String(x.id)===String(id));if(
   if(!(typeof RQ!=='undefined'&&RQ)){qbMsg='Request a bet is unavailable right now.';render();return}
   const sp=(qbList(g)||[]).find(x=>x.k==='sp');
   RQ.prefill(id,sp?'sp':null,sp?1:0);RQ.S.f.lineOn=true;qbG=null;qbMsg='';tab='bets27';OB_VIEW='request';render();betsLand()}
+function qbMl(id,side){const g=(D.games||[]).find(x=>String(x.id)===String(id));if(!g||!qbOk(g))return;
+  if(!(typeof RQ!=='undefined'&&RQ)||typeof RQ.moneyline!=='function'){qbMsg='Request a bet is unavailable right now.';render();return}
+  RQ.prefill(id,null,0);RQ.moneyline(side);qbG=null;qbMsg='';tab='bets27';OB_VIEW='request';render();betsLand()}
 function qbStraight(id,side){const g=(D.games||[]).find(x=>String(x.id)===String(id));if(!g||!qbOk(g))return;
   if(!(typeof RQ!=='undefined'&&RQ)||typeof RQ.straight!=='function'){qbMsg='Request a bet is unavailable right now.';render();return}
   RQ.prefill(id,null,0);RQ.straight(side);qbG=null;qbMsg='';tab='bets27';OB_VIEW='request';render();betsLand()}
@@ -3856,6 +3859,13 @@ function b27NeedsOther(b,me){return !!(b&&b.status==='open'&&b.kind!=='pool'&&me
 function b27Cards(list,me){return (list||[]).map(b=>b.kind==='pool'?b27PoolCard(b,me):b27Card(b,me)).join('')}
 function b27Grouped(list,me){const names=[['game',''],['season','End of season'],['date','Set date'],['unknown','Not sure yet']];let left=60,h='',n=0;names.forEach(([k,lab])=>{const g=b27SortSoon(list.filter(b=>b27WhenGroup(b)===k));if(!g.length||left<=0)return;const show=g.slice(0,left);left-=show.length;n+=g.length;h+=(lab?`<h3 class="b27-gh">${lab}</h3>`:'')+`<div class="b27-grid">${b27Cards(show,me)}</div>`});if(n>60)h+='<p class="note">Showing the first 60 in these groups.</p>';return h}
 function b27Fine(){return ''}
+function b27MlGame(){const t=String(U.text||'').toLowerCase(),list=(D.games||[]).filter(g=>g&&g.away&&g.home&&g.line&&(g.line.hml||g.line.aml)&&g.status!=='final');
+  if(t){const hit=list.find(g=>t.includes(String(g.away.short||g.away.name||'').toLowerCase())&&t.includes(String(g.home.short||g.home.name||'').toLowerCase()));if(hit)return hit}
+  return list.find(g=>typeof qbOk==='function'&&qbOk(g))||null}
+function b27MlHtml(){const g=b27MlGame();if(!g||typeof SHARED_UI==='undefined'||!SHARED_UI.mlPills)return '';return '<div class="qbs-r qbs-mkt"><span class="qbs-l">ML</span><span class="qbs-s">'+SHARED_UI.mlPills(g,{e:esc,name:qbNm,stake:U.amt||5,attr:i=>`onclick="b27Ml('${esc(g.id)}',${i})"`})+'</span></div>'}
+function b27Ml(id,i){const g=(D.games||[]).find(x=>String(x.id)===String(id)),q=g&&SHARED_UI.mlQuote(g);if(!q)return;const side=i?g.home:g.away,other=i?g.away:g.home,fav=String(side.id)===String(q.favId);
+  U.odds=[q.a,q.b];U.custom=!(q.a===1&&q.b===1);U.customTxt=q.label==='Even'?'':q.label;U.text=qbNm(side)+' ML v '+qbNm(other);
+  U.rdEd={k:'ml',ml:1,t:qbNm(side),o:qbNm(other),l:null,sp:'mcbb',d:g.day||'',fav:fav?qbNm(side):qbNm(other)};U.wk='game';U.whenPick=false;render()}
 function vB27(){
   b27Seen();b27DropStale();
   const me=b27Who(),names=b27OwnerNames(),others=names.filter(n=>n!==me);
@@ -3873,7 +3883,7 @@ function vB27(){
     /*<S29E-PASTE>*/if(PASTE_BET&&U.kind!=='pool')h+=s29ePasteBox();/*</S29E-PASTE>*/
     h+=`<div class="card b27-form">${SHARED_UI.entryHead('wiu',b27KindOnly())}${/*<QUICK-BET>*/qbHint()/*</QUICK-BET>*/}${/*<S24-EDIT>*/s24EditHint()/*</S24-EDIT>*/}${/*<POOL>*/b27KindTabs(b27SelAbove(others.length,`<div class="s27-sel"><button type="button" class="s27-selb" data-b27-all="1" onclick="b27OppAll()"><span class="f">Select all</span><span class="s">All</span></button><button type="button" class="s27-selb" data-b27-clear="1" onclick="b27OppClear()">Clear</button></div>`))/*</POOL>*/}
      ${/*<MULTI-BET>*/''/*opponents: multi-select*/}<div class="b27-q"><button type="button" class="s27-tipk" data-tip="who" aria-expanded="false" onfocus="s27TipShow(this)" onclick="s27WhenClick(this)">1. Who are you betting against?</button></div><div class="b27-opps" role="group" aria-label="Opponents" style="--n:${others.length}">${others.map((n,i)=>{const o=(D.owners.find(x=>x.name===n)||{});const on=U.opps.includes(n);return `<button type="button" class="b27-chip op" data-b27-opp="${i}" data-b27-name="${esc(n)}" aria-label="${esc(TN(n))}" aria-pressed="${on}" onclick="b27Opp(${i})"><span class="ck" aria-hidden="true">✓</span><span class="em" aria-hidden="true">${esc(o.emoji||'')}</span><span class="nm" aria-hidden="true"><span class="f">${esc(TN(n))}</span><span class="sh">${esc(b27ShortT(n))}</span><span class="xs">${esc(b27TinyT(n))}</span></span></button>`}).join('')}${others.length%4?b27UtilTile('data-b27-all="1" onclick="b27OppAll()"','data-b27-clear="1" onclick="b27OppClear()"'):''}</div><span class="sr" id="b27SelCnt" aria-live="polite">${esc(b27SelTxt())}</span>
-     ${''/*</MULTI-BET>*/}<div class="b27-q"><button type="button" class="s27-tipk" data-tip="text" aria-expanded="false" onfocus="s27TipShow(this)" onclick="s27WhenClick(this)">2. What’s the bet?</button><label for="b27Text" class="sr">What’s the bet?</label></div><input id="b27Text" class="sb-in b27-in" maxlength="${PULK.maxText}" autocomplete="off" enterkeyhint="go" placeholder="e.g. Kansas -4 beats Duke" value="${esc(U.text)}" oninput="b27Text(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();b27Place()}">${/*<S25>*/'<div id="s25Rd">'+s25RdHtml()+'</div>'/*</S25>*/}${U.kind==='pool'?'':(typeof RQ!=='undefined'&&RQ.parlayBox?RQ.parlayBox(U):'')}
+     ${''/*</MULTI-BET>*/}<div class="b27-q"><button type="button" class="s27-tipk" data-tip="text" aria-expanded="false" onfocus="s27TipShow(this)" onclick="s27WhenClick(this)">2. What’s the bet?</button><label for="b27Text" class="sr">What’s the bet?</label></div><input id="b27Text" class="sb-in b27-in" maxlength="${PULK.maxText}" autocomplete="off" enterkeyhint="go" placeholder="e.g. Kansas -4 beats Duke" value="${esc(U.text)}" oninput="b27Text(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();b27Place()}">${/*<S25>*/'<div id="s25Rd">'+s25RdHtml()+'</div>'/*</S25>*/}${U.kind==='pool'?'':(typeof RQ!=='undefined'&&RQ.parlayBox?RQ.parlayBox(U):'')}${typeof b27MlHtml==='function'?b27MlHtml():''}
      <div class="b27-ao"><div class="b27-ao-c"><div class="b27-q"><button type="button" class="s27-tipk" data-tip="amt" aria-expanded="false" onfocus="s27TipShow(this)" onclick="s27WhenClick(this)">3. Amount</button></div><div class="b27-amts" role="group" aria-label="Amount">${[5,10,20,25].map(a=>`<button type="button" class="b27-amt" data-b27-amt="${a}" aria-pressed="${!U.amtCustom&&a===U.amt}" onclick="b27Amt(${a})">${a}</button>`).join('')}<button type="button" class="b27-amt cu" data-b27-amtcustom="1" aria-pressed="${U.amtCustom}" onclick="b27AmtCustomOpen()">Custom</button></div>
      <div id="b27Aw" class="b27-cw"${U.amtCustom?'':' hidden'}><label for="b27Ao" class="sr">Custom amount</label><input id="b27Ao" class="sb-in b27-in" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6" placeholder="Whole number, ${PULK.minAmt} to ${PULK.maxAmt}" value="${esc(U.amtTxt)}" oninput="b27AmtApply(this.value);b27Sync()" onkeydown="if(event.key==='Enter'){event.preventDefault();b27Place()}"><div id="b27Ae" class="b27-bad-t" role="alert">${esc(U.amtErr)}</div></div></div><div class="b27-ao-c">
      <div class="b27-q"><button type="button" class="s27-tipk" data-tip="odds" aria-expanded="false" onfocus="s27TipShow(this)" onclick="s27WhenClick(this)">4. Odds</button></div><div class="b27-chips" role="group" aria-label="Odds">${[[1,1],[2,1],[3,1],[4,1]].map(([a,b])=>`<button type="button" class="b27-chip" data-b27-odds="${a}-${b}" aria-pressed="${!U.custom&&!!U.odds&&U.odds[0]===a&&U.odds[1]===b}" onclick="b27Odds(${a},${b})">${a===1&&b===1?'Even':a+'-'+b}</button>`).join('')}<button type="button" class="b27-chip cu" data-b27-custom="1" aria-pressed="${U.custom}" onclick="b27CustomOpen()">Custom</button></div>
