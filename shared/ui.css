@@ -332,6 +332,12 @@ html body .gm .gl{margin-top:2px!important;padding-top:4px!important}
 .qbs-acts{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 0}
 .qbs-acts .qbs-o{flex:0 1 auto;min-height:36px;height:36px;padding:0 8px;font-size:12px}
 .ln-wrap{margin:8px 0 2px}.ln-go{width:auto;min-height:36px;height:36px;padding:0 12px;border-radius:99px}
+html body .rq-form .rq-tools{display:flex;flex-wrap:nowrap;gap:4px;margin:6px 0 0}
+html body .rq-form .rq-tool{flex:1 1 0;min-width:0;height:36px;min-height:36px;padding:0 4px;border-radius:999px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font:inherit;font-size:11px;font-weight:800;line-height:34px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+html body .rq-form .rq-tool[aria-pressed=true]{background:var(--acc);color:#111;border-color:var(--acc)}
+html body .rq-form .rq-tool-body{margin-top:6px}
+html body .rq-form .rq-tool-body .qbs-s{display:flex;flex-wrap:wrap;gap:4px}
+html body .rq-form .rq-tool-body .qbs-o{flex:1 1 140px;min-height:36px;height:auto;padding:6px 8px;font-size:12px}
 .ln-box{display:flex;flex-direction:column;gap:6px;margin-top:6px}
 .ln-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .ln-row .b27-chip,.py-add .b27-chip,.py-wrap .ln-go{flex:0 0 auto;width:auto;min-height:36px;height:36px;padding:0 10px;font-size:13px}

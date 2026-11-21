@@ -255,7 +255,7 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
       if(useFair&&fair){f.odds=[fair.a,fair.b];f.oddC=!rqChipOdds().some(function(o){return o[0]===fair.a&&o[1]===fair.b});f.oddTxt=fair.label}
       var odds=f.odds||[1,1],day=lineDay(gw);f.text=linePhrase(team,other,kind,pts,odds);f.side='';
       if(day)f.rd=kind==='none'?{k:'ml',t:team,o:other,l:null,sp:'mcbb',d:day}:{k:'spread',t:team,o:other,l:pts,sp:'mcbb',d:day}}
-    function copyRd(rd){if(!rd||!rd.k||rd.k==='manual'||!rd.t||!rd.o||!rd.d)return null;var o={k:rd.k,t:rd.t,o:rd.o,l:rd.l==null?null:rd.l,sp:rd.sp||'mcbb',d:rd.d};if(rd.ou==='o'||rd.ou==='u')o.ou=rd.ou;return o}
+    function copyRd(rd){if(!rd||!rd.k||rd.k==='manual'||!rd.t||!rd.o||!rd.d)return null;var o={k:rd.k,t:rd.t,o:rd.o,l:rd.l==null?null:rd.l,sp:rd.sp||'mcbb',d:rd.d};if(rd.ou==='o'||rd.ou==='u')o.ou=rd.ou;if(rd.ml){o.ml=1;if(rd.fav)o.fav=rd.fav}return o}
     /* The description can change ("(no points) v", a spread, an O/U) without dropping the game. Prefer the reading already on the form. Otherwise read the text, but only if both teams are this game's teams, and keep the game's own date. */
     function pinReading(f,g){var keep=copyRd(f&&f.rd);if(keep)return keep;if(!f||f.parlay||!g||!g.g)return null;var day=g.g.day||lineDay(g);if(!day)return null;var names=[A.tname(g.g.away),A.tname(g.g.home)].filter(Boolean);if(names.length<2)return null;var low=names.map(function(n){return String(n).toLowerCase()});
       var parsed=null;try{if(typeof S25!=='undefined'&&S25.parse)parsed=S25.parse(f.text||'',g.start||'')}catch(e){}
@@ -263,8 +263,8 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
       var m=/^(.*?)\s*(?:wins?\s*)?\(no points\)/i.exec(String(f.text||'').replace(/\s*·\s*\d+\s*-\s*\d+.*$/,'').trim());
       if(m){var i=low.indexOf(m[1].trim().toLowerCase());if(i>=0)return {k:'ml',t:names[i],o:names[1-i],l:null,sp:'mcbb',d:day}}
       return null}
-    function lineBox(f,gw){var names=lineTeams(gw);if(names.length<2)return '';var on=!!f.lineOn,side=names[f.lineSide?1:0],info=linePosted(gw),pp=linePtsOf(info,side);
-      var h='<div class="ln-wrap"><button type="button" class="b27-chip ln-go" data-rq="line" aria-expanded="'+(on?'true':'false')+'">Change the line</button>';
+    function lineBox(f,gw,bodyOnly){var names=lineTeams(gw);if(names.length<2)return '';var on=bodyOnly||!!f.lineOn,side=names[f.lineSide?1:0],info=linePosted(gw),pp=linePtsOf(info,side);
+      var h=bodyOnly?'':'<div class="ln-wrap"><button type="button" class="b27-chip ln-go" data-rq="line" aria-expanded="'+(on?'true':'false')+'">Change the line</button>';
       if(!on)return h+'</div>';
       h+='<div class="ln-box" role="group" aria-label="Change the line">';
       h+='<div class="ln-row"><span class="ln-lab">If</span>'+names.map(function(n,i){return '<button type="button" class="b27-chip" data-rq="lside" data-v="'+i+'" aria-pressed="'+((f.lineSide?1:0)===i?'true':'false')+'">'+e(n)+'</button>'}).join('')+'<span class="ln-lab">wins</span></div>';
@@ -275,7 +275,7 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
       h+='<div class="ln-row"><span class="ln-lab">Odds if '+e(side)+' wins</span>'+chips.map(function(o){return '<button type="button" class="b27-chip" data-rq="odds" data-v="'+o[0]+'-'+o[1]+'" aria-pressed="'+(ca===o[0]&&cb===o[1]?'true':'false')+'">'+(o[0]===o[1]?'Even':o[0]+'-'+o[1])+'</button>'}).join('')+'</div>';
       if((f.lineKind==='none'||f.lineKind==='custom')&&f.lineFair)h+='<div class="ln-fair">Fair: about '+e(f.lineFair.label)+(lineLop(f.odds,f.lineFair)?' <span class="ln-lop">Lopsided</span>':'')+'</div>';
       if(f.lineKind==='none'||f.lineKind==='custom')h+='<div class="ln-terms">'+e(f.text||'')+'</div>';
-      return h+'</div></div>'}
+      return h+'</div>'+(bodyOnly?'':'</div>')}
     function pySoon(){var now=Date.now(),out=[];(games()||[]).forEach(function(gw){var st=Date.parse(gw.start)||0;if(!gw.g||gw.g.status==='final'||!(st>now)||st>now+14*86400000)return;if(!gw.g.line||!(+gw.g.line.sp>0))return;out.push(gw)});return out.slice(0,24)}
     function pyLeg(gid,kind,side){var gw=game(gid);if(!gw||!gw.g)return null;var g=gw.g,names=[A.tname(g.away),A.tname(g.home)],i=side?1:0,team=names[i],other=names[1-i];if(!team||!other)return null;var info=linePosted(gw),pts=kind==='spread'?linePtsOf(info,team):0;if(kind==='spread'&&pts==null)return null;var fair=SHARED_UI.linePrice(g,team,{kind:kind==='spread'?'custom':'none',pts:pts});if(!fair)return null;return {gid:String(g.id),kind:kind==='spread'?'spread':'ml',t:team,o:other,l:kind==='spread'?pts:null,d:g.day||lineDay(gw),start:gw.start||g.start||'',lab:kind==='spread'?team+' '+lineBit(pts)+' v '+other:team+' (no points) v '+other,raw:fair.raw}}
     function pyRung(r){var n=[1,2,3,4,5,6,7,8,9,10,12,15,20,25,30,40,50];if(!(r>0))return null;if(r<1){var inv=pyRung(1/r);return inv?[inv[1],inv[0]]:null}var best=n[0],bd=1e9;for(var i=0;i<n.length;i++){var d=Math.abs(Math.log(n[i])-Math.log(Math.max(r,1)));if(d<bd){bd=d;best=n[i]}}return [best,1]}
@@ -285,7 +285,7 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
     function pyBegin(gid){pyOpen(S.f,gid)}
     function pyAct(f,k,v){if(k==='parlay'){if(f.parlay){f.parlay=false;f.legs=[];f.lineFair=null;if(/^Parlay ·/.test(f.text||''))f.text='';return}pyOpen(f,f.pyGid||'');return}if(k==='pydel'){var ix=+v;if(f.legs&&ix>=0)f.legs.splice(ix,1);pySync(f,true);return}if(k==='pyadd'){if((f.legs||[]).length>=5)return;var bits=String(v||'').split(':'),leg=pyLeg(f.pyGid,bits[0]==='spread'?'spread':'ml',bits[1]==='1'?1:0);if(!leg)return;f.legs=f.legs||[];var at=f.legs.findIndex(function(L){return String(L.gid)===String(leg.gid)});if(at>=0)f.legs[at]=leg;else f.legs.push(leg);pySync(f,true);return}if(k==='pyGid'){f.pyGid=v;return}}
     function pySet(legs){var f=S.f;f.parlay=true;f.legs=(legs||[]).slice(0,5);f.lineOn=false;f.lineKind='';f.pyGid=f.legs[0]?String(f.legs[0].gid):'';pySync(f,true)}
-    function pyBox(f,pfx){pfx=pfx||'rq';var dq='data-'+pfx,di='data-'+pfx+'-in';var h='<div class="py-wrap"><button type="button" class="b27-chip ln-go" '+dq+'="parlay" aria-pressed="'+(f.parlay?'true':'false')+'" aria-expanded="'+(f.parlay?'true':'false')+'">Parlay</button>';if(!f.parlay)return h+'</div>';var list=pySoon(),gid=f.pyGid||(list[0]&&String(list[0].id))||'';if(!f.pyGid&&gid)f.pyGid=gid;var gw=game(gid),names=gw? [A.tname(gw.g.away),A.tname(gw.g.home)]:[];
+    function pyBox(f,pfx,bodyOnly){pfx=pfx||'rq';var dq='data-'+pfx,di='data-'+pfx+'-in';var h=bodyOnly?'':('<div class="py-wrap"><button type="button" class="b27-chip ln-go" '+dq+'="parlay" aria-pressed="'+(f.parlay?'true':'false')+'" aria-expanded="'+(f.parlay?'true':'false')+'">Parlay</button>');if(!bodyOnly&&!f.parlay)return h+'</div>';var list=pySoon(),gid=f.pyGid||(list[0]&&String(list[0].id))||'';if(!f.pyGid&&gid)f.pyGid=gid;var gw=game(gid),names=gw? [A.tname(gw.g.away),A.tname(gw.g.home)]:[];
       h+='<div class="py-box" role="group" aria-label="Parlay">';
       (f.legs||[]).forEach(function(L,i){h+='<div class="py-leg"><span>'+(i+1)+'. '+e(L.lab)+'</span><button type="button" class="py-x" '+dq+'="pydel" data-v="'+i+'" aria-label="Remove leg">\u00d7</button></div>'});
       h+='<select class="sb-in b27-in rq-in" '+di+'="pyGid" aria-label="Add a game">'+list.map(function(g){var id=String(g.id),lab=A.tname(g.g.away)+' at '+A.tname(g.g.home)+(g.g.day?', '+ (A.dateET?A.dateET(g.g):g.g.day):'');return '<option value="'+e(id)+'"'+(id===String(f.pyGid)?' selected':'')+'>'+e(lab)+'</option>'}).join('')+'</select>';
@@ -293,19 +293,26 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
       h+='<div class="note">2 to 5 legs. The parlay hits only if every leg hits.</div>';
       if(f.lineFair)h+='<div class="ln-fair">Fair: about '+e(f.lineFair.label)+(lineLop(f.odds,f.lineFair)?' <span class="ln-lop">Lopsided</span>':'')+'</div>';
       if((f.legs||[]).length>=2)h+='<div class="ln-terms">'+e(f.text||'')+'</div>'+(f.legs||[]).map(function(L){return '<div class="py-leg">'+e(L.lab)+'</div>'}).join('');
-      return h+'</div></div>'}
+      return h+'</div>'+(bodyOnly?'':'</div>')}
     function rqChipOdds(){return [[1,1],[2,1],[3,1],[4,1]]}
     function rqAmts(){return (A.amounts||[]).filter(function(a){return +a!==50})}
     /* Unmatched text shows a real expiry (3 days) and Not sure yet. Those visible choices are the pick; a matched game still uses tipoff and end of game until the person changes them. */
     function freeShown(f,hasGame){if(hasGame||!f||!String(f.text||'').trim())return;if(!f.expPick&&f.mode==='start'){f.mode='d';if(!(+f.n>0))f.n=3}if(!f.whenPick)f.wk='unknown'}
     function commitRqSelect(t){if(!t||!t.dataset)return;var k=t.dataset.rqIn,v=t.value,f=S.f;if(k==='mode'){if(f.mode===v&&f.expPick)return;f.mode=v;f.expPick=true}else if(k==='wkMenu'){var wk=v==='date'||v==='season'||v==='game'?v:'unknown';if(f.whenPick&&f.wk===wk)return;f.whenPick=true;f.wk=wk;if(wk!=='date')f.est=''}else return;A.render()}
+    /* Parlay, Moneyline and Change the line sit on one row. Each opens its own options underneath, and only one stays open. */
+    function betTools(f,g){var cur=f.tool||'',btn=function(k,lab){return '<button type="button" class="rq-tool" data-rq="tool" data-v="'+k+'" aria-pressed="'+(cur===k?'true':'false')+'">'+e(lab)+'</button>'};
+      var h='<div class="rq-tools" role="group" aria-label="Bet type">'+btn('parlay','Parlay')+btn('ml','Moneyline')+btn('line','Change the line')+'</div>';
+      if(cur==='parlay')h+='<div class="rq-tool-body">'+pyBox(f,'rq',true)+'</div>';
+      else if(cur==='ml')h+='<div class="rq-tool-body"><div class="qbs-s">'+(g&&g.g&&SHARED_UI.mlQuote(g.g)?SHARED_UI.mlPills(g.g,{e:e,name:function(s){return A.tname(s)},stake:f.amt||5,on:function(i){return f.lineKind==='ml'&&(f.lineSide?1:0)===i},attr:function(i){return 'data-rq="lml" data-v="'+i+'"'}}):'<span class="note">No moneyline on this game.</span>')+'</div></div>';
+      else if(cur==='line')h+='<div class="rq-tool-body">'+lineBox(f,g,true)+'</div>';
+      return h}
     function form(){var f=S.f,now0=Date.now(),G=games().filter(function(x){var st=Date.parse(x.start)||0,ws=f.cov==='2h'?st+HALF_MS:st;if(String(x.id)===String(f.gid))return true;if(x.status==='final'||st>=now0+7*86400000)return false;if(f.cov==='2h')return !(x.period&&+x.period>=2)&&now0<ws;return x.status==='scheduled'&&now0<ws}),g=tipOf(f),me=A.me(),nOth=A.others().length;
       var timed=!!(g&&Date.parse(g.start));if(!f.expPick&&timed)f.mode='start';freeShown(f,timed);
       /* same template as Write it Up: header, Select all / Clear, numbered questions, Amount + Odds, summary, big button. Identity stays on Profile. */
       var h='<div class="card b27-form rq-form" id="rqForm">'+SHARED_UI.entryHead('rq')+(S.edit?'<div class="note">Editing this request. Nothing is posted until you save.</div>':'');
       /* STEP10: Select all / Clear sit right-aligned on the same line as question 1; the Stoop buttons stay on the next row */
       h+=(A.others().length%4?rqQ(1,'rqwho','Who is it open to?'):'<div class="rq-qrow">'+rqQ(1,'rqwho','Who is it open to?')+'<div class="s27-sel b27-selbar"><button type="button" class="s27-selb" data-rq="all"><span class="f">Select all</span><span class="s">All</span></button><button type="button" class="s27-selb" data-rq="clear">Clear</button></div></div>')+chips(f);
-      h+=rqQ(2,'text','What\u2019s the bet?')+'<input class="sb-in b27-in rq-in" data-rq-in="text" maxlength="'+(A.maxText||140)+'" autocomplete="off" placeholder="e.g. Virginia -3" value="'+e(f.text||'')+'" aria-label="What\u2019s the bet?">'+(g&&g.g&&SHARED_UI.mlQuote(g.g)?'<div class="qbs-r qbs-mkt"><span class="qbs-l">ML</span><span class="qbs-s">'+SHARED_UI.mlPills(g.g,{e:e,name:function(s){return A.tname(s)},stake:f.amt||5,on:function(i){return f.lineKind==='ml'&&(f.lineSide?1:0)===i},attr:function(i){return 'data-rq="lml" data-v="'+i+'"'}})+'</span></div>':'')+(f.parlay?'':lineBox(f,g))+pyBox(f);
+      h+=rqQ(2,'text','What\u2019s the bet?')+'<input class="sb-in b27-in rq-in" data-rq-in="text" maxlength="'+(A.maxText||140)+'" autocomplete="off" placeholder="e.g. Virginia -3" value="'+e(f.text||'')+'" aria-label="What\u2019s the bet?">'+betTools(f,g);
       var oc=!rqChipOdds().some(function(o){return +f.odds[0]===o[0]&&+f.odds[1]===o[1]})||f.oddC;
       h+='<div class="b27-ao"><div class="b27-ao-c">'+rqQ(3,'rqamt','Amount')+'<div class="b27-amts" role="group" aria-label="Amount">'+rqAmts().map(function(a){return '<button type="button" class="b27-amt" data-rq="amt" data-v="'+a+'" aria-pressed="'+(!f.amtC&&f.amt===a)+'">'+a+'</button>'}).join('')+'<button type="button" class="b27-amt cu" data-rq="amtc" aria-pressed="'+!!f.amtC+'">Custom</button></div>'+(f.amtC?'<div class="b27-cw"><input class="sb-in b27-in rq-in" data-rq-in="amtTxt" inputmode="numeric" placeholder="Whole number" value="'+e(f.amtTxt)+'" aria-label="Custom amount"></div>':'')+'</div>';
       h+='<div class="b27-ao-c">'+rqQ(4,'rqodds','Odds')+'<div class="b27-chips" role="group" aria-label="Odds">'+rqChipOdds().map(function(o){var on=!f.oddC&&+f.odds[0]===o[0]&&+f.odds[1]===o[1];return '<button type="button" class="b27-chip" data-rq="odds" data-v="'+o[0]+'-'+o[1]+'" aria-pressed="'+on+'">'+(o[0]===1?'Even':o[0]+'-'+o[1])+'</button>'}).join('')+'<button type="button" class="b27-chip cu" data-rq="oddc" aria-pressed="'+!!oc+'">Custom</button></div>'+(oc?'<div class="b27-cw"><input class="sb-in b27-in rq-in" data-rq-in="oddTxt" placeholder="e.g. 7-2 or 10-1" value="'+e(f.oddTxt||(f.odds[0]+'-'+f.odds[1]))+'" aria-label="Custom odds"></div>':'')+'</div></div>';
@@ -482,7 +489,8 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
           if(k==='close'){S.posted=true;noteCopy(S.copied)}else{S.msg='Spots: '+want+'.';S.bad=false}}catch(x){S.msg='Could not save that. Try again.';S.bad=true}S.busy=false;A.render();return}
       if(k==='unedit'){S.edit=null;S.f=nf();A.render();return}
       if(k==='when'){f.whenPick=true;f.wk=v==='date'||v==='season'||v==='game'?v:'unknown';if(f.wk!=='date')f.est='';A.render();return}
-      if(k==='line'){f.lineOn=!f.lineOn;if(f.lineOn){f.parlay=false;if(!f.lineBase)f.lineBase=f.text||''}A.render();return}
+      if(k==='tool'){var next=f.tool===v?'':v;f.tool=next;if(next==='parlay'){f.lineOn=false;pyBegin(f.gid||f.pyGid||(pySoon()[0]&&pySoon()[0].id)||'')}else f.parlay=false;f.lineOn=next==='line';if(next==='line'&&!f.lineBase)f.lineBase=f.text||'';A.render();return}
+      if(k==='line'){f.lineOn=!f.lineOn;f.tool=f.lineOn?'line':'';if(f.lineOn){f.parlay=false;if(!f.lineBase)f.lineBase=f.text||''}A.render();return}
       if(k==='parlay'){if(f.parlay){f.parlay=false;f.legs=[];f.lineFair=null;f.text=f.lineBase||'';A.render();return}pyBegin(f.gid||f.pyGid||(pySoon()[0]&&pySoon()[0].id)||'');A.render();return}
       if(k==='pydel'){var ix=+v;if(f.legs&&ix>=0)f.legs.splice(ix,1);pySync(f,true);A.render();return}
       if(k==='pyadd'){if((f.legs||[]).length>=5)return;var bits=String(v||'').split(':'),leg=pyLeg(f.pyGid,bits[0]==='spread'?'spread':'ml',bits[1]==='1'?1:0);if(!leg)return;f.legs=f.legs||[];var at=f.legs.findIndex(function(L){return String(L.gid)===String(leg.gid)});if(at>=0)f.legs[at]=leg;else f.legs.push(leg);pySync(f,true);A.render();return}
@@ -594,11 +602,6 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
     var h='<div class="qbd" role="region" aria-label="Quick bet: '+t+'"><div class="qbd-h"><b>\u26A1 Quick bet</b><button type="button" class="qbd-x" aria-label="Close" '+o.close()+'>\u2715</button></div>';
     list.forEach(function(x){var lab=x.k==='sp'?'Spread':x.k==='ou'?'O/U':x.t;h+=row(lab,x.s.map(function(s,i){return '<button type="button" class="qbs-o" aria-label="'+e(s.txt)+'" '+o.pick(x.k,i)+'>'+e(s.lab)+'</button>'}).join(''))});
     if(o.ml&&SHARED_UI.mlQuote(g))h+=row('ML',SHARED_UI.mlPills(g,{e:e,name:o.name,stake:5,attr:o.ml}));
-    var acts='';
-    if(o.straight){var ln0=g.line||{},fav0=String(ln0.fav)===String(g.away.id)?g.away:String(ln0.fav)===String(g.home.id)?g.home:null,order=fav0?[fav0,fav0===g.away?g.home:g.away]:[g.away,g.home];order.forEach(function(s){var name=o.name(s),opp=o.name(s===g.away?g.home:g.away),fair=SHARED_UI.linePrice(g,name,{kind:'none'});if(!fair)return;acts+='<button type="button" class="qbs-o" aria-label="'+e(name+' v '+opp+' (no points), '+fair.label)+'" '+o.straight(s===g.home?1:0)+'>'+e(name+' '+fair.label)+'</button>'})}
-    if(o.parlay)acts+='<button type="button" class="qbs-o" '+o.parlay()+'>Parlay</button>';
-    if(o.line)acts+='<button type="button" class="qbs-o" '+o.line()+'>Line</button>';
-    if(acts)h+='<div class="qbs-acts">'+acts+'</div>';
     return h+'<button type="button" class="qbs-o qbd-req" '+o.blank()+'>\u{1F4E8} Request a bet</button></div>'};
   /* STEP7-UPSETS: Rules "upset rule" card + empty state (each site passes its own wording, already safe markup) */
   SHARED_UI.upsetHead=function(note,empty){var h='<div class="card"><b>\u{1F631} The upset rule</b><div class="note">'+note+'</div></div>';return empty==null?h:h+'<div class="card">'+empty+'</div>'};

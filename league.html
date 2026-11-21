@@ -958,7 +958,7 @@ main,#main{padding-top:6px!important}
 /* SYNC7..SYNC14 moved to shared/ui.css (linked right after this style block) */
 
 </style>
-<link rel="stylesheet" href="shared/ui.css?v=1.86.3">
+<link rel="stylesheet" href="shared/ui.css?v=1.86.4">
 <style>/*<SORT-FIT> phone All teams: the card scrolls sideways, the page does not. Names stay full size. */@media (max-width:480px){html body .card.tap.s27-rk{padding-left:4px!important;padding-right:4px!important}html body .card.tap.s27-rk th{font-size:11px!important}html body .card.tap.s27-rk td.n,html body .card.tap.s27-rk td.to,html body .card.tap.s27-rk td.cf{font-size:13px!important}html body .card.tap.s27-rk .s27-sort i{font-size:.7em!important;margin-left:0!important}}/*</SORT-FIT>*/</style>
 </head>
 <body>
@@ -984,7 +984,7 @@ main,#main{padding-top:6px!important}
   </div>
 </section><!--</CHAT>-->
 <footer id="foot"></footer>
-<script src="shared/ui.js?v=1.86.7"></script>
+<script src="shared/ui.js?v=1.86.9"></script>
 <script src="js/version.js"></script><script src="js/core.js"></script><script src="js/league-d.js"></script><script src="js/ball-settings.js"></script><script src="js/ball-bets.js"></script><script src="js/ball-stoopids.js"></script>
 <script>
 /*<S25-SHARED>*/
@@ -1760,7 +1760,7 @@ function qbBtn(g){/*<SYNC1>*/// the Quick bet button, stacked under Copy in the 
   return `<button type="button" class="s27-copy qb-btn" aria-expanded="${open}" aria-label="Quick bet: ${esc(qbNm(g.away))} vs ${esc(qbNm(g.home))}" onclick="qbToggle('${esc(id)}')"><svg class="qb-bolt" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" focusable="false"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg> Quick bet</button>`}
 function qbHtml(g){
   if(!qbOk(g))return '';const id=String(g.id),open=qbG===id;
-  /*<STEP7-QB>*/if(typeof SHARED_UI!=='undefined'&&SHARED_UI.qbSheet){if(!open)return '';return SHARED_UI.qbSheet(g,qbList(g),{e:esc,name:qbNm,date:qbDate(g),close:()=>`onclick="qbToggle(null)"`,blank:()=>`onclick="qbGo('${esc(id)}',null,0)"`,pick:(k,i)=>`onclick="qbGo('${esc(id)}','${k}',${i})"`,straight:i=>`onclick="qbStraight('${esc(id)}',${i})"`,parlay:()=>`onclick="qbParlay('${esc(id)}')"`,line:()=>`onclick="qbLine('${esc(id)}')"`,ml:i=>`onclick="qbMl('${esc(id)}',${i})"`})}/*</STEP7-QB>*/
+  /*<STEP7-QB>*/if(typeof SHARED_UI!=='undefined'&&SHARED_UI.qbSheet){if(!open)return '';return SHARED_UI.qbSheet(g,qbList(g),{e:esc,name:qbNm,date:qbDate(g),close:()=>`onclick="qbToggle(null)"`,blank:()=>`onclick="qbGo('${esc(id)}',null,0)"`,pick:(k,i)=>`onclick="qbGo('${esc(id)}','${k}',${i})"`,ml:i=>`onclick="qbMl('${esc(id)}',${i})"`})}/*</STEP7-QB>*/
   let h='';
   const oa=qbOwn(g.away),oh=qbOwn(g.home),me=b27Who(),need=me!==oa&&me!==oh;
   h+=`<div class="qb-pick" role="group" aria-label="Quick bet picker">`;
