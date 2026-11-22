@@ -958,7 +958,7 @@ main,#main{padding-top:6px!important}
 /* SYNC7..SYNC14 moved to shared/ui.css (linked right after this style block) */
 
 </style>
-<link rel="stylesheet" href="shared/ui.css?v=1.86.5">
+<link rel="stylesheet" href="shared/ui.css?v=1.86.7">
 <style>/*<SORT-FIT> phone All teams: the card scrolls sideways, the page does not. Names stay full size. */@media (max-width:480px){html body .card.tap.s27-rk{padding-left:4px!important;padding-right:4px!important}html body .card.tap.s27-rk th{font-size:11px!important}html body .card.tap.s27-rk td.n,html body .card.tap.s27-rk td.to,html body .card.tap.s27-rk td.cf{font-size:13px!important}html body .card.tap.s27-rk .s27-sort i{font-size:.7em!important;margin-left:0!important}}/*</SORT-FIT>*/</style>
 </head>
 <body>
@@ -984,7 +984,7 @@ main,#main{padding-top:6px!important}
   </div>
 </section><!--</CHAT>-->
 <footer id="foot"></footer>
-<script src="shared/ui.js?v=1.86.11"></script>
+<script src="shared/ui.js?v=1.86.13"></script>
 <script src="js/version.js"></script><script src="js/core.js"></script><script src="js/league-d.js"></script><script src="js/ball-settings.js"></script><script src="js/ball-bets.js"></script><script src="js/ball-stoopids.js"></script>
 <script>
 /*<S25-SHARED>*/
@@ -1664,12 +1664,13 @@ function TN(n){const k=ownerKey(n);const o=D&&D.owners&&D.owners.find(x=>x.name=
 function idLine(){let name=null;if(!(typeof VIEW_ONLY!=='undefined'&&VIEW_ONLY)){try{const raw=(typeof PS!=='undefined'&&PS&&PS.who)||localStorage.getItem((HK+'who'))||'';const w=typeof whoKey==='function'?whoKey(raw):legacyOwner(raw);if(w&&w!=='__guest__'&&D&&D.owners&&D.owners.some(o=>o.name===w))name=PN(w)}catch(e){}}
   const line=window.SHARED_UI&&SHARED_UI.loginLine?SHARED_UI.loginLine(name?{name:esc(name),change:'onclick="presAsk()"'} : {}):(name?`<p class="idline">You are logged in as <b>${esc(name)}</b> — <button type="button" class="idline-ch" onclick="presAsk()">Change?</button></p>`:`<p class="idline" role="status">You’re viewing as a guest. This visit can’t pick a name.</p>`);
   return line+(name&&typeof whoWarn==='function'?whoWarn():'')}
+function mgrRec(teams){let w=0,l=0;(teams||[]).forEach(t=>{const r=(D.records||{})[t.tid]||{};w+=(+r.w||0);l+=(+r.l||0)});return w+'-'+l}
 function vStandings(){const tail=idLine();/*<RANKINGS>*/const sv=rkView();if(sv==='points')return rkSeg()+vPoints()+tail;/*</RANKINGS>*/
-  /*<STEP5-STANDINGS>*/if(typeof SHARED_UI!=='undefined'&&SHARED_UI.standingsList)return rkSeg()+SHARED_UI.standingsList(D.owners.map(o=>({rank:rankTxt(o),emoji:o.emoji,team:TN(o.name),person:PN(o.name),gold:goldTag(o.name),total:o.total,lbAttr:`onclick="goOwner('${esc(o.name)}')"`,chips:o.teams.map(t=>chipRec(t.tid,{out:t.status==='dropped',cn:1})).join('')})),esc)+goldNote()+tail;/*</STEP5-STANDINGS> fallback below*/
+  /*<STEP5-STANDINGS>*/if(typeof SHARED_UI!=='undefined'&&SHARED_UI.standingsList)return rkSeg()+SHARED_UI.standingsList(D.owners.map(o=>({rank:rankTxt(o),emoji:o.emoji,team:TN(o.name),person:PN(o.name),wl:mgrRec(o.teams),gold:goldTag(o.name),total:o.total,lbAttr:`onclick="goOwner('${esc(o.name)}')"`,chips:o.teams.map(t=>chipRec(t.tid,{out:t.status==='dropped',cn:1})).join('')})),esc)+goldNote()+tail;/*</STEP5-STANDINGS> fallback below*/
   const mx=Math.max(10,...D.owners.map(o=>o.total));
   return /*<RANKINGS>*/rkSeg()+/*</RANKINGS>*//*<RANK-CHIPS>*/'<div class="ocl">'/*</RANK-CHIPS>*/+D.owners.map((o,i)=>`<div class="card${/*<RANK-CHIPS>*/' oc'/*</RANK-CHIPS>*/}"><div class="lb" onclick="goOwner('${esc(o.name)}')">
     <div class="rank">${rankTxt(o)}</div>
-    <div class="who"><b>${esc(o.emoji)} ${esc(/*<OWNER-NAMES>*/TN(o.name)/*</OWNER-NAMES>*/)}</b><small>${esc(/*<OWNER-NAMES>*/PN(o.name)/*</OWNER-NAMES>*/)}${/*<GOLD-LINE>*//*<SYNC2-ST>*/goldTag(o.name)/*</GOLD-LINE>*/}</small>${/*<RANK-CHIPS>*/''/*per-owner quip no longer shown on these cards (quip() itself is untouched; Rosters still uses it)*//*</RANK-CHIPS>*/}</div>
+    <div class="who"><b>${esc(o.emoji)} ${esc(/*<OWNER-NAMES>*/TN(o.name)/*</OWNER-NAMES>*/)}</b><small><span class="mn">${esc(/*<OWNER-NAMES>*/PN(o.name)/*</OWNER-NAMES>*/)}</span><span class="mrec" title="Combined team record">${mgrRec(o.teams)}</span>${/*<GOLD-LINE>*//*<SYNC2-ST>*/goldTag(o.name)/*</GOLD-LINE>*/}</small>${/*<RANK-CHIPS>*/''/*per-owner quip no longer shown on these cards (quip() itself is untouched; Rosters still uses it)*//*</RANK-CHIPS>*/}</div>
     <div class="pts">${o.total}<small>Points</small></div></div>
     <div class="bar"><i style="width:${Math.max(0,o.total)/mx*100}%"></i></div>
     <div class="chips">${o.teams.map(t=>/*<CHIP-RECORD>*/chipRec/*</CHIP-RECORD>*/(t.tid,{out:t.status==='dropped',cn:1})).join('')}</div></div>`).join('')+'</div>'+
