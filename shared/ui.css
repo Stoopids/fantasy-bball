@@ -598,9 +598,22 @@ html body .s24fb .row2>select,html body .s24fb .row2>input,html body .b27-fr>sel
 html body .s24st{display:flex;flex-flow:row wrap;align-items:center;gap:6px;margin:0 0 8px}
 html body .s24st>button{flex:0 0 auto;width:auto;height:32px;min-height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line,#2d3548);background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 html body .s24st>button.on{background:#ffd400;color:#111;border-color:#ffd400}
-/* Manager record sits on the existing name line: small, muted, no extra row. */
-html body .card.oc .who small{display:flex;align-items:baseline;justify-content:flex-start;gap:6px;min-width:0;overflow:hidden}
-html body .card.oc .who small .mn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-html body .card.oc .who small .mrec{flex:none;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:0;white-space:nowrap;opacity:.8}
-html body .card.oc .who small .gold{flex:none}
-@media (max-width:600px){html body .card.oc .who small{justify-content:center}}
+/* Standings header: place, points, manager, record. Content-sized, record at the right. */
+html body .card.oc,html body .ocl>.card.oc{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;grid-template-areas:"rank who pts" "bar bar bar" "chips chips chips"!important;column-gap:8px!important;align-items:center!important}
+html body .card.oc .rank{grid-area:rank;display:flex!important;align-items:baseline;gap:6px;width:auto!important;text-align:left!important;font-size:15px!important;flex:none}
+html body .card.oc .rank .pl{font-weight:800;color:var(--acc,#ffd23f);white-space:nowrap}
+html body .card.oc .rank .mhpts{font-size:13px;font-weight:700;color:var(--mut,#9aa6bd);white-space:nowrap;font-variant-numeric:tabular-nums}
+html body .card.oc .who{grid-area:who;display:flex!important;align-items:baseline;justify-content:flex-start!important;gap:6px;min-width:0;text-align:left!important;overflow:hidden}
+html body .card.oc .who .mn{flex:none;font-size:15px;font-weight:800;white-space:nowrap}
+html body .card.oc .who>b,html body .card.oc .who .nm{flex:0 1 auto;min-width:0;font-size:12px!important;font-weight:700;color:var(--mut,#9aa6bd);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html body .card.oc .who .gold{flex:none;display:inline!important}
+html body .card.oc .pts{grid-area:pts;display:block!important;width:auto!important;font-size:15px!important;font-weight:800;text-align:right!important;justify-self:end!important;white-space:nowrap;font-variant-numeric:tabular-nums}
+html body .card.oc .pts small{display:none!important}
+html body .card.oc .pts .mrec{font-weight:800}
+@media (min-width:700px){
+ html body .ocl{display:grid!important;grid-template-columns:auto minmax(0,1.15fr) auto minmax(0,1.7fr)!important;column-gap:12px!important}
+ html body .ocl>.card.oc{grid-column:1/-1!important;grid-template-columns:subgrid!important;grid-template-areas:"rank who pts chips" "bar bar bar bar"!important}
+}
+@supports not (grid-template-columns:subgrid){
+ @media (min-width:700px){html body .ocl>.card.oc{grid-template-columns:auto minmax(0,1.15fr) auto minmax(0,1.7fr)!important}}
+}

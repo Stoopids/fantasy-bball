@@ -59,13 +59,15 @@ U.espnStatus=lvStatus;U.espnEvent=lvParse;U.espnBox=boxParse;
 function hsLs(g,s,BOX){var L=g._lv&&g._lv.ls;if(L){var a=s===g.away?L.a:L.h;if(a&&a.length)return a}if(Array.isArray(s.ls)&&s.ls.length)return s.ls;try{var b=BOX&&BOX[String(g.id)];if(b&&b.teams){var t=b.teams.find(function(t){return String(t.id)===String(s.id)});if(t&&t.ls&&t.ls.length)return t.ls}}catch(e){}return null}
 U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(String(s.score)):'';var A=hsLs(g,g.away,BOX),H=hsLs(g,g.home,BOX);if(!A&&!H)return tot;var n=Math.max(2,(A||[]).length,(H||[]).length),me=(s===g.away?A:H)||[],lab=function(i){return i<2?(i+1)+'H':(n>3?'OT'+(i-1):'OT')};var h='';for(var i=0;i<n;i++){var v=me[i];h+='<span class="hsq"'+(first?' data-h="'+lab(i)+'"':'')+'>'+'<i>'+(v!=null&&v!==''?esc(String(v)):'&nbsp;')+'</i>'+'</span>'}return '<span class="hsg">'+h+'<span class="hst"'+(first?' data-h="T"':'')+'>'+tot+'</span></span>'};
 
-  /* STEP5-STANDINGS: one owner-card list for the Standings tab (both sites). rows: {mid,rank,emoji,team,person,gold,total,chips,lbAttr} */
+  /* STEP5-STANDINGS: one owner-card list for the Standings tab (both sites). rows: {mid,rank,emoji,team,person,gold,total,wl,chips,lbAttr}
+     Header, left to right: place, points, manager name, combined record. */
+  function placeOf(rank){var t=String(rank==null?'':rank),tie=/^T-/.test(t),n=parseInt(tie?t.slice(2):t,10);if(!(n>0))return t;var s='th',v=n%100;if(v<11||v>13){var d=n%10;s=d===1?'st':d===2?'nd':d===3?'rd':'th'}return (tie?'T-':'')+n+s}
   SHARED_UI.standingsList=function(rows,se){var e=se||function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
     var mx=Math.max.apply(null,[10].concat(rows.map(function(r){return r.total})));
     return '<div class="ocl">'+rows.map(function(r){return '<div class="card oc strow"'+(r.mid!=null?' data-mid="'+e(r.mid)+'"':'')+'><div class="lb" '+r.lbAttr+'>'+
-      '<div class="rank place">'+e(r.rank)+'</div>'+
-      '<div class="who"><b class="nm">'+e(r.emoji)+' '+e(r.team)+'</b><small><span class="mn">'+e(r.person)+'</span>'+(r.wl?'<span class="mrec" title="Combined team record">'+e(r.wl)+'</span>':'')+(r.gold||'')+'</small></div>'+
-      '<div class="pts score"><span class="pv">'+r.total+'</span><small>Points</small></div></div>'+
+      '<div class="rank place"><b class="pl">'+e(placeOf(r.rank))+'</b><span class="mhpts">'+e(r.total)+' pts</span></div>'+
+      '<div class="who"><span class="mn">'+e(r.emoji)+' '+e(r.person)+'</span><b class="nm">'+e(r.team)+'</b>'+(r.gold||'')+'</div>'+
+      '<div class="pts score"><span class="mrec" title="Combined team record">'+e(r.wl||'')+'</span></div></div>'+
       '<div class="bar"><i style="width:'+(Math.max(0,r.total)/mx*100)+'%"></i></div>'+
       '<div class="chips school-grid">'+r.chips+'</div></div>'}).join('')+'</div>'};
 
