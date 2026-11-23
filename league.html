@@ -958,7 +958,7 @@ main,#main{padding-top:6px!important}
 /* SYNC7..SYNC14 moved to shared/ui.css (linked right after this style block) */
 
 </style>
-<link rel="stylesheet" href="shared/ui.css?v=1.86.7">
+<link rel="stylesheet" href="shared/ui.css?v=1.86.8">
 <style>/*<SORT-FIT> phone All teams: the card scrolls sideways, the page does not. Names stay full size. */@media (max-width:480px){html body .card.tap.s27-rk{padding-left:4px!important;padding-right:4px!important}html body .card.tap.s27-rk th{font-size:11px!important}html body .card.tap.s27-rk td.n,html body .card.tap.s27-rk td.to,html body .card.tap.s27-rk td.cf{font-size:13px!important}html body .card.tap.s27-rk .s27-sort i{font-size:.7em!important;margin-left:0!important}}/*</SORT-FIT>*/</style>
 </head>
 <body>
@@ -984,7 +984,7 @@ main,#main{padding-top:6px!important}
   </div>
 </section><!--</CHAT>-->
 <footer id="foot"></footer>
-<script src="shared/ui.js?v=1.86.12"></script>
+<script src="shared/ui.js?v=1.86.13"></script>
 <script src="js/version.js"></script><script src="js/core.js"></script><script src="js/league-d.js"></script><script src="js/ball-settings.js"></script><script src="js/ball-bets.js"></script><script src="js/ball-stoopids.js"></script>
 <script>
 /*<S25-SHARED>*/
@@ -1386,7 +1386,7 @@ function chip(tid,opt){opt=opt||{};const t=D.teams[tid]||{};if(!t.short&&opt.nam
   return `<a class="chip${opt.big?' big':''}${opt.out?' out':''}" data-tid="${esc(tid)}" href="${url}" target="_blank" rel="noopener" title="Open ${esc(t.name||t.short||tid)} on ESPN" onclick="event.stopPropagation()" style="background:${bg};color:${fg};border-color:${alt}">${logo}${/*<RANKINGS>*/apBadge(tid)/*</RANKINGS>*/}${/*<RANK-CHIPS>*/opt.cn?'<span class="cn'+(/\s/.test(t.short||t.name||tid)?'':' one')+'">'+esc(t.short||t.name||tid)+'</span>'+/*<SYNC1>*/'<span class="cab">'+esc(String(t.abbr||t.short||'').toUpperCase().slice(0,4))+'</span>'/*</SYNC1>*/:/*</RANK-CHIPS>*/esc(t.short||t.name||tid)}</a>`}
 /* ---------- helpers ---------- */
 const rec=tid=>{const r=(D.records||{})[tid]||{w:0,l:0};return r.w+'-'+r.l};
-function mgrTot(teams){let w=0,l=0;(teams||[]).forEach(t=>{const r=(D.records||{})[t.tid]||{};w+=+r.w||0;l+=+r.l||0});const g=w+l;return {wl:w+'-'+l,gp:'('+g+')'}}
+function mgrTot(teams){let w=0,l=0;(teams||[]).forEach(t=>{const r=(D.records||{})[t.tid]||{};w+=+r.w||0;l+=+r.l||0});const g=w+l;return {wl:w+'-'+l,gp:'('+g+')',gn:g}}
 /*<CHIP-RECORD>*/const chipRec=(tid,o)=>{const h=chip(tid,o);return D.records?h.replace(/<\/a>$/,'<span class="cr" title="Season record (W-L)">'+rec(tid)+'</span></a>'):h};/*</CHIP-RECORD>*/
 const sign=n=>n>0?'+'+n:String(n);
 function ownerOf(tid){for(const o of D.owners)for(const t of o.teams)if(t.tid===tid&&t.status!=='dropped')return o.name;return '—'}
@@ -1666,7 +1666,7 @@ function idLine(){let name=null;if(!(typeof VIEW_ONLY!=='undefined'&&VIEW_ONLY))
   const line=window.SHARED_UI&&SHARED_UI.loginLine?SHARED_UI.loginLine(name?{name:esc(name),change:'onclick="presAsk()"'} : {}):(name?`<p class="idline">You are logged in as <b>${esc(name)}</b> — <button type="button" class="idline-ch" onclick="presAsk()">Change?</button></p>`:`<p class="idline" role="status">You’re viewing as a guest. This visit can’t pick a name.</p>`);
   return line+(name&&typeof whoWarn==='function'?whoWarn():'')}
 function vStandings(){const tail=idLine();/*<RANKINGS>*/const sv=rkView();if(sv==='points')return rkSeg()+vPoints()+tail;/*</RANKINGS>*/
-  /*<STEP5-STANDINGS>*/if(typeof SHARED_UI!=='undefined'&&SHARED_UI.standingsList)return rkSeg()+SHARED_UI.standingsList(D.owners.map(o=>({rank:rankTxt(o),emoji:o.emoji,team:TN(o.name),person:PN(o.name),gold:goldTag(o.name),total:o.total,lbAttr:`onclick="goOwner('${esc(o.name)}')"`,chips:o.teams.map(t=>chipRec(t.tid,{out:t.status==='dropped',cn:1})).join(''),wl:mgrTot(o.teams).wl,gp:mgrTot(o.teams).gp})),esc)+goldNote()+tail;/*</STEP5-STANDINGS> fallback below*/
+  /*<STEP5-STANDINGS>*/if(typeof SHARED_UI!=='undefined'&&SHARED_UI.standingsList)return rkSeg()+SHARED_UI.standingsList(D.owners.map(o=>({rank:rankTxt(o),emoji:o.emoji,team:TN(o.name),person:PN(o.name),gold:goldTag(o.name),total:o.total,lbAttr:`onclick="goOwner('${esc(o.name)}')"`,chips:o.teams.map(t=>chipRec(t.tid,{out:t.status==='dropped',cn:1})).join(''),wl:mgrTot(o.teams).wl,gp:mgrTot(o.teams).gp,gn:mgrTot(o.teams).gn})),esc)+goldNote()+tail;/*</STEP5-STANDINGS> fallback below*/
   const mx=Math.max(10,...D.owners.map(o=>o.total));
   return /*<RANKINGS>*/rkSeg()+/*</RANKINGS>*//*<RANK-CHIPS>*/'<div class="ocl">'/*</RANK-CHIPS>*/+D.owners.map((o,i)=>`<div class="card${/*<RANK-CHIPS>*/' oc'/*</RANK-CHIPS>*/}"><div class="lb" onclick="goOwner('${esc(o.name)}')">
     <div class="rank">${rankTxt(o)}</div>
