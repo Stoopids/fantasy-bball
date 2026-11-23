@@ -958,7 +958,7 @@ main,#main{padding-top:6px!important}
 /* SYNC7..SYNC14 moved to shared/ui.css (linked right after this style block) */
 
 </style>
-<link rel="stylesheet" href="shared/ui.css?v=1.86.5">
+<link rel="stylesheet" href="shared/ui.css?v=1.86.6">
 <style>/*<SORT-FIT> phone All teams: the card scrolls sideways, the page does not. Names stay full size. */@media (max-width:480px){html body .card.tap.s27-rk{padding-left:4px!important;padding-right:4px!important}html body .card.tap.s27-rk th{font-size:11px!important}html body .card.tap.s27-rk td.n,html body .card.tap.s27-rk td.to,html body .card.tap.s27-rk td.cf{font-size:13px!important}html body .card.tap.s27-rk .s27-sort i{font-size:.7em!important;margin-left:0!important}}/*</SORT-FIT>*/</style>
 </head>
 <body>
@@ -1386,7 +1386,8 @@ function chip(tid,opt){opt=opt||{};const t=D.teams[tid]||{};if(!t.short&&opt.nam
   return `<a class="chip${opt.big?' big':''}${opt.out?' out':''}" data-tid="${esc(tid)}" href="${url}" target="_blank" rel="noopener" title="Open ${esc(t.name||t.short||tid)} on ESPN" onclick="event.stopPropagation()" style="background:${bg};color:${fg};border-color:${alt}">${logo}${/*<RANKINGS>*/apBadge(tid)/*</RANKINGS>*/}${/*<RANK-CHIPS>*/opt.cn?'<span class="cn'+(/\s/.test(t.short||t.name||tid)?'':' one')+'">'+esc(t.short||t.name||tid)+'</span>'+/*<SYNC1>*/'<span class="cab">'+esc(String(t.abbr||t.short||'').toUpperCase().slice(0,4))+'</span>'/*</SYNC1>*/:/*</RANK-CHIPS>*/esc(t.short||t.name||tid)}</a>`}
 /* ---------- helpers ---------- */
 const rec=tid=>{const r=(D.records||{})[tid]||{w:0,l:0};return r.w+'-'+r.l};
-/*<CHIP-RECORD>*/const chipRec=(tid,o)=>{const h=chip(tid,o);return D.records?h.replace(/<\/a>$/,'<span class="cr" title="Season record (W-L)">'+rec(tid)+'</span></a>'):h};/*</CHIP-RECORD>*/
+function teamGp(tid){const r=(D.records||{})[tid]||{w:0,l:0};const g=(+r.w||0)+(+r.l||0);return g+(g===1?' game':' games')}
+/*<CHIP-RECORD>*/const chipRec=(tid,o)=>{const h=chip(tid,o);if(!D.records)return h;const pill=h.replace(/<\/a>$/,'<span class="cr" title="Season record (W-L)">'+rec(tid)+'</span></a>');return '<span class="tline">'+pill+'<span class="trec" title="Season record and games played"><b>'+rec(tid)+'</b><small>'+teamGp(tid)+'</small></span></span>'};/*</CHIP-RECORD>*/
 const sign=n=>n>0?'+'+n:String(n);
 function ownerOf(tid){for(const o of D.owners)for(const t of o.teams)if(t.tid===tid&&t.status!=='dropped')return o.name;return '—'}
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];

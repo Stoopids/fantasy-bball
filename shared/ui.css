@@ -598,3 +598,17 @@ html body .s24fb .row2>select,html body .s24fb .row2>input,html body .b27-fr>sel
 html body .s24st{display:flex;flex-flow:row wrap;align-items:center;gap:6px;margin:0 0 8px}
 html body .s24st>button{flex:0 0 auto;width:auto;height:32px;min-height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line,#2d3548);background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 html body .s24st>button.on{background:#ffd400;color:#111;border-color:#ffd400}
+/* Desktop Standings: W-L on the right of each team, games played underneath. Phones keep the record inside the pill. */
+@media (max-width:699px){
+ html body .card.oc .chips .tline{display:contents!important}
+ html body .card.oc .trec{display:none!important}
+}
+@media (min-width:700px){
+ html body .card.oc .chips .tline{display:flex!important;align-items:center;justify-content:flex-start;gap:6px;min-width:0}
+ html body .card.oc .chips .tline>.chip{flex:0 1 auto!important;width:auto!important;max-width:calc(100% - 52px)!important;height:32px!important;min-height:32px!important;display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;padding:0 8px 0 2px!important}
+ html body .card.oc .chips .tline>.chip .cr{display:none!important}
+ html body .card.oc .chips .tline>.chip .cab,html body .card.oc .chips .tline>.chip .mkab{align-self:center!important;grid-row:auto!important}
+ html body .card.oc .trec{display:block!important;margin-left:auto;flex:none;text-align:right;line-height:1.05}
+ html body .card.oc .trec b{display:block;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:0}
+ html body .card.oc .trec small{display:block;margin-top:1px;font-size:10px;font-weight:600;color:var(--mut,#9aa6bd);white-space:nowrap}
+}
