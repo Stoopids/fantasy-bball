@@ -9,7 +9,7 @@ for(const f of ['league.html','shared/ui.js','shared/ui.css','js/ball-settings.j
 }
 const html=read('league.html');
 const layer=read('js/ball-stoopids.js');
-assert.ok(html.includes('shared/ui.js?v=1.86.13'),'ui.js cache key');
+assert.ok(html.includes('shared/ui.js?v=1.86.14'),'ui.js cache key');
 assert.ok(html.includes("s.src='data.js?v='+Date.now()"),'the page loads one data.js');
 assert.ok(!html.includes('js/league-sched.js'),'per-school schedule script is still on the page');
 assert.ok(!html.includes('css/power.css'),'power css loads on every page');
