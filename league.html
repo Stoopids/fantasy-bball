@@ -984,7 +984,7 @@ main,#main{padding-top:6px!important}
   </div>
 </section><!--</CHAT>-->
 <footer id="foot"></footer>
-<script src="shared/ui.js?v=1.86.14"></script>
+<script src="shared/ui.js?v=1.86.15"></script>
 <script src="js/version.js"></script><script src="js/core.js"></script><script src="js/league-d.js"></script><script src="js/ball-settings.js"></script><script src="js/ball-bets.js"></script><script src="js/ball-stoopids.js"></script>
 <script>
 /*<S25-SHARED>*/
@@ -3856,7 +3856,8 @@ function b27Due(b){if(!b||b.kind==='pool'||!s24IsOpen(b))return false;const k=b2
   return false}
 function b27Ready(b){return b27Due(b)}
 /* Anyone in the bet can settle: backer, the other side, or opponents. postedBy counts only when that person is already one of those. */
-function b27CanSettle(b,me){if(!b||!me||b.kind==='pool'||b.status!=='open')return false;if(b.backer===me||b.other===me)return true;return Array.isArray(b.opponents)&&b.opponents.includes(me)}
+function b27InBet(b,me){if(!b||!me||b.kind==='pool')return false;if(b.backer===me||b.other===me)return true;return Array.isArray(b.opponents)&&b.opponents.includes(me)}
+function b27CanSettle(b,me){return !!(b&&b.status==='open'&&b27InBet(b,me))}
 function b27NeedsOther(b,me){return !!(b&&b.status==='open'&&b.kind!=='pool'&&!b27CanSettle(b,me))}
 function b27Cards(list,me){return (list||[]).map(b=>b.kind==='pool'?b27PoolCard(b,me):b27Card(b,me)).join('')}
 function b27Grouped(list,me){const names=[['game',''],['season','End of season'],['date','Set date'],['unknown','Not sure yet']];let left=60,h='',n=0;names.forEach(([k,lab])=>{const g=b27SortSoon(list.filter(b=>b27WhenGroup(b)===k));if(!g.length||left<=0)return;const show=g.slice(0,left);left-=show.length;n+=g.length;h+=(lab?`<h3 class="b27-gh">${lab}</h3>`:'')+`<div class="b27-grid">${b27Cards(show,me)}</div>`});if(n>60)h+='<p class="note">Showing the first 60 in these groups.</p>';return h}
@@ -3901,7 +3902,7 @@ function vB27(){
   /*<OWES-TABLE>*//*<S26F-WIU>*/// Write it Up: no Who Owes Who grid / Net per manager here; they live on Tally only (vTally, unchanged)/*</S26F-WIU>*//*</OWES-TABLE>*/
   /*<S26F-WIU> 'Still open' line removed from Write it Up (its closing </div> belonged to the removed owes card) </S26F-WIU>*/
   /*<S24-EDIT>*/{const FL=s24Filter(bets,me).filter(b=>!b27Done(b)||(S24.sub&&b.id===S24.sub));
-  const ready=b27SortSoon(FL.filter(b27Ready)),mine=ready.filter(b=>!b27NeedsOther(b,me)),other=ready.filter(b=>b27NeedsOther(b,me)),ids=new Set(ready.map(b=>b.id)),rest=FL.filter(b=>!ids.has(b.id));
+  const ready=b27SortSoon(FL.filter(b27Ready)),mine=ready.filter(b=>b27CanSettle(b,me)),other=ready.filter(b=>b27InBet(b,me)&&!b27CanSettle(b,me)),ids=new Set(mine.concat(other).map(b=>b.id)),rest=FL.filter(b=>!ids.has(b.id));
   if(mine.length)h+=`<section id="b27Ready"><h2>Ready to settle <span class="note">${mine.length}</span></h2><div class="b27-grid">${b27Cards(mine,me)}</div></section>`;
   if(other.length)h+=`<section id="b27ReadyElse"><h2>Ready For Someone Else to Settle <span class="note">${other.length}</span></h2><div class="b27-grid">${b27Cards(other,me)}</div></section>`;
   h+=`<h2 class="b27-allh">All bets (${rest.length}${rest.length!==bets.length?' of '+bets.length:''})${/*<S25>*/s25MuteBtn()/*</S25>*/}</h2>`+s24FilterBar(bets,me)+(rest.length?s24ChronoList(rest,me):bets.length?'<div class="card note s24fe">No unsettled bets match this filter.</div>':'<div class="card note">No bets yet. Be the first.</div>');}/*</S24-EDIT>*/
