@@ -1386,7 +1386,7 @@ function chip(tid,opt){opt=opt||{};const t=D.teams[tid]||{};if(!t.short&&opt.nam
   return `<a class="chip${opt.big?' big':''}${opt.out?' out':''}" data-tid="${esc(tid)}" href="${url}" target="_blank" rel="noopener" title="Open ${esc(t.name||t.short||tid)} on ESPN" onclick="event.stopPropagation()" style="background:${bg};color:${fg};border-color:${alt}">${logo}${/*<RANKINGS>*/apBadge(tid)/*</RANKINGS>*/}${/*<RANK-CHIPS>*/opt.cn?'<span class="cn'+(/\s/.test(t.short||t.name||tid)?'':' one')+'">'+esc(t.short||t.name||tid)+'</span>'+/*<SYNC1>*/'<span class="cab">'+esc(String(t.abbr||t.short||'').toUpperCase().slice(0,4))+'</span>'/*</SYNC1>*/:/*</RANK-CHIPS>*/esc(t.short||t.name||tid)}</a>`}
 /* ---------- helpers ---------- */
 const rec=tid=>{const r=(D.records||{})[tid]||{w:0,l:0};return r.w+'-'+r.l};
-function mgrTot(teams){let w=0,l=0;(teams||[]).forEach(t=>{const r=(D.records||{})[t.tid]||{};w+=+r.w||0;l+=+r.l||0});const g=w+l;return {wl:w+'-'+l,gp:g+(g===1?' game':' games')}}
+function mgrTot(teams){let w=0,l=0;(teams||[]).forEach(t=>{const r=(D.records||{})[t.tid]||{};w+=+r.w||0;l+=+r.l||0});const g=w+l;return {wl:w+'-'+l,gp:'('+g+')'}}
 /*<CHIP-RECORD>*/const chipRec=(tid,o)=>{const h=chip(tid,o);return D.records?h.replace(/<\/a>$/,'<span class="cr" title="Season record (W-L)">'+rec(tid)+'</span></a>'):h};/*</CHIP-RECORD>*/
 const sign=n=>n>0?'+'+n:String(n);
 function ownerOf(tid){for(const o of D.owners)for(const t of o.teams)if(t.tid===tid&&t.status!=='dropped')return o.name;return '—'}
