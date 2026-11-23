@@ -598,3 +598,14 @@ html body .s24fb .row2>select,html body .s24fb .row2>input,html body .b27-fr>sel
 html body .s24st{display:flex;flex-flow:row wrap;align-items:center;gap:6px;margin:0 0 8px}
 html body .s24st>button{flex:0 0 auto;width:auto;height:32px;min-height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line,#2d3548);background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 html body .s24st>button.on{background:#ffd400;color:#111;border-color:#ffd400}
+/* Desktop Standings: one combined record on the right of the manager row. Phones do not show it. */
+@media (max-width:699px){html body .card.oc .mgtot{display:none!important}}
+@media (min-width:700px){
+ html body .ocl{grid-template-columns:56px fit-content(260px) 64px minmax(0,1fr) auto!important}
+ html body .ocl>.card.oc{grid-template-areas:"rank who pts chips mgtot" "bar bar bar bar bar"!important}
+ html body .card.oc .mgtot{grid-area:mgtot;align-self:center;justify-self:end;text-align:right;line-height:1.05;padding-left:10px;white-space:nowrap}
+ html body .card.oc .mgtot b{display:block;font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:0}
+ html body .card.oc .mgtot small{display:block;margin-top:1px;font-size:11px;font-weight:600;color:var(--mut,#9aa6bd)}
+ html body .card.oc .mgtot small.good{color:var(--good,#4ade80)}
+ html body .card.oc .mgtot small.bad{color:var(--bad,#f87171)}
+}

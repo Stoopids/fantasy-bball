@@ -62,10 +62,12 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
   /* STEP5-STANDINGS: one owner-card list for the Standings tab (both sites). rows: {mid,rank,emoji,team,person,gold,total,chips,lbAttr} */
   SHARED_UI.standingsList=function(rows,se){var e=se||function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
     var mx=Math.max.apply(null,[10].concat(rows.map(function(r){return r.total})));
-    return '<div class="ocl">'+rows.map(function(r){return '<div class="card oc strow"'+(r.mid!=null?' data-mid="'+e(r.mid)+'"':'')+'><div class="lb" '+r.lbAttr+'>'+
+    var gs=rows.map(function(r){return +r.gn||0}),hi=Math.max.apply(null,gs),lo=Math.min.apply(null,gs),spread=hi!==lo;
+    return '<div class="ocl">'+rows.map(function(r){var tone=spread&&+r.gn===hi?' good':spread&&+r.gn===lo?' bad':'';return '<div class="card oc strow"'+(r.mid!=null?' data-mid="'+e(r.mid)+'"':'')+'><div class="lb" '+r.lbAttr+'>'+
       '<div class="rank place">'+e(r.rank)+'</div>'+
       '<div class="who"><b class="nm">'+e(r.emoji)+' '+e(r.team)+'</b><small>'+e(r.person)+(r.gold||'')+'</small></div>'+
-      '<div class="pts score"><span class="pv">'+r.total+'</span><small>Points</small></div></div>'+
+      '<div class="pts score"><span class="pv">'+r.total+'</span><small>Points</small></div>'+
+      (r.wl?'<div class="mgtot"><b>'+e(r.wl)+'</b><small class="'+tone.trim()+'">'+e(r.gp||'')+'</small></div>':'')+'</div>'+
       '<div class="bar"><i style="width:'+(Math.max(0,r.total)/mx*100)+'%"></i></div>'+
       '<div class="chips school-grid">'+r.chips+'</div></div>'}).join('')+'</div>'};
 
