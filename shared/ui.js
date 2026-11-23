@@ -65,7 +65,8 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
     return '<div class="ocl">'+rows.map(function(r){return '<div class="card oc strow"'+(r.mid!=null?' data-mid="'+e(r.mid)+'"':'')+'><div class="lb" '+r.lbAttr+'>'+
       '<div class="rank place">'+e(r.rank)+'</div>'+
       '<div class="who"><b class="nm">'+e(r.emoji)+' '+e(r.team)+'</b><small>'+e(r.person)+(r.gold||'')+'</small></div>'+
-      '<div class="pts score"><span class="pv">'+r.total+'</span><small>Points</small></div></div>'+
+      '<div class="pts score"><span class="pv">'+r.total+'</span><small>Points</small></div>'+
+      (r.wl?'<div class="mgtot"><b>'+e(r.wl)+'</b><small>'+e(r.gp||'')+'</small></div>':'')+'</div>'+
       '<div class="bar"><i style="width:'+(Math.max(0,r.total)/mx*100)+'%"></i></div>'+
       '<div class="chips school-grid">'+r.chips+'</div></div>'}).join('')+'</div>'};
 
