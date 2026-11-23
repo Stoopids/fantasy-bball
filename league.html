@@ -4261,7 +4261,7 @@ function s25ValidExtra(x,names,status){const o={},R=x.rd,cl=v=>typeof v==='strin
   if(R&&typeof R==='object'){
     if(R.k==='manual')o.rd={k:'manual'};
     else if(['spread','ml','total'].includes(R.k)&&S25.SPORTS[R.sp]&&/^\d{4}-\d\d-\d\d$/.test(R.d||'')){const t=cl(R.t),op=cl(R.o),l=R.l==null?null:Number(R.l);
-      if(t&&op&&(R.k==='ml'||(isFinite(l)&&Math.abs(l)<=400))&&(R.k!=='total'||R.ou==='o'||R.ou==='u'))o.rd=Object.assign({k:R.k,t,o:op,l:R.k==='ml'?null:l},R.k==='total'?{ou:R.ou}:{},{sp:R.sp,d:R.d})}}
+      if(t&&op&&(R.k==='ml'||(isFinite(l)&&Math.abs(l)<=400))&&(R.k!=='total'||R.ou==='o'||R.ou==='u')){const fav=R.k==='ml'?cl(R.fav):'';o.rd=Object.assign({k:R.k,t,o:op,l:R.k==='ml'?null:l},R.k==='total'?{ou:R.ou}:{},R.k==='ml'&&R.ml?{ml:1}:{},R.k==='ml'&&R.ml&&(fav===t||fav===op)?{fav}:{},{sp:R.sp,d:R.d})}}}
   if(x.src&&typeof x.src==='object'&&['backer','other','push'].includes(status)){const a=x.src,g=typeof a.g==='string'?a.g.replace(/\D/g,'').slice(0,20):'',sc=typeof a.sc==='string'?a.sc.replace(/[<>"]/g,'').trim().slice(0,80):'';if(sc)o.src={g,sc}}   // spec s25 §4: settle source {g: ESPN event id, sc: 'Kansas 78, Duke 71'}
   if(x.rx&&typeof x.rx==='object'){const r={};S25.REACTIONS.forEach(e=>{const w=Array.isArray(x.rx[e])?[...new Set(x.rx[e].map(n=>legacyOwner(n)).filter(n=>(names||[]).includes(n)))].slice(0,20):[];if(w.length)r[e]=w});if(Object.keys(r).length)o.rx=r}
   return o}
