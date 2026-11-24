@@ -3830,7 +3830,7 @@ function b27Card(b,me){
     const pick=(w,label)=>`<button type="button" class="btn sec b27-b${picked(w)?' on':''}" aria-pressed="${picked(w)?'true':'false'}" data-hand-pick="${w}" onclick="b27Pick('${b.id}','${w}')"${U.busy?' disabled':''}>${label}</button>`;
     const armed=!!(U.handPick&&U.handPick.id===b.id&&U.handPick.terms===b27Terms(b)&&S25P.ask&&S25P.ask.id===b.id&&S25P.ask.terms===b27Terms(b)+'\u001f'+U.handPick.w);
     const confirm=`<button type="button" class="btn b27-b" data-hand-ok="${b.id}" onclick="b27HandGo('${b.id}')"${U.busy?' disabled':''}>${armed?'Tap again to confirm #'+b.n:'✅ Confirm'}</button>`;
-    const hand=b27HandSettle(b),sbLock=b27AutoConfirm(b)&&!(S25P.fix&&S25P.fix[b.id]);/*<CREATOR-SETTLE>*/if((hand||!!(S25P.fix&&S25P.fix[b.id]))&&b27CanSettle(b,me)&&!s25HideManual(b)&&!sbLock)/*</CREATOR-SETTLE>*//*<S25>*/who=`<div class="b27-act" data-hand-settle="1"><span class="note">Who won?</span>${pick('backer',esc(Bk)+' won')}${pick('other',BU?'Managers won':esc(Ot)+' won')}${pick('push','Wash')}${confirm}</div>`;
+    const hand=b27HandSettle(b),sbLock=b27AutoConfirm(b)&&!(S25P.fix&&S25P.fix[b.id]);/*<CREATOR-SETTLE>*/if((hand||!!(S25P.fix&&S25P.fix[b.id]))&&b27CanSettle(b,me)&&!s25HideManual(b)&&!sbLock){const block=`<div class="b27-act" data-hand-settle="1"><span class="note">Who won?</span>${pick('backer',esc(Bk)+' won')}${pick('other',BU?'Managers won':esc(Ot)+' won')}${pick('push','Wash')}${confirm}</div>`;who=ready?block:`<details class="b27-early" data-early-settle="${b.id}"><summary>Details</summary>${block}</details>`}/*</CREATOR-SETTLE>*/
     if(b27CanUndo(b)&&b.kind!=='pool'){const ask=U.askDel===b.id&&U.askDelAt&&U.askDelAt.terms===b27Terms(b);del=`<button type="button" class="btn sec b27-b" onclick="b27OpenEdit('${b.id}')"${U.busy?' disabled':''}>Edit</button><button type="button" class="btn sec b27-b" onclick="${ask?`b27DoDel('${b.id}','${b27Hash(b27Terms(b))}')`:`b27AskDel('${b.id}')`}"${U.busy?' disabled':''}>${ask?'Tap again to delete bet #'+b.n:'Delete'}</button>`}
     else if(ADMIN)del=`<button type="button" class="btn sec b27-b" onclick="b27Void('${b.id}','${b27Hash(b27Terms(b))}')"${U.busy?' disabled':''}>Delete</button>`;
   }
@@ -3898,14 +3898,14 @@ function b27GameMatched(b){try{const rd=s25BetRd(b);if(!rd||rd.k==='manual'||!rd
   return S25.match({events},rd)}catch(e){return null}}
 function b27Due(b){if(!b||b.kind==='pool'||!s24IsOpen(b))return false;const k=b27SettleKind(b);
   if(k==='date')return !!(SHARED_UI.estOk(b.est)&&b.est<=SHARED_UI.estToday());
-  if(k==='season')return false;
+  if(k==='season')return !!(typeof D!=='undefined'&&D&&D.meta&&D.meta.mode==='final');
   if(k!=='game')return false;
   const m=b27GameMatched(b);if(m&&m.final)return true;
   try{const G=s25Game(b);if(G&&!G.wait&&G.g&&G.g.final)return true}catch(e){}
   return false}
 function b27HandSettle(b){if(!b||b.status!=='open'||b.kind==='pool')return false;const k=b27SettleKind(b);if(k==='season'||k==='date'||k==='unknown')return true;if(b27Due(b))return true;if(b.legs&&b.legs.length>=2){const games=(typeof D!=='undefined'&&D&&D.games)||[];return b.legs.every(L=>{const g=games.find(x=>String(x.id)===String(L.gid));return !!(g&&g.status==='final')})}if(typeof sbEvent==='function'){const ev=sbEvent(b);if(ev&&(ev.state==='manual'||ev.state==='missing'))return true}return false}
 function b27AutoConfirm(b){if(!b||b.status!=='open'||typeof sbEvent!=='function'||typeof sbSide!=='function')return false;const ev=sbEvent(b);return !!(ev&&ev.state==='final'&&sbSide(b,ev.who))}
-function b27Ready(b){return b27HandSettle(b)||b27AutoConfirm(b)}
+function b27Ready(b){if(!b||b.status!=='open'||b.kind==='pool')return false;if(b27Due(b)||b27AutoConfirm(b))return true;if(b.legs&&b.legs.length>=2){const games=(typeof D!=='undefined'&&D&&D.games)||[];if(b.legs.every(L=>{const g=games.find(x=>String(x.id)===String(L.gid));return !!(g&&g.status==='final')}))return true}if(typeof sbEvent==='function'){const ev=sbEvent(b);if(ev&&ev.state==='final')return true;if(ev&&ev.state==='missing'&&/final box score|Box score missing/i.test(String(ev.detail||'')))return true}return false}
 /* Anyone in the bet can settle: backer, the other side, or opponents. postedBy counts only when that person is already one of those. */
 function b27InBet(b,me){if(!b||!me||b.kind==='pool')return false;if(b.backer===me||b.other===me)return true;return Array.isArray(b.opponents)&&b.opponents.includes(me)}
 function b27CanSettle(b,me){return !!(b&&b.status==='open'&&b27InBet(b,me))}
@@ -4860,6 +4860,7 @@ html body .ggrid .gow,html body .ggrid>.gm:not(.gfin)>.gow,html body .ggrid .gbo
 html body .ggrid .gow .opill{max-width:none!important;overflow:visible!important;text-overflow:clip!important;white-space:normal!important}
 html body .b27-c.b27-ready{outline:2px solid #f87171;outline-offset:0}
 html body .b27-ready-t{margin-top:4px;color:#fca5a5;font-weight:800;font-size:13px}
+html body .b27-early{margin-top:6px;color:var(--mut);font-size:13px}html body .b27-early>summary{cursor:pointer;font-weight:600}
 html body .b27-del{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
 html body .b27-del .b27-ready-t{margin-top:0}
 html body .b27-set{margin-top:6px}
