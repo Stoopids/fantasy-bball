@@ -170,7 +170,8 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
     function stAttr(r){return ' data-st="'+reqHash(reqTerms(r))+'"'}
     var ARM_MS=30000;
     function armLive(a){return !!(a&&a.at&&Date.now()-a.at<ARM_MS)}
-    function dropArm(){if(!S.arm)return;if(!armLive(S.arm)){S.arm=null;return}var r=S.list.find(function(x){return x.id===S.arm.id});if(!r){S.arm=null;return}if(S.arm.act==='csend')return;var terms=S.arm.act==='caccept'||S.arm.act==='cno'?(r.offer?offerKey(r.offer):''):reqTerms(r);if(terms!==S.arm.terms)S.arm=null}
+    function sendKey(f){f=f||S.f||{};return [S.edit||'new',f.amt==null?'':f.amt,f.amtTxt||'',(f.odds||[]).join('-'),f.oddTxt||'',f.text||'',(f.to||[]).slice().sort().join(','),f.wk||'',f.est||'',f.mode||'',f.n||'',f.at||'',f.slots==null?'':f.slots,f.sAll?1:0].join('\u001f')}
+    function dropArm(){if(!S.arm)return;if(!armLive(S.arm)){S.arm=null;return}if(S.arm.act==='send'){if(S.arm.terms!==sendKey())S.arm=null;return}var r=S.list.find(function(x){return x.id===S.arm.id});if(!r){S.arm=null;return}if(S.arm.act==='csend')return;var terms=S.arm.act==='caccept'||S.arm.act==='cno'?(r.offer?offerKey(r.offer):''):reqTerms(r);if(terms!==S.arm.terms)S.arm=null}
     function armed(id,act,terms){return !!(S.arm&&armLive(S.arm)&&S.arm.id===id&&S.arm.act===act&&S.arm.terms===terms)}
     function armHold(id,act,terms){if(S.busy)return false;dropArm();if(armed(id,act,terms)){S.arm=null;clearTimeout(S.armT);return true}S.arm={id:id,act:act,terms:terms,at:Date.now()};clearTimeout(S.armT);S.armT=setTimeout(function(){if(S.arm&&Date.now()-S.arm.at>=ARM_MS){S.arm=null;A.render()}},ARM_MS+40);A.render();return false}
     function armLab(act,n){return 'Tap again to '+act+(n!=null&&n!==''?' #'+n:'')}
@@ -331,7 +332,8 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
       var pv=rqPreview(f);
       h+='<div class="rq-prev" id="rqEx">'+pv.ex+'</div>';
       if(S.msg)h+='<div class="'+(S.bad?'b27-bad-t':'good')+' rq-msg" role="status">'+e(S.msg)+'</div>';
-      return h+'<button type="button" class="btn b27-big rq-send" data-rq="send"'+(S.busy||!A.canWrite()?' disabled':'')+'>'+(S.edit?'Save changes':'Request bet')+'</button>'+(S.edit?'<button type="button" class="btn sec rq-send" data-rq="unedit">Stop editing</button>':'')+'</div>'}
+      var sendOn=armed(S.edit||'new','send',sendKey(f));
+      return h+'<button type="button" class="btn b27-big rq-send" data-rq="send"'+(S.busy||!A.canWrite()?' disabled':'')+'>'+(sendOn?armLab(S.edit?'save':'request',''):(S.edit?'Save changes':'Request bet'))+'</button>'+(S.edit?'<button type="button" class="btn sec rq-send" data-rq="unedit">Stop editing</button>':'')+'</div>'}
     
 function sbOnce(s){var n=0;return String(s||'').replace(/Stoopid bet:\s*/gi,function(){n++;return n===1?'Stoopid bet: ':''}).replace(/\.\s*,/g,',')}
     function sbIs(s){s=String(s||'');if(/Stoopid bet:/i.test(s))return true;try{if(typeof sbParse==='function'&&sbParse(s))return true}catch(e){}return false}
@@ -529,6 +531,7 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
         var pack=SHARED_UI.whenPack(wk||'unknown',f.est,A.seasonId?A.seasonId():'');if(!err&&wk==='date'&&!pack)err='Use a real date, or pick End Of Season or Not Sure Yet.';
         if(!err){var r0={id:rid(),gid:g?String(g.id):'',start:g&&g.start||null};if(started(Object.assign({cov:f.cov},r0),now))err='That '+(f.cov==='2h'?'half':'game')+' has already started.'}
         if(err){S.msg=err;S.bad=true;A.render();return}
+        if(!armHold(S.edit||'new','send',sendKey(f)))return;
         if(S.edit)r0.id=S.edit;
         var toAll=f.to.length?f.to.slice():A.others().map(function(o){return o.id});var r=Object.assign(r0,{by:me,to:toAll,cov:f.cov,k:p.k,si:p.si,lab:p.lab,other:p.other,odds:f.odds.slice(),slots:f.sAll?null:f.slots?Math.min(f.slots,toAll.length):(f.to.length?null:1),txt:p.txt,game:hasGame?A.tname(g.g.away)+' vs '+A.tname(g.g.home):'',date:hasGame?A.dateET(g.g):'',amt:amt,exp:ex,at:now,status:'open',dec:[],wk:pack.wk,est:pack.est,sid:pack.sid});var pinnedRd=hasGame?pinReading(f,g):null;if(pinnedRd)r.rd=pinnedRd;if(!hasGame)r.free=1;if(f.parlay&&f.legs&&f.legs.length>=2)r.legs=f.legs.map(function(L){return {gid:String(L.gid),kind:L.kind,t:L.t,o:L.o,l:L.l,d:L.d,start:L.start||'',lab:L.lab,raw:+L.raw||1}})
         say(waText(r,S.edit?'upd':'new'),S.edit?'Request updated':'Request posted');   /* one tap: copy starts inside the tap (clipboard needs it), then the request is posted */
