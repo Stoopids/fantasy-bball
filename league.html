@@ -2505,7 +2505,52 @@ const D27_START='2026-11-01T13:00:00Z',D27_OWNERS=8,D27_ROUNDS=8,D27_TOTAL=D27_O
 function d27Done(){const r=DRAFT27_RESULTS;if(!r)return false;const t=r.draft_completed_at||r.completed_at,ms=t?Date.parse(t):NaN;
   return isFinite(ms)&&ms>=Date.parse(D27_START)&&Array.isArray(r.picks)&&r.picks.length===D27_TOTAL}
 /* Weekly write-ups for the Recap tab: Monday recaps + milestone specials. Newest first by date. Add entries like {date:'2026-11-09',title:'Week 1',kind:'weekly',body:'...'} (kind 'weekly' | 'special'). body is plain text (escaped). */
-const RECAPS=[];
+const RECAPS=[{date:'2026-11-23',title:'Week 3',kind:'weekly',body:`Nov 16-22. Jim and Lucas are still tied for first, now on 39. Chris Maclean and Paul E are tied on 38. JT has 35, Skyler 31, B 30, and Murphy 29. Points this week: Paul E 13, Jim 12, Lucas 12, Chris Maclean 12, JT 10, B 8, Murphy 6, Skyler 5.
+
+Best team: Chris Maclean's UCLA, 3-0 by a combined 80 (105-66 Long Beach St, 75-71 Fullerton, 85-48 Delaware). Worst team: Skyler's Montana State, 0-2 by a combined 23 (62-74 Gonzaga, 74-85 High Point).
+
+Biggest roster upset: JT's Illinois, an 8.5-point dog, beat Skyler's Duke 99-78 on Nov 17.
+
+Pullups: 3 bets settled, none a wash. Jim went 2-0. B owes him 10 on Houston +2.5, and Paul E owes him 5 on Siena +28.5. Paul E owes B 5 on Yale -4.5. Lucas, Chris Maclean, JT, Skyler, and Murphy did not settle a bet. 2 are still open.
+
+Jim: still tied for first at 39. Houston won at Florida.
+Lucas: still tied for first. Missouri went 2-0 by 88.
+Paul E: 13 points, the most this week, and one short of first.
+Chris Maclean: UCLA went 3-0 by 80, and he is tied one point back.
+JT: the upset of the week. Michigan St was a 2.5 favorite and lost by 15.
+Skyler: 5 points, the fewest. Duke was an 8.5 favorite and lost by 21. He fell out of the tie for second.
+B: Villanova was a 3.5 dog and beat Murphy's Michigan.
+Murphy: last on 29. Michigan was a 3.5 favorite and lost.`},{date:'2026-11-16',title:'Week 2',kind:'weekly',body:`Nov 10-15. Jim caught Lucas. They are tied for first on 27. Chris Maclean and Skyler are tied on 26. JT and Paul E are tied on 25. Murphy has 23 and B has 22. Points this week: Chris Maclean 11, JT 11, Skyler 11, Jim 10, Murphy 10, B 9, Lucas 8, Paul E 8.
+
+Best team: JT's USC, 2-0 by a combined 88 (77-65 California, 122-46 AR-Pine Bluff). Worst team: Paul E's Marquette, 0-2 by a combined 19 (70-84 Michigan, 64-69 Missouri).
+
+Biggest roster upset: Skyler's Howard, a 10.5-point dog, beat Davidson 64-58 on Nov 14.
+
+Pullups: no bets settled. None were open.
+
+Jim: caught the lead and has to share it, on 27.
+Lucas: still tied for first. Missouri beat Paul E's Marquette.
+Paul E: Marquette went 0-2, and he left the opening tie. He is on 25.
+Chris Maclean: tied for the most points this week, and one short of first.
+JT: tied for the most points. USC went 2-0 by 88.
+Skyler: Howard was a 10.5 dog and won. Duke was a 7.5 favorite and lost.
+B: Louisville was favored by 10.5 and lost by 20. Last on 22.
+Murphy: High Point beat B's Saint Louis.`},{date:'2026-11-09',title:'Week 1',kind:'special',body:`Opening week (Nov 1-9) started everyone at zero. Lucas has first alone on 19. Jim and Paul E are tied on 17. Chris Maclean and Skyler are tied on 15. JT has 14, and B and Murphy are tied on 13. Every point so far is a win. No bonuses.
+
+Best team: Lucas's Texas, 3-0 by a combined 129 (109-59 Chicago St, 98-50 Gardner-Webb, 93-62 Grambling). Worst team: Murphy's Long Island University, 0-4 by a combined 49 (60-74 FAU, 60-67 Seton Hall, 80-88 La Salle, 46-66 Towson).
+
+Biggest roster upset: Paul E's Gonzaga, a 5.5-point dog, beat Paul E's Purdue 78-72 on Nov 2.
+
+Pullups: no bets settled. None were open.
+
+Jim: 17 points, tied for second.
+Lucas: first alone on 19. Texas won by 129.
+Paul E: Gonzaga beat his Purdue, and he is tied for second.
+Chris Maclean: UCLA beat Murphy's Arizona, and he is tied on 15.
+JT: 14 points, one off that tie.
+Skyler: 15 points, tied with Chris Maclean.
+B: Saint Louis beat Lucas's Missouri, and he is tied for last.
+Murphy: Long Island is 0-4, and he is tied for last.`}];
 function vDraftTab(){return vDraft27()}   /* s26s: STOOPIDS drafted by hand; board always shows, no gate, no draft-room button */
 function vRecap(){/*<S27-RECAP> weekly write-ups first (newest first), then the draft grades, then the draft board (was the Draft tab) */
   const L=RECAPS.filter(x=>x&&x.title).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
