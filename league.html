@@ -958,7 +958,7 @@ main,#main{padding-top:6px!important}
 /* SYNC7..SYNC14 moved to shared/ui.css (linked right after this style block) */
 
 </style>
-<link rel="stylesheet" href="shared/ui.css?v=1.86.10">
+<link rel="stylesheet" href="shared/ui.css?v=1.86.11">
 <style>/*<SORT-FIT> phone All teams: the card scrolls sideways, the page does not. Names stay full size. */@media (max-width:480px){html body .card.tap.s27-rk{padding-left:4px!important;padding-right:4px!important}html body .card.tap.s27-rk th{font-size:11px!important}html body .card.tap.s27-rk td.n,html body .card.tap.s27-rk td.to,html body .card.tap.s27-rk td.cf{font-size:13px!important}html body .card.tap.s27-rk .s27-sort i{font-size:.7em!important;margin-left:0!important}}/*</SORT-FIT>*/</style>
 </head>
 <body>
@@ -984,7 +984,7 @@ main,#main{padding-top:6px!important}
   </div>
 </section><!--</CHAT>-->
 <footer id="foot"></footer>
-<script src="shared/ui.js?v=1.86.17"></script>
+<script src="shared/ui.js?v=1.86.18"></script>
 <script src="js/version.js"></script><script src="js/core.js"></script><script src="js/league-d.js"></script><script src="js/ball-settings.js"></script><script src="js/ball-bets.js"></script><script src="js/ball-stoopids.js"></script>
 <script>
 /*<S25-SHARED>*/
@@ -3697,6 +3697,7 @@ function b27SyncDom(){
 function b27Sync(){try{b27SyncDom()}catch(e){}}
 /*<MULTI-BET>*//* narrow chip label: short names (several words = the last word when it is 4-9 chars: "Dirty Draymond" -> "Draymond", "En Fuego" -> "Fuego"; else <=9 chars as is, else the first word, else cut with an ellipsis). The full name is always in aria-label and data-b27-name. */
 const b27ShortName=n=>{n=String(PN(n));const w=n.split(/\s+/).filter(Boolean),l=w[w.length-1];if(w.length>1&&l.length>=4&&l.length<=9)return l;if(n.length<=9)return n;if(w.length>1&&w[0].length<=9)return w[0];return n.slice(0,8)+'…'};
+const b27MgrShort=n=>window.SHARED_UI&&SHARED_UI.mgrShort?SHARED_UI.mgrShort(PN(n)):PN(n);
 /*<OWNER-NAMES>*/const b27ShortT=n=>{if(typeof SHARED_UI!=='undefined'&&SHARED_UI.shortName)return SHARED_UI.shortName(TN(n));n=String(TN(n));const w=n.split(/\s+/).filter(Boolean),l=w[w.length-1];if(w.length>1&&l.length>=4&&l.length<=9)return l;if(n.length<=9)return n;if(w.length>1&&w[0].length<=9)return w[0];return n.slice(0,8)+'…'};const b27TinyT=n=>{const t=b27ShortT(n);return t.length<=7?t:t.slice(0,4)};   // bet-against chips show TEAM names (keyed by the owner key)/*</OWNER-NAMES>*/
 const b27TinyName=n=>{const t=b27ShortName(n);return t.length<=7?t:t.slice(0,4)};   // phones (7 chips in one row): max 7 chars, long ones cut to 4 letters ("Draymond" -> "Dray")
 const b27SelTxt=()=>U.opps.length?U.opps.length+' selected':'None selected';
@@ -3746,7 +3747,7 @@ function b27FaceBits(b){let rd=null;try{rd=s25BetRd(b)}catch(e){}if(!rd||rd.k===
   return {sides:rd.t+' vs '+rd.o,day:rd.d}}
 function b27FaceSides(b){if(!b||b.kind==='pool')return '';if(b.legs&&b.legs.length>=2){const a=+(b.odds&&b.odds.a)||1,c=+(b.odds&&b.odds.b)||1;return 'Parlay · '+b.legs.length+' legs · '+(a===c?'1-1':a+'-'+c)}const bits=b27FaceBits(b);return bits&&bits.sides?bits.sides:b27Clean(b.text||'')}
 function b27ParlayHtml(b){if(!b||!b.legs||b.legs.length<2)return '';const rows=b.legs.map(L=>{let sug='After the game';try{const g=(D.games||[]).find(x=>String(x.id)===String(L.gid));if(g&&g.status==='final'&&g.away&&g.home&&g.away.score!=null&&g.home.score!=null){const mine=(g.away.short||g.away.name)===L.t?g.away:g.home,opp=mine===g.away?g.home:g.away;const res=S25.result({k:L.kind==='ml'?'ml':'spread',t:L.t,o:L.o,l:L.kind==='ml'?null:+L.l,sp:'mcbb',d:L.d},+mine.score,+opp.score);sug=res?(res.r==='backer'?'Suggested: hit':res.r==='push'?'Suggested: push':'Suggested: miss'):'No score'}}catch(e){}return '<div class="py-leg"><span>'+esc(L.lab||'')+'</span> <span class="note">'+esc(sug)+'</span></div>'});return '<div class="py-card">'+rows.join('')+'<div class="note">Every leg has to hit. Nothing is settled until someone taps Confirm.</div></div>'}
-function b27FaceWhoStake(b){const Bk=PN(b.backer),OP=b27Opps(b).map(PN).join(', '),a=+(b.odds&&b.odds.a),c=+(b.odds&&b.odds.b);const odds=a>=1&&c>=1&&!(a===1&&c===1)?a+'-'+c:'';return [Bk+' v '+OP,'$'+b27Num(b.amt)+(b27Opps(b).length>1?' each':''),odds].filter(Boolean).join(' · ')}
+function b27FaceWhoStake(b){const Bk=b27MgrShort(b.backer),OP=b27Opps(b).map(b27MgrShort).join(', '),a=+(b.odds&&b.odds.a),c=+(b.odds&&b.odds.b);const odds=a>=1&&c>=1&&!(a===1&&c===1)?a+'-'+c:'';return [Bk+' v '+OP,'$'+b27Num(b.amt)+(b27Opps(b).length>1?' each':''),odds].filter(Boolean).join(' · ')}
 function b27GameLine(b){let rd=null;try{rd=s25BetRd(b)}catch(e){}
   let match=b27Matchup(b);
   if(rd&&rd.k==='spread'&&rd.t&&rd.o)match=rd.t+' '+b27SpreadBit(rd.l)+' vs '+rd.o;
@@ -3765,13 +3766,14 @@ function b27SettledDet(b){const st=b.status,OP=b27Opps(b),Bk=PN(b.backer),pay=b2
 function b27Card(b,me){
   const L=b27Lines(b),OP=b27Opps(b),BU=OP.length>1,isP=me&&(b.backer===me||OP.includes(me)),st=b.status;
   const stTxt={open:'Unsettled',backer:'Settled',other:'Settled',push:'💦',void:'Cancelled'}[st];
-  /*<OWNER-NAMES>*/const OPd=OP.map(PN),Bk=PN(b.backer),Ot=PN(b.other);/*</OWNER-NAMES>*/
+  /*<OWNER-NAMES>*/const OPd=OP.map(b27MgrShort),Bk=b27MgrShort(b.backer),Ot=b27MgrShort(b.other);/*</OWNER-NAMES>*/
   const tail=b27OddsTail(b.odds&&b.odds.a,b.odds&&b.odds.b);
   const res=BU?(st==='backer'?Bk+' won ('+OPd.join(', ')+' each owe '+Bk+' '+b27Num(b27Pay(b).ifBackerRight)+tail+')':st==='other'?'Managers won ('+Bk+' owes each of them '+b27Num(b27Pay(b).ifOtherRight)+tail+')':st==='push'?'💦: nobody owes anything':'')
    :st==='backer'?Bk+' won ('+Ot+' owes '+b27Num(b27Pay(b).ifBackerRight)+tail+')':st==='other'?Ot+' won ('+Bk+' owes '+b27Num(b27Pay(b).ifOtherRight)+tail+')':st==='push'?'💦: nobody owes anything':'';
   const ready=b27Ready(b),bits=b.kind==='pool'?null:b27FaceBits(b);
   const settled=st==='backer'||st==='other'||st==='push';
-  const title=settled?(st==='push'?`Bet #${b.n} · 💦 Wash`:`Bet #${b.n} · ${st==='backer'?Bk:(BU?'Managers':Ot)} won`):`Bet #${b.n} · ${stTxt}`;
+  const whoLine=Bk+(OPd.length?' v '+OPd.join(', '):''),stLabel=st==='push'?'Wash':st==='backer'?Bk+' won':st==='other'?(BU?'Managers won':Ot+' won'):st==='void'?'Cancelled':(stTxt||'');
+  const title=whoLine+(stLabel?' · '+stLabel:'');
   const sides=b.kind==='pool'?'':b27FaceSides(b),whoStake=b.kind==='pool'?Bk+' v '+OPd.join(', '):b27FaceWhoStake(b);
   const onlyLine=b27NeedsOther(b,me)?'<div class="note b27-onlyc">Only people in the bet can settle it.</div>':'';
   const day=b27DayBit(bits&&bits.day)||b27CardDate(b);
@@ -3792,7 +3794,7 @@ function b27Card(b,me){
   const posted=b27PostedLine(b),fix=settled&&b.kind!=='pool'?s24FixLink(b,me):'';
   return h+fix+`<div class="b27-foot">${posted}${/*<S25>*/s25RxHtml(b,me)/*</S25>*/}</div></div>`;
 }
-function b27PostedLine(b){const who=b&&b.postedBy?PN(b.postedBy):'',placed=s25dWhen((b&&(b.postedAt||b.created_at))||''),done=['backer','other','push'].includes(b&&b.status),settled=done?s25dWhen(b.settled_at):'';
+function b27PostedLine(b){const who=b&&b.postedBy?b27MgrShort(b.postedBy):'',placed=s25dWhen((b&&(b.postedAt||b.created_at))||''),done=['backer','other','push'].includes(b&&b.status),settled=done?s25dWhen(b.settled_at):'';
   const bits=[];if(who)bits.push('Posted by '+who);if(placed)bits.push('Placed '+placed);if(settled)bits.push('Settled '+settled);
   return bits.length?`<div class="b27-ts">${esc(bits.join(' · '))}</div>`:''}
 /*<OWES-TABLE>*/
