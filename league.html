@@ -958,7 +958,7 @@ main,#main{padding-top:6px!important}
 /* SYNC7..SYNC14 moved to shared/ui.css (linked right after this style block) */
 
 </style>
-<link rel="stylesheet" href="shared/ui.css?v=1.86.11">
+<link rel="stylesheet" href="shared/ui.css?v=1.86.12">
 <style>/*<SORT-FIT> phone All teams: the card scrolls sideways, the page does not. Names stay full size. */@media (max-width:480px){html body .card.tap.s27-rk{padding-left:4px!important;padding-right:4px!important}html body .card.tap.s27-rk th{font-size:11px!important}html body .card.tap.s27-rk td.n,html body .card.tap.s27-rk td.to,html body .card.tap.s27-rk td.cf{font-size:13px!important}html body .card.tap.s27-rk .s27-sort i{font-size:.7em!important;margin-left:0!important}}/*</SORT-FIT>*/</style>
 </head>
 <body>
@@ -984,7 +984,7 @@ main,#main{padding-top:6px!important}
   </div>
 </section><!--</CHAT>-->
 <footer id="foot"></footer>
-<script src="shared/ui.js?v=1.86.18"></script>
+<script src="shared/ui.js?v=1.86.19"></script>
 <script src="js/version.js"></script><script src="js/core.js"></script><script src="js/league-d.js"></script><script src="js/ball-settings.js"></script><script src="js/ball-bets.js"></script><script src="js/ball-stoopids.js"></script>
 <script>
 /*<S25-SHARED>*/
@@ -3772,12 +3772,12 @@ function b27Card(b,me){
    :st==='backer'?Bk+' won ('+Ot+' owes '+b27Num(b27Pay(b).ifBackerRight)+tail+')':st==='other'?Ot+' won ('+Bk+' owes '+b27Num(b27Pay(b).ifOtherRight)+tail+')':st==='push'?'💦: nobody owes anything':'';
   const ready=b27Ready(b),bits=b.kind==='pool'?null:b27FaceBits(b);
   const settled=st==='backer'||st==='other'||st==='push';
-  const whoLine=Bk+(OPd.length?' v '+OPd.join(', '):''),stLabel=st==='push'?'Wash':st==='backer'?Bk+' won':st==='other'?(BU?'Managers won':Ot+' won'):st==='void'?'Cancelled':(stTxt||'');
-  const title=whoLine+(stLabel?' · '+stLabel:'');
+  const b27Side=n=>{const team=TN(n),person=PN(n);if(!person||String(person).toLowerCase()===String(team).toLowerCase())return team;return team+' ('+person+')'};
+  const whoLine=TN(b.backer)+(OP.length?' v '+OP.map(b27Side).join(', '):''),stLabel=st==='push'?'Wash':st==='backer'?Bk+' won':st==='other'?(BU?'Managers won':Ot+' won'):st==='void'?'Cancelled':(stTxt||'');
   const sides=b.kind==='pool'?'':b27FaceSides(b),whoStake=b.kind==='pool'?Bk+' v '+OPd.join(', '):b27FaceWhoStake(b);
   const onlyLine=b27NeedsOther(b,me)?'<div class="note b27-onlyc">Only people in the bet can settle it.</div>':'';
   const day=b27DayBit(bits&&bits.day)||b27CardDate(b);
-  let h=`<div class="card b27-c${ready?' b27-ready':''}${U.flashBet===b.id?' act-flash':''}"${/*<S24-EDIT>*/s24Attr('b',b.id)/*</S24-EDIT>*/}><div class="s24hd"><b>${esc(title)}</b>${/*<S24-EDIT>*/s24FixBadge(b)/*</S24-EDIT>*/}${/*<S24-EDIT>*/s24LinkBtn('bets',b.id,'bet')/*</S24-EDIT>*/}</div>
+  let h=`<div class="card b27-c${ready?' b27-ready':''}${U.flashBet===b.id?' act-flash':''}"${/*<S24-EDIT>*/s24Attr('b',b.id)/*</S24-EDIT>*/}><div class="s24hd"><b>${esc(whoLine)}</b>${stLabel?` <span class="note">· ${esc(stLabel)}</span>`:''}${/*<S24-EDIT>*/s24FixBadge(b)/*</S24-EDIT>*/}${/*<S24-EDIT>*/s24LinkBtn('bets',b.id,'bet')/*</S24-EDIT>*/}</div>
    ${sides?`<div class="b27-t">${esc(sides)}</div>`:''}${b27ParlayHtml(b)}<div class="b27-m">${esc(whoStake)}</div>${onlyLine}${!settled?`<div class="b27-meta">${day?`<span>${esc(day)}</span>`:''}${b27SettlesHtml(b)}</div>`:day?`<div class="b27-meta"><span>${esc(day)}</span></div>`:''}`;
   let del='',who='';
   if(st==='open'&&(isP||ADMIN)){
