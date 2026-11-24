@@ -217,10 +217,9 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
       catch(x){}S.loading=false;A.render()}
     function chips(f){var list=A.others(),gap=list.length%4;return '<div class="b27-opps rq-to" role="group" aria-label="Open to" style="--n:'+list.length+'">'+list.map(function(o){var on=f.to.indexOf(o.id)>=0;return '<button type="button" class="b27-chip op" data-rq="to" data-v="'+e(o.id)+'" aria-pressed="'+on+'" aria-label="'+e(o.nick)+'"><span class="ck" aria-hidden="true">✓</span><span class="em" aria-hidden="true">'+e(o.emoji||'')+'</span><span class="nm" aria-hidden="true"><span class="f">'+e(o.nick)+'</span><span class="sh">'+e(SHARED_UI.shortName(o.nick))+'</span><span class="xs">'+e(SHARED_UI.tinyName(o.nick))+'</span></span></button>'}).join('')+(gap?'<div class="b27-util" role="group" aria-label="Select people"><button type="button" class="s27-selb" data-rq="all"><span class="f">Select all</span><span class="s">All</span></button><button type="button" class="s27-selb" data-rq="clear">Clear</button></div>':'')+'</div>'}
     function shortWho(id){var raw=(A.real||A.nick)(id)||'';return SHARED_UI.mgrShort?SHARED_UI.mgrShort(raw):raw}
-    function stoopSide(id){var team=A.nick(id)||'',person=(A.real||A.nick)(id)||'';if(!team)return person;if(!person||String(person).toLowerCase()===String(team).toLowerCase())return team;return team+' ('+person+')'}
-    function rqHead(r){var left=A.nick(r.by)||shortWho(r.by),to=(r.to||[]).filter(function(id){return id&&id!==r.by}),others=A.others?A.others():[],right;
+    function rqHead(r){var left=shortWho(r.by),to=(r.to||[]).filter(function(id){return id&&id!==r.by}),others=A.others?A.others():[],right;
       if(!to.length||(others.length&&to.length>=others.length))right='Anyone';
-      else right=to.map(stoopSide).filter(Boolean).join(', ')||'Anyone';
+      else right=to.map(shortWho).filter(Boolean).join(', ')||'Anyone';
       return left?left+' v '+right:right}
     function card(r,now){var me=A.me(),inv=r.to.indexOf(me)>=0,dec=(r.dec||[]).indexOf(me)>=0;
       var nt=tk(r).length,mine=tk(r).indexOf(me)>=0;
