@@ -3468,7 +3468,7 @@ const ARM_MS=30000;
 function b27ArmOld(a){return !!(a&&a.at&&Date.now()-a.at>=ARM_MS)}
 function b27ArmTick(){clearTimeout(b27ArmTick.t);b27ArmTick.t=setTimeout(()=>{b27DropStale();if(typeof render==='function')render()},ARM_MS+40)}
 function b27DropStale(){if(U.askDel){const b=U.doc&&U.doc.bets&&U.doc.bets.find(x=>x.id===U.askDel);if(!b||!b27CanUndo(b)||b27ArmOld(U.askDelAt)||(U.askDelAt&&U.askDelAt.terms&&U.askDelAt.terms!==b27Terms(b))){U.askDel=null;U.askDelAt=null}}if(U.askSettle){if(b27ArmOld(U.askSettle))U.askSettle=null;else{const b=U.doc&&U.doc.bets&&U.doc.bets.find(x=>x.id===U.askSettle.id);const terms=b&&(U.askSettle.what==='pool'?b27PoolTerms(b):b27Terms(b));if(!b||terms!==U.askSettle.terms)U.askSettle=null}}
-  if(typeof S25P!=='undefined'&&S25P.ask&&S25P.ask.id){if(b27ArmOld(S25P.ask))S25P.ask=null;else{const b=U.doc&&U.doc.bets&&U.doc.bets.find(x=>x.id===S25P.ask.id);if(!b)S25P.ask=null;else{let score='',hand='',prop='';try{const G=s25Game(b);score=b27Terms(b)+'\u001f'+(G&&G.p?G.p.text+'\u001f'+G.p.r:'')}catch(e){}try{hand=U.handPick&&U.handPick.id===b.id?b27Terms(b)+'\u001f'+U.handPick.w:''}catch(e){}try{prop=typeof sbTerms==='function'?sbTerms(b):''}catch(e){}if(S25P.ask.terms!==score&&S25P.ask.terms!==hand&&S25P.ask.terms!==prop)S25P.ask=null}}}}
+  if(typeof S25P!=='undefined'&&S25P.ask&&S25P.ask.id){if(b27ArmOld(S25P.ask))S25P.ask=null;else{const b=U.doc&&U.doc.bets&&U.doc.bets.find(x=>x.id===S25P.ask.id);if(!b)S25P.ask=null;else if(S25P.ask.win){const wins=s25SugWins(b);if(wins.length&&wins.indexOf(S25P.ask.win)<0)S25P.ask=null}else{const hand=U.handPick&&U.handPick.id===b.id?b27Terms(b)+'\u001f'+U.handPick.w:'';if(S25P.ask.terms!==hand)S25P.ask=null}}}}
 /*</MULTI-BET>*/async function b27SetStatus(id,status/*<S25>*/,extra/*</S25>*/){
   if(U.busy)return;if(!b27SetStatus.skip&&b27TapLock())return;b27SetStatus.skip=false;const b0=U.doc&&U.doc.bets&&U.doc.bets.find(x=>x.id===id);if(!b0||b0.status!=='open'){b27Stale();return}
   if(U.askSettle&&(U.askSettle.id!==id||U.askSettle.terms!==b27Terms(b0)||(U.askSettle.what!==status&&U.askSettle.what!=='pool'))){b27Stale();return}
@@ -4381,15 +4381,16 @@ function s25SuggestName(b,r){const OP=b27Opps(b);return r==='backer'?PN(b.backer
 function s25SuggestLine(b,p){const rd=s25BetRd(b),tot=rd&&rd.k==='total',sc=p&&p.sc?String(p.sc).replace(/^\((.*)\)$/,'$1').trim():'',second=tot&&p&&p.why?p.why:sc;return `<div class="s25sg"><div>Suggested winner: <b>${esc(s25SuggestName(b,p.r))}</b></div>${second?`<div class="s25sc">${esc(second)}</div>`:''}</div>`}
 function s25ScoreOk(g){if(!g)return false;const ts=+g.ts,os=+g.os;return isFinite(ts)&&isFinite(os)&&!(ts===0&&os===0)}
 function s25PropReady(b){if(!b27Due(b)||!b27CanSettle(b,b27Who()))return false;const G=s25Game(b);return !!(G&&!G.wait&&G.p&&G.g&&G.g.final&&s25ScoreOk(G.g))}
-function s25PropHtml(b,me){if(!s25PropReady(b))return '';const G=s25Game(b),p=G.p;const ask=!!(S25P.ask&&S25P.ask.id===b.id&&S25P.ask.terms===b27Terms(b)+'\u001f'+p.text+'\u001f'+p.r);
+function s25SugWins(b){const w=[];try{const G=s25Game(b);if(G&&G.p&&G.p.r)w.push(G.p.r)}catch(e){}try{if(typeof sbEvent==='function'&&typeof sbSide==='function'){const ev=sbEvent(b);if(ev&&ev.state==='final'){const s=sbSide(b,ev.who);if(s)w.push(s)}}}catch(e){}return w}
+function s25PropHtml(b,me){if(!s25PropReady(b))return '';const G=s25Game(b),p=G.p;const ask=!!(S25P.ask&&S25P.ask.id===b.id&&S25P.ask.win===p.r);
   const btn=`<button type="button" class="ok${ask?' on flash':''}" data-s25-ok="${b.id}" onclick="${ask?`s25Confirm('${b.id}')`:`s25Ask('${b.id}')`}"${U.busy?' disabled':''}>${ask?'Tap again to confirm #'+b.n:'✅ Confirm'}</button> <button type="button" data-s25-fix="${b.id}" aria-pressed="${!!S25P.fix[b.id]}" onclick="s25Fix('${b.id}')">✏️ Fix</button>`;
   return `<div class="s25pp" data-s25-prop="final">${s25SuggestLine(b,p)}<div class="s25sg-act">${btn}</div><div class="note">Nothing is settled until someone taps Confirm.</div></div>`}
-function s25Ask(id){if(U.busy)return;const b=U.doc&&U.doc.bets&&U.doc.bets.find(x=>x.id===id);if(!b){S25P.ask=null;render();return}const G=s25Game(b);const terms=b27Terms(b)+'\u001f'+(G&&G.p?G.p.text+'\u001f'+G.p.r:'');U.askSettle=null;if(S25P.ask&&S25P.ask.id===id&&S25P.ask.terms===terms&&!b27ArmOld(S25P.ask))S25P.ask=null;else{S25P.ask={id,terms,at:Date.now()};b27ArmTick()}render()}
+function s25Ask(id){if(U.busy)return;const b=U.doc&&U.doc.bets&&U.doc.bets.find(x=>x.id===id);if(!b){S25P.ask=null;render();return}const G=s25Game(b),win=G&&G.p&&G.p.r;if(!win){S25P.ask=null;render();return}U.askSettle=null;if(S25P.ask&&S25P.ask.id===id&&S25P.ask.win===win&&!b27ArmOld(S25P.ask))S25P.ask=null;else{S25P.ask={id,win,at:Date.now()};b27ArmTick()}render()}
 function s25HideManual(b){if(S25P.fix[b.id])return false;return s25PropReady(b)}
 function s25Fix(id){S25P.fix[id]=!S25P.fix[id];render()}
 async function s25Confirm(id){if(U.busy)return;const flash=document.querySelector('[data-s25-ok="'+id+'"]');if(flash)flash.classList.add('on','flash');const b=U.doc.bets.find(x=>x.id===id),me=b27Who();if(!b||!b27CanSettle(b,me)){U.msg='Only people in the bet can settle it.';U.msgBad=true;render();return}
   const G=s25Game(b);if(!G||!G.p){S25P.ask=null;U.msg='No final score to confirm yet.';U.msgBad=true;render();return}
-  const terms=b27Terms(b)+'\u001f'+G.p.text+'\u001f'+G.p.r;if(!S25P.ask||S25P.ask.id!==id||S25P.ask.terms!==terms){S25P.ask=null;b27Stale();return}
+  if(!S25P.ask||S25P.ask.id!==id||S25P.ask.win!==G.p.r){S25P.ask=null;b27Stale();return}
   S25P.ask=null;b27SetStatus.skip=true;return b27SetStatus(id,G.p.r,{src:{g:G.g.id,sc:G.p.sc}})}
 /* --- settle sound + meme: once per bet that turns from open to settled while the page is open (own Confirm or a live refresh); never on first load --- */
 function s25Settled(prev,list){const was=new Map(prev.map(b=>[b.id,b.status])),me=b27Who();
@@ -5245,6 +5246,6 @@ html body #main h2.b27-allh+.card.s24fb+.b27-grid{margin-top:0}
  html body #main h2.b27-allh+.card.s24fb>input.s24q{flex:0 1 auto!important;width:auto!important;max-width:100%!important;min-width:9em;margin-top:4px!important}
 }
 </style>
-<script src="stoopid-bet.js?v=15"></script>
+<script src="stoopid-bet.js?v=16"></script>
 </body>
 </html>
