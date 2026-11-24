@@ -3481,6 +3481,8 @@ function b27DropStale(){if(U.askDel){const b=U.doc&&U.doc.bets&&U.doc.bets.find(
   U.busy=false;render();
 }
 function b27Ask(id,what){if(U.busy)return;const b=U.doc&&U.doc.bets&&U.doc.bets.find(x=>x.id===id);if(!b){U.askSettle=null;render();return}const terms=what==='pool'?b27PoolTerms(b):b27Terms(b);if(typeof S25P!=='undefined')S25P.ask=null;if(U.askSettle&&U.askSettle.id===id&&U.askSettle.what===what&&U.askSettle.terms===terms&&!b27ArmOld(U.askSettle))U.askSettle=null;else{U.askSettle={id,what,terms,at:Date.now()};U.askDel=null;b27ArmTick()}render()}
+function b27Pick(id,w){if(U.busy)return;const b=U.doc&&U.doc.bets&&U.doc.bets.find(x=>x.id===id);if(!b||!b27CanSettle(b,b27Who())||!['backer','other','push'].includes(w))return;U.handPick={id,w,terms:b27Terms(b)};if(typeof S25P!=='undefined'&&S25P.ask&&S25P.ask.id===id)S25P.ask=null;U.askSettle=null;render()}
+function b27HandGo(id){if(U.busy)return;const b=U.doc&&U.doc.bets&&U.doc.bets.find(x=>x.id===id),me=b27Who();if(!b||!b27CanSettle(b,me)){U.msg='Only people in the bet can settle it.';U.msgBad=true;render();return}const pick=U.handPick;if(!pick||pick.id!==id||pick.terms!==b27Terms(b)||!['backer','other','push'].includes(pick.w)){U.msg='Pick who won, then tap Confirm.';U.msgBad=true;render();return}const terms=b27Terms(b)+'\u001f'+pick.w;if(S25P.ask&&S25P.ask.id===id&&S25P.ask.terms===terms&&!b27ArmOld(S25P.ask)){S25P.ask=null;U.handPick=null;b27SetStatus.skip=true;return b27SetStatus(id,pick.w)}S25P.ask={id,terms,at:Date.now()};b27ArmTick();render()}
 /*<POOL>*/
 /* ===== POOL (Bets 26-27): a group entry where each participant gets some back when it is done. ONE record in the same ledger key: {id,n,kind:'pool',backer:<who built it>,parts:[names],amt:<buy-in each>,back:null|{name:amount},text,created_at,status:'open'|'void',settled_at}.
    Counts as soon as the amounts back are entered (they must add up to buy-in x participants); each person's net = back - buy-in. Blank = open, entered later on the card. ===== */
@@ -3824,9 +3826,11 @@ function b27Card(b,me){
    ${sides?`<div class="b27-t">${esc(sides)}</div>`:''}${b27ParlayHtml(b)}<div class="b27-m">${esc(whoStake)}</div>${onlyLine}${!settled?`<div class="b27-meta">${day?`<span>${esc(day)}</span>`:''}${b27SettlesHtml(b)}</div>`:day?`<div class="b27-meta"><span>${esc(day)}</span></div>`:''}`;
   let del='',who='';
   if(st==='open'&&(isP||ADMIN)){
-    const ask=w=>U.askSettle&&U.askSettle.id===b.id&&U.askSettle.what===w&&U.askSettle.terms===b27Terms(b);
-    const btn=(w,label)=>`<button type="button" class="btn sec b27-b" onclick="${ask(w)?`b27SetStatus('${b.id}','${w}')`:`b27Ask('${b.id}','${w}')`}"${U.busy?' disabled':''}>${ask(w)?'Tap again to '+(w==='push'?'wash':'settle')+' #'+b.n:label}</button>`;
-    const due=b27Due(b);/*<CREATOR-SETTLE>*/if(due&&b27CanSettle(b,me)&&!s25HideManual(b))/*</CREATOR-SETTLE>*//*<S25>*/who=`<div class="b27-act"><span class="note">Who won?</span>${btn('backer',esc(Bk)+' won')}${btn('other',BU?'Managers won':esc(Ot)+' won')}${btn('push','Wash')}</div>`;
+    const picked=w=>!!(U.handPick&&U.handPick.id===b.id&&U.handPick.w===w&&U.handPick.terms===b27Terms(b));
+    const pick=(w,label)=>`<button type="button" class="btn sec b27-b${picked(w)?' on':''}" aria-pressed="${picked(w)?'true':'false'}" data-hand-pick="${w}" onclick="b27Pick('${b.id}','${w}')"${U.busy?' disabled':''}>${label}</button>`;
+    const armed=!!(U.handPick&&U.handPick.id===b.id&&U.handPick.terms===b27Terms(b)&&S25P.ask&&S25P.ask.id===b.id&&S25P.ask.terms===b27Terms(b)+'\u001f'+U.handPick.w);
+    const confirm=`<button type="button" class="btn b27-b" data-hand-ok="${b.id}" onclick="b27HandGo('${b.id}')"${U.busy?' disabled':''}>${armed?'Tap again to confirm #'+b.n:'✅ Confirm'}</button>`;
+    const hand=b27HandSettle(b),sbLock=b27AutoConfirm(b)&&!(S25P.fix&&S25P.fix[b.id]);/*<CREATOR-SETTLE>*/if((hand||!!(S25P.fix&&S25P.fix[b.id]))&&b27CanSettle(b,me)&&!s25HideManual(b)&&!sbLock)/*</CREATOR-SETTLE>*//*<S25>*/who=`<div class="b27-act" data-hand-settle="1"><span class="note">Who won?</span>${pick('backer',esc(Bk)+' won')}${pick('other',BU?'Managers won':esc(Ot)+' won')}${pick('push','Wash')}${confirm}</div>`;
     if(b27CanUndo(b)&&b.kind!=='pool'){const ask=U.askDel===b.id&&U.askDelAt&&U.askDelAt.terms===b27Terms(b);del=`<button type="button" class="btn sec b27-b" onclick="b27OpenEdit('${b.id}')"${U.busy?' disabled':''}>Edit</button><button type="button" class="btn sec b27-b" onclick="${ask?`b27DoDel('${b.id}','${b27Hash(b27Terms(b))}')`:`b27AskDel('${b.id}')`}"${U.busy?' disabled':''}>${ask?'Tap again to delete bet #'+b.n:'Delete'}</button>`}
     else if(ADMIN)del=`<button type="button" class="btn sec b27-b" onclick="b27Void('${b.id}','${b27Hash(b27Terms(b))}')"${U.busy?' disabled':''}>Delete</button>`;
   }
@@ -3899,7 +3903,9 @@ function b27Due(b){if(!b||b.kind==='pool'||!s24IsOpen(b))return false;const k=b2
   const m=b27GameMatched(b);if(m&&m.final)return true;
   try{const G=s25Game(b);if(G&&!G.wait&&G.g&&G.g.final)return true}catch(e){}
   return false}
-function b27Ready(b){return b27Due(b)}
+function b27HandSettle(b){if(!b||b.status!=='open'||b.kind==='pool')return false;const k=b27SettleKind(b);if(k==='season'||k==='date'||k==='unknown')return true;if(b27Due(b))return true;if(b.legs&&b.legs.length>=2){const games=(typeof D!=='undefined'&&D&&D.games)||[];return b.legs.every(L=>{const g=games.find(x=>String(x.id)===String(L.gid));return !!(g&&g.status==='final')})}if(typeof sbEvent==='function'){const ev=sbEvent(b);if(ev&&(ev.state==='manual'||ev.state==='missing'))return true}return false}
+function b27AutoConfirm(b){if(!b||b.status!=='open'||typeof sbEvent!=='function'||typeof sbSide!=='function')return false;const ev=sbEvent(b);return !!(ev&&ev.state==='final'&&sbSide(b,ev.who))}
+function b27Ready(b){return b27HandSettle(b)||b27AutoConfirm(b)}
 /* Anyone in the bet can settle: backer, the other side, or opponents. postedBy counts only when that person is already one of those. */
 function b27InBet(b,me){if(!b||!me||b.kind==='pool')return false;if(b.backer===me||b.other===me)return true;return Array.isArray(b.opponents)&&b.opponents.includes(me)}
 function b27CanSettle(b,me){return !!(b&&b.status==='open'&&b27InBet(b,me))}
@@ -4372,11 +4378,13 @@ function s25Fetch(r){const k=s25Key(r),c=S25P.games[k];const hold=c&&c.st==='err
 function s25ResWho(b,r){const OP=b27Opps(b);return r==='backer'?b.backer+' won':r==='other'?(OP.length>1?'Managers won':b.other+' won'):'💦'}
 function s25SuggestName(b,r){const OP=b27Opps(b);return r==='backer'?PN(b.backer):r==='other'?(OP.length>1?'Managers':PN(b.other)):'Wash'}
 function s25SuggestLine(b,p){const rd=s25BetRd(b),tot=rd&&rd.k==='total',sc=p&&p.sc?String(p.sc).replace(/^\((.*)\)$/,'$1').trim():'',second=tot&&p&&p.why?p.why:sc;return `<div class="s25sg"><div>Suggested winner: <b>${esc(s25SuggestName(b,p.r))}</b></div>${second?`<div class="s25sc">${esc(second)}</div>`:''}</div>`}
-function s25PropHtml(b,me){if(!b27Due(b))return '';const G=s25Game(b);if(!G||G.wait||!G.p||!G.g||!G.g.final)return '';const p=G.p;if((+G.g.ts===0&&+G.g.os===0)||!isFinite(+G.g.ts)||!isFinite(+G.g.os))return '';const ask=!!(S25P.ask&&S25P.ask.id===b.id&&S25P.ask.terms===b27Terms(b)+'\u001f'+p.text+'\u001f'+p.r);
+function s25ScoreOk(g){if(!g)return false;const ts=+g.ts,os=+g.os;return isFinite(ts)&&isFinite(os)&&!(ts===0&&os===0)}
+function s25PropReady(b){if(!b27Due(b)||!b27CanSettle(b,b27Who()))return false;const G=s25Game(b);return !!(G&&!G.wait&&G.p&&G.g&&G.g.final&&s25ScoreOk(G.g))}
+function s25PropHtml(b,me){if(!s25PropReady(b))return '';const G=s25Game(b),p=G.p;const ask=!!(S25P.ask&&S25P.ask.id===b.id&&S25P.ask.terms===b27Terms(b)+'\u001f'+p.text+'\u001f'+p.r);
   const btn=`<button type="button" class="ok${ask?' on flash':''}" data-s25-ok="${b.id}" onclick="${ask?`s25Confirm('${b.id}')`:`s25Ask('${b.id}')`}"${U.busy?' disabled':''}>${ask?'Tap again to confirm #'+b.n:'✅ Confirm'}</button> <button type="button" data-s25-fix="${b.id}" aria-pressed="${!!S25P.fix[b.id]}" onclick="s25Fix('${b.id}')">✏️ Fix</button>`;
   return `<div class="s25pp" data-s25-prop="final">${s25SuggestLine(b,p)}<div class="s25sg-act">${btn}</div><div class="note">Nothing is settled until someone taps Confirm.</div></div>`}
 function s25Ask(id){if(U.busy)return;const b=U.doc&&U.doc.bets&&U.doc.bets.find(x=>x.id===id);if(!b){S25P.ask=null;render();return}const G=s25Game(b);const terms=b27Terms(b)+'\u001f'+(G&&G.p?G.p.text+'\u001f'+G.p.r:'');U.askSettle=null;if(S25P.ask&&S25P.ask.id===id&&S25P.ask.terms===terms&&!b27ArmOld(S25P.ask))S25P.ask=null;else{S25P.ask={id,terms,at:Date.now()};b27ArmTick()}render()}
-function s25HideManual(b){if(S25P.fix[b.id])return false;const G=s25Game(b);return !!(G&&G.p)}
+function s25HideManual(b){if(S25P.fix[b.id])return false;return s25PropReady(b)}
 function s25Fix(id){S25P.fix[id]=!S25P.fix[id];render()}
 async function s25Confirm(id){if(U.busy)return;const flash=document.querySelector('[data-s25-ok="'+id+'"]');if(flash)flash.classList.add('on','flash');const b=U.doc.bets.find(x=>x.id===id),me=b27Who();if(!b||!b27CanSettle(b,me)){U.msg='Only people in the bet can settle it.';U.msgBad=true;render();return}
   const G=s25Game(b);if(!G||!G.p){S25P.ask=null;U.msg='No final score to confirm yet.';U.msgBad=true;render();return}
@@ -5235,6 +5243,6 @@ html body #main h2.b27-allh+.card.s24fb+.b27-grid{margin-top:0}
  html body #main h2.b27-allh+.card.s24fb>input.s24q{flex:0 1 auto!important;width:auto!important;max-width:100%!important;min-width:9em;margin-top:4px!important}
 }
 </style>
-<script src="stoopid-bet.js?v=14"></script>
+<script src="stoopid-bet.js?v=15"></script>
 </body>
 </html>
