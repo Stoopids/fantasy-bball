@@ -308,8 +308,9 @@ U.halfLs=hsLs;U.halfScores=function(g,s,first,BOX){var tot=s.score!=null?esc(Str
     function commitRqSelect(t){if(!t||!t.dataset)return;var k=t.dataset.rqIn,v=t.value,f=S.f;if(k==='mode'){if(f.mode===v&&f.expPick)return;f.mode=v;f.expPick=true}else if(k==='wkMenu'){var wk=v==='date'||v==='season'||v==='game'?v:'unknown';if(f.whenPick&&f.wk===wk)return;f.whenPick=true;f.wk=wk;if(wk!=='date')f.est=''}else return;A.render()}
     /* Parlay, Moneyline and Change the line sit on one row. Each opens its own options underneath, and only one stays open. */
     function betTools(f,g){var cur=f.tool||'',btn=function(k,lab){return '<button type="button" class="rq-tool" data-rq="tool" data-v="'+k+'" aria-pressed="'+(cur===k?'true':'false')+'">'+e(lab)+'</button>'};
-      var h='<div class="rq-tools" role="group" aria-label="Bet type">'+btn('parlay','Parlay')+btn('line','Change the line')+'</div>';
+      var h='<div class="rq-tools" role="group" aria-label="Bet type">'+btn('parlay','Parlay')+btn('ml','Moneyline')+btn('line','Change the line')+'</div>';
       if(cur==='parlay')h+='<div class="rq-tool-body">'+pyBox(f,'rq',true)+'</div>';
+      else if(cur==='ml')h+='<div class="rq-tool-body"><div class="qbs-s">'+(g&&g.g&&SHARED_UI.mlQuote(g.g)?SHARED_UI.mlPills(g.g,{e:e,name:function(s){return A.tname(s)},stake:f.amt||5,on:function(i){return f.lineKind==='ml'&&(f.lineSide?1:0)===i},attr:function(i){return 'data-rq="lml" data-v="'+i+'"'}}):'<span class="note">No moneyline on this game.</span>')+'</div></div>';
       else if(cur==='line')h+='<div class="rq-tool-body">'+lineBox(f,g,true)+'</div>';
       return h}
     function form(){var f=S.f,now0=Date.now(),G=games().filter(function(x){var st=Date.parse(x.start)||0,ws=f.cov==='2h'?st+HALF_MS:st;if(String(x.id)===String(f.gid))return true;if(x.status==='final'||st>=now0+7*86400000)return false;if(f.cov==='2h')return !(x.period&&+x.period>=2)&&now0<ws;return x.status==='scheduled'&&now0<ws}),g=tipOf(f),me=A.me(),nOth=A.others().length;
@@ -623,6 +624,7 @@ function oddsTxt(o){o=o||[1,1];return +o[0]===+o[1]?'even':o[0]+'-'+o[1]}
     var row=function(lab,btns){return '<div class="qbs-r qbs-mkt"><span class="qbs-l">'+e(lab)+'</span><span class="qbs-s">'+btns+'</span></div>'};
     var h='<div class="qbd" role="region" aria-label="Quick bet: '+t+'"><div class="qbd-h"><b>\u26A1 Quick bet</b><button type="button" class="qbd-x" aria-label="Close" '+o.close()+'>\u2715</button></div>';
     list.forEach(function(x){var lab=x.k==='sp'?'Spread':x.k==='ou'?'O/U':x.t;h+=row(lab,x.s.map(function(s,i){return '<button type="button" class="qbs-o" aria-label="'+e(s.txt)+'" '+o.pick(x.k,i)+'>'+e(s.lab)+'</button>'}).join(''))});
+    if(o.ml&&SHARED_UI.mlQuote(g))h+=row('ML',SHARED_UI.mlPills(g,{e:e,name:o.name,stake:5,attr:o.ml}));
     return h+'<button type="button" class="qbs-o qbd-req" '+o.blank()+'>\u{1F4E8} Request a bet</button></div>'};
   /* STEP7-UPSETS: Rules "upset rule" card + empty state (each site passes its own wording, already safe markup) */
   SHARED_UI.upsetHead=function(note,empty){var h='<div class="card"><b>\u{1F631} The upset rule</b><div class="note">'+note+'</div></div>';return empty==null?h:h+'<div class="card">'+empty+'</div>'};
