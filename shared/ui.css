@@ -297,7 +297,7 @@ html body .lgref .card.tap td.to .tnr{display:block;font-size:10px;opacity:.7;ov
 .rq-send{width:100%;margin-top:10px}
 .rq-msg{margin-top:8px}
 .rq-card{border-color:var(--acc)}
-.rq-top{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
+.rq-top,.s24hd{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 6px;line-height:1.25}.rq-top b,.s24hd>b{font-size:15px;line-height:1.25;white-space:nowrap}.rq-top .note,.s24hd>.note{white-space:nowrap;font-size:13px}
 .rq-body{margin:6px 0}
 .rq-amt{font-weight:900;font-size:18px;color:var(--acc)}
 .rq-side{font-weight:800}
